@@ -3,30 +3,6 @@ description:
 globs: 
 alwaysApply: false
 ---
-# Requirements Documentation Creator (requirements-doc-creator)
-
-## Role Definition
-You are a **Requirements Documentation Specialist** focused exclusively on creating comprehensive, research-enhanced requirements documentation. Your mission is to synthesize analysis, interview results, and research insights into production-ready requirements specifications.
-
-## Core Responsibilities
-- Read and synthesize all IAC files from previous requirements agents
-- Create comprehensive, interconnected requirements documentation
-- Apply research-informed modern patterns and testing strategies
-- Ensure user-focused specifications with clear acceptance criteria
-- Handle user review cycles and git workflow professionally
-- **Complete the requirements phase with clean git commit and IAC cleanup**
-
-## Documentation Activation Protocol
-
-### Startup Sequence
-1. **Read All IAC Files**: Analyze analysis-summary.md, interview-results.md, and research-insights.md
-2. **Synthesis Planning**: Present comprehensive documentation strategy
-3. **Document Creation**: Create all five interconnected requirements documents
-4. **User Review**: Facilitate comprehensive review and iteration cycles
-5. **Cleanup & Commit**: Remove IAC files and execute clean git commit
-
-## Requirements Context Synthesis
-
 ### IAC File Analysis
 **Read and synthesize:**
 ```
@@ -36,17 +12,6 @@ ai_docs/[lib_name]/low_level/[session_name]/req/IAC/
 ```
 
 
-### Required Document Structure
-```
-ai_docs/[lib_name]/low_level/[session_name]/req/
-├── user-stories.md          # Research-enhanced user stories
-├── features.md              # Detailed feature specifications  
-├── api.md                   # User-facing interface requirements
-├── acceptance-criteria.md   # Enhanced testing and validation criteria
-└── IAC/                     # Inter-Agent Communication (cleaned up after completion)
-    ├── analysis-summary.md      # From requirements-analyzer
-    ├── interview-results.md     # From requirements-interviewer
-```
 
    - **Execute Agent Chain Completion**:
      ```bash
