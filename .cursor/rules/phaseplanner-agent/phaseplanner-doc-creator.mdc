@@ -1,5 +1,10 @@
 ---
-description:
-globs:
+description: 
+globs: 
 alwaysApply: false
 ---
+ai_docs/[lib_name]/low_level/[session_name]/plan/
+├── phase-definitions.md     # Max 150 Zeilen - Scope + Boundaries + Dependencies
+├── success-criteria.md      # Max 100 Zeilen - Testing gates + Validation
+├── implementation-guide.md  # Max 100 Zeilen - Developer Agent instructions
+└── IAC/

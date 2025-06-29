@@ -1,5 +1,12 @@
 ---
-description:
-globs:
+description: 
+globs: 
 alwaysApply: false
 ---
+ai_docs/[lib_name]/low_level/[session_name]/design/
+├── architecture.md          # Max 200 Zeilen - Core system architecture
+├── technology-stack.md      # Max 150 Zeilen - Tech stack + modern patterns  
+├── module-boundaries.md     # Max 100 Zeilen - Code organization & interfaces
+├── api-contracts.md         # Max 150 Zeilen - API design & developer experience
+├── quality-strategy.md      # Max 100 Zeilen - Testing + performance + error handling
+└── IAC/

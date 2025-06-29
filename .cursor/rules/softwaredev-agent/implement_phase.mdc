@@ -3,3 +3,7 @@ description:
 globs: 
 alwaysApply: false
 ---
+ai_docs/[lib_name]/low_level/[session_name]/dev/
+├── progress.md              # Max 50 Zeilen - Nur Status + Blockers
+└── [phase_name]/           # Per-phase CODE output
+    └── retro.md  #wichtige gedanken für die retrospektive um im nachgang alle agents zu optimieren
