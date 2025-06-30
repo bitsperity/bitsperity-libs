@@ -1,157 +1,341 @@
-# Enhanced Developer User Stories
+# Enhanced Developer User Stories - Nostr Unchained
 
-## Core Stories (Priority 1) - The Magical "First 5 Minutes"
+*Updated with research insights and competitive positioning*
 
-### As a developer building social apps, I want to create and send events effortlessly
-**So that** Nostr feels as simple as posting to a traditional database
+## Core Stories
 
-**Enhanced with Research**: Based on competitive analysis, existing libraries require 10+ lines für basic event creation. Nostr Unchained's fluent API reduces this zu 3 lines.
+### Epic 1: Magical First Experience
+**As an AI prompt engineer working late**, I want to send a DM with minimal code so that I get instant gratification and see the power immediately.
 
-**Magic Moment:**
+**Acceptance Criteria:**
 ```typescript
-await nostr.events.create()
-  .content("Hello Nostr!")
-  .sign()           // Auto-detects Alby/NIP-07
-  .send();          // Auto-discovers best relays
+const nostr = new NostrUnchained();
+const dmStore = nostr.dm.with('npub1234...');
+await dmStore.send("Hello!");
+$: console.log('Messages:', $dmStore.messages);
 ```
+- Zero configuration required
+- Works with any valid npub
+- Automatic relay discovery
+- Reactive updates work immediately
 
-**Success Metric**: Developer creates first event in <30 seconds
+### Epic 2: SQL-like Query Power
+**As a developer building a job board**, I want to query complex event relationships like a database so that I can focus on business logic instead of protocol details.
 
-### As a SvelteKit developer, I want reactive Nostr data stores
-**So that** my UI automatically updates when events change
-
-**Enhanced with Research**: Current Svelte integrations (ndk-svelte, svelte-nostr) haben limited adoption. Nostr Unchained positions as first Svelte-optimized solution.
-
-**Magic Moment:**
+**Acceptance Criteria:**
 ```typescript
-const eventStore = nostr.query().kinds([1]).createStore();
-$: posts = $eventStore; // Automatic reactivity
-```
-
-**Success Metric**: Live UI updates without polling or manual refresh
-
-### As a developer, I want to query complex event relationships easily  
-**So that** I can build social features without understanding Nostr's complexity
-
-**Enhanced with Research**: No existing library provides subgraph traversal APIs. This ist Nostr Unchained's unique differentiator.
-
-**Magic Moment:**
-```typescript
-// Get entire conversation + state in one query
-const conversation = await nostr.query()
-  .subgraph(eventId)
-  .includeState(['declined', 'accepted'])
+const activeJobs = await nostr.subgraph()
+  .startFrom({kind: 30023, tags: {t: 'jobs'}})
+  .excludeWhen()
+    .hasChild()
+    .content(['finished', 'aborted'])
+    .authorMustBe('root.author')
   .execute();
 ```
+- Natural language business logic
+- Automatic event relationship resolution
+- Performance comparable to traditional databases
+- Intuitive result structure
 
-**Success Metric**: Complex social queries in <3 lines of code
+### Epic 3: Effortless Publishing
+**As a developer creating content**, I want to publish events with fluent syntax so that I don't need to understand Nostr event structure.
 
-## Advanced Stories - Power User Scenarios
-
-### As a developer building job platforms, I want to track event state changes
-**So that** I can show "job declined" or "offer accepted" naturally
-
-**Current Pain**: Multiple queries to check for kind:5 deletion events, manual relationship tracking
-**Nostr Unchained**: `const isDeclined = conversation.events.some(e => e.state.declined)`
-
-### As a developer, I want intelligent DM management  
-**So that** encrypted messaging feels like normal chat
-
-**Magic Moment:**
+**Acceptance Criteria:**
 ```typescript
-// Send DM with auto-relay discovery
-await nostr.dm.send({
-  to: pubkey,
-  content: "Hello!",
-  // Relays auto-discovered from recipient's NIP-65
-});
-
-// Get live conversation updates
-const chatStore = nostr.dm.conversation(pubkey);
-$: messages = $chatStore;
+await nostr.events.create()
+  .kind(1)
+  .content("Hello Nostr!")
+  .tag('t', 'introduction')
+  .replyTo(originalEventId)
+  .sign()
+  .publish();
 ```
+- Automatic tag management
+- Validation before publishing
+- Smart relay selection
+- Clear error messages
 
-### As a developer, I want profiles and relays combined intelligently
-**So that** I don't need to understand Nostr's separate event types
+## Advanced Stories
 
-**Current Pain**: kind:0 (profile) and kind:10002 (relays) are separate, manual combination needed
-**Nostr Unchained**: `const profile = await nostr.profile.get(pubkey); // Contains profile.relays automatically`
+### Epic 4: Graph Navigation
+**As a developer building a discussion app**, I want to navigate event relationships easily so that I can show threaded conversations naturally.
 
-## Onboarding Stories - First-Time Experience
-
-### As a developer new to Nostr, I want zero-config initialization
-**So that** I can start building immediately without relay research
-
+**Acceptance Criteria:**
 ```typescript
-const nostr = new NostrUnchained(); // Works with sensible defaults
+const jobEvent = jobSubgraph.getEvent(jobId);
+const applications = jobEvent.children.filter(e => e.isApplication);
+const author = jobEvent.author.profile();
+const mentions = jobEvent.mentions(); // All p-tags resolved
 ```
+- Seamless navigation between events
+- Automatic profile resolution
+- Cached relationship data
+- Type-safe property access
 
-### As a frustrated developer, I want clear error messages with solutions
-**So that** debugging feels helpful instead of hopeless
+### Epic 5: Business Logic Conditions
+**As a developer building a marketplace**, I want to express complex business rules declaratively so that my code reads like natural language.
 
-**When** relay connection fails: "Relay wss://... unreachable. Trying fallback relays: [...]. Suggestion: Check relay status at relay.info"
-
-### As a developer, I want to understand what's cached and why
-**So that** I can optimize performance without guessing
-
+**Acceptance Criteria:**
 ```typescript
-const cacheStatus = nostr.cache.status();
-// Shows: events count, memory usage, hit rates, suggestions
+const availableItems = await nostr.subgraph()
+  .startFrom({kind: 30018, tags: {t: 'marketplace'}})
+  .excludeWhen()
+    .hasChild()
+    .kind(5) // deletion events
+    .authorMustBe('root.author')
+  .includeWhen()
+    .hasChild()
+    .kind(7) // reactions
+    .content('✅')
+    .countGreaterThan(5)
+  .execute();
 ```
+- Declarative business rules
+- Chainable conditions
+- Performance optimized
+- Readable code structure
 
-## Integration Stories - SvelteKit Optimization
+### Epic 6: Reactive Real-time Updates
+**As a developer building a chat app**, I want automatic updates when new events arrive so that my UI stays current without manual refreshing.
 
-### As a SvelteKit developer, I want SSR-compatible stores
-**So that** my Nostr app works with server-side rendering
+**Acceptance Criteria:**
+```typescript
+const conversation = nostr.dm.with(pubkey);
+const liveJobBoard = await nostr.subgraph()
+  .startFrom({kind: 30023, tags: {t: 'jobs'}})
+  .live(true)
+  .execute();
 
-### As a developer, I want offline-first caching
-**So that** my app works without internet connection
+$: {
+  console.log('New messages:', $conversation.messages);
+  console.log('New jobs:', $liveJobBoard.replies);
+}
+```
+- Opt-in live updates
+- Svelte store compatibility
+- Efficient subscription management
+- Memory leak prevention
 
-### As a developer, I want automatic query optimization
-**So that** I don't accidentally create performance problems
+## Onboarding Stories
 
-**Smart Subscription Merging**: Multiple `nostr.query().kinds([1])` calls → single relay subscription
+### Epic 7: Zero-Config Setup
+**As a tired developer at 9 PM**, I want the library to work immediately without configuration so that I can start building instead of reading docs.
 
-## State Management Stories - The "Natural" Feel
+**Acceptance Criteria:**
+```typescript
+const nostr = new NostrUnchained();
+// Everything works with smart defaults
+```
+- No relay configuration required
+- Automatic NIP-07 detection
+- Sensible default behaviors
+- Progressive enhancement
 
-### As a developer, I want event state to feel mutable
-**So that** Nostr's immutability doesn't complicate my app logic
+### Epic 8: Familiar Patterns
+**As a developer coming from React/Svelte**, I want Nostr operations to feel like familiar patterns so that I don't need to learn new paradigms.
 
-**Current Pain**: Check for deletion events manually, track state changes across multiple events
-**Nostr Unchained**: Events have `.state.deleted`, `.state.declined`, `.state.reactions` properties automatically
+**Acceptance Criteria:**
+- Store-based reactive updates
+- Promise-based async operations
+- Fluent/chainable API patterns
+- Consistent error handling
 
-### As a developer, I want conversation threading to work automatically
-**So that** replies and mentions connect naturally
+### Epic 9: Immediate Value Demo
+**As a developer evaluating the library**, I want to see impressive results quickly so that I understand the potential and get excited to use it.
 
-**Magic**: Event relationships automatically detected and cached, no manual NIP-10 tag parsing
-
-### As a developer, I want relay management to be invisible
-**So that** I can focus on features instead of infrastructure
-
-**Auto-Discovery**: User relays loaded from NIP-65, health monitoring, automatic fallbacks
-
----
+**Acceptance Criteria:**
+- 5-minute DM app tutorial
+- 15-minute job board tutorial
+- 30-minute social feed tutorial
+- Each tutorial shows progressive complexity
 
 ## Success Metrics
 
-### Developer Delight Indicators:
-- **Time to First DM**: <2 minutes from `npm install` to sending encrypted message
-- **Lines of Code**: Complex social features in <10 lines  
-- **"Aha Moments"**: Store reactivity, automatic caching, state detection work "magically"
-- **Migration Joy**: Bitspark → Nostr Unchained feels like upgrade, not rewrite
+### Time to First Success
+- **DM sent**: < 5 minutes from library installation
+- **Complex query**: < 15 minutes for business logic
+- **Production ready**: < 2 hours from start to deploy
 
-### Technical Success:
-- **Query Performance**: <50ms for cached subgraph queries
-- **Bundle Size**: <80KB gzipped for full library
-- **Compatibility**: Works in Browser, Node.js, SvelteKit SSR
-- **Cache Efficiency**: >90% hit rate for repeated queries
+### Developer Experience
+- **Learning curve**: Familiar patterns, not new paradigms
+- **Error messages**: Clear, actionable, with suggestions
+- **Documentation**: Code examples that copy-paste work
 
-### Community Adoption:
-- **First Impression**: Developers succeed in first 5 minutes  
-- **Word of Mouth**: "Finally, Nostr development that doesn't suck"
-- **Retention**: Developers stick with library instead of switching
-- **Contribution**: Community contributes improvements to DX
+### Performance
+- **Query speed**: Comparable to traditional databases
+- **Bundle size**: < 80KB gzipped
+- **Memory usage**: < 50MB for 10k cached events
 
----
+### Migration
+- **From existing tools**: < 4 hours for typical app
+- **Code reduction**: 50% less code than raw Nostr libraries
+- **Feature parity**: Everything possible with raw Nostr, but easier
 
-*These stories transform Nostr's alien complexity into natural, joyful development patterns that make building decentralized social applications feel as simple as traditional web development.* 
+## Vision Validation
+
+## Integration Stories (Priority 2) 
+*Enhanced with research insights on ecosystem gaps*
+
+### Epic 10: Framework Migration
+**As a developer with existing React/Vue apps**, I want to integrate Nostr Unchained easily so that I don't need to rewrite my entire application.
+
+**Research Insight**: Current tools like NDK require extensive refactoring. Our competitive advantage is seamless integration.
+
+**Acceptance Criteria:**
+```typescript
+// React integration
+import { useNostrQuery } from 'nostr-unchained/react';
+
+function MyComponent() {
+  const { data, loading } = useNostrQuery().kinds([1]).execute();
+  return loading ? 'Loading...' : data.map(event => <div>{event.content}</div>);
+}
+
+// Vue integration
+import { computed } from 'vue';
+import { createNostrStore } from 'nostr-unchained/vue';
+
+const nostrStore = createNostrStore();
+const posts = computed(() => nostrStore.query().kinds([1]).execute());
+```
+
+### Epic 11: Bundle Optimization
+**As a developer building for production**, I want minimal bundle impact so that my app stays fast for users.
+
+**Research Insight**: NDK is >200KB, nostr-tools creates large bundles due to poor tree-shaking.
+
+**Acceptance Criteria:**
+- Core bundle <40KB gzipped
+- Tree-shakeable imports (`import { dm } from 'nostr-unchained/dm'`)
+- Dynamic imports for advanced features
+- Zero polyfills for modern browsers
+
+## Advanced Stories (Priority 3)
+*Power user scenarios from competitive analysis*
+
+### Epic 12: Performance Optimization
+**As a developer building high-traffic apps**, I want built-in performance optimization so that my app scales without manual tuning.
+
+**Research Insight**: Current tools require manual optimization. Auto-optimization is a key differentiator.
+
+**Acceptance Criteria:**
+```typescript
+// Automatic batching
+const results = await Promise.all([
+  nostr.query().kinds([1]).execute(),
+  nostr.query().kinds([7]).execute(),
+  nostr.query().kinds([0]).execute()
+]); // Batched into single relay request
+
+// Intelligent caching
+const cachedQuery = nostr.query().kinds([1]).cache(300); // 5min cache
+```
+
+### Epic 13: Enterprise Features
+**As a developer in an enterprise environment**, I want compliance and monitoring features so that I can use Nostr in production systems.
+
+**Research Insight**: No existing Nostr tool addresses enterprise needs - massive opportunity.
+
+**Acceptance Criteria:**
+- Audit logging for all operations
+- Rate limiting and quotas
+- Health check endpoints
+- Metrics and monitoring integration
+- Data retention policies
+
+## Ecosystem Stories (Priority 4)
+*Community and ecosystem development*
+
+### Epic 14: Plugin Development
+**As a community developer**, I want to extend Nostr Unchained with custom NIPs so that the ecosystem can grow organically.
+
+**Acceptance Criteria:**
+```typescript
+// Custom NIP plugin
+const customNIP = definePlugin({
+  name: 'nip-custom',
+  kinds: [30000],
+  install(nostr) {
+    nostr.custom = {
+      async doCustomThing() {
+        // Custom functionality
+      }
+    };
+  }
+});
+
+const nostr = new NostrUnchained({
+  plugins: [customNIP]
+});
+```
+
+### Epic 15: Migration Tools
+**As a developer with existing Nostr code**, I want automated migration tools so that I can adopt Nostr Unchained without manual rewriting.
+
+**Research Insight**: High switching cost is adoption barrier. Migration tools remove friction.
+
+**Acceptance Criteria:**
+- Automated codemod for nostr-tools → Nostr Unchained
+- NDK compatibility layer
+- Migration guides with before/after examples
+- Incremental adoption strategy
+
+## Research-Driven Enhancements
+
+### Competitive Positioning Stories
+
+#### vs nostr-tools (Low-level → High-level)
+**Pain Point**: Too much boilerplate, manual relationship management
+**Our Solution**: Subgraph queries eliminate boilerplate
+
+#### vs NDK (Complex → Simple)  
+**Pain Point**: Configuration complexity, steep learning curve
+**Our Solution**: Zero-config with smart defaults
+
+#### vs nostr-fetch (Limited → Comprehensive)
+**Pain Point**: Only fetching, no publishing or real-time
+**Our Solution**: Complete toolkit with reactive updates
+
+### Technology Acceleration Stories
+
+#### Svelte-first Strategy
+**Market Gap**: Svelte ecosystem underserved
+**Our Opportunity**: Become the standard Nostr tool for Svelte developers
+
+```typescript
+// Seamless Svelte integration
+export let conversation = nostr.dm.with(pubkey);
+// Automatic reactivity without any setup
+```
+
+#### Bundle Size Leadership
+**Market Gap**: All tools are >100KB  
+**Our Opportunity**: <80KB full functionality
+
+#### Zero-Config Experience
+**Market Gap**: All tools require extensive setup
+**Our Opportunity**: Works immediately out of the box
+
+### The Magic Moment
+When a developer sees this working:
+```typescript
+const activeJobs = await nostr.subgraph()
+  .startFrom({kind: 30023, tags: {t: 'jobs'}})
+  .excludeWhen().hasChild().content(['finished']).authorMustBe('root.author')
+  .execute();
+```
+
+They should think: **"This is like SQL for Nostr - I can build anything with this!"**
+
+### Progressive Power Revelation
+1. **Minute 1**: DM works magically
+2. **Minute 5**: Publishing is effortless  
+3. **Minute 10**: Complex queries feel natural
+4. **Minute 30**: Business logic is trivial
+5. **Hour 1**: Full app is possible
+
+### Developer Satisfaction
+- **Excitement**: "I want to build something with this right now"
+- **Confidence**: "I can make this work without deep Nostr knowledge"
+- **Productivity**: "This is so much faster than other tools"
+- **Reliability**: "I trust this to work in production" 

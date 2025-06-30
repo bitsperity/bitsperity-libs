@@ -2,629 +2,644 @@
 
 ## API Design Philosophy
 
-### Core Design Principles
-- **Fluent Interfaces**: Chainable methods für natürlichen Code-Flow
-- **Progressive Disclosure**: Einfache APIs für häufige Use Cases, Power-Features bei Bedarf
-- **Svelte-First**: Reactive stores als first-class citizens
-- **Intelligent Defaults**: Zero-config für 80% der Szenarien
-- **Type Safety**: TypeScript-native mit ausgezeichneter IDE-Integration
+### Core Principles
+1. **Builder Pattern Everywhere**: Fluent, chainable APIs für maximale Entdeckbarkeit
+2. **Natural Language Business Logic**: Code liest sich wie englische Geschäftsregeln
+3. **Smart Defaults + Escape Hatches**: Zero-Config funktioniert, Profis können überschreiben
+4. **Progressive Disclosure**: Einfache Cases bleiben einfach, komplexe werden möglich
+5. **Reactive by Design**: Svelte Store Integration für Real-Time-Updates
 
-### Inspiration Patterns
-- **Prisma/DrizzleORM**: Elegante query builders
-- **Svelte Stores**: Reactive programming patterns
-- **Stripe/Plaid APIs**: Progressive complexity disclosure
+### Method Naming Strategy: Hybrid Pattern
+```typescript
+nostr.dm.with(pubkey).send("test");           // Context-first für häufige Operationen
+nostr.events.create().kind(1).content("test"); // Resource-first für Event-Building
+nostr.query().kinds([1]).execute();           // Action-first für Queries
+```
 
 ## Core APIs
 
-### Primary Interface - NostrUnchained Class
+### Primary Interface: NostrUnchained Class
 
+#### Initialization
 ```typescript
-class NostrUnchained {
-  // Initialization mit intelligent defaults
-  constructor(config?: NostrConfig)
-  
-  // Core subsystems
-  readonly events: EventManager
-  readonly query: QueryBuilder  
-  readonly cache: CacheManager
-  readonly dm: DMManager
-  readonly profile: ProfileManager
-  readonly relays: RelayManager
-}
-
-// Zero-config initialization
+// Zero-Config (Smart Defaults)
 const nostr = new NostrUnchained();
 
-// Power-user configuration
+// Mit Konfiguration für Profis
 const nostr = new NostrUnchained({
-  caching: { strategy: 'hybrid', maxEvents: 10000 },
-  relays: { autoDiscover: true, fallbacks: DEFAULTS },
-  signing: { strategy: 'nip07-first' }
+  relays: ['wss://relay.damus.io', 'wss://nos.lol'],
+  timeout: 5000,
+  cache: true,
+  signer: customSigner
 });
 ```
 
-### Event Management API
-
+#### Core Modules
 ```typescript
-interface EventManager {
-  // Fluent event creation
-  create(): EventBuilder
+interface NostrUnchained {
+  // Direct Messages
+  dm: DMModule;
   
-  // Direct publishing
-  publish(event: NostrEvent): Promise<PublishResult>
+  // Event Publishing  
+  events: EventModule;
   
-  // Batch operations
-  publishBatch(events: NostrEvent[]): Promise<PublishResult[]>
+  // Complex Queries
+  query(): QueryBuilder;
+  subgraph(): SubgraphBuilder;
+  
+  // Simple Publishing
+  publish(content: string, options?: PublishOptions): Promise<PublishResult>;
+  
+  // Utilities
+  profile: ProfileModule;
+  relays: RelayModule;
 }
-
-// Fluent EventBuilder interface
-interface EventBuilder {
-  // Content methods
-  content(text: string): this
-  kind(k: number): this
-  
-  // Tagging
-  tag(tagName: string, ...values: string[]): this
-  tagEvent(eventId: string): this
-  tagProfile(pubkey: string): this
-  
-  // Signing & sending
-  sign(signer?: Signer): Promise<SignedEventBuilder>
-  
-  // Advanced
-  createdAt(timestamp: number): this
-  custom(partial: Partial<NostrEvent>): this
-}
-
-interface SignedEventBuilder {
-  send(relays?: string[]): Promise<PublishResult>
-  toEvent(): NostrEvent
-  
-  // Batch operations
-  addToBatch(batch: EventBatch): this
-}
-
-// Usage Examples:
-await nostr.events.create()
-  .content("Hello Nostr!")
-  .tag('p', userPubkey)
-  .sign()
-  .send();
-
-// Job posting with custom fields
-await nostr.events.create()
-  .kind(CUSTOM_KIND.JOB_POSTING)
-  .content("Senior TypeScript Developer")
-  .tag('budget', '5000')
-  .tag('remote', 'true')
-  .sign()
-  .send();
 ```
 
-### Query Builder API
+### DM Module: Direct Messages Made Simple
 
+#### Basic Usage
 ```typescript
-interface QueryBuilder {
-  // Filter methods (chainable)
-  kinds(kinds: number[]): this
-  authors(pubkeys: string[]): this
-  tags(tagName: string, values: string[]): this
-  since(timestamp: number): this
-  until(timestamp: number): this
-  limit(count: number): this
-  
-  // Relationship traversal (unique to Nostr Unchained)
-  subgraph(rootEventId: string): SubgraphQueryBuilder
-  
-  // Execution methods
-  execute(): Promise<NostrEvent[]>
-  createStore(): Readable<NostrEvent[]>
-  stream(): AsyncIterable<NostrEvent>
-  
-  // Optimization hints
-  fromCache(): this
-  fromRelays(relayUrls: string[]): this
-  requireFresh(): this
+// Conversation Store (Reactive)
+const conversation = nostr.dm.with('npub1234...');
+
+// Access reactive data
+$: {
+  console.log('Messages:', $conversation.messages);
+  console.log('Status:', $conversation.status);
+  console.log('Latest:', $conversation.latest);
 }
 
-interface SubgraphQueryBuilder extends QueryBuilder {
-  depth(levels: number): this
-  includeState(stateTypes: StateType[]): this
-  includeReplies(): this
-  includeReactions(): this
-  includeDeletions(): this
-  
-  // Advanced relationship analysis
-  followThread(): this
-  includeProfiles(): this
-}
+// Send message
+await conversation.send("Hello!");
+```
 
-// Usage Examples:
+### Event Module: Publishing Made Elegant
 
-// Basic query mit Svelte store
-const eventStore = nostr.query()
+#### Fluent Event Builder
+```typescript
+// Step-by-step building
+const event = await nostr.events.create()
+  .kind(1)
+  .content("Hello Nostr!")
+  .tag('t', 'introduction')
+  .replyTo(originalEventId)
+  .sign()
+  .publish();
+
+// Job posting example
+const jobEvent = await nostr.events.create()
+  .kind(30023)
+  .content("Looking for TypeScript developer")
+  .tag('t', 'jobs')
+  .tag('location', 'remote')
+  .tag('d', 'unique-job-id')
+  .publish();
+```
+
+### Query Builder: Simple Queries
+
+#### Basic Event Queries
+```typescript
+// Simple kind query
+const posts = await nostr.query()
   .kinds([1])
-  .authors([pubkey])
-  .limit(20)
-  .createStore();
-
-$: posts = $eventStore; // Auto-reactive UI updates
-
-// Complex relationship query
-const jobApplications = await nostr.query()
-  .subgraph(jobEventId)
-  .depth(2)
-  .includeState(['declined', 'accepted'])
-  .includeProfiles()
+  .authors(['npub1234...'])
+  .limit(50)
   .execute();
 
-// Real-time conversation updates
-const conversationStore = nostr.query()
-  .subgraph(rootMessageId)
-  .followThread()
-  .includeReplies()
-  .createStore();
+// Tag-based queries
+const jobPosts = await nostr.query()
+  .kinds([30023])
+  .tags('#t', ['jobs'])
+  .execute();
 ```
 
-### Intelligent Caching API
+### Subgraph Builder: Complex Event Relationships
 
+#### Business Logic Queries
 ```typescript
-interface CacheManager {
-  // Cache inspection
-  status(): CacheStatus
-  size(): { events: number, profiles: number, relationships: number }
-  
-  // Cache control
-  clear(): Promise<void>
-  clearOlderThan(timestamp: number): Promise<void>
-  
-  // Preloading strategies  
-  preload(strategy: PreloadStrategy): Promise<void>
-  warmup(pubkeys: string[]): Promise<void>
-  
-  // Event lifecycle
-  invalidate(eventId: string): void
-  refresh(eventId: string): Promise<NostrEvent | null>
-  
-  // Performance monitoring
-  getHitRate(): number
-  getPerformanceMetrics(): CacheMetrics
-}
+// Active jobs (exclude finished ones)
+const activeJobs = await nostr.subgraph()
+  .startFrom({kind: 30023, tags: {t: 'jobs'}})
+  .excludeWhen()
+    .hasChild()
+    .kind(1)
+    .content(['finished', 'aborted'])
+    .authorMustBe('root.author')
+  .execute();
 
-interface CacheStatus {
-  hitRate: number
-  memoryUsage: number
-  persistedEvents: number
-  relationshipGraph: GraphStats
-  suggestions: string[]
-}
-
-// Usage:
-const status = nostr.cache.status();
-console.log(`Cache hit rate: ${status.hitRate}%`);
-console.log(`Suggestions: ${status.suggestions.join(', ')}`);
-```
-
-### DM (Direct Messages) API
-
-```typescript
-interface DMManager {
-  // Send encrypted DM
-  send(params: DMParams): Promise<SendResult>
-  
-  // Conversation management
-  conversation(pubkey: string): Readable<DMMessage[]>
-  conversations(): Readable<DMConversation[]>
-  
-  // Bulk operations
-  markAsRead(conversationId: string): Promise<void>
-  deleteConversation(pubkey: string): Promise<void>
-}
-
-interface DMParams {
-  to: string
-  content: string
-  replyTo?: string
-  relays?: string[] // Auto-discovered if omitted
-}
-
-interface DMMessage {
-  id: string
-  from: string
-  to: string  
-  content: string
-  timestamp: number
-  read: boolean
-  decrypted: boolean
-}
-
-// Usage Examples:
-// Send DM mit auto-relay discovery
-await nostr.dm.send({
-  to: recipientPubkey,
-  content: "Hello! Interested in the job posting."
-});
-
-// Live conversation updates in Svelte
-const chatStore = nostr.dm.conversation(pubkey);
-$: messages = $chatStore; // Auto-updates when new messages arrive
-
-// All conversations overview
-const conversationsStore = nostr.dm.conversations();
-$: allChats = $conversationsStore;
-```
-
-### Profile Management API
-
-```typescript
-interface ProfileManager {
-  // Unified profile access (combines kind:0 + kind:10002)
-  get(pubkey: string): Promise<UnifiedProfile | null>
-  
-  // Reactive profile store
-  store(pubkey: string): Readable<UnifiedProfile | null>
-  
-  // Profile updates
-  update(updates: ProfileUpdates): Promise<PublishResult>
-  
-  // Batch profile loading
-  loadBatch(pubkeys: string[]): Promise<Map<string, UnifiedProfile>>
-  
-  // Social graph  
-  following(pubkey: string): Promise<string[]>
-  followers(pubkey: string): Promise<string[]>
-}
-
-interface UnifiedProfile {
-  // Basic profile (kind:0)
-  name?: string
-  about?: string
-  picture?: string
-  nip05?: string
-  
-  // Relay information (kind:10002) 
-  relays: RelayInfo[]
-  
-  // Social metrics
-  followerCount?: number
-  followingCount?: number
-  
-  // Cache metadata
-  lastUpdated: number
-  isStale: boolean
-}
-
-// Usage:
-// Get complete profile (includes relays)
-const profile = await nostr.profile.get(pubkey);
-console.log(`${profile.name} uses ${profile.relays.length} relays`);
-
-// Reactive profile in Svelte component
-const profileStore = nostr.profile.store(pubkey);
-$: userProfile = $profileStore;
-```
-
-### Relay Pool Management
-
-```typescript
-interface RelayManager {
-  // Connection management
-  connect(relayUrl: string): Promise<RelayConnection>
-  disconnect(relayUrl: string): Promise<void>
-  
-  // Health monitoring
-  getHealthStatus(): RelayHealthMap
-  
-  // Auto-discovery
-  discoverRelays(pubkey: string): Promise<string[]>
-  
-  // Load balancing
-  getBestRelays(purpose: RelayPurpose): string[]
-  
-  // Performance optimization
-  getMetrics(): RelayMetrics[]
-}
-
-interface RelayConnection {
-  url: string
-  status: 'connected' | 'connecting' | 'disconnected' | 'error'
-  latency: number
-  successRate: number
-  lastError?: Error
-}
-
-// Usage meist transparent:
-// Relays werden automatisch discovered und managed
-// Power users können aber auch manuell eingreifen
-const health = nostr.relays.getHealthStatus();
-const slow = health.filter(r => r.latency > 1000);
-```
-
-## Configuration API
-
-```typescript
-interface NostrConfig {
-  // Caching strategy
-  caching?: {
-    strategy: 'memory' | 'hybrid' | 'persistent'
-    maxEvents?: number
-    evictionPolicy?: 'lru' | 'fifo' | 'smart'
-  }
-  
-  // Relay configuration
-  relays?: {
-    autoDiscover?: boolean
-    fallbacks?: string[]
-    maxConnections?: number
-    timeout?: number
-  }
-  
-  // Signing strategy
-  signing?: {
-    strategy: 'nip07-first' | 'private-key' | 'external'
-    privateKey?: string
-    signer?: ExternalSigner
-  }
-  
-  // Performance tuning
-  performance?: {
-    bundleSize?: 'minimal' | 'standard' | 'full'
-    preload?: PreloadStrategy
-    backgroundSync?: boolean
-  }
-}
-```
-
-## Event/Callback API
-
-### Store-Based Subscriptions
-
-```typescript
-// Alle query results können als Svelte stores konsumiert werden
-const eventStore = nostr.query().kinds([1]).createStore();
-
-// Store hat standard Svelte interface
-interface Readable<T> {
-  subscribe(subscriber: (value: T) => void): () => void
-}
-
-// Error handling in stores
-const storeWithErrors = nostr.query()
-  .kinds([1])
-  .createStore({
-    onError: (error) => console.error('Query failed:', error),
-    retryStrategy: 'exponential-backoff'
-  });
-```
-
-### Event Lifecycle Hooks
-
-```typescript
-// Global event listeners
-nostr.on('event:received', (event: NostrEvent) => {
-  console.log('New event cached:', event.id);
-});
-
-nostr.on('relay:connected', (relayUrl: string) => {
-  console.log('Connected to relay:', relayUrl);
-});
-
-nostr.on('cache:updated', (stats: CacheStats) => {
-  if (stats.evicted > 0) {
-    console.log(`Cache evicted ${stats.evicted} old events`);
-  }
-});
+// Popular posts (with many reactions)  
+const popularPosts = await nostr.subgraph()
+  .startFrom({kind: 1, authors: followingList})
+  .includeWhen()
+    .hasChild()
+    .kind(7) // reactions
+    .countGreaterThan(10)
+  .include({
+    replies: {kind: 1, referencesRoot: true},
+    reactions: {kind: 7, referencesRoot: true}
+  })
+  .execute();
 ```
 
 ## Usage Patterns
 
 ### Getting Started (First 5 Minutes)
 
+#### 1. Installation & Setup
+```bash
+npm install nostr-unchained
+```
+
+#### 2. Send First DM
 ```typescript
-// 1. Install & Import
-import { NostrUnchained } from '@nostr-unchained/core';
+import { NostrUnchained } from 'nostr-unchained';
 
-// 2. Initialize (zero config)
 const nostr = new NostrUnchained();
+const conversation = nostr.dm.with('npub1234...');
+await conversation.send("Hello from Nostr Unchained!");
+```
 
-// 3. Create & send first event
-await nostr.events.create()
-  .content("Hello Nostr from Unchained!")
-  .sign() // Auto-detects Alby/NIP-07
-  .send(); // Auto-discovers relays
+#### 3. Reactive UI Updates
+```svelte
+<script>
+  import { NostrUnchained } from 'nostr-unchained';
+  
+  const nostr = new NostrUnchained();
+  const conversation = nostr.dm.with('npub1234...');
+</script>
 
-// 4. Query & display in Svelte
-const recentPosts = nostr.query()
-  .kinds([1])
-  .limit(10)
-  .createStore();
-
-// In Svelte component:
-// $: posts = $recentPosts;
+{#each $conversation.messages as message}
+  <div class="message">{message.content}</div>
+{/each}
 ```
 
 ### Common Use Cases
 
+#### Job Board Application
 ```typescript
-// Job Platform Example
-const jobPosting = await nostr.events.create()
-  .kind(JOB_KIND)
-  .content("Senior TypeScript Developer - Remote")
-  .tag('budget', '5000')
-  .tag('skills', 'typescript', 'svelte', 'nostr')
-  .sign()
-  .send();
-
-// Track applications
-const applications = nostr.query()
-  .subgraph(jobPosting.id)
-  .includeState(['applied', 'declined', 'accepted'])
-  .createStore();
-
-// Social Media Example  
-const userFeed = nostr.query()
-  .kinds([1])
-  .authors(followingList)
-  .since(oneDayAgo)
-  .createStore();
-
-// DM Example
-const chatStore = nostr.dm.conversation(friendPubkey);
+// Get active job listings
+const activeJobs = await nostr.subgraph()
+  .startFrom({kind: 30023, tags: {t: 'jobs'}})
+  .excludeWhen()
+    .hasChild()
+    .content(['finished'])
+    .authorMustBe('root.author')
+  .include({
+    applications: {kind: 1, referencesRoot: true},
+    employer: {kind: 0, authors: 'root.author'}
+  })
+  .execute();
 ```
 
-### Advanced Scenarios
-
+#### Social Feed with Relations
 ```typescript
-// Complex relationship analysis
-const networkAnalysis = await nostr.query()
-  .subgraph(influencerPubkey)
-  .depth(3)
-  .includeReplies()
-  .includeReactions()
-  .includeProfiles()
+// Complex social feed
+const feedWithContext = await nostr.subgraph()
+  .startFrom({kind: 1, authors: followingList})
+  .include({
+    replies: {kind: 1, referencesRoot: true, limit: 3},
+    reactions: {kind: 7, referencesRoot: true},
+    authorProfiles: {kind: 0, authors: 'root.author'}
+  })
   .execute();
 
-// Performance optimization
-const optimizedQuery = nostr.query()
-  .kinds([1])
-  .fromCache() // Try cache first
-  .limit(50)
-  .createStore({
-    background: true, // Update in background
-    stale: 300000 // 5 minute stale tolerance
-  });
-
-// Batch operations
-const batch = nostr.events.createBatch();
-events.forEach(e => batch.add(e));
-await batch.publish();
+// Access structured data
+$: posts = $feedWithContext.events;
+$: replies = $feedWithContext.replies;
+$: reactions = $feedWithContext.reactions;
 ```
 
 ## Error Handling Philosophy
 
-### Progressive Error Disclosure
-- **Silent Degradation**: App works offline/without Nostr
-- **Soft Errors**: Warnings für non-critical failures  
-- **Hard Errors**: Clear messages für blocking issues
-- **Recovery Guidance**: Actionable suggestions für fixes
-
-### Error Categories
-
+### Result-based Error Handling
 ```typescript
-// Network errors - retry logic built-in
-try {
-  await nostr.events.create().content("Test").sign().send();
-} catch (error) {
-  if (error instanceof RelayError) {
-    // Automatic retry on other relays
-    console.log('Trying fallback relays...');
+// Explicit error handling
+const result = await nostr.dm.send("Hello!");
+if (result.error) {
+  console.log('Failed relays:', result.error.failedRelays);
+  console.log('Successful relays:', result.error.successfulRelays);
+  
+  // Retry logic
+  if (result.error.retryable) {
+    await retryWithExponentialBackoff(() => nostr.dm.send("Hello!"));
   }
 }
+```
 
-// Signing errors - clear user guidance  
-try {
-  await event.sign();
-} catch (error) {
-  if (error instanceof SigningError) {
-    console.log('Please check Alby extension connection');
-  }
-}
-
-// Validation errors - developer-friendly
-try {
-  await nostr.events.create().content("").send(); // Invalid
-} catch (error) {
-  // "Event content cannot be empty. Add content with .content('text')"
+### Error Types
+```typescript
+interface NostrError {
+  type: 'network' | 'validation' | 'auth' | 'timeout' | 'relay';
+  message: string;
+  code: string;
+  retryable: boolean;
+  context?: {
+    relay?: string;
+    event?: NostrEvent;
+    operation?: string;
+  };
 }
 ```
 
 ## Integration Patterns
 
 ### SvelteKit Integration
-
 ```typescript
-// In SvelteKit routes/+page.server.ts
-export const load: PageServerLoad = async ({ params }) => {
-  const nostr = new NostrUnchained();
-  const event = await nostr.query()
-    .id(params.eventId)
-    .execute();
-    
-  return {
-    event: event[0],
-    // Hydrates client-side store
-    initialData: nostr.cache.export()
-  };
-};
+// stores.ts
+import { NostrUnchained } from 'nostr-unchained';
+import { browser } from '$app/environment';
 
-// In +page.svelte
-export let data;
-const eventStore = nostr.query().id(data.event.id).createStore();
-$: event = $eventStore || data.event; // SSR fallback
-```
+export const nostr = browser ? new NostrUnchained() : null;
 
-### Progressive Enhancement
+// +page.svelte
+<script>
+  import { nostr } from '$lib/stores';
+  
+  const conversation = nostr?.dm.with('npub1234...');
+</script>
 
-```typescript
-// Works without Nostr
-const localPosts = writable([]);
-
-// Enhanced with Nostr
-let nostrPosts: Readable<NostrEvent[]>;
-if (browser && 'nostr' in window) {
-  nostrPosts = nostr.query().kinds([1]).createStore();
-}
-
-// Combined view
-$: allPosts = nostrPosts ? $nostrPosts : $localPosts;
+{#if conversation}
+  {#each $conversation.messages as message}
+    <div>{message.content}</div>
+  {/each}
+{/if}
 ```
 
 ## Extensibility Model
 
 ### Plugin Architecture
+```typescript
+interface NostrPlugin {
+  name: string;
+  install(nostr: NostrUnchained): void;
+  uninstall?(nostr: NostrUnchained): void;
+}
+
+// Plugin development
+export const analyticsPlugin: NostrPlugin = {
+  name: 'analytics',
+  install(nostr) {
+    nostr.analytics = {
+      track: (event: string, data: any) => {
+        // Analytics implementation
+      }
+    };
+    
+    // Hook into events
+    nostr.on('publish', (event) => {
+      nostr.analytics.track('event_published', { kind: event.kind });
+    });
+  }
+};
+```
+
+## Usage Patterns
+
+### Getting Started (First 5 Minutes)
+
+#### 1. Installation & Setup
+```bash
+npm install nostr-unchained
+```
 
 ```typescript
-// Signing plugins
-interface SignerPlugin {
-  name: string
-  detect(): Promise<boolean>
-  sign(event: UnsignedEvent): Promise<NostrEvent>
+import { NostrUnchained } from 'nostr-unchained';
+
+const nostr = new NostrUnchained();
+```
+
+#### 2. Send First DM
+```typescript
+const conversation = nostr.dm.with('npub1234...');
+await conversation.send("Hello from Nostr Unchained!");
+console.log('DM sent successfully!');
+```
+
+#### 3. Reactive UI Updates
+```svelte
+<script>
+  import { NostrUnchained } from 'nostr-unchained';
+  
+  const nostr = new NostrUnchained();
+  const conversation = nostr.dm.with('npub1234...');
+</script>
+
+{#each $conversation.messages as message}
+  <div class="message">
+    {message.content}
+  </div>
+{/each}
+```
+
+### Common Use Cases
+
+#### 1. Chat Application
+```typescript
+// Multi-user chat setup
+const conversations = new Map();
+
+async function startChat(pubkey: string) {
+  const conversation = nostr.dm.with(pubkey);
+  conversations.set(pubkey, conversation);
+  
+  // Auto-scroll on new messages
+  conversation.subscribe(state => {
+    if (state.latest) {
+      scrollToBottom();
+    }
+  });
+  
+  return conversation;
 }
 
-nostr.use(new HardwareSignerPlugin());
-nostr.use(new MultiSigPlugin());
+// Send message with typing indicator
+async function sendMessage(pubkey: string, content: string) {
+  const conversation = conversations.get(pubkey);
+  return await conversation.send(content);
+}
+```
 
-// Cache plugins
-interface CachePlugin {
-  name: string
-  store(events: NostrEvent[]): Promise<void>
-  retrieve(filter: Filter): Promise<NostrEvent[]>
+#### 2. Job Board Application
+```typescript
+// Get active job listings
+const activeJobs = await nostr.subgraph()
+  .startFrom({kind: 30023, tags: {t: 'jobs'}})
+  .excludeWhen()
+    .hasChild()
+    .kind(1)
+    .content(['finished', 'closed'])
+    .authorMustBe('root.author')
+  .include({
+    applications: {kind: 1, referencesRoot: true},
+    employer: {kind: 0, authors: 'root.author'}
+  })
+  .execute();
+
+// Post new job
+const jobPosting = await nostr.events.create()
+  .kind(30023)
+  .content("Looking for a TypeScript developer...")
+  .tag('t', 'jobs')
+  .tag('location', 'remote')
+  .tag('salary', '100k-150k')
+  .tag('d', generateUniqueId())
+  .sign()
+  .publish();
+```
+
+#### 3. Social Feed with Relations
+```typescript
+// Complex social feed
+const feedWithContext = await nostr.subgraph()
+  .startFrom({kind: 1, authors: followingList})
+  .include({
+    replies: {
+      kind: 1, 
+      referencesRoot: true,
+      limit: 3 // Max 3 replies per post
+    },
+    reactions: {
+      kind: 7,
+      referencesRoot: true,
+      groupBy: 'content' // Group by reaction type
+    },
+    authorProfiles: {
+      kind: 0,
+      authors: 'root.author'
+    }
+  })
+  .execute();
+
+// Access structured data
+$: posts = $feedWithContext.events;
+$: replies = $feedWithContext.replies;
+$: reactions = $feedWithContext.reactions;
+$: profiles = $feedWithContext.authorProfiles;
+```
+
+### Advanced Scenarios
+
+#### 1. Custom Signer Integration
+```typescript
+// Hardware wallet signer
+import { HardwareWalletSigner } from './signers';
+
+const nostr = new NostrUnchained({
+  signer: new HardwareWalletSigner({
+    device: 'ledger',
+    derivationPath: "m/44'/1237'/0'/0/0"
+  })
+});
+
+// Extension signer (NIP-07)
+const nostr = new NostrUnchained({
+  signer: 'extension' // Auto-detect browser extension
+});
+```
+
+#### 2. Performance Optimization
+```typescript
+// Batch publishing
+const events = [
+  nostr.events.create().kind(1).content("Post 1"),
+  nostr.events.create().kind(1).content("Post 2"),
+  nostr.events.create().kind(1).content("Post 3")
+];
+
+const results = await nostr.publishBatch(events);
+
+// Streaming queries for large datasets
+const jobStream = nostr.query()
+  .kinds([30023])
+  .tags('#t', ['jobs'])
+  .stream(); // Returns AsyncIterable
+
+for await (const batch of jobStream) {
+  processJobBatch(batch);
+}
+```
+
+#### 3. Plugin System
+```typescript
+// Custom NIP implementation
+import { NostrUnchained, definePlugin } from 'nostr-unchained';
+
+const customNIPPlugin = definePlugin({
+  name: 'custom-nip',
+  install(nostr) {
+    nostr.customNIP = {
+      async doSomething() {
+        // Custom functionality
+      }
+    };
+  }
+});
+
+const nostr = new NostrUnchained({
+  plugins: [customNIPPlugin]
+});
+```
+
+## Error Handling Philosophy
+
+### Result-based Error Handling
+```typescript
+// Explicit error handling
+const result = await nostr.dm.send("Hello!");
+if (result.error) {
+  console.log('Failed relays:', result.error.failedRelays);
+  console.log('Successful relays:', result.error.successfulRelays);
+  
+  // Retry logic
+  if (result.error.retryable) {
+    await retryWithExponentialBackoff(() => nostr.dm.send("Hello!"));
+  }
+}
+```
+
+### Error Types
+```typescript
+interface NostrError {
+  type: 'network' | 'validation' | 'auth' | 'timeout' | 'relay';
+  message: string;
+  code: string;
+  retryable: boolean;
+  context?: {
+    relay?: string;
+    event?: NostrEvent;
+    operation?: string;
+  };
+}
+```
+
+### Graceful Degradation
+```typescript
+// Fallback strategies
+const result = await nostr.query()
+  .kinds([1])
+  .authors(['npub1234...'])
+  .fallbackTo(['wss://backup.relay']) // Backup relays
+  .timeout(5000)
+  .retries(3)
+  .execute();
+
+// Partial success handling
+if (result.partial) {
+  console.log('Got results from:', result.successfulRelays);
+  console.log('Failed relays:', result.failedRelays);
+  // Continue with partial results
+}
+```
+
+## Integration Patterns
+
+### SvelteKit Integration
+```typescript
+// stores.ts
+import { NostrUnchained } from 'nostr-unchained';
+import { browser } from '$app/environment';
+
+export const nostr = browser ? new NostrUnchained() : null;
+
+// +layout.svelte
+<script>
+  import { nostr } from '$lib/stores';
+  import { onMount } from 'svelte';
+  
+  onMount(async () => {
+    if (nostr) {
+      await nostr.connect();
+    }
+  });
+</script>
+
+// +page.svelte
+<script>
+  import { nostr } from '$lib/stores';
+  
+  const conversation = nostr?.dm.with('npub1234...');
+</script>
+
+{#if conversation}
+  {#each $conversation.messages as message}
+    <div>{message.content}</div>
+  {/each}
+{/if}
+```
+
+### Vite/Rollup Integration
+```javascript
+// vite.config.js
+export default {
+  define: {
+    global: 'globalThis'
+  },
+  resolve: {
+    alias: {
+      buffer: 'buffer'
+    }
+  },
+  optimizeDeps: {
+    include: ['nostr-unchained']
+  }
+};
+```
+
+## Extensibility Model
+
+### Plugin Architecture
+```typescript
+interface NostrPlugin {
+  name: string;
+  install(nostr: NostrUnchained): void;
+  uninstall?(nostr: NostrUnchained): void;
 }
 
-nostr.use(new RedisCache());
-nostr.use(new CloudflareKVCache());
+// Plugin development
+export const analyticsPlugin: NostrPlugin = {
+  name: 'analytics',
+  install(nostr) {
+    nostr.analytics = {
+      track: (event: string, data: any) => {
+        // Analytics implementation
+      }
+    };
+    
+    // Hook into events
+    nostr.on('publish', (event) => {
+      nostr.analytics.track('event_published', { kind: event.kind });
+    });
+  }
+};
 ```
 
 ### Custom Event Types
-
 ```typescript
-// Define custom event structure
-interface JobEvent extends NostrEvent {
-  kind: 30023
-  content: string
-  tags: [
-    ['budget', string],
-    ['skills', ...string[]], 
-    ['remote', 'true' | 'false']
-  ]
-}
+// Define custom event type
+const jobEventType = nostr.defineEventType({
+  kind: 30023,
+  validate: (event) => {
+    return event.tags.some(tag => tag[0] === 't' && tag[1] === 'jobs');
+  },
+  serialize: (jobData) => ({
+    kind: 30023,
+    content: jobData.description,
+    tags: [
+      ['t', 'jobs'],
+      ['location', jobData.location],
+      ['salary', jobData.salary]
+    ]
+  })
+});
 
-// Type-safe event creation
-const job = await nostr.events.create<JobEvent>()
-  .kind(30023)
-  .content(jobDescription)
-  .tag('budget', '5000')
-  .tag('skills', 'typescript', 'svelte')
-  .sign()
-  .send();
+// Use custom type
+const job = await nostr.events.create(jobEventType)
+  .data({
+    description: "TypeScript developer needed",
+    location: "remote", 
+    salary: "100k-150k"
+  })
+  .publish();
 ``` 
