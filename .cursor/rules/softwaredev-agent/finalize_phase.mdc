@@ -1,5 +1,5 @@
 ---
-description: Finalizes completed phase with comprehensive retrospective, deployment preparation, and standardized git commits. Documents AI assistance effectiveness, lessons learned, and prepares for next phase or project completion. Ensures clean handoff with complete documentation.
+description: 
 globs: 
 alwaysApply: false
 ---
@@ -390,3 +390,4 @@ Ready for next phase? [Yes/No/Project Complete]
 2. Enhance container testing automation
 3. Implement automated retrospective metrics collection
 ```
+

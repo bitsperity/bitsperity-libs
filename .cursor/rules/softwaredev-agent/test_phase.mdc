@@ -1,5 +1,5 @@
 ---
-description: Executes comprehensive testing and validation for AI-generated code in containerized environments. Ensures all functionality works correctly, performance meets requirements, and security standards are maintained before phase completion.
+description: 
 globs: 
 alwaysApply: false
 ---

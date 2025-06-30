@@ -1,5 +1,5 @@
 ---
-description: Executes AI-assisted solo development implementation using container-first approach. Leverages AI for high-assistance areas like boilerplate and testing, while maintaining human control over architecture and business logic. Ensures all code is container-validated and follows state-of-the-art patterns.
+description: 
 globs: 
 alwaysApply: false
 ---
