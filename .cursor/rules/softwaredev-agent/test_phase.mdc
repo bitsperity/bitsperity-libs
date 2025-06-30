@@ -1,5 +1,336 @@
 ---
-description: 
+description: Executes comprehensive testing and validation for AI-generated code in containerized environments. Ensures all functionality works correctly, performance meets requirements, and security standards are maintained before phase completion.
 globs: 
 alwaysApply: false
 ---
+
+# Comprehensive Testing and Validation
+
+## Critical Rules
+
+- **Container-based testing**: All tests must run successfully in Docker environment to ensure deployment reliability
+- **AI-generated test validation**: Verify all AI-generated tests correctly validate business logic and edge cases
+- **Performance validation**: Ensure code meets performance requirements under realistic load conditions
+- **Security scanning**: Validate that no security vulnerabilities exist in dependencies or generated code
+- **Documentation testing**: Verify all examples and documentation work as described
+
+## Testing Framework
+
+### 1. Unit Testing Validation
+
+**AI-Generated Test Review**
+```typescript
+// Validate AI-generated tests cover:
+// 1. Happy path scenarios
+// 2. Edge cases and error conditions
+// 3. Input validation
+// 4. Type safety
+// 5. Async/await patterns
+// 6. Mock usage for external dependencies
+
+// Example test validation checklist:
+describe('TestValidation', () => {
+  it('covers happy path') // ✅ AI generated
+  it('handles null/undefined inputs') // ✅ AI generated
+  it('validates input types') // ✅ AI generated
+  it('handles async errors properly') // ⚠️ Manual review needed
+})
+```
+
+**Container Test Execution**
+```bash
+# Run all tests in container environment
+docker-compose exec app npm run test
+docker-compose exec app npm run test:coverage
+docker-compose exec app npm run test:watch
+```
+
+### 2. Integration Testing
+
+**API Integration Tests**
+```typescript
+// Test all public APIs work correctly
+// Validate container-to-container communication
+// Test with realistic data volumes
+// Verify error handling across service boundaries
+```
+
+**Container Integration Validation**
+```bash
+# Test service interactions
+docker-compose exec app npm run test:integration
+docker-compose exec app npm run test:e2e
+
+# Validate container networking
+docker-compose exec app npm run test:network
+```
+
+### 3. Performance Testing
+
+**Performance Benchmarking**
+```bash
+# Run performance tests in container
+docker-compose exec app npm run test:performance
+docker-compose exec app npm run benchmark
+
+# Memory and CPU usage validation
+docker stats {container-name}
+```
+
+**Load Testing Validation**
+```typescript
+// Validate performance under load
+// Test memory usage patterns
+// Validate response times
+// Check for memory leaks
+```
+
+### 4. Security Testing
+
+**Security Scanning Pipeline**
+```bash
+# Dependency vulnerability scanning
+docker-compose exec app npm audit --audit-level moderate
+docker-compose exec app npm run security:scan
+
+# Container security validation
+docker scan {container-image}
+
+# SAST (Static Application Security Testing)
+docker-compose exec app npm run security:sast
+```
+
+**Security Validation Checklist**
+- ✅ No critical dependency vulnerabilities
+- ✅ Input validation implemented
+- ✅ No hardcoded secrets or credentials
+- ✅ Proper error handling (no information leakage)
+- ✅ Type safety prevents injection attacks
+
+## Testing Execution Strategy
+
+### Week 1: Core Testing (Days 1-7)
+
+**Days 1-2: Unit Test Validation**
+```bash
+# Validate all AI-generated tests
+docker-compose exec app npm run test:unit
+docker-compose exec app npm run test:coverage
+
+# Review test quality and coverage
+# Ensure business logic validation
+# Verify edge case handling
+```
+
+**Days 3-4: Integration Testing**
+```bash
+# Test component interactions
+docker-compose exec app npm run test:integration
+
+# Validate API contracts
+# Test error propagation
+# Verify data flow
+```
+
+**Days 5-7: Performance & Security**
+```bash
+# Performance validation
+docker-compose exec app npm run test:performance
+docker-compose exec app npm run benchmark
+
+# Security scanning
+docker-compose exec app npm audit
+docker-compose exec app npm run security:scan
+```
+
+### Week 2: Validation & Finalization (Days 8-14)
+
+**Days 8-10: End-to-End Testing**
+```bash
+# Full workflow testing
+docker-compose exec app npm run test:e2e
+
+# User scenario validation
+# Cross-browser testing (if applicable)
+# Integration with external services
+```
+
+**Days 11-12: Documentation Testing**
+```bash
+# Test all code examples in documentation
+# Validate API documentation accuracy
+# Test installation and setup instructions
+```
+
+**Days 13-14: Production Readiness**
+```bash
+# Production container testing
+docker build -f Dockerfile.prod -t {lib-name}:prod .
+docker run --rm {lib-name}:prod npm run test:production
+
+# Deployment validation
+# Performance under production conditions
+# Security hardening verification
+```
+
+## Quality Assurance Automation
+
+### Automated Testing Pipeline
+```yaml
+# GitHub Actions or similar CI/CD
+name: Comprehensive Testing
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build containers
+        run: docker-compose build
+      - name: Run unit tests
+        run: docker-compose exec app npm run test
+      - name: Run integration tests  
+        run: docker-compose exec app npm run test:integration
+      - name: Security scan
+        run: docker-compose exec app npm audit
+      - name: Performance test
+        run: docker-compose exec app npm run test:performance
+```
+
+### Test Coverage Requirements
+```json
+{
+  "jest": {
+    "coverageThreshold": {
+      "global": {
+        "branches": 80,
+        "functions": 90,
+        "lines": 85,
+        "statements": 85
+      }
+    }
+  }
+}
+```
+
+## AI-Generated Test Quality Validation
+
+### Test Quality Checklist
+```typescript
+// Review AI-generated tests for:
+// 1. Correct assertion patterns
+// 2. Realistic test data
+// 3. Proper mock usage  
+// 4. Error scenario coverage
+// 5. Performance considerations
+
+// Example quality validation:
+const validateAITest = (testCode: string) => ({
+  hasHappyPath: true,      // ✅ AI usually good at this
+  hasEdgeCases: true,      // ⚠️ Needs manual review
+  hasErrorHandling: false, // ❌ Often missing
+  hasRealisticData: true,  // ✅ AI usually good
+  hasProperMocking: false  // ⚠️ Needs manual review
+})
+```
+
+### Human Test Review Process
+```typescript
+// Manual review required for:
+// 1. Business logic correctness
+// 2. Complex error scenarios
+// 3. Security-sensitive tests
+// 4. Performance edge cases
+// 5. Integration boundary tests
+
+// AI excels at:
+// 1. Boilerplate test structure
+// 2. Happy path scenarios
+// 3. Type validation tests
+// 4. Basic mocking patterns
+```
+
+## Container Testing Validation
+
+### Development Container Tests
+```bash
+# Ensure all tests pass in development environment
+docker-compose up -d
+docker-compose exec app npm install
+docker-compose exec app npm run test:all
+docker-compose exec app npm run lint
+docker-compose exec app npm run type-check
+```
+
+### Production Container Tests
+```bash
+# Validate production readiness
+docker build -f Dockerfile.prod -t {lib-name}:test .
+docker run --rm {lib-name}:test npm run test:ci
+docker run --rm {lib-name}:test npm run build
+docker run --rm {lib-name}:test npm run start
+```
+
+### Cross-Platform Container Testing
+```bash
+# Test on different architectures if needed
+docker buildx build --platform linux/amd64,linux/arm64 .
+```
+
+## Quality Validation
+
+### Testing Completeness Check
+- ✅ All unit tests pass in container environment
+- ✅ Integration tests validate component interactions
+- ✅ Performance meets established benchmarks
+- ✅ Security scans show no critical vulnerabilities
+- ✅ Documentation examples work correctly
+- ✅ Production container builds and runs successfully
+- ✅ Test coverage meets minimum thresholds
+
+## Termination Criteria
+
+The test_phase rule terminates when:
+
+1. **All tests passing**: Unit, integration, and end-to-end tests pass in containers
+2. **Coverage targets met**: Code coverage meets or exceeds established thresholds
+3. **Performance validated**: All performance benchmarks pass
+4. **Security cleared**: No critical security vulnerabilities found
+5. **Documentation tested**: All examples and instructions work correctly
+6. **Production ready**: Production container validated and deployment-ready
+
+## Agent Chain Handoff
+
+Upon successful completion:
+
+```bash
+# Deactivate current rule and activate next
+sed -i 's/alwaysApply: false/alwaysApply: true/' .cursor/rules/softwaredev-agent/finalize_phase.mdc
+sed -i 's/alwaysApply: true/alwaysApply: false/' .cursor/rules/softwaredev-agent/test_phase.mdc
+```
+
+**Handoff Message:**
+```
+🧪 Testing Complete - All Quality Gates Passed
+
+📊 Testing Summary:
+- Unit Tests: ✅ {X} tests passed, {Y}% coverage
+- Integration Tests: ✅ All API contracts validated
+- Performance: ✅ Meets benchmarks ({X}ms response time)
+- Security: ✅ No critical vulnerabilities found
+- Container Validation: ✅ Production deployment ready
+
+📁 Test Artifacts:
+- Test coverage reports
+- Performance benchmark results
+- Security scan reports
+- Production container validation
+
+🔄 Next: finalize_phase.mdc will create retrospective and prepare handoff
+
+All tests passing in containers? [✅ Yes]
+Performance benchmarks met? [✅ Yes]
+Security scans clear? [✅ Yes]
+Ready for phase finalization? [Yes/No]
+```

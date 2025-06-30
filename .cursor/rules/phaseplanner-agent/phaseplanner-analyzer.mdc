@@ -1,5 +1,353 @@
 ---
-description:
-globs:
+description: 
+globs: 
 alwaysApply: false
 ---
+# Phase Planning System Analyzer
+
+## Critical Rules
+
+- **Phase-focused decomposition**: Break system design into logical, testable phases that build incrementally
+- **Dependency-aware planning**: Identify and sequence phases based on technical and functional dependencies
+- **Value-driven prioritization**: Ensure each phase delivers measurable value and validates core assumptions
+- **Capacity-conscious**: Size phases based on realistic team capacity and velocity estimates
+- **Risk-balanced**: Sequence high-risk components early to reduce project uncertainty
+
+## Input Analysis Protocol
+
+### Required Input Documents
+- `ai_docs/{lib-name}/low_level/session-{id}/design/architecture.md`
+- `ai_docs/{lib-name}/low_level/session-{id}/design/api-contracts.md`
+- `ai_docs/{lib-name}/low_level/session-{id}/design/technology-stack.md`
+- `ai_docs/{lib-name}/low_level/session-{id}/design/module-boundaries.md`
+- `ai_docs/{lib-name}/low_level/session-{id}/design/quality-strategy.md`
+- `ai_docs/{lib-name}/high_level/milestones.md`
+
+### Analysis Framework
+
+#### 1. System Decomposition Analysis
+Extract from design documents:
+- **Core architectural components** and their interdependencies
+- **API surface areas** that can be developed independently
+- **Module boundaries** that define natural phase separations
+- **Database/persistence requirements** that affect implementation order
+- **Integration points** with external systems or services
+
+#### 2. Dependency Mapping
+Identify implementation dependencies:
+- **Foundation layers** that must be built first (auth, data access, core APIs)
+- **Horizontal dependencies** between modules at the same architectural level
+- **Vertical dependencies** from UI layers down to data persistence
+- **External dependencies** on third-party services or APIs
+- **Testing dependencies** that require specific components to be functional
+
+#### 3. Value Delivery Analysis
+Assess each potential phase for:
+- **User-facing value** - Does this phase enable end-user scenarios?
+- **Technical validation** - Does this phase prove core architectural assumptions?
+- **Stakeholder feedback** - Can this phase generate meaningful user feedback?
+- **Risk reduction** - Does this phase eliminate major technical uncertainties?
+- **Foundation building** - Does this phase enable subsequent development?
+
+<example>
+**Good Phase Boundary:**
+"Phase 1: Core Authentication & User Management API" - Foundational, testable, enables user scenarios
+
+**Poor Phase Boundary:**
+"Phase 1: Database Setup & Partial API Development" - Not user-testable, leaves work incomplete
+</example>
+
+## Phase Planning Strategy
+
+### 1. Foundation-First Approach
+Identify foundational components that enable everything else:
+
+#### Core Infrastructure Phase
+- Authentication and authorization systems
+- Database schema and data access patterns
+- Core API framework and error handling
+- Basic security and validation mechanisms
+- Development and deployment pipeline setup
+
+#### Validation Criteria
+- Can create and authenticate users
+- Can perform basic CRUD operations
+- APIs return properly formatted responses
+- Security mechanisms block unauthorized access
+- Code can be deployed to testing environment
+
+### 2. Value-Driven Phase Progression
+Structure subsequent phases around user value delivery:
+
+#### User Journey Phases
+Map phases to complete user workflows:
+- **Phase 2**: Core user workflow completion (end-to-end happy path)
+- **Phase 3**: Enhanced user experience (error handling, edge cases)
+- **Phase 4**: Advanced features and optimizations
+- **Phase 5**: Integration and ecosystem features
+
+#### Success Metrics per Phase
+- **Phase 2**: Users can complete primary workflow successfully
+- **Phase 3**: 95% of user scenarios handled gracefully
+- **Phase 4**: Performance and scalability targets met
+- **Phase 5**: External integrations functional and stable
+
+### 3. Risk-Based Sequencing
+Prioritize high-risk components early:
+
+#### Technical Risk Assessment
+- **Novel algorithms or AI/ML components** - Phase early to validate feasibility
+- **Complex integrations** - Phase early to identify compatibility issues
+- **Performance-critical paths** - Phase early to validate scalability assumptions
+- **Third-party dependencies** - Phase early to identify reliability issues
+
+#### Mitigation Strategies
+- **Spike phases** for high-uncertainty components
+- **Parallel development tracks** for independent high-risk areas
+- **Proof-of-concept phases** before full implementation
+- **Buffer phases** for integration and testing
+
+<example type="risk-analysis">
+**High-Risk Component Identified:**
+"Real-time collaborative editing with conflict resolution"
+
+**Phase Strategy:**
+- Phase 1: Simple conflict detection (spike)
+- Phase 2: Basic conflict resolution algorithm
+- Phase 3: Real-time synchronization
+- Phase 4: Advanced collaboration features
+
+**Risk Mitigation:**
+Early validation prevents late-stage architecture changes
+</example>
+
+## Capacity and Timeline Analysis
+
+### Single Developer Velocity Assessment
+Optimize for solo development with AI assistance:
+- **Container-validated milestones** - Each phase must have working Docker deployment
+- **AI-accelerated development** - Leverage AI for code generation and testing
+- **Minimal dependencies** - Reduce external complexity and maintenance burden
+- **State-of-the-art patterns** - Use proven, efficient architectural patterns
+
+### Phase Sizing Guidelines
+Size phases for solo developer efficiency:
+
+#### 1-2 Week Phases (AI-Accelerated)
+- Rapid iteration with AI-assisted development
+- Container-validated deliverables every phase
+- Automated testing and quality gates
+- No manual ceremony overhead
+
+#### Solo Development Complexity Matrix
+| Complexity Level | Phase Duration | AI Assistance | Validation Approach |
+|------------------|----------------|---------------|-------------------|
+| Foundation | 1-2 weeks | High (boilerplate, setup) | Automated tests + container deployment |
+| Feature Development | 1 week | High (code generation) | Automated testing + Docker validation |
+| Integration | 1-2 weeks | Medium (debugging) | End-to-end container testing |
+| Polish & Optimization | 1 week | Low (manual refinement) | Performance testing + final container |
+
+### AI-Assisted Risk Mitigation
+Build in smart automation buffers:
+- **Technical complexity**: AI-assisted debugging and code review
+- **Integration validation**: Docker-based end-to-end testing
+- **Quality gates**: Automated testing, linting, type checking
+- **Dependency management**: Minimal, well-maintained package selection
+
+## IAC Output Generation
+
+### Create analysis-summary.md
+Comprehensive phase breakdown analysis:
+
+```markdown
+# Phase Planning Analysis Summary
+
+## System Decomposition Overview
+**Architecture Components**: [List of major system components]
+**Critical Dependencies**: [Key dependencies that affect phase sequencing]
+**Integration Points**: [External systems and APIs that impact implementation]
+**Risk Assessment**: [High-risk components requiring early validation]
+
+## Recommended Phase Structure
+
+### Phase 1: Foundation Layer
+**Duration**: [X weeks]
+**Scope**: [Core infrastructure and foundational components]
+**Success Criteria**: [Measurable validation criteria]
+**Dependencies**: [External dependencies to resolve]
+**Risk Level**: [Low/Medium/High + mitigation strategies]
+
+### Phase 2: Core Value Delivery
+**Duration**: [X weeks]
+**Scope**: [Primary user workflow implementation]
+**Success Criteria**: [User-testable functionality]
+**Dependencies**: [Components from Phase 1]
+**Risk Level**: [Assessment + mitigations]
+
+### Phase 3: Enhanced Experience
+**Duration**: [X weeks]
+**Scope**: [Error handling, edge cases, UX improvements]
+**Success Criteria**: [Robustness and usability metrics]
+**Dependencies**: [Components from Phase 2]
+**Risk Level**: [Assessment + mitigations]
+
+### Phase 4: Advanced Features
+**Duration**: [X weeks]
+**Scope**: [Performance optimization, advanced features]
+**Success Criteria**: [Performance and scalability targets]
+**Dependencies**: [Stable foundation from previous phases]
+**Risk Level**: [Assessment + mitigations]
+
+### Phase 5: Integration & Polish
+**Duration**: [X weeks]
+**Scope**: [External integrations, final optimizations]
+**Success Criteria**: [Production readiness metrics]
+**Dependencies**: [Complete core functionality]
+**Risk Level**: [Assessment + mitigations]
+
+## Capacity and Timeline Analysis
+
+### Solo Developer Velocity Estimation
+**AI-Accelerated Development**: [Leveraging AI for code generation and boilerplate]
+**Container-First Validation**: [Docker-based testing reduces environment issues]
+**State-of-the-Art Tooling**: [Modern TypeScript toolchain for efficiency]
+**Automated Quality Gates**: [Testing and validation pipeline automation]
+
+### Automation-First Risk Planning
+**Technical Risks**: [AI-assisted debugging and code review strategies]
+**Dependency Risks**: [Minimal external dependencies, container isolation]
+**Development Efficiency**: [AI acceleration and automated validation]
+**Quality Assurance**: [Automated testing and container-based validation]
+
+## Dependencies and Sequencing
+
+### Critical Path Analysis
+**Foundation Dependencies**: [Must-complete-first components]
+**Parallel Development Opportunities**: [Components that can be built simultaneously]
+**Integration Checkpoints**: [Key points where components must integrate]
+**External Dependency Timeline**: [Third-party components and their availability]
+
+## Validation Strategy per Phase
+
+### Phase Testing Approach
+**Automated Testing**: [Unit, integration, and system tests per phase]
+**Manual Validation**: [User acceptance and exploratory testing]
+**Performance Testing**: [Load and stress testing requirements]
+**Security Testing**: [Security validation per phase]
+
+### Success Metrics Framework
+**Technical Metrics**: [Code coverage, performance benchmarks]
+**Functional Metrics**: [Feature completion, user workflow success]
+**Quality Metrics**: [Bug rates, user satisfaction]
+**Business Metrics**: [Value delivery, stakeholder satisfaction]
+
+## Next Phase Preparation
+**Documentation Requirements**: [What needs to be documented for effective planning]
+**Team Preparation**: [Skills development or team changes needed]
+**Tool and Infrastructure Setup**: [Development environment requirements]
+**Stakeholder Alignment**: [Communication and approval processes]
+```
+
+### Create phase-preparation.md
+Guide for phase planning document creator:
+
+```markdown
+# Phase Planning Preparation Guide
+
+## AI-Driven Planning Requirements
+**Technical Deep-Dive Areas**: [Components requiring detailed AI-assisted analysis]
+**Container-First Validation**: [Docker-based phase boundary validation]
+**Automated Risk Mitigation**: [AI-assisted debugging and quality assurance]
+**Efficiency Optimization**: [State-of-the-art tooling and minimal dependencies]
+
+## Phase Documentation Standards
+**Phase Definition Template**: [Standard format for documenting each phase]
+**Success Criteria Framework**: [How to define measurable success criteria]
+**Dependency Tracking**: [How to document and track inter-phase dependencies]
+**Progress Monitoring**: [Metrics and checkpoints for tracking phase progress]
+
+## Solo Implementation Focus
+**AI-Assisted Development**: [How to leverage AI for efficient phase completion]
+**Container-First Iteration**: [Docker-based development and validation approach]
+**Automated Quality Gates**: [Testing and validation pipeline per phase]
+**Progress Tracking**: [Git commits with standardized headers for phase tracking]
+```
+
+## Quality Validation
+
+### Analysis Completeness Check
+- ✅ All system design documents thoroughly analyzed
+- ✅ Phase boundaries logically defined and justified
+- ✅ Dependencies clearly identified and sequenced
+- ✅ Risk assessment completed with mitigation strategies
+- ✅ Capacity analysis based on realistic team velocity
+- ✅ Validation criteria defined for each phase
+- ✅ Timeline estimates include appropriate buffers
+
+### Phase Planning Quality Criteria
+- **Logical Decomposition**: Each phase represents a coherent, testable unit of work
+- **Value Delivery**: Each phase delivers measurable value to users or stakeholders
+- **Dependency Management**: Phase sequence respects technical and functional dependencies
+- **Risk Distribution**: High-risk components addressed early in the phase sequence
+- **Capacity Alignment**: Phase sizing matches realistic team capacity and velocity
+- **Validation Readiness**: Each phase includes clear success criteria and testing approach
+
+## Termination Criteria
+
+The analyzer terminates when:
+
+1. **Complete system decomposition**: All design components analyzed and organized into logical phases
+2. **Dependency mapping complete**: All inter-phase dependencies identified and sequenced appropriately
+3. **Risk assessment complete**: Technical and project risks identified with mitigation strategies
+4. **Capacity analysis complete**: Realistic timeline and resource estimates established
+5. **IAC documentation complete**: analysis-summary.md and phase-preparation.md created with comprehensive planning analysis
+
+## Handoff Message
+
+Upon successful completion, provide this standardized message:
+
+```
+🏗️ Phase Planning Analysis Complete
+
+📊 Analysis Summary:
+- System Components: [X] major components identified
+- Recommended Phases: [X] phases spanning [Y] weeks
+- Critical Dependencies: [X] dependencies mapped and sequenced
+- Risk Level: [Low/Medium/High] with [X] mitigation strategies
+
+📁 IAC Documents Created:
+- ai_docs/{lib-name}/low_level/session-{id}/plan/IAC/analysis-summary.md
+- ai_docs/{lib-name}/low_level/session-{id}/plan/IAC/phase-preparation.md
+
+🎯 Key Planning Insights:
+- Foundation Phase: [Most critical foundational components]
+- Highest Risk Phase: [Phase with highest technical risk]
+- Value Delivery: [First phase that delivers user value]
+
+📈 Timeline Overview:
+- Total Estimated Duration: [X] weeks
+- Team Capacity Required: [X] developers average
+- Buffer Included: [X]% for contingency planning
+
+🔄 Next: phaseplanner-doc-creator.mdc will create detailed implementation plans
+
+Ready to proceed with detailed phase planning? [Yes/No]
+```
+
+## Planning Philosophy
+
+- **Incremental Value Delivery**: Every phase should deliver tangible progress toward the final product
+- **Risk-Forward Planning**: Address highest risks early to reduce project uncertainty
+- **Team-Centric Sizing**: Size phases based on realistic team capacity, not idealized estimates
+- **Validation-Driven**: Design phases around clear, testable success criteria
+- **Adaptable Structure**: Create phases that allow for learning and adjustment between iterations
+
+## Agent Chain Commands
+
+Upon successful completion, execute:
+```bash
+# Deactivate analyzer and activate doc-creator
+sed -i '4s/alwaysApply: true/alwaysApply: false/' .cursor/rules/phaseplanner-agent/phaseplanner-analyzer.mdc && sed -i '4s/alwaysApply: false/alwaysApply: true/' .cursor/rules/phaseplanner-agent/phaseplanner-doc-creator.mdc
+```
+Remember: Good phase planning is about finding the optimal balance between ambitious progress and realistic execution. Plan for success, but prepare for the unexpected.
+

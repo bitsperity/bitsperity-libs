@@ -3,3 +3,468 @@ description:
 globs: 
 alwaysApply: false
 ---
+# Phase Analysis for AI-Assisted Solo Development
+
+## Critical Rules
+
+- **AI-first analysis**: Identify high, medium, and low AI assistance opportunities for optimal development velocity
+- **Container-first setup**: Establish Docker-based development and testing environment before coding
+- **State-of-the-art tooling**: Configure modern TypeScript toolchain with automated quality gates
+- **Iterative planning**: Break phase into 1-2 week AI-accelerated development cycles
+- **Quality automation**: Set up automated testing, linting, and validation pipelines
+
+## Input Requirements
+
+### Required Phase Planning Documents
+- `ai_docs/{lib-name}/low_level/session-{id}/plan/*.md`
+- `ai_docs/{lib-name}/low_level/session-{id}/design/*md`
+
+### Phase Context Analysis
+Analyze current phase requirements to determine:
+- **Scope boundaries** - What exactly needs to be built in this phase
+- **Success criteria** - Container-testable validation requirements
+- **Dependencies** - External packages and internal components needed
+- **AI assistance level** - Which parts benefit most from AI acceleration
+- **Risk factors** - Technical challenges that need extra attention
+
+## Phase Analysis Framework
+
+### 1. AI Assistance Level Assessment
+
+**High AI Assistance (80-90% acceleration)**
+- Boilerplate code generation (API endpoints, database schemas)
+- Test suite creation (unit tests, integration tests)
+- Documentation generation (README, API docs, inline comments)
+- Configuration files (TypeScript config, Docker setup)
+- Error handling patterns and validation logic
+
+**Medium AI Assistance (50-70% acceleration)**
+- API design and interface definitions
+- Data transformation and utility functions
+- Integration patterns with external services
+- Performance optimization implementations
+- Security pattern implementations
+
+**Low AI Assistance (20-30% acceleration)**
+- Core business logic and domain-specific algorithms
+- Architecture decisions and design patterns
+- Complex state management logic
+- Custom optimization requirements
+- Debugging complex integration issues
+
+### 2. Container-First Environment Setup
+
+**Development Environment Analysis**
+```bash
+# Required Docker setup analysis
+- Development Dockerfile for hot-reload development
+- Testing Dockerfile for isolated test environment
+- Production Dockerfile for deployment validation
+- docker-compose.yml for full development stack
+- .dockerignore for optimized build contexts
+```
+
+**Container Validation Strategy**
+```bash
+# Phase completion criteria
+- All code runs successfully in container
+- All tests pass in containerized environment
+- Performance meets requirements in container
+- Security scans pass in Docker environment
+- Deployment works from container image
+```
+
+### 3. Modern TypeScript Toolchain Configuration
+
+**State-of-the-Art Stack Analysis**
+```json
+{
+  "core": {
+    "typescript": "^5.0.0",
+    "node": ">=18.0.0"
+  },
+  "development": {
+    "build": "vite or rollup",
+    "testing": "vitest or jest",
+    "linting": "eslint + prettier",
+    "type-checking": "tsc --noEmit"
+  },
+  "quality": {
+    "pre-commit": "husky + lint-staged",
+    "ci-cd": "GitHub Actions",
+    "security": "npm audit + snyk"
+  }
+}
+```
+
+**Automated Quality Gates Setup**
+- Pre-commit hooks for code quality
+- Automated testing on every commit
+- Type checking and linting automation
+- Security vulnerability scanning
+- Performance benchmarking (if applicable)
+
+### 4. Dependency Minimization Strategy
+
+**Dependency Analysis Framework**
+```typescript
+interface DependencyEvaluation {
+  name: string;
+  necessity: 'critical' | 'helpful' | 'optional';
+  maintenance: 'active' | 'stable' | 'legacy';
+  alternatives: string[];
+  bundleImpact: number; // KB
+  securityScore: number; // 1-10
+}
+```
+
+**Minimal Dependency Guidelines**
+- Prefer Node.js built-in modules over external packages
+- Choose well-maintained packages with active communities
+- Avoid packages with extensive dependency trees
+- Prioritize packages with TypeScript support
+- Consider bundle size impact for client-side libraries
+
+### 5. Implementation Strategy Creation
+
+**Phase Breakdown Structure**
+```markdown
+## Week 1: Foundation & Core Setup
+**Days 1-2: Environment & Tooling**
+- Container setup and validation
+- TypeScript configuration
+- Quality gate automation
+- AI tool configuration
+
+**Days 3-5: Core Implementation**
+- High AI assistance: Boilerplate generation
+- Medium AI assistance: API structure
+- Manual: Core business logic planning
+
+**Days 6-7: Testing Foundation**
+- Test environment setup
+- AI-generated test scaffolding
+- Container-based test validation
+
+## Week 2: Feature Completion & Validation
+**Days 8-10: Feature Implementation**
+- AI-assisted feature development
+- Integration with existing components
+- Error handling and edge cases
+
+**Days 11-12: Quality Assurance**
+- Comprehensive testing in containers
+- Performance validation
+- Security scanning
+
+**Days 13-14: Phase Finalization**
+- Documentation completion
+- Container deployment validation
+- Git commits with standardized messages
+```
+
+## Analysis Output Generation
+
+### Create phase-analysis.md
+Document detailed analysis for implementation:
+
+```markdown
+# Phase Analysis: {Phase Name}
+
+## Overview
+**Phase Scope**: {Detailed description of what will be built}
+**Duration**: {X} weeks (AI-accelerated timeline)
+**Complexity Level**: {Low/Medium/High}
+**Container Validation**: {Docker-based testing strategy}
+
+## AI Assistance Strategy
+
+### High AI Assistance Areas (80-90% acceleration)
+- {Specific task 1}: {AI tool and approach}
+- {Specific task 2}: {AI tool and approach}
+- {Specific task 3}: {AI tool and approach}
+
+### Medium AI Assistance Areas (50-70% acceleration)
+- {Specific task 1}: {AI tool and approach}
+- {Specific task 2}: {AI tool and approach}
+
+### Low AI Assistance Areas (20-30% acceleration)
+- {Specific task 1}: {Manual implementation required}
+- {Specific task 2}: {Manual implementation required}
+
+## Container-First Development Setup
+
+### Development Environment
+```dockerfile
+# Development Dockerfile analysis
+FROM node:18-alpine
+WORKDIR /app
+# Hot-reload setup for development
+# Volume mounts for live code changes
+```
+
+### Testing Environment
+```dockerfile
+# Testing Dockerfile analysis  
+FROM node:18-alpine
+WORKDIR /app
+# Isolated testing environment
+# All tests run in container
+```
+
+## Dependency Analysis
+
+### Critical Dependencies
+| Package | Version | Purpose | Bundle Impact | Security Score |
+|---------|---------|---------|---------------|----------------|
+| {package} | {version} | {purpose} | {KB} | {score}/10 |
+
+### Optional Dependencies
+| Package | Alternative | Justification |
+|---------|-------------|---------------|
+| {package} | {alternative} | {reason} |
+
+## Implementation Timeline
+
+### Week 1: Foundation
+**Container Setup** (Days 1-2)
+- Docker development environment
+- docker-compose configuration
+- Automated testing setup
+
+**Core Implementation** (Days 3-5)
+- AI-generated boilerplate
+- API structure development
+- Core logic implementation
+
+**Testing Foundation** (Days 6-7)
+- Test suite generation
+- Container test validation
+
+### Week 2: Completion
+**Feature Development** (Days 8-10)
+- AI-assisted feature completion
+- Integration testing
+- Error handling
+
+**Quality Assurance** (Days 11-12)
+- Comprehensive testing
+- Performance validation
+- Security scanning
+
+**Phase Finalization** (Days 13-14)
+- Documentation completion
+- Deployment validation
+- Git commit preparation
+
+## Success Criteria
+
+### Container Validation
+- [ ] All code builds successfully in Docker
+- [ ] All tests pass in containerized environment
+- [ ] Performance meets requirements in container
+- [ ] Security scans pass
+- [ ] Deployment pipeline works
+
+### Code Quality
+- [ ] TypeScript compilation with zero warnings
+- [ ] ESLint passes with zero errors
+- [ ] Test coverage above {X}%
+- [ ] Documentation is complete and accurate
+- [ ] Git history is clean with standardized commits
+
+## Risk Assessment
+
+### Technical Risks
+- {Risk 1}: {AI-assisted mitigation strategy}
+- {Risk 2}: {Container-based validation approach}
+
+### Dependency Risks
+- {Risk 1}: {Minimal dependency strategy}
+- {Risk 2}: {Alternative package identification}
+
+## AI Tool Configuration
+
+### Primary AI Tools
+- **Code Generation**: {Tool name and configuration}
+- **Testing**: {Tool name and test generation approach}
+- **Documentation**: {Tool name and doc generation}
+- **Debugging**: {Tool name and debugging assistance}
+
+### AI Prompt Templates
+```
+// High-assistance code generation
+"Generate a TypeScript {component type} that {specific requirement} with proper error handling and type safety"
+
+// Medium-assistance API design
+"Design an API interface for {functionality} that follows {architectural pattern} with {specific constraints}"
+
+// Low-assistance debugging
+"Analyze this error in {context} and suggest debugging approaches"
+```
+```
+
+### Create development-environment.md
+Container and tooling setup guide:
+
+```markdown
+# Development Environment Setup
+
+## Container-Based Development Stack
+
+### Dockerfile.dev
+```dockerfile
+FROM node:18-alpine
+WORKDIR /app
+
+# Install development dependencies
+COPY package*.json ./
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Expose development port
+EXPOSE 3000
+
+# Development command with hot reload
+CMD ["npm", "run", "dev"]
+```
+
+### docker-compose.yml
+```yaml
+version: '3.8'
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+  
+  tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run test:watch
+```
+
+## Modern TypeScript Configuration
+
+### tsconfig.json
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts"]
+}
+```
+
+### Quality Automation Setup
+
+### .eslintrc.js
+```javascript
+module.exports = {
+  extends: [
+    '@typescript-eslint/recommended',
+    'prettier'
+  ],
+  parser: '@typescript-eslint/parser',
+  rules: {
+    // AI-friendly rules for consistent code
+    '@typescript-eslint/explicit-function-return-type': 'error',
+    '@typescript-eslint/no-explicit-any': 'error',
+    'prefer-const': 'error'
+  }
+};
+```
+
+## AI Development Workflow
+
+### Phase Development Process
+1. **Analyze** - Run this analyze_phase.mdc
+2. **Implement** - Use AI for code generation and development
+3. **Test** - Automated testing in containers
+4. **Finalize** - Documentation and deployment preparation
+
+### AI Assistance Guidelines
+- Use AI for boilerplate and repetitive tasks
+- Validate all AI-generated code through container testing
+- Maintain human oversight for architecture decisions
+- Document AI-generated code for maintainability
+```
+
+## Quality Validation
+
+### Analysis Completeness Check
+- ✅ Phase requirements thoroughly analyzed
+- ✅ AI assistance levels identified and planned
+- ✅ Container-based development environment designed
+- ✅ Modern TypeScript toolchain configured
+- ✅ Dependencies minimized and evaluated
+- ✅ Implementation timeline with realistic estimates
+- ✅ Success criteria defined and measurable
+- ✅ Risk assessment with mitigation strategies
+
+## Termination Criteria
+
+The analyze_phase rule terminates when:
+
+1. **Complete phase analysis**: All requirements analyzed and implementation strategy defined
+2. **Container setup ready**: Docker environment configured and validated
+3. **AI assistance strategy**: High/medium/low assistance areas identified with specific tools
+4. **Toolchain configured**: Modern TypeScript development setup complete
+5. **Implementation plan**: Detailed timeline with AI-accelerated development approach
+6. **Documentation complete**: phase-analysis.md and development-environment.md created
+
+## Agent Chain Handoff
+
+Upon successful completion:
+
+```bash
+# Deactivate current rule and activate next
+sed -i 's/alwaysApply: false/alwaysApply: true/' .cursor/rules/softwaredev-agent/implement_phase.mdc
+sed -i 's/alwaysApply: false/alwaysApply: true/' .cursor/rules/softwaredev-agent/analyze_phase.mdc
+```
+
+**Handoff Message:**
+```
+🔬 Phase Analysis Complete - Ready for AI-Assisted Implementation
+
+📊 Analysis Summary:
+- Phase Scope: {scope description}
+- AI Acceleration: {high/medium/low assistance breakdown}
+- Container Setup: {development environment ready}
+- Timeline: {X} weeks with AI-assisted development
+
+📁 Analysis Documents:
+- ai_docs/{lib-name}/low_level/session-{id}/dev/phase_{X}/analysis/phase-analysis.md
+- ai_docs/{lib-name}/low_level/session-{id}/dev/phase_{X}/analysis/development-environment.md
+
+🚀 Next: implement_phase.mdc will execute AI-assisted development
+
+Container environment ready? [Docker/compose validated]
+AI tools configured? [Copilot/Cursor/etc. ready]
+Implementation timeline clear? [Week-by-week breakdown]
+
+Ready to begin AI-accelerated implementation? [Yes/No]
+```

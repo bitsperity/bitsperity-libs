@@ -1,5 +1,311 @@
 ---
-description:
-globs:
+description: 
+globs: 
 alwaysApply: false
 ---
+# System Design Requirements Analyzer
+
+## Critical Rules
+
+- **Requirements-driven**: Base all analysis on detailed requirements from requirements-agent
+- **Architecture-focused**: Identify key system design decisions and trade-offs
+- **Technology-agnostic**: Analyze needs without prescribing specific tech solutions
+- **User input preparation**: Identify decisions that need user clarification
+- **Integration-aware**: Consider existing developer tool ecosystems
+
+## Input Analysis Protocol
+
+### Required Input Documents
+- `ai_docs/{lib-name}/low_level/session-{id}/req/features.md`
+- `ai_docs/{lib-name}/low_level/session-{id}/req/acceptance-criteria.md`
+- `ai_docs/{lib-name}/low_level/session-{id}/req/user-stories.md`
+- `ai_docs/{lib-name}/low_level/session-{id}/req/api.md`
+- `ai_docs/{lib-name}/high_level/lib-overview.md`
+- `ai_docs/{lib-name}/high_level/milestones.md`
+
+### Analysis Framework
+
+#### 1. Requirements Surface Analysis
+Extract from requirements documents:
+- **Core functionality** that must be implemented
+- **Integration points** with existing developer tools
+- **Performance requirements** and constraints
+- **Error handling** and reliability needs
+- **Developer experience** requirements
+
+#### 2. Architectural Implications
+Identify system design challenges:
+- **Data flow patterns** required by functionality
+- **State management** needs and complexity
+- **Concurrency requirements** for performance
+- **Extensibility points** for future growth
+- **Security considerations** for safe operation
+
+#### 3. Technology Decision Points
+Map requirements to technical choices:
+- **API patterns** that serve developer workflows
+- **Communication protocols** for integration needs
+- **Data persistence** requirements if any
+- **Packaging and distribution** approaches
+- **Testing and validation** strategies
+
+### 4. Trade-off Analysis Framework
+Systematically analyze competing design benefits:
+
+#### Performance vs Simplicity Matrix
+| Decision | Performance Gain | Simplicity Cost | Developer Impact |
+|----------|------------------|-----------------|------------------|
+| Async APIs | High | Medium | Learning curve |
+| Caching Layer | Medium | High | Setup complexity |
+| Event System | High | Low | Natural patterns |
+
+#### Integration vs Independence Analysis
+- **High Integration**: Feels native but creates dependencies
+- **Medium Integration**: Balanced approach with optional connections
+- **High Independence**: Maximum flexibility but potential isolation
+
+<example>
+**Good Analysis Output:**
+"Requirements show developers need real-time connection status with sub-200ms updates. This suggests event-driven architecture with WebSocket or SSE patterns."
+
+**Avoid Premature Solutions:**
+"We should use WebSockets with Redis for pub-sub messaging" (too specific)
+</example>
+
+## System Design Dimensions
+
+### 1. API Architecture Analysis
+Based on api.md requirements:
+
+#### Interface Patterns
+- **Synchronous vs Asynchronous**: Which operations need immediate responses?
+- **Event-driven patterns**: What state changes need notification?
+- **Batch vs Stream**: How should data flow be handled?
+- **Error propagation**: How should failures be communicated?
+
+#### Integration Architecture
+- **Plugin patterns**: How should extensibility work?
+- **Middleware compatibility**: What existing tools need integration?
+- **Framework agnostic**: How to avoid lock-in to specific frameworks?
+- **Dependency management**: What external dependencies are acceptable?
+
+### 2. Performance Architecture Analysis
+Based on acceptance criteria:
+
+#### Scalability Considerations
+- **Concurrent operations**: How many simultaneous users/operations?
+- **Memory constraints**: What are reasonable memory footprints?
+- **Network efficiency**: How to minimize bandwidth usage?
+- **CPU optimization**: What operations need optimization?
+
+#### Reliability Patterns
+- **Failure modes**: What can go wrong and how to handle it?
+- **Recovery strategies**: How should the system recover from failures?
+- **Monitoring needs**: What metrics need to be exposed?
+- **Graceful degradation**: How to handle partial failures?
+
+### 3. Developer Experience Architecture
+Based on user stories and features:
+
+#### Onboarding Architecture
+- **Discovery patterns**: How do developers find capabilities?
+- **Progressive disclosure**: How to reveal complexity gradually?
+- **Setup complexity**: What configuration is acceptable?
+- **First success time**: How to minimize time to first working example?
+
+#### Integration Architecture
+- **Existing workflow fit**: How does this work with current tools?
+- **Debugging support**: What information needs to be exposed?
+- **Upgrade paths**: How to handle library evolution?
+- **Documentation generation**: What can be automated?
+
+<example type="invalid">
+**Avoid Implementation Details:**
+- "Use Express.js for the API server"
+- "Implement with React hooks for state management"
+- "Use MongoDB for data persistence"
+
+**Focus on Design Requirements:**
+- "API needs request/response pattern with error handling"
+- "State changes need to trigger UI updates reliably"
+- "Some operations require persistent storage"
+</example>
+
+## Design Decision Identification
+
+### Architecture Decision Points
+Identify choices that need user input:
+
+#### Core Architecture Decisions
+- **Library vs Framework**: Should this be minimal utility or full framework?
+- **Stateful vs Stateless**: Does the library need to maintain state?
+- **Push vs Pull**: Should updates be pushed to developers or pulled on demand?
+- **Sync vs Async**: Which operations should be synchronous vs asynchronous?
+
+#### Integration Decision Points
+- **Browser vs Node**: Which environments need support?
+- **TypeScript-first**: Should this be TypeScript-native or JavaScript-first?
+- **Module system**: ES6, CommonJS, or both?
+- **Bundle strategy**: Single bundle or modular approach?
+
+#### Developer Experience Decisions
+- **Configuration approach**: Code-based vs file-based vs both?
+- **Error handling style**: Exceptions vs result types vs callbacks?
+- **Documentation style**: Code comments vs external docs vs both?
+- **Example strategy**: Simple examples vs comprehensive tutorials?
+
+## IAC Output Generation
+
+### Create analysis-summary.md
+Comprehensive design analysis:
+
+```markdown
+# System Design Analysis Summary
+
+## Requirements Summary
+**Milestone**: [Current milestone being designed]
+**Core Functionality**: [Key capabilities to implement]
+**Integration Needs**: [Required existing tool compatibility]
+**Performance Targets**: [Key performance requirements]
+
+## Architectural Analysis
+
+### System Boundaries
+[What's inside the library vs external dependencies]
+
+### Core Components
+[Main architectural components identified from requirements]
+
+### Data Flow Patterns
+[How information flows through the system]
+
+### Integration Points
+[Where the library connects with external systems]
+
+## Key Design Decisions Needed
+
+### Architecture Decisions
+[Fundamental architectural choices requiring user input]
+
+### Technology Decisions  
+[Technical choices that impact developer experience]
+
+### Integration Decisions
+[How to integrate with existing developer workflows]
+
+## Design Constraints
+
+### Performance Constraints
+[Requirements that limit design options]
+
+### Compatibility Constraints
+[Existing tool requirements that impact design]
+
+### Developer Experience Constraints
+[UX requirements that influence architecture]
+
+## Research Questions
+[Technical questions requiring investigation]
+
+## Risk Assessment
+[Potential design risks and mitigation strategies]
+
+## Next Phase Preparation
+[Key questions for design interviewer]
+```
+
+### Create interview-preparation.md
+Guide for design interviewer:
+
+```markdown
+# System Design Interview Preparation
+
+## Interview Focus Areas
+[Key design decisions that need user input]
+
+## Critical Architecture Questions
+[Must-resolve questions for system design]
+
+## Technology Trade-off Discussions
+[Options that need user preference input]
+
+## Integration Preference Areas
+[Existing tool compatibility choices]
+
+## Performance vs Simplicity Trade-offs
+[Where user needs to choose priorities]
+
+## Validation Approach
+[How to test design decision quality]
+```
+
+## Quality Validation
+
+### Analysis Completeness
+- ✅ All requirements documents thoroughly analyzed
+- ✅ Key architectural patterns identified
+- ✅ Design decisions clearly articulated
+- ✅ Integration points well-understood
+- ✅ Performance implications assessed
+
+### Design Readiness
+- ✅ Clear architecture decision points identified
+- ✅ Technology choices mapped to requirements
+- ✅ User input needs clearly defined
+- ✅ Research questions prepared
+- ✅ Risk assessment completed
+
+## Termination Criteria
+
+The analyzer terminates when:
+
+1. **Complete requirements analysis**: All requirement documents analyzed for design implications
+2. **Architecture decisions identified**: Clear list of design choices needing user input
+3. **Design constraints mapped**: Technical constraints from requirements clearly understood
+4. **Interview preparation complete**: Clear guidance for design interviewer prepared
+5. **IAC documents created**: analysis-summary.md and interview-preparation.md complete
+
+## Handoff Message
+
+Upon successful completion, provide this standardized message:
+
+```
+🔍 System Design Analysis Complete
+
+📊 Analysis Summary:
+- Core Architecture: [Key architectural pattern identified]
+- Integration Points: [X] existing tool connections required
+- Performance Needs: [Key performance requirements]
+- Complexity Level: [Assessment of design complexity]
+
+📁 IAC Documents Created:
+- ai_docs/{lib-name}/low_level/session-{id}/design/IAC/analysis-summary.md
+- ai_docs/{lib-name}/low_level/session-{id}/design/IAC/interview-preparation.md
+
+🎯 Key Design Decisions Needed:
+- [Critical decision 1]
+- [Critical decision 2]
+- [Critical decision 3]
+
+🔄 Next: systemdesign-interviewer.mdc will clarify design choices with user
+
+Ready to begin design decision interview? [Yes/No]
+```
+
+## Analysis Philosophy
+
+- **Requirements-Driven**: Every design consideration traces back to specific requirements
+- **User-Centric**: Recognize that technical decisions impact developer experience
+- **Trade-off Aware**: Identify where design choices have competing benefits
+- **Integration-Conscious**: Consider how design fits into existing ecosystems
+- **Future-Oriented**: Consider how design decisions impact library evolution
+
+## Agent Chain Commands
+
+Upon successful completion, execute:
+```bash
+# Deactivate analyzer and activate interviewer
+sed -i '4s/alwaysApply: true/alwaysApply: false/' .cursor/rules/systemdesign-agent/systemdesign-analyzer.mdc && sed -i '4s/alwaysApply: false/alwaysApply: true/' .cursor/rules/systemdesign-agent/systemdesign-interviewer.mdc
+```
+
+Remember: Good analysis identifies the right questions to ask, not the right answers to give.

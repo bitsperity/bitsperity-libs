@@ -3,27 +3,374 @@ description:
 globs: 
 alwaysApply: false
 ---
-### IAC File Analysis
-**Read and synthesize:**
+# Requirements Documentation Creator
+
+## Critical Rules
+
+- **Complete synthesis**: Merge analysis insights with interview results into coherent requirements
+- **Developer-centric specification**: Every requirement serves developer experience from interviews
+- **Testable criteria**: All requirements have clear acceptance criteria and validation methods
+- **Design-ready output**: Create specifications detailed enough for system design decisions
+- **No implementation details**: Focus on "what" requirements, not "how" solutions
+
+## IAC Input Analysis
+
+### Required Input Files
+- `ai_docs/{lib-name}/low_level/session-{id}/req/IAC/analysis-summary.md`
+- `ai_docs/{lib-name}/low_level/session-{id}/req/IAC/interview-results.md`
+- `ai_docs/{lib-name}/high_level/user-stories.md`
+- `ai_docs/{lib-name}/high_level/api.md`
+
+### Synthesis Process
+1. **Extract milestone scope** from analysis-summary.md
+2. **Integrate requirements** from interview-results.md
+3. **Map to user stories** from high_level/user-stories.md
+4. **Align with API vision** from high_level/api.md
+5. **Create testable specifications** with clear acceptance criteria
+
+## Output Documentation Structure
+
+### Primary Output Documents
+
+#### 1. features.md
+Detailed feature specifications:
+
+```markdown
+# [Milestone Name] - Feature Specifications
+
+## Milestone Overview
+**Goal**: [From analysis summary]
+**Scope**: [Clear boundaries of what's included/excluded]
+**Success Criteria**: [How we'll know this milestone succeeds]
+
+## Target Developer Personas
+[Specific developers this milestone serves]
+
+## Feature Requirements
+
+### Core Feature 1: [Name]
+**Purpose**: [What problem this solves for developers]
+**Priority**: Must Have (P0)
+
+#### Functional Requirements
+- [Specific requirement 1]
+- [Specific requirement 2]
+- [Specific requirement 3]
+
+#### Developer Experience Requirements
+- [How developers discover this feature]
+- [How developers first use this feature]
+- [How developers integrate this feature]
+
+#### Error Handling Requirements
+- [What errors developers might encounter]
+- [How errors should be communicated]
+- [How developers should recover from errors]
+
+#### Performance Requirements
+- [Response time expectations]
+- [Reliability standards]
+- [Resource usage constraints]
+
+### Core Feature 2: [Name]
+[Repeat structure for each core feature]
+
+### Supporting Features
+[Secondary features that enable core functionality]
+
+## Integration Requirements
+[How this milestone integrates with existing developer tools]
+
+## Documentation Requirements
+[What documentation developers need for this milestone]
+
+## Migration Requirements
+[How developers upgrade or migrate to this milestone]
 ```
-ai_docs/[lib_name]/low_level/[session_name]/req/IAC/
-├── analysis-summary.md      ← Work package context and library analysis
-├── interview-results.md     ← User requirements and workflows
+
+#### 2. acceptance-criteria.md
+Testable validation criteria:
+
+```markdown
+# [Milestone Name] - Acceptance Criteria
+
+## Overview
+This document defines specific, testable criteria for validating milestone completion.
+
+## Feature Acceptance Criteria
+
+### Core Feature 1: [Name]
+
+#### User Story Acceptance
+**As a** [developer type]
+**I want to** [action]
+**So that** [benefit]
+
+**Acceptance Criteria:**
+- [ ] Given [context], when [action], then [expected result]
+- [ ] Given [context], when [different action], then [expected result]
+- [ ] Given [error context], when [action], then [error handling result]
+
+#### API Acceptance Criteria
+- [ ] API follows documented interface from api.md
+- [ ] API integrates with [specific existing tools]
+- [ ] API provides [specific error information]
+- [ ] API performs within [specific performance requirements]
+
+#### Developer Experience Acceptance
+- [ ] Developer can complete first usage in under [X] minutes
+- [ ] Developer receives clear feedback for [specific scenarios]
+- [ ] Developer can debug issues using [specific information]
+- [ ] Developer can integrate with [existing workflow]
+
+### Core Feature 2: [Name]
+[Repeat structure for each feature]
+
+## Integration Acceptance Criteria
+[Specific tests for how milestone integrates with existing tools]
+
+## Performance Acceptance Criteria
+[Measurable performance requirements and test scenarios]
+
+## Documentation Acceptance Criteria
+[What documentation must exist and how to validate completeness]
+
+## Validation Methods
+
+### Automated Testing
+[What can be tested automatically]
+
+### Manual Testing
+[What requires human validation]
+
+### Developer Testing
+[How to test with actual developers]
+
+### Integration Testing
+[How to test integration with existing tools]
+
+## Success Metrics
+[Quantifiable measures of milestone success]
 ```
 
+#### 3. user-stories.md (Enhanced)
+Refined user stories based on detailed requirements:
 
+```markdown
+# [Milestone Name] - User Stories
 
-   - **Execute Agent Chain Completion**:
-     ```bash
-     # Deactivate final agent - requirements phase complete
-     sed -i '4s/alwaysApply: true/alwaysApply: false/' .cursor/rules/requirements-agent/requirements-doc-creator.mdc
-     ```
+## Story Overview
+These user stories represent the developer needs discovered during requirements gathering for this specific milestone.
 
-## Agent Chain Completion
+## Epic: [Milestone Goal]
 
-When requirements documentation is complete, execute:
+### Primary User Stories (Must Have)
 
+#### Story 1: [Developer First Use]
+**As a** [specific developer type]
+**I want to** [specific action based on interview]
+**So that** [specific benefit from requirements]
+
+**Details from Requirements:**
+- [Specific requirement from interview]
+- [Integration need discovered]
+- [Error handling expectation]
+
+**Acceptance Criteria:**
+- [Link to specific acceptance criteria]
+
+**Priority:** Must Have (P0)
+**Effort:** [Relative sizing]
+
+#### Story 2: [Developer Integration]
+[Repeat structure for each story]
+
+### Secondary User Stories (Should Have)
+[Important but not critical stories]
+
+### Future User Stories (Could Have)
+[Stories for future milestones that were discovered]
+
+## Story Mapping
+[How stories connect and depend on each other]
+
+## Developer Journey Map
+[Complete path from discovery to integration for this milestone]
+```
+
+#### 4. api.md (Milestone-Specific)
+Detailed API requirements for the milestone:
+
+```markdown
+# [Milestone Name] - API Requirements
+
+## API Design Principles
+[Principles from high-level api.md applied to this milestone]
+
+## Core APIs for This Milestone
+
+### Primary Interface: [API Name]
+**Purpose**: [What this API enables for developers]
+**Priority**: Must Have (P0)
+
+#### Method Signatures
+[Specific method signatures based on requirements]
+
+#### Input Requirements
+- [Parameter requirements from interview]
+- [Validation requirements]
+- [Configuration options needed]
+
+#### Output Requirements
+- [Return value specifications]
+- [Success response format]
+- [Error response format]
+
+#### Behavior Requirements
+- [How the API should behave in normal cases]
+- [How the API should behave in error cases]
+- [Performance expectations]
+
+### Secondary Interfaces
+[Supporting APIs needed for complete milestone]
+
+## Integration Requirements
+[How APIs work with existing developer tools]
+
+## Error Handling Specification
+[Detailed error handling based on interview requirements]
+
+## Configuration Requirements
+[What developers need to configure and how]
+
+## Examples and Usage Patterns
+[Concrete examples of how developers will use these APIs]
+```
+
+## Quality Standards
+
+### Requirements Completeness
+- **Coverage**: All interview requirements mapped to specifications
+- **Traceability**: Clear connection from user needs to specific requirements
+- **Testability**: Every requirement has corresponding acceptance criteria
+- **Specificity**: Requirements are concrete and actionable
+
+### Documentation Quality
+- **Clarity**: Easy for system designers to understand and implement
+- **Consistency**: Terminology and concepts align across documents
+- **Completeness**: No gaps that would confuse next agent
+- **Actionability**: Clear enough for technical decision-making
+
+### Validation Framework
+- **Measurable**: Success criteria can be objectively evaluated
+- **Developer-focused**: Validation methods test actual developer experience
+- **Comprehensive**: Covers functional, integration, and performance aspects
+- **Realistic**: Acceptance criteria are achievable within milestone scope
+
+<example>
+**Good Requirement Specification:**
+```markdown
+### Real-time Connection Status
+**Requirement**: Developers must know the connection health at all times
+**Acceptance**: 
+- [ ] Connection status visible within 200ms of change
+- [ ] Status includes specific error information when disconnected
+- [ ] Status integrates with developer's existing monitoring setup
+```
+
+**Avoid Vague Requirements:**
+```markdown
+### Connection Management
+**Requirement**: Handle connections well
+**Acceptance**: Connection should work properly
+```
+</example>
+
+## Validation Process
+
+### Internal Validation
+- **Requirements mapping**: All interview insights captured in specifications
+- **User story alignment**: Specifications enable all relevant user stories
+- **API consistency**: Milestone APIs align with high-level API vision
+- **Acceptance completeness**: Every requirement has testable criteria
+
+### Design Readiness Validation
+- **Sufficient detail**: System designers can make informed technical decisions
+- **Clear scope**: Boundaries between this milestone and future work are clear
+- **Integration clarity**: How milestone fits with existing systems is specified
+- **Success measurement**: Clear criteria for milestone completion
+
+## Termination Criteria
+
+The documentation creator terminates when:
+
+1. **Complete requirements documented**: All interview insights translated to specifications
+2. **Testable criteria defined**: Clear acceptance criteria for every requirement
+3. **Design-ready output**: Sufficient detail for system design decisions
+4. **Integration specified**: Clear requirements for existing tool integration
+5. **Validation framework complete**: Methods for testing requirement satisfaction
+
+## Handoff Message
+
+Upon successful completion, provide this standardized message:
+
+```
+📋 Requirements Documentation Complete
+
+📖 Documentation Package:
+- features.md: Detailed feature specifications and requirements
+- acceptance-criteria.md: Testable validation criteria for all requirements
+- user-stories.md: Enhanced user stories based on detailed requirements
+- api.md: Milestone-specific API requirements and interfaces
+
+🎯 Requirements Summary:
+- Must Have (P0): [X] core requirements
+- Should Have (P1): [Y] important requirements
+- Could Have (P2): [Z] nice-to-have requirements
+
+📊 Coverage Analysis:
+- [X] interview insights mapped to specifications
+- [Y] user stories enabled by requirements
+- [Z] acceptance criteria defined for validation
+
+🔄 Next Phase: systemdesign-agent will analyze requirements and create technical architecture
+
+requirements-agent work complete. Ready to begin system design? [Yes/No]
+```
+
+## Agent Termination
+
+Upon successful completion:
+
+1. **Create git commit** with standardized message:
+```
+feat(requirements-agent/session-{id}): Complete milestone requirements analysis
+
+- Analysis: Selected [milestone name] based on developer value and foundation building
+- Interview: Gathered detailed requirements through dopamine-optimized developer sessions
+- Documentation: Created comprehensive specifications with testable acceptance criteria
+- Handoff: Prepared complete requirements package for system design phase
+
+Next: systemdesign-agent technical architecture and implementation planning
+```
+
+2. **Archive IAC documents**: Move analysis and interview files to archive
+3. **Provide final status**: Confirm completion and readiness for design phase
+
+## Documentation Philosophy
+
+- **Developer-First**: Every requirement serves the developer experience uncovered in interviews
+- **Evidence-Based**: All specifications trace back to specific interview insights
+- **Design-Enabling**: Provide enough detail for informed technical decisions without prescribing solutions
+- **Validation-Focused**: Ensure every requirement can be tested with real developers
+- **Scope-Conscious**: Maintain clear boundaries for the selected milestone
+
+Remember: These requirements become the contract between what developers need and what the system will deliver. Quality here determines development success and developer satisfaction.
+
+## Agent Chain Commands
+
+Upon successful completion, execute:
 ```bash
-# Deactivate documentation creator - requirements-agent pipeline complete
+# Deactivate doc-creator - requirements-agent complete
 sed -i '4s/alwaysApply: true/alwaysApply: false/' .cursor/rules/requirements-agent/requirements-doc-creator.mdc
 ```

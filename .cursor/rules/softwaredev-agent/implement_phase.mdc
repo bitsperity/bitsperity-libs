@@ -1,9 +1,203 @@
 ---
-description: 
+description: Executes AI-assisted solo development implementation using container-first approach. Leverages AI for high-assistance areas like boilerplate and testing, while maintaining human control over architecture and business logic. Ensures all code is container-validated and follows state-of-the-art patterns.
 globs: 
 alwaysApply: false
 ---
-ai_docs/[lib_name]/low_level/[session_name]/dev/
-├── progress.md              # Max 50 Zeilen - Nur Status + Blockers
-└── [phase_name]/           # Per-phase CODE output
-    └── retro.md  #wichtige gedanken für die retrospektive um im nachgang alle agents zu optimieren
+
+# AI-Assisted Implementation Execution
+
+## Critical Rules
+
+- **AI-first implementation**: Maximize AI assistance for boilerplate, testing, and documentation while maintaining human oversight for critical decisions
+- **Container-validated development**: All code must run and pass tests in Docker environment before proceeding
+- **Iterative build approach**: Build incrementally with frequent container validation and AI-assisted refactoring
+- **State-of-the-art patterns**: Use modern TypeScript patterns, minimal dependencies, and efficient architectures
+- **Quality-first automation**: Automated testing, linting, and validation at every step
+
+## AI-Assisted Implementation Framework
+
+### 1. High AI Assistance Implementation (80-90% acceleration)
+
+**Boilerplate Code Generation**
+```typescript
+// AI Prompt Template for TypeScript Library Bootstrap
+"Generate a TypeScript library structure with:
+- Modern ESM/CommonJS dual exports
+- TypeScript strict mode configuration  
+- Automated testing setup with Vitest
+- ESLint + Prettier configuration"
+```
+
+**Test Suite Creation**
+```typescript
+// AI Prompt Template for Test Generation
+"Generate comprehensive tests for [function/class] that:
+- Covers happy path and edge cases
+- Uses Vitest with TypeScript support
+- Tests error handling and validation
+- Follows AAA pattern (Arrange, Act, Assert)"
+```
+
+### 2. Medium AI Assistance Implementation (50-70% acceleration)
+
+**API Design and Interfaces**
+```typescript
+// AI Prompt Template for API Design
+"Design a TypeScript API for [functionality] that:
+- Follows modern patterns
+- Uses proper TypeScript types
+- Implements error handling patterns
+- Has clear separation of concerns"
+```
+
+### 3. Low AI Assistance Implementation (20-30% acceleration)
+
+**Core Business Logic** (Human-Led with AI Assistance)
+```typescript
+// Manual implementation with AI consultation
+// 1. Design the core algorithm/business logic manually
+// 2. Use AI for syntax optimization and pattern suggestions
+// 3. Human validates business rule correctness
+```
+
+## Container-First Development Workflow
+
+### Development Environment Validation
+```bash
+# Verify container environment before coding
+docker-compose up -d
+docker-compose exec app npm run type-check
+docker-compose exec app npm run lint
+docker-compose exec app npm run test
+```
+
+### Continuous Container Validation
+```bash
+# After each implementation increment
+docker-compose exec app npm run build  # Verify build works
+docker-compose exec app npm run test   # All tests pass
+docker-compose exec app npm run lint   # Code quality check
+```
+
+## Implementation Execution Strategy
+
+### Week 1: Foundation Implementation
+
+**Days 1-2: Environment & Tooling Setup**
+- Generate Dockerfile.dev with hot-reload
+- Create docker-compose.yml for development
+- Set up TypeScript configuration
+- Configure ESLint and Prettier
+
+**Days 3-5: Core Implementation**
+- AI-generated project structure
+- Human-defined API interfaces
+- Core business logic implementation
+- Utility functions with AI assistance
+
+**Days 6-7: Testing Foundation**
+- AI-generated test scaffolding
+- Container-based test validation
+- Coverage reporting setup
+
+### Week 2: Feature Completion & Validation
+
+**Days 8-10: Feature Implementation**
+- AI-assisted feature development
+- Integration testing
+- Error handling patterns
+
+**Days 11-12: Quality Assurance**
+- Comprehensive testing in containers
+- Security scanning
+- Performance validation
+
+**Days 13-14: Phase Finalization**
+- AI-generated documentation
+- Container deployment validation
+- Git commit preparation
+
+## AI Tool Integration Strategies
+
+### Primary AI Tools Configuration
+
+**GitHub Copilot Integration**
+```json
+{
+  "github.copilot.enable": {
+    "*": true,
+    "typescript": true
+  }
+}
+```
+
+### AI Prompt Engineering Best Practices
+
+**High-Quality Code Generation Prompts**
+```typescript
+// Template for complex code generation
+"Generate a TypeScript [component type] that:
+1. Implements [specific interface/pattern]
+2. Includes proper error handling
+3. Has comprehensive TypeScript types
+4. Is fully testable"
+```
+
+## Code Quality Assurance
+
+### Automated Quality Gates
+```json
+{
+  "scripts": {
+    "dev": "vite dev",
+    "build": "tsc && vite build", 
+    "test": "vitest",
+    "lint": "eslint src --ext .ts",
+    "type-check": "tsc --noEmit"
+  }
+}
+```
+
+## Quality Validation
+
+### Implementation Completeness Check
+- ✅ All phase requirements implemented and tested
+- ✅ AI assistance optimally utilized across development tasks
+- ✅ Container-based development and testing validated
+- ✅ Modern TypeScript toolchain configured and working
+- ✅ Code quality meets established standards
+
+## Termination Criteria
+
+The implement_phase rule terminates when:
+
+1. **Feature implementation complete**: All phase requirements implemented and container-validated
+2. **Quality gates passed**: TypeScript, ESLint, tests all passing
+3. **Container deployment validated**: Production container builds and runs successfully
+4. **Documentation complete**: API docs and examples generated and reviewed
+5. **Git commits standardized**: All commits follow established format
+
+## Agent Chain Handoff
+
+Upon successful completion:
+
+```bash
+# Deactivate current rule and activate next
+sed -i 's/alwaysApply: false/alwaysApply: true/' .cursor/rules/softwaredev-agent/test_phase.mdc
+sed -i 's/alwaysApply: true/alwaysApply: false/' .cursor/rules/softwaredev-agent/implement_phase.mdc
+```
+
+**Handoff Message:**
+```
+🚀 Implementation Complete - Ready for Comprehensive Testing
+
+📊 Implementation Summary:
+- Phase Features: {feature list} ✅ Complete
+- AI Acceleration: {efficiency metrics}
+- Container Validation: ✅ All development tests pass
+- Code Quality: ✅ TypeScript strict, ESLint clean
+
+🔄 Next: test_phase.mdc will execute comprehensive testing
+
+Ready for comprehensive testing phase? [Yes/No]
+```

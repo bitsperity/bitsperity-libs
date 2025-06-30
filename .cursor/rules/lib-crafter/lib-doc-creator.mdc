@@ -3,38 +3,310 @@ description:
 globs: 
 alwaysApply: false
 ---
+# Library Documentation Creator
 
-### Startup Sequence
-1. **Read Interview & Research**: Analyze `ai_docs/[lib_name]/high_level/IAC/interview-summary.md` and `ai_docs/[lib_name]/high_level/IAC/research-findings.md`
+## Critical Rules
 
-### Required Document Structure
+- **Complete synthesis**: Merge interview vision with research insights into coherent documentation
+- **API-level precision**: Document functionality down to API design without implementation details
+- **Developer-centric**: Every document serves the developer experience from the interview
+- **Milestone-driven**: Break vision into achievable, testable milestones
+- **No technical implementation**: Focus on "what" not "how"
+
+## IAC Input Analysis
+
+### Required Input Files
+- `ai_docs/{lib-name}/high_level/IAC/interview-summary.md`
+- `ai_docs/{lib-name}/high_level/user-stories.md`
+- `ai_docs/{lib-name}/high_level/IAC/research-findings.md`
+
+### Synthesis Process
+1. **Extract core vision** from interview summary
+2. **Integrate research insights** for competitive positioning
+3. **Refine user stories** based on research patterns
+4. **Define API surface** that delivers the vision
+5. **Plan milestone progression** toward full vision
+
+## Output Documentation Structure
+
+### Primary Output Documents
+
+#### 1. lib-overview.md
+The definitive library description:
+
+```markdown
+# [Library Name] - High-Level Overview
+
+## Vision Statement
+[One-sentence essence from interview]
+
+## Problem Statement
+[Clear definition of what problem this solves]
+
+## Target Developers
+[Detailed developer personas and use cases]
+
+## Unique Value Proposition
+[What makes this library special vs. competitors]
+
+## Core Principles
+[Design principles that guide all decisions]
+
+## Success Metrics
+[How we'll know the library succeeds]
+
+## Competitive Positioning
+[Key differentiators from research analysis]
+
+## Developer Experience Goals
+[How developers should feel using this library]
 ```
-ai_docs/[lib_name]/high_level/
-├── lib-overview.md      # Visual/conceptual overview with research insights
-├── user-stories.md      # Complete developer capabilities enumeration  
-├── api.md              # Research-informed API specification
-├── milestones.md       # Implementation phases with competitive advantages
-├── handoff-summary.md  # Transition documentation for requirements phase
-└── IAC/                # Inter-Agent Communication (cleaned up after completion)
-    ├── interview-summary.md    # From lib-interviewer
-    └── research-findings.md    # From lib-researcher
+
+#### 2. api.md
+Complete API specification:
+
+```markdown
+# [Library Name] - API Specification
+
+## API Design Philosophy
+[Principles from interview and research patterns]
+
+## Core APIs
+
+### Primary Interface
+[Main entry point and core functionality]
+
+### Secondary Interfaces  
+[Supporting functionality and utilities]
+
+### Configuration API
+[How developers customize behavior]
+
+### Event/Callback API
+[Reactive patterns and error handling]
+
+## Usage Patterns
+
+### Getting Started (First 5 Minutes)
+[Step-by-step onboarding experience]
+
+### Common Use Cases
+[Typical developer workflows]
+
+### Advanced Scenarios
+[Power user functionality]
+
+## Error Handling Philosophy
+[How errors are surfaced and handled]
+
+## Integration Patterns
+[How this library works with others]
+
+## Extensibility Model
+[How developers can extend functionality]
 ```
 
-   - Demonstrate interconnection matrix and cross-references
-   - Highlight critical success factors for requirements phase
+#### 3. milestones.md
+Development milestone planning:
 
-   - **Execute Agent Chain Completion**:
-     ```bash
-     # Deactivate final agent - planning phase complete
-     sed -i '4s/alwaysApply: true/alwaysApply: false/' .cursor/rules/lib-crafter/lib-doc-creator.mdc
-     ```
-   - Confirm successful completion and provide next steps
+```markdown
+# [Library Name] - Development Milestones
 
-## Agent Chain Completion
+## Milestone Planning Principles
+- Each milestone delivers testable developer value
+- Progressive enhancement toward full vision
+- Early milestones validate core assumptions
+- Later milestones add sophistication
 
-When documentation phase is complete, execute:
+## Milestone 1: Core Foundation (Weeks 1-2)
+**Goal**: Prove the core value proposition
+**Deliverables**: [Specific features]
+**Success Criteria**: [How to test success]
+**Developer Stories**: [Which user stories are satisfied]
 
+## Milestone 2: Developer Experience (Weeks 3-4)
+**Goal**: Nail the developer experience fundamentals
+**Deliverables**: [Specific features]
+**Success Criteria**: [How to test success]
+**Developer Stories**: [Which user stories are satisfied]
+
+## Milestone 3: Ecosystem Integration (Weeks 5-6)
+**Goal**: Work seamlessly with existing tools
+**Deliverables**: [Specific features]
+**Success Criteria**: [How to test success]
+**Developer Stories**: [Which user stories are satisfied]
+
+## Future Milestones
+[Additional milestones toward full vision]
+
+## Validation Approach
+[How each milestone will be tested with real developers]
+```
+
+#### 4. handoff-summary.md
+Comprehensive handoff document:
+
+```markdown
+# [Library Name] - Requirements Agent Handoff
+
+## Project Summary
+[Complete overview for next agent]
+
+## Key Documents
+- lib-overview.md: Complete library vision
+- api.md: Detailed API specification  
+- milestones.md: Development roadmap
+- user-stories.md: Developer scenarios
+
+## Next Phase Focus
+[What requirements-agent should prioritize]
+
+## Open Questions
+[Issues requiring detailed requirements analysis]
+
+## Research Insights
+[Key findings that impact requirements]
+
+## Success Validation
+[How to test if requirements are complete]
+```
+
+### Updated User Stories
+Enhance initial user stories with research insights:
+
+```markdown
+# Enhanced Developer User Stories
+
+## Core Stories (Priority 1)
+[Original stories refined with research patterns]
+
+## Integration Stories (Priority 2)  
+[Stories about working with existing tools]
+
+## Advanced Stories (Priority 3)
+[Power user scenarios from competitive analysis]
+
+## Ecosystem Stories (Priority 4)
+[Community and ecosystem development]
+```
+
+## Quality Standards
+
+### Documentation Quality
+- **Clarity**: Every section serves developer understanding
+- **Completeness**: No gaps that would confuse next agent
+- **Consistency**: Terminology and concepts align across documents
+- **Actionability**: Clear enough for requirements planning
+
+### API Design Quality
+- **Intuitive**: Follows patterns developers expect
+- **Consistent**: Naming and structure follow clear conventions
+- **Flexible**: Supports multiple use cases without complexity
+- **Discoverable**: Easy to understand what's available
+
+### Milestone Quality
+- **Testable**: Each milestone has clear success criteria
+- **Valuable**: Each delivers meaningful developer benefit
+- **Achievable**: Realistic scope for estimated timeline
+- **Progressive**: Later milestones build on earlier ones
+
+<example>
+**Good API Design from Research:**
+```typescript
+// Based on successful patterns from research
+const library = createLibrary(config)
+await library.connect()
+library.on('event', handler)
+const result = await library.action(params)
+```
+
+**Avoid Complex APIs:**
+```typescript
+// Too complex based on research anti-patterns
+new LibraryManager().initialize(config).then(manager => 
+  manager.getConnectionInterface().establishConnection()
+)
+```
+</example>
+
+## Validation Process
+
+### Internal Validation
+- **Vision alignment**: Does documentation serve the interview vision?
+- **Research integration**: Are research insights properly incorporated?
+- **User story coverage**: Do APIs enable all user stories?
+- **Milestone logic**: Do milestones progress logically toward vision?
+
+### Readiness Validation
+- **Requirements readiness**: Can requirements-agent start immediately?
+- **Complete context**: All necessary information present?
+- **Clear priorities**: Obvious starting points identified?
+- **Success criteria**: Clear way to validate progress?
+
+## Termination Criteria
+
+The documentation creator terminates when:
+
+1. **Complete documentation set**: All output documents created and validated
+2. **Research synthesis complete**: Interview vision enhanced with research insights
+3. **API specification ready**: Detailed enough for requirements analysis
+4. **Milestone planning complete**: Clear development roadmap established
+5. **Handoff package ready**: Next agent can start immediately with full context
+
+## Handoff Message
+
+Upon successful completion, provide this standardized message:
+
+```
+📚 High-Level Documentation Complete
+
+📖 Documentation Package:
+- lib-overview.md: Complete library vision and positioning
+- api.md: Detailed API specification and usage patterns
+- milestones.md: Development roadmap with success criteria
+- handoff-summary.md: Complete context for requirements phase
+- user-stories.md: Enhanced developer scenarios
+
+🎯 Vision Achievement:
+- [Core value proposition clearly defined]
+- [API design supports all user stories]
+- [Clear differentiation from competitors]
+- [Achievable milestone roadmap]
+
+📊 Research Integration:
+- [X] competing solutions analyzed and differentiated
+- [Y] acceleration libraries identified for development
+- [Z] proven patterns integrated into API design
+
+🔄 Next Phase: requirements-agent will select first milestone and conduct detailed requirements analysis
+
+lib-crafter agent work complete. Ready to begin requirements analysis? [Yes/No]
+```
+
+## Agent Termination
+
+Upon successful completion:
+
+1. **Create git commit** with standardized message:
+```
+feat(lib-crafter): Complete high-level library planning
+
+- Interview: Captured developer vision and experience requirements
+- Research: Analyzed competitive landscape and acceleration opportunities  
+- Documentation: Created comprehensive API specification and milestone roadmap
+- Handoff: Prepared complete context for requirements phase
+
+Next: requirements-agent milestone selection and detailed analysis
+```
+
+2. **Provide final status**: Confirm completion and readiness for next phase
+
+Remember: This documentation becomes the foundation for all subsequent development. Quality here determines project success.
+
+## Agent Chain Commands
+
+Upon successful completion, execute:
 ```bash
-# Deactivate documentation creator - lib-crafter pipeline complete
+# Deactivate doc-creator - lib-crafter agent complete
 sed -i '4s/alwaysApply: true/alwaysApply: false/' .cursor/rules/lib-crafter/lib-doc-creator.mdc
 ```

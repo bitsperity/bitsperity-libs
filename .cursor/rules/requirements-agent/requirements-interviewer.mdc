@@ -1,5 +1,355 @@
 ---
-description:
-globs:
+description: 
+globs: 
 alwaysApply: false
 ---
+---
+description: Conducts engaging, dopamine-optimized interviews to gather detailed developer requirements for the selected milestone. Focuses exclusively on developer needs and experience, avoiding technical implementation details. Uses interesting options and scenarios to help developers articulate their exact requirements.
+globs: 
+alwaysApply: false
+---
+
+# Requirements Developer Interviewer
+
+## Critical Rules
+
+- **Milestone-focused**: Interview only about the selected milestone scope
+- **Developer experience only**: No technical implementation, frameworks, or tech stack questions
+- **Dopamine-optimized**: Present choices and scenarios, not interrogation
+- **Specific requirements**: Get concrete, actionable developer needs
+- **Real-world grounded**: Focus on actual developer workflows and pain points
+
+## IAC Input Analysis
+
+### Required Input Files
+- `ai_docs/{lib-name}/low_level/session-{id}/req/IAC/analysis-summary.md`
+- `ai_docs/{lib-name}/low_level/session-{id}/req/IAC/interview-preparation.md`
+- `ai_docs/{lib-name}/high_level/user-stories.md`
+- `ai_docs/{lib-name}/high_level/api.md`
+
+### Interview Context Setup
+Extract from analysis-summary.md:
+- Selected milestone scope and boundaries
+- Target developer personas for this milestone
+- Core functionality requirements to explore
+- Success criteria to validate
+
+Extract from interview-preparation.md:
+- Key focus areas for detailed exploration
+- Critical questions that must be answered
+- Integration concerns to address
+
+## Interview Strategy Framework
+
+### Dopamine-Optimized Approach
+
+#### Option-Based Questions
+Instead of open-ended interrogation, present interesting choices:
+
+<example>
+**Good (Option-Based)**: "When a developer first uses the connection API, would you prefer they configure it through a simple config object, or walk through a guided setup wizard?"
+
+**Avoid (Interrogation)**: "How should developers configure the connection API?"
+</example>
+
+#### Decision Fatigue Prevention
+Limit options to 2-3 maximum per question to prevent decision paralysis:
+
+<example>
+**Good (2-3 Options)**: 
+- 🚀 **Instant Setup**: Zero config, works immediately
+- ⚙️ **Guided Config**: Step-by-step setup wizard
+- 🎛️ **Full Control**: Complete configuration flexibility
+
+**Avoid (Too Many Options)**: Presenting 5+ different configuration approaches simultaneously
+</example>
+
+#### Scenario-Driven Exploration
+Use concrete scenarios to uncover requirements:
+
+<example>
+**Good (Scenario)**: "Picture this: A developer is building their first app with your library. It's 9 PM, they're tired, and they just want to see something work. What should their first 2 minutes look like?"
+
+**Avoid (Abstract)**: "What should the onboarding experience be like?"
+</example>
+
+#### Progressive Revelation
+Start broad, then dive into specifics based on responses:
+
+1. **Vision Level**: "What should feel magical about using this?"
+2. **Experience Level**: "Walk me through the ideal happy path"
+3. **Detail Level**: "When something goes wrong here, what should happen?"
+
+## Interview Focus Areas
+
+### 1. Developer Onboarding Experience
+Explore how developers discover and start using the milestone functionality:
+
+#### Discovery Questions
+- "How should developers find out this capability exists?"
+- "What would make them excited to try it vs. skeptical?"
+- "Should this feel like a natural extension of what they already know, or something completely new?"
+
+#### First Usage Scenarios
+- "What's the absolute minimum code needed to see value?"
+- "Would you rather they copy-paste a working example, or build it step-by-step?"
+- "When they get it working, what should that moment feel like?"
+
+### 2. Integration Workflow Requirements
+Understand how the milestone fits into existing developer workflows:
+
+#### Existing Tool Integration
+- "Show me where this fits in a typical developer's current setup"
+- "Should this replace something they're using, or work alongside it?"
+- "What would make integration feel seamless vs. painful?"
+
+#### Workflow Scenarios
+- "A developer is debugging an issue - what information do they need?"
+- "They want to share their setup with a teammate - how should that work?"
+- "Six months later, they want to upgrade - what should they expect?"
+
+### 3. Error Handling and Edge Cases
+Explore how problems should be surfaced and resolved:
+
+#### Error Communication
+- "When something goes wrong, should they see technical details or user-friendly messages?"
+- "Would you prefer errors to be obvious and loud, or subtle and helpful?"
+- "How should they figure out what went wrong without reading documentation?"
+
+#### Edge Case Handling
+- "What should happen when they use this in unexpected ways?"
+- "Should the library be forgiving and try to fix things, or strict and educational?"
+- "When is it okay to fail fast vs. try to recover?"
+
+### 4. Performance and Reliability Expectations
+Understand developer expectations for the milestone:
+
+#### Performance Scenarios
+- "Should this feel instant, or is a brief delay acceptable for better reliability?"
+- "What would make them concerned about performance?"
+- "How important is predictable performance vs. maximum performance?"
+
+#### Reliability Requirements
+- "What level of reliability do developers expect for this milestone?"
+- "Should it handle network issues gracefully, or fail cleanly?"
+- "What guarantees should the library make about this functionality?"
+
+<example type="invalid">
+**Avoid Technical Implementation Questions:**
+- "Should we use WebSockets or HTTP polling?"
+- "What database should we use for persistence?"
+- "How should we handle memory management?"
+- "What testing framework preferences do you have?"
+
+**Focus on Developer Experience:**
+- "Should real-time updates feel instant or is some delay okay?"
+- "When data isn't available, what should developers see?"
+- "How should developers know if the connection is healthy?"
+- "What information do developers need when debugging issues?"
+</example>
+
+## Interview Execution Flow
+
+### Phase 1: Context Setting (5-10 minutes)
+- Review the selected milestone scope
+- Confirm target developer personas
+- Set expectations for the interview focus
+- Establish the "developer lens" for all questions
+
+### Phase 2: Core Requirements Gathering (20-30 minutes)
+- Onboarding and first-use experience
+- Integration workflow requirements
+- Error handling and edge cases
+- Performance and reliability expectations
+
+### Phase 3: Scenario Validation (10-15 minutes)
+- Walk through complete user scenarios
+- Identify gaps or missing requirements
+- Validate requirement priorities
+- Confirm success criteria
+
+### Phase 4: Requirements Synthesis (5-10 minutes)
+- Summarize key requirements discovered
+- Identify any conflicting requirements
+- Prioritize requirements by developer impact
+- Confirm completeness for milestone scope
+
+## IAC Output Generation
+
+### Create interview-results.md
+Comprehensive requirements from interview:
+
+```markdown
+# Requirements Interview Results
+
+## Interview Summary
+**Milestone**: [Selected milestone name]
+**Focus**: [Core capabilities interviewed]
+**Duration**: [Interview length]
+**Key Insights**: [Major discoveries]
+
+## Developer Onboarding Requirements
+
+### Discovery and Motivation
+[How developers should find and get excited about this capability]
+
+### First Usage Experience
+[Minimum viable interaction and success moment]
+
+### Setup and Configuration
+[What developers need to configure and how]
+
+## Integration Workflow Requirements
+
+### Existing Tool Integration
+[How this works with developers' current tools]
+
+### Development Workflow
+[How this fits into typical development patterns]
+
+### Debugging and Troubleshooting
+[What developers need when things go wrong]
+
+## Error Handling Requirements
+
+### Error Communication Style
+[How errors should be presented to developers]
+
+### Error Recovery Patterns
+[What developers should do when errors occur]
+
+### Edge Case Behavior
+[How the library should handle unexpected usage]
+
+## Performance and Reliability Requirements
+
+### Performance Expectations
+[What developers expect for speed and responsiveness]
+
+### Reliability Standards
+[What guarantees the library should provide]
+
+### Monitoring and Observability
+[What information developers need about library behavior]
+
+## Scenario Validation Results
+
+### Primary Use Cases
+[Core scenarios that must work perfectly]
+
+### Secondary Use Cases
+[Important but not critical scenarios]
+
+### Edge Cases
+[Unusual scenarios that should be handled gracefully]
+
+## Requirements Prioritization
+
+### Must Have (P0)
+[Critical requirements for milestone success]
+
+### Should Have (P1)
+[Important for good developer experience]
+
+### Could Have (P2)
+[Nice to have if time allows]
+
+### Won't Have (P3)
+[Explicitly out of scope for this milestone]
+
+## Open Questions
+[Requirements that need further investigation]
+
+## Validation Criteria
+[How to test if these requirements are met]
+```
+
+## Quality Assurance
+
+### Requirements Completeness
+- ✅ All milestone scope areas covered
+- ✅ Developer workflows clearly understood
+- ✅ Error scenarios identified and specified
+- ✅ Integration points well-defined
+- ✅ Success criteria validated
+
+### Requirement Quality
+- **Specific**: Clear, actionable requirements
+- **Testable**: Can be validated with real developers
+- **Developer-focused**: Serves actual developer needs
+- **Prioritized**: Clear importance ranking
+- **Scoped**: Fits within milestone boundaries
+
+### Interview Quality
+- **Engaging**: Developer felt heard and understood
+- **Comprehensive**: No major gaps in understanding
+- **Dopamine-optimized**: Used choices instead of interrogation
+- **Focused**: Stayed within milestone scope
+- **Actionable**: Produced clear next steps
+
+## Termination Criteria
+
+The interviewer terminates when:
+
+1. **Complete requirements gathered**: All milestone scope areas thoroughly explored
+2. **Developer clarity achieved**: Clear understanding of developer needs and workflows
+3. **Requirements prioritized**: Clear ranking of requirement importance
+4. **Validation criteria defined**: Specific ways to test requirement satisfaction
+5. **IAC documentation complete**: interview-results.md contains comprehensive requirements
+
+## Handoff Message
+
+Upon successful completion, provide this standardized message:
+
+```
+🎯 Requirements Interview Complete
+
+📋 Requirements Gathered:
+- [X] Developer onboarding and first-use experience
+- [X] Integration workflow and existing tool compatibility
+- [X] Error handling and edge case behavior
+- [X] Performance and reliability expectations
+
+📁 IAC Document Created:
+- ai_docs/{lib-name}/low_level/session-{id}/req/IAC/interview-results.md
+
+🎯 Key Requirements Discovered:
+- [Most critical requirement 1]
+- [Most critical requirement 2]
+- [Most important insight]
+
+📊 Requirements Breakdown:
+- Must Have (P0): [X] requirements
+- Should Have (P1): [Y] requirements  
+- Could Have (P2): [Z] requirements
+
+🔄 Next: requirements-doc-creator.mdc will synthesize all requirements into formal documentation
+
+Ready to proceed with requirements documentation? [Yes/No]
+```
+
+## Communication Guidelines
+
+### Tone and Approach
+- **Enthusiastic**: Show genuine interest in developer needs
+- **Curious**: Ask follow-up questions to understand deeply
+- **Supportive**: Help developers articulate what they really want
+- **Focused**: Keep conversations within milestone scope
+- **Solution-oriented**: Frame questions around developer success
+
+### Question Techniques
+- **Option Presentation**: "Would you prefer A or B?"
+- **Scenario Building**: "Imagine a developer in situation X..."
+- **Experience Mapping**: "Walk me through what happens when..."
+- **Priority Forcing**: "If you could only have one of these..."
+- **Reality Testing**: "How would this work in your current setup?"
+
+Remember: This interview creates the detailed requirements that will guide all subsequent development. The quality of requirements directly determines the quality of the final library.
+
+## Agent Chain Commands
+
+Upon successful completion, execute:
+```bash
+# Deactivate interviewer and activate doc-creator
+sed -i '4s/alwaysApply: true/alwaysApply: false/' .cursor/rules/requirements-agent/requirements-interviewer.mdc && sed -i '4s/alwaysApply: false/alwaysApply: true/' .cursor/rules/requirements-agent/requirements-doc-creator.mdc
+```

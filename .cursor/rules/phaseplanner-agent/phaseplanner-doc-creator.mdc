@@ -3,8 +3,627 @@ description:
 globs: 
 alwaysApply: false
 ---
-ai_docs/[lib_name]/low_level/[session_name]/plan/
-├── phase-definitions.md     # Max 150 Zeilen - Scope + Boundaries + Dependencies
-├── success-criteria.md      # Max 100 Zeilen - Testing gates + Validation
-├── implementation-guide.md  # Max 100 Zeilen - Developer Agent instructions
-└── IAC/
+# Phase Planning Documentation Creator
+
+## Critical Rules
+
+- **Implementation-ready phases**: Create actionable phase definitions for AI-assisted solo development
+- **Container-validated criteria**: Define measurable, Docker-testable success criteria for each phase
+- **AI-accelerated timelines**: Ground all estimates in AI-assisted development velocity
+- **Automation-first planning**: Include automated testing and validation in every phase
+- **Efficient value delivery**: Ensure each phase delivers working software with minimal overhead
+
+## IAC Input Analysis
+
+### Required Input Files
+- `ai_docs/{lib-name}/low_level/session-{id}/plan/IAC/analysis-summary.md`
+- `ai_docs/{lib-name}/low_level/session-{id}/plan/IAC/phase-preparation.md`
+- `ai_docs/{lib-name}/low_level/session-{id}/design/architecture.md`
+- `ai_docs/{lib-name}/low_level/session-{id}/design/technology-stack.md`
+- `ai_docs/{lib-name}/high_level/milestones.md`
+
+### Documentation Synthesis Framework
+
+#### 1. Phase Definition Consolidation
+From analysis-summary.md, extract:
+- **Phase boundaries and scope** for each identified development phase
+- **Dependency relationships** between phases and external components
+- **Risk assessments** and mitigation strategies per phase
+- **Capacity estimates** and team resource requirements
+- **Timeline projections** with appropriate buffers
+
+#### 2. Implementation Planning Integration
+From design documents, incorporate:
+- **Technical specifications** that affect implementation sequencing
+- **Architecture decisions** that impact phase planning
+- **Quality requirements** that must be met in each phase
+- **Integration patterns** that influence phase boundaries
+- **Technology constraints** that affect development velocity
+
+#### 3. Success Metrics Framework
+Define comprehensive success criteria:
+- **Technical validation** - Does the implementation meet architectural requirements?
+- **Functional validation** - Do features work as specified for users?
+- **Quality validation** - Does the code meet quality and performance standards?
+- **Business validation** - Does the phase deliver measurable business value?
+
+## Phase Documentation Creation Strategy
+
+### 1. Phase Definitions Framework
+
+Each phase must include:
+
+#### Scope and Objectives
+- **Primary deliverables** - What gets built in this phase
+- **User value delivered** - How this phase benefits end users
+- **Technical foundation established** - What this enables for future phases
+- **Business value achieved** - Measurable impact on project objectives
+
+#### Development Requirements
+- **AI assistance level** - Which parts benefit from AI code generation
+- **Container setup** - Docker development and testing environment
+- **External dependencies** - Minimal, well-maintained packages only
+- **Automation tooling** - Testing, linting, and validation pipeline setup
+
+#### Success Criteria Definition
+- **Functional requirements** - Features that must work correctly
+- **Non-functional requirements** - Performance, security, usability standards
+- **Quality gates** - Code coverage, testing, and review standards
+- **User acceptance criteria** - How success will be validated with stakeholders
+
+<example>
+**Well-Defined Phase:**
+**Phase 2: Core User Workflow Implementation**
+- **Scope**: User registration, authentication, and primary dashboard functionality
+- **Duration**: 1-2 weeks (AI-accelerated development)
+- **AI Focus**: High - authentication boilerplate, form validation, API endpoints
+- **Success Criteria**: Users can register, log in, and access dashboard - validated via Docker container
+- **Dependencies**: Phase 1 (authentication infrastructure) must be complete
+- **Automation**: Frontend-backend integration validated through automated container testing
+</example>
+
+### 2. Implementation Guide Structure
+
+#### Solo Development Workflow per Phase
+- **AI-assisted development** - Leverage AI for boilerplate, testing, documentation
+- **Container-first iteration** - Develop and test everything in Docker environment
+- **Automated validation** - Unit, integration, and container-based end-to-end testing
+- **Git-based progress tracking** - Standardized commits for phase completion validation
+
+#### Automated Quality Assurance
+- **AI-assisted code review** - AI tools for code quality and best practices
+- **Container-based testing** - All testing runs in Docker for consistency
+- **Automated validation pipelines** - CI/CD with TypeScript, linting, testing
+- **Performance monitoring** - Automated performance testing in containers
+
+#### Efficiency-First Risk Management
+- **AI-assisted debugging** - Use AI tools for rapid issue identification
+- **Container isolation** - Docker reduces environment-related risks
+- **Minimal dependencies** - Fewer external dependencies = fewer failure points
+- **Automated quality gates** - Catch issues early through automation
+
+### 3. Success Criteria Documentation
+
+#### Container-Validated Success Framework
+
+**Technical Success Criteria**
+- **Functionality**: All features work as designed in Docker container
+- **Performance**: System meets defined speed requirements in containerized environment
+- **Security**: No critical vulnerabilities, proper TypeScript types
+- **Maintainability**: Clean code, documented, follows state-of-the-art patterns
+- **Integration**: All components work together in container deployment
+
+**Developer Experience Success Criteria**
+- **API Design**: Intuitive, discoverable interfaces for other developers
+- **Documentation**: Clear examples and usage patterns
+- **Testing**: Comprehensive test suite runs in container
+- **Deployment**: Simple Docker-based deployment process
+- **Maintainability**: Minimal dependencies, clear architecture
+
+**Library Quality Success Criteria**
+- **Performance**: Fast execution, minimal bundle size
+- **Reliability**: Robust error handling, graceful degradation
+- **Compatibility**: Works across target environments
+- **Security**: Secure by default, proper input validation
+- **Efficiency**: Optimal resource usage, no memory leaks
+
+#### Automated Validation Process
+- **Container testing** - All tests run in Docker environment
+- **AI-assisted validation** - Use AI for code review and optimization suggestions
+- **Automated quality metrics** - Code coverage, performance benchmarks, security scans
+- **Git-based progress tracking** - Standardized commit messages for milestone tracking
+
+## Output Document Generation
+
+### Create phase-definitions.md
+Comprehensive phase breakdown for AI-assisted solo development:
+
+```markdown
+# Phase Definitions and Implementation Plan
+
+## Overview
+**Project**: [Library/Project Name]
+**Total Phases**: [X] phases spanning [X] weeks
+**Development Approach**: AI-assisted solo development with container-first validation
+**Quality Strategy**: Automated testing and validation pipelines
+
+## Phase 1: [Foundation Layer]
+
+### Scope and Objectives
+**Primary Goal**: [Establish foundational infrastructure and core functionality]
+**Key Deliverables**:
+- [Specific deliverable 1]
+- [Specific deliverable 2]
+- [Specific deliverable 3]
+
+**Developer Value**: [How this phase enables efficient development]
+**Technical Foundation**: [What this enables for future phases]
+**Container Validation**: [How phase success is validated via Docker]
+
+### Development Requirements
+**Duration**: [X] weeks (AI-accelerated timeline)
+**AI Assistance Level**: [High/Medium/Low] - [Specific areas for AI assistance]
+**Container Setup**: [Docker environment and testing requirements]
+**Dependencies**: [Minimal external dependencies and package requirements]
+
+### Success Criteria
+**Functional Requirements**:
+- ✅ [Specific functional requirement 1]
+- ✅ [Specific functional requirement 2]
+- ✅ [Specific functional requirement 3]
+
+**Container Validation**:
+- Docker build: Successful container creation
+- Tests: All tests pass in container environment
+- Performance: Meets speed requirements in containerized deployment
+- Integration: All components work together in Docker
+
+**Code Quality Standards**:
+- TypeScript: Strict type checking passes
+- Linting: ESLint passes with zero warnings
+- Testing: [X]% code coverage minimum
+- Security: No critical vulnerabilities
+
+### AI-Assisted Development Plan
+**High AI Assistance Areas**:
+- [Boilerplate code generation]
+- [Test suite creation]
+- [Documentation generation]
+
+**Medium AI Assistance Areas**:
+- [API design refinement]
+- [Error handling patterns]
+
+**Low AI Assistance Areas**:
+- [Business logic implementation]
+- [Architecture decisions]
+
+### Risk Assessment
+**Risk Level**: [Low/Medium/High]
+**Primary Risks**:
+- [Risk 1]: [AI-assisted mitigation strategy]
+- [Risk 2]: [Container-based validation approach]
+
+**Automation-First Mitigation**:
+- [Automated testing strategy]
+- [Container-based validation]
+- [AI-assisted debugging approach]
+
+## Phase Dependencies Matrix
+| Phase | Depends On | Enables | Container Validation |
+|-------|------------|---------|---------------------|
+| Phase 1 | [External deps] | Phase 2, 3 | Docker + tests pass |
+| Phase 2 | Phase 1 | Phase 3, 4 | Integration tests pass |
+| Phase 3 | Phase 2 | Phase 4, 5 | E2E tests pass |
+| Phase 4 | Phase 2 | Phase 5 | Performance tests pass |
+| Phase 5 | Phase 3, 4 | Project completion | Full deployment success |
+
+## Development Efficiency Overview
+**AI Acceleration Factor**: [Estimated speedup from AI assistance]
+**Container Benefits**: [Environment consistency, testing reliability]
+**Quality Automation**: [Automated validation reduces manual overhead]
+```
+
+### Create implementation-guide.md
+Detailed implementation methodology:
+
+```markdown
+# Implementation Guide and Development Methodology
+
+## Development Process Framework
+
+### Agile Implementation Approach
+**Sprint Structure**: [Sprint length and planning approach]
+**Team Ceremonies**:
+- Daily Stand-ups: [Format and timing]
+- Sprint Planning: [Process and participants]
+- Sprint Reviews: [Demonstration and feedback process]
+- Retrospectives: [Continuous improvement process]
+
+### Phase Development Workflow
+
+#### Pre-Phase Preparation
+**Week Before Phase Start**:
+- [ ] Team availability confirmed
+- [ ] Dependencies resolved or mitigation plans active
+- [ ] Development environment prepared
+- [ ] Required tools and access provisioned
+- [ ] Stakeholder expectations aligned
+
+#### Phase Execution Process
+
+**Week 1: Foundation and Setup**
+- Sprint 1 Planning: Break phase scope into specific tasks
+- Environment Setup: Ensure all team members can contribute effectively
+- Risk Monitoring: Identify early warning signs of potential issues
+- Daily Progress Tracking: Monitor velocity against plan
+
+**Week 2-3: Core Development**
+- Feature Implementation: Build and test core functionality
+- Integration Testing: Ensure components work together properly
+- Quality Assurance: Continuous testing and validation
+- Stakeholder Updates: Regular communication on progress
+
+**Week 4: Integration and Validation**
+- End-to-End Testing: Validate complete user workflows
+- Performance Testing: Ensure system meets performance requirements
+- User Acceptance Testing: Validate with actual users or stakeholders
+- Documentation: Update technical and user documentation
+
+**Phase Completion**:
+- [ ] All success criteria validated
+- [ ] Code reviewed and merged
+- [ ] Documentation updated
+- [ ] Stakeholder sign-off obtained
+- [ ] Next phase preparation initiated
+
+### Quality Assurance Integration
+
+#### Code Quality Standards
+**Development Standards**:
+- Code review process: [Peer review requirements]
+- Testing requirements: [Unit test coverage minimum]
+- Documentation standards: [Code and API documentation]
+- Performance standards: [Response time and throughput requirements]
+
+**Automated Quality Gates**:
+- Continuous Integration: [CI/CD pipeline requirements]
+- Automated Testing: [Test suite execution requirements]
+- Code Quality Metrics: [Static analysis and quality metrics]
+- Security Scanning: [Automated security validation]
+
+#### Testing Strategy per Phase
+
+**Unit Testing**:
+- Coverage Requirements: [Minimum percentage coverage]
+- Test Quality Standards: [What makes a good unit test]
+- Automation Requirements: [Automated test execution]
+
+**Integration Testing**:
+- API Testing: [How to validate API functionality]
+- Database Testing: [Data integrity and performance testing]
+- Third-party Integration: [External service integration validation]
+
+**End-to-End Testing**:
+- User Workflow Testing: [Complete user journey validation]
+- Cross-browser Testing: [Browser compatibility requirements]
+- Performance Testing: [Load and stress testing approach]
+
+### Risk Management and Contingency Planning
+
+#### Daily Risk Monitoring
+**Risk Indicators to Track**:
+- Velocity vs. Plan: [How to identify if development is falling behind]
+- Quality Metrics: [When quality indicators suggest problems]
+- Team Availability: [How to handle unexpected absences]
+- External Dependencies: [Monitoring third-party service health]
+
+#### Escalation Procedures
+**Level 1 - Team Level** (Issues resolved within 24 hours):
+- Technical blockers within team expertise
+- Minor scope clarifications
+- Resource allocation adjustments
+
+**Level 2 - Project Level** (Issues requiring 2-3 days):
+- Cross-team dependency issues
+- Significant technical challenges
+- Resource conflicts or availability issues
+
+**Level 3 - Stakeholder Level** (Issues requiring management decision):
+- Scope changes affecting timeline or budget
+- Technical decisions requiring architecture changes
+- External dependency failures requiring business decisions
+
+#### Contingency Plan Activation
+**Common Scenarios and Responses**:
+- Team Member Unavailability: [Resource reallocation process]
+- Technical Blocker: [Alternative implementation approach]
+- External Dependency Failure: [Workaround or alternative service]
+- Performance Issues: [Optimization strategy and timeline adjustment]
+
+### Communication and Collaboration
+
+#### Stakeholder Communication Plan
+**Daily Updates**: [Who receives what information]
+**Weekly Reports**: [Progress summary and upcoming focus]
+**Phase Completion**: [Demonstration and approval process]
+**Issue Escalation**: [How and when to communicate problems]
+
+#### Team Collaboration Tools
+**Development Tools**: [Code repository, build systems, testing tools]
+**Communication Tools**: [Chat, video conferencing, documentation]
+**Project Management**: [Task tracking, timeline management, reporting]
+**Quality Assurance**: [Code review, testing, and validation tools]
+
+## Phase Transition Management
+
+### Phase Completion Checklist
+- [ ] All functional requirements implemented and tested
+- [ ] Performance benchmarks met
+- [ ] Security requirements validated
+- [ ] Documentation completed and reviewed
+- [ ] Stakeholder approval obtained
+- [ ] Code merged and deployed to appropriate environment
+- [ ] Team retrospective completed
+- [ ] Lessons learned documented
+- [ ] Next phase preparation initiated
+
+### Handoff to Next Phase
+**Documentation Handoff**: [What documentation must be updated]
+**Technical Handoff**: [System state and configuration]
+**Team Handoff**: [Knowledge transfer and role transitions]
+**Stakeholder Handoff**: [Business approval and next phase alignment]
+```
+
+### Create success-criteria.md
+Comprehensive validation framework:
+
+```markdown
+# Success Criteria and Validation Framework
+
+## Overall Project Success Framework
+
+### Primary Success Metrics
+**Business Success Indicators**:
+- [Primary business metric]: [Target value and measurement method]
+- [Secondary business metric]: [Target value and measurement method]
+- [User adoption metric]: [Target value and measurement method]
+
+**Technical Success Indicators**:
+- System Performance: [Response time, throughput, availability targets]
+- Code Quality: [Coverage, maintainability, security metrics]
+- User Experience: [Usability metrics, error rates, user satisfaction]
+
+**Project Management Success**:
+- Schedule Adherence: [On-time delivery within X% of planned timeline]
+- Budget Compliance: [Within X% of allocated budget]
+- Quality Delivery: [Defect rates below X per 1000 lines of code]
+
+## Phase-Specific Success Criteria
+
+### Phase 1: [Foundation Layer] Success Criteria
+
+#### Functional Validation
+**Core Functionality Tests**:
+- [ ] User authentication system operational
+  - Users can register with valid credentials
+  - Login/logout functionality works correctly
+  - Password reset process functional
+  - Session management secure and reliable
+
+- [ ] Database operations functional
+  - CRUD operations work for all core entities
+  - Data integrity maintained across operations
+  - Query performance meets specified targets
+  - Backup and recovery procedures tested
+
+- [ ] API framework operational
+  - All planned endpoints respond correctly
+  - Error handling returns appropriate status codes
+  - Request/response validation working
+  - API documentation accurate and complete
+
+#### Performance Validation
+**System Performance Requirements**:
+- Response Time: API responses < [X]ms for 95% of requests
+- Throughput: System handles [X] concurrent users
+- Availability: System uptime > [X]% during testing period
+- Scalability: System performance degradation < [X]% under maximum load
+
+#### Security Validation
+**Security Requirements Met**:
+- [ ] Authentication mechanisms secure (password policies, session management)
+- [ ] Authorization controls functional (role-based access working)
+- [ ] Data encryption implemented (data at rest and in transit)
+- [ ] Input validation prevents injection attacks
+- [ ] Security headers properly configured
+- [ ] Vulnerability scan shows no critical issues
+
+#### Quality Validation
+**Code Quality Standards**:
+- Test Coverage: [X]% minimum coverage across all modules
+- Code Review: 100% of code reviewed and approved
+- Documentation: All APIs and core functions documented
+- Code Standards: Passes automated linting and style checks
+- Performance: No memory leaks or performance anti-patterns
+
+### Phase 2: [Core Value Delivery] Success Criteria
+[Similar detailed structure for each subsequent phase]
+
+## Validation Process and Tools
+
+### Automated Validation
+**Continuous Integration Checks**:
+- [ ] All unit tests pass
+- [ ] Integration tests pass
+- [ ] Security scans show no critical vulnerabilities
+- [ ] Performance tests meet targets
+- [ ] Code quality metrics meet standards
+
+**Automated Deployment Validation**:
+- [ ] Application deploys successfully to test environment
+- [ ] Health checks pass post-deployment
+- [ ] End-to-end smoke tests pass
+- [ ] Performance monitoring shows normal operation
+
+### Manual Validation Process
+
+#### User Acceptance Testing
+**Testing Approach**:
+- Test Participants: [User personas or stakeholder representatives]
+- Test Scenarios: [Key user workflows to validate]
+- Success Criteria: [What constitutes successful user testing]
+- Feedback Collection: [How to gather and prioritize user feedback]
+
+#### Stakeholder Review Process
+**Review Participants**: [Business stakeholders, product owners, technical leads]
+**Review Format**: [Demonstration, documentation review, hands-on testing]
+**Approval Criteria**: [What stakeholders need to see to approve phase completion]
+**Decision Timeline**: [Maximum time for stakeholder review and approval]
+
+#### Quality Assurance Validation
+**QA Testing Scope**:
+- Functional Testing: [Verification that features work as specified]
+- Regression Testing: [Verification that existing functionality still works]
+- Integration Testing: [Verification that all components work together]
+- Performance Testing: [Verification that performance targets are met]
+- Security Testing: [Verification that security requirements are met]
+
+### Success Measurement and Reporting
+
+#### Metrics Collection
+**Technical Metrics**:
+- Performance Metrics: [Response times, throughput, error rates]
+- Quality Metrics: [Test coverage, defect density, code complexity]
+- Security Metrics: [Vulnerability count, security test results]
+
+**Business Metrics**:
+- Feature Usage: [How often new features are used]
+- User Satisfaction: [User feedback scores and comments]
+- Business Impact: [Contribution to business objectives]
+
+#### Reporting Framework
+**Daily Reports**: [Key metrics for team monitoring]
+**Weekly Reports**: [Progress summary for stakeholders]
+**Phase Completion Reports**: [Comprehensive validation results]
+
+## Risk Validation and Mitigation Success
+
+### Risk Mitigation Effectiveness
+**Risk Monitoring Results**:
+- [ ] Identified risks successfully monitored
+- [ ] Mitigation plans executed when needed
+- [ ] Contingency plans tested and ready
+- [ ] No critical unplanned risks emerged
+
+### Quality Gate Validation
+**Phase Gate Criteria**:
+- [ ] All functional requirements implemented and tested
+- [ ] All non-functional requirements met
+- [ ] All quality standards achieved
+- [ ] All stakeholder approvals obtained
+- [ ] All documentation completed and approved
+- [ ] Team ready to proceed to next phase
+
+## Continuous Improvement Integration
+
+### Retrospective Success Criteria
+**Team Effectiveness**:
+- [ ] Team velocity maintained or improved
+- [ ] Team satisfaction maintained or improved
+- [ ] Communication effectiveness maintained or improved
+- [ ] Process improvements identified and implemented
+
+### Learning and Adaptation
+**Knowledge Transfer**:
+- [ ] Technical knowledge documented and shared
+- [ ] Process improvements identified and documented
+- [ ] Best practices captured for future phases
+- [ ] Lessons learned integrated into future planning
+
+**Process Evolution**:
+- [ ] Development process refined based on experience
+- [ ] Quality processes improved based on results
+- [ ] Risk management approach enhanced
+- [ ] Communication processes optimized
+```
+
+## Quality Validation
+
+### Documentation Completeness Check
+- ✅ Phase definitions comprehensive with clear scope and objectives
+- ✅ Implementation guide provides actionable development methodology
+- ✅ Success criteria framework enables measurable validation
+- ✅ Risk management integrated throughout all documentation
+- ✅ Timeline estimates realistic and based on team capacity
+- ✅ Resource allocation clearly defined for each phase
+- ✅ Quality standards established and measurable
+
+### Implementation Readiness Criteria
+- **Actionable Phases**: Each phase can be started immediately by development team
+- **Clear Dependencies**: All dependencies identified and resolution plans in place
+- **Measurable Success**: Each phase has specific, testable completion criteria
+- **Risk-Aware Planning**: Contingency plans prepared for identified risks
+- **Resource-Aligned**: Phase requirements match available team capacity
+- **Value-Focused**: Each phase delivers meaningful progress toward final product
+
+## Termination Criteria
+
+The doc-creator terminates when:
+
+1. **Complete phase documentation**: All phases documented with comprehensive scope, success criteria, and implementation guidance
+2. **Implementation methodology defined**: Clear development process and quality standards established
+3. **Success validation framework**: Measurable criteria and validation process defined for each phase
+4. **Risk management integration**: Contingency plans and risk mitigation integrated throughout
+5. **Output documents complete**: phase-definitions.md, implementation-guide.md, and success-criteria.md created with actionable content
+
+## Handoff Message
+
+Upon successful completion, provide this standardized message:
+
+```
+📋 Phase Planning Documentation Complete
+
+📊 Documentation Summary:
+- Total Phases Defined: [X] phases spanning [Y] weeks
+- Implementation Methodology: [Agile/Hybrid] with [sprint/iteration] cycles
+- Success Criteria: [X] measurable validation points per phase
+- Risk Management: [X] identified risks with mitigation plans
+
+📁 Output Documents Created:
+- ai_docs/{lib-name}/low_level/session-{id}/plan/phase-definitions.md
+- ai_docs/{lib-name}/low_level/session-{id}/plan/implementation-guide.md
+- ai_docs/{lib-name}/low_level/session-{id}/plan/success-criteria.md
+
+🎯 Implementation Ready:
+- Phase 1 Start Date: [Immediate/Date]
+- Team Requirements: [X] developers, [Y] QA, [Z] other roles
+- Infrastructure Needs: [Development environment, tools, services]
+
+📈 Success Framework:
+- Technical Validation: [Automated testing, performance benchmarks]
+- Business Validation: [User acceptance criteria, stakeholder approval]
+- Quality Gates: [Code coverage, security scans, review process]
+
+🔄 Next: softwaredev-agent will begin iterative implementation and testing
+
+Ready to begin Phase 1 implementation? [Yes/No]
+```
+
+## Planning Excellence Principles
+
+- **Implementation-First Design**: Every plan element must be actionable by development teams
+- **Value-Driven Sequencing**: Phases ordered by user value delivery and risk reduction
+- **Realistic Capacity Planning**: All estimates grounded in team velocity and constraints
+- **Quality-Integrated Process**: Quality validation built into every phase, not added afterward
+- **Stakeholder-Aligned Delivery**: Each phase delivers value that stakeholders can evaluate
+
+## Agent Chain Commands
+
+Upon successful completion, execute:
+```bash
+# Deactivate doc-creator and activate softwaredev-agent analyze_phase
+sed -i '4s/alwaysApply: true/alwaysApply: false/' .cursor/rules/phaseplanner-agent/phaseplanner-doc-creator.mdc && sed -i '4s/alwaysApply: false/alwaysApply: true/' .cursor/rules/softwaredev-agent/analyze_phase.mdc
+```
+
+Remember: Great planning documents are those that enable great execution. Every detail should serve the ultimate goal of delivering working software that creates value for users.

@@ -3,37 +3,265 @@ description:
 globs: 
 alwaysApply: false
 ---
+# Requirements Milestone Analyzer
 
-### Required Document Analysis
+## Critical Rules
+
+- **Milestone focus**: Select one specific milestone from milestones.md for detailed analysis
+- **Developer value priority**: Choose milestone with highest developer impact
+- **Testable scope**: Ensure selected milestone is small enough to validate quickly
+- **Foundation first**: Prioritize milestones that enable future development
+- **No technical decisions**: Focus on what developers need, not how to build it
+
+## Input Analysis Protocol
+
+### Required Input Documents
+- `ai_docs/{lib-name}/high_level/lib-overview.md`
+- `ai_docs/{lib-name}/high_level/api.md`
+- `ai_docs/{lib-name}/high_level/milestones.md`
+- `ai_docs/{lib-name}/high_level/user-stories.md`
+- `ai_docs/{lib-name}/high_level/handoff-summary.md`
+
+### Analysis Framework
+
+#### 1. Vision Comprehension
+Extract and understand:
+- Core value proposition from lib-overview.md
+- Target developer personas and their pain points
+- Unique differentiators that must be preserved
+- Success metrics and validation criteria
+
+#### 2. Milestone Evaluation
+For each milestone in milestones.md, assess:
+- **Developer Impact**: How much value does this deliver?
+- **Validation Potential**: Can success be measured quickly?
+- **Foundation Value**: Does this enable future milestones?
+- **Scope Clarity**: Is the scope well-defined and achievable?
+- **Risk Level**: What could go wrong and how to mitigate?
+
+#### 3. API Surface Analysis
+From api.md, identify:
+- Core APIs needed for selected milestone
+- Integration points with existing tools
+- Developer workflow implications
+- Error handling requirements
+
+<example>
+**Good Milestone Selection:**
+"Milestone 1: Core Connection API" - Enables basic library usage, easily testable, foundation for everything else
+
+**Avoid Complex First Milestones:**
+"Milestone 3: Advanced Plugin System" - Too complex, depends on earlier work, hard to validate independently
+</example>
+
+## Selection Criteria
+
+### Primary Criteria (Must Have)
+- **Immediate Value**: Developers can use it right away
+- **Clear Success**: Obvious way to test if it works
+- **Manageable Scope**: Completable in 1-2 weeks
+- **Foundation Building**: Enables subsequent milestones
+
+### Secondary Criteria (Nice to Have)
+- **High Visibility**: Showcases the library's unique value
+- **Quick Wins**: Builds momentum for the project
+- **Market Validation**: Tests core assumptions with real developers
+- **Community Building**: Attracts early adopters and contributors
+
+### Evaluation Matrix
+Score each milestone (1-5 scale):
+
+| Milestone | Dev Value | Testability | Scope | Foundation | Total |
+|-----------|-----------|-------------|-------|------------|-------|
+| M1        | 5         | 5           | 4     | 5          | 19    |
+| M2        | 3         | 4           | 5     | 3          | 15    |
+| M3        | 4         | 2           | 3     | 2          | 11    |
+
+## Analysis Deep Dive
+
+### Developer Journey Mapping
+Map the selected milestone to developer experience:
+
+1. **Discovery**: How do developers find and evaluate the capability?
+2. **First Usage**: What's the absolute minimum viable interaction?
+3. **Success Moment**: When do developers realize the value?
+4. **Integration**: How does this fit into their existing workflow?
+5. **Expansion**: What do they want to do next?
+
+### Requirements Surface Area
+Identify what needs detailed requirements gathering:
+
+#### Core Functionality Requirements
+- Primary APIs and their behavior
+- Input validation and error handling
+- Performance expectations
+- Integration capabilities
+
+#### Developer Experience Requirements  
+- Installation and setup process
+- Documentation and examples needed
+- Debugging and troubleshooting support
+- Migration or upgrade paths
+
+#### Validation Requirements
+- Success criteria and metrics
+- Testing approaches for each user story
+- Feedback collection mechanisms
+- Iteration and improvement processes
+
+<example type="invalid">
+**Avoid Technical Implementation Focus:**
+- "How should we structure the codebase?"
+- "What testing framework should we use?"
+- "Which CI/CD pipeline is best?"
+
+**Focus on Developer Needs:**
+- "What information do developers need to get started?"
+- "How should errors be communicated to developers?"
+- "What examples would make the API clear?"
+</example>
+
+## IAC Output Generation
+
+### Create analysis-summary.md
+Comprehensive milestone analysis:
+
+```markdown
+# Requirements Analysis Summary
+
+## Selected Milestone
+**Milestone X**: [Name and brief description]
+
+## Selection Rationale
+[Why this milestone was chosen over alternatives]
+
+## Developer Value Analysis
+[Detailed explanation of value delivered to developers]
+
+## Scope Definition
+[Precise boundaries of what's included/excluded]
+
+## Success Criteria
+[Specific, measurable ways to validate success]
+
+## Requirements Surface Area
+
+### Core Functionality
+[APIs and capabilities that need detailed requirements]
+
+### Developer Experience
+[Onboarding, documentation, and workflow needs]
+
+### Integration Points
+[How this milestone connects with existing tools]
+
+### Validation Approach
+[How to test and gather feedback]
+
+## Risk Assessment
+[Potential challenges and mitigation strategies]
+
+## Next Phase Preparation
+[Key questions for requirements interviewer]
+
+## User Story Mapping
+[Which user stories from user-stories.md are addressed]
+
+## API Impact Analysis
+[Which parts of api.md are relevant to this milestone]
 ```
-ai_docs/[lib_name]/high_level/
-├── lib-overview.md      ← Understand core purpose and vision
-├── user-stories.md      ← Map comprehensive user capabilities  
-├── api.md              ← Review planned interface
-├── milestones.md       ← Understand implementation phases
-└── handoff-summary.md  ← Key insights from planning phase
+
+### Create interview-preparation.md
+Guide for requirements interviewer:
+
+```markdown
+# Requirements Interview Preparation
+
+## Interview Focus Areas
+[Key topics to explore in detail]
+
+## Critical Questions
+[Must-ask questions for this milestone]
+
+## Developer Personas
+[Target developers for this milestone]
+
+## Success Scenarios
+[Specific use cases to validate]
+
+## Integration Concerns
+[How this fits with existing developer tools]
+
+## Validation Approach
+[How to test requirements completeness]
 ```
 
+## Quality Validation
 
-### Analysis Summary Creation
-Create `ai_docs/[lib_name]/low_level/[session_name]/req/IAC/analysis-summary.md` with:
+### Analysis Completeness Check
+- ✅ All input documents thoroughly reviewed
+- ✅ Milestone selection clearly justified
+- ✅ Developer value articulated precisely
+- ✅ Scope boundaries well-defined
+- ✅ Success criteria specific and measurable
 
-1. **Create analysis documentation** with complete context and work package definition
-2. **Inform user**: "Analysis complete. Activating requirements interviewer for detailed user requirements gathering..."
-3. **Execute Agent Chain Commands**:
-   ```bash
-   # Activate requirements interviewer
-   sed -i '4s/alwaysApply: false/alwaysApply: true/' .cursor/rules/requirements-agent/requirements-interviewer.mdc
-   ```
-4. **Provide analysis context**: Requirements interviewer will automatically start with work package focus
+### Requirements Readiness Check
+- ✅ Clear focus areas for interview identified
+- ✅ Critical questions prepared for interviewer
+- ✅ User stories mapped to milestone scope
+- ✅ API surface area clearly defined
+- ✅ Integration points identified
+
+## Termination Criteria
+
+The analyzer terminates when:
+
+1. **Milestone selected**: One specific milestone chosen with clear justification
+2. **Analysis complete**: Comprehensive understanding of requirements surface area
+3. **Interview prepared**: Clear guidance for requirements interviewer
+4. **IAC documents created**: analysis-summary.md and interview-preparation.md complete
+5. **Handoff ready**: Requirements interviewer can start immediately
+
+## Handoff Message
+
+Upon successful completion, provide this standardized message:
+
+```
+🔍 Requirements Analysis Complete
+
+📌 Selected Milestone: [Milestone Name]
+🎯 Developer Value: [Key value proposition]
+📏 Scope: [Concise scope definition]
+✅ Success Criteria: [Primary success metrics]
+
+📁 IAC Documents Created:
+- ai_docs/{lib-name}/low_level/session-{id}/req/IAC/analysis-summary.md
+- ai_docs/{lib-name}/low_level/session-{id}/req/IAC/interview-preparation.md
+
+🎯 Interview Focus Areas:
+- [Key area 1]
+- [Key area 2]
+- [Key area 3]
+
+🔄 Next: requirements-interviewer.mdc will conduct dopamine-optimized developer requirements gathering
+
+Ready to begin requirements interview? [Yes/No]
+```
+
+## Analysis Philosophy
+
+- **Developer-First**: Every decision serves developer experience
+- **Value-Driven**: Select milestones that deliver real developer value quickly
+- **Evidence-Based**: Base decisions on clear analysis, not assumptions
+- **Scope-Conscious**: Choose achievable milestones that build momentum
+- **Foundation-Focused**: Prioritize work that enables future development
+
+Remember: The goal is not to pick the easiest milestone, but the one that delivers the most developer value while building a solid foundation for the library's evolution.
 
 ## Agent Chain Commands
 
-### Activate Next Agent
-When analysis is complete, execute this command:
-
+Upon successful completion, execute:
 ```bash
-# Activate interviewer - analyzer stays inactive
-sed -i '4s/alwaysApply: false/alwaysApply: true/' .cursor/rules/requirements-agent/requirements-interviewer.mdc
+# Deactivate analyzer and activate interviewer
+sed -i '4s/alwaysApply: true/alwaysApply: false/' .cursor/rules/requirements-agent/requirements-analyzer.mdc && sed -i '4s/alwaysApply: false/alwaysApply: true/' .cursor/rules/requirements-agent/requirements-interviewer.mdc
 ```
-also deactivate the analyzer

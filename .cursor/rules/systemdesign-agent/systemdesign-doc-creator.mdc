@@ -3,10 +3,567 @@ description:
 globs: 
 alwaysApply: false
 ---
-ai_docs/[lib_name]/low_level/[session_name]/design/
-├── architecture.md          # Max 200 Zeilen - Core system architecture
-├── technology-stack.md      # Max 150 Zeilen - Tech stack + modern patterns  
-├── module-boundaries.md     # Max 100 Zeilen - Code organization & interfaces
-├── api-contracts.md         # Max 150 Zeilen - API design & developer experience
-├── quality-strategy.md      # Max 100 Zeilen - Testing + performance + error handling
-└── IAC/
+# System Design Documentation Creator
+
+## Critical Rules
+
+- **Synthesis-focused**: Combine all IAC documents into coherent system design
+- **Implementation-ready**: Create documentation that guides actual development
+- **Decision-justified**: Every design choice traces back to user preferences and research
+- **Phase-planning ready**: Structure outputs for optimal development phase planning
+- **Quality-assured**: Include comprehensive testing and validation strategies
+
+## Required Input Synthesis
+
+### Load All IAC Documents
+Required for complete synthesis:
+- `ai_docs/{lib-name}/low_level/session-{id}/design/IAC/analysis-summary.md`
+- `ai_docs/{lib-name}/low_level/session-{id}/design/IAC/interview-results.md`
+- `ai_docs/{lib-name}/low_level/session-{id}/design/IAC/research-findings.md`
+
+### Load Requirements Context
+For constraint validation:
+- `ai_docs/{lib-name}/low_level/session-{id}/req/features.md`
+- `ai_docs/{lib-name}/low_level/session-{id}/req/acceptance-criteria.md`
+- `ai_docs/{lib-name}/low_level/session-{id}/req/api.md`
+
+### Documentation Synthesis Framework
+
+#### 1. Decision Traceability
+For every design choice, maintain clear traceability:
+- **User Preference**: What the user chose during interview
+- **Research Validation**: How research supports this choice
+- **Requirements Alignment**: How this serves the original requirements
+- **Implementation Impact**: What this means for development phases
+
+#### 2. Architecture Coherence
+Ensure all components work together:
+- **System boundaries** clearly defined
+- **Component interactions** well-specified
+- **Data flow patterns** consistent throughout
+- **Error handling** unified across components
+
+#### 3. Implementation Guidance
+Provide concrete direction for developers:
+- **Technology choices** with clear rationale
+- **API contracts** with detailed specifications
+- **Quality standards** with measurable criteria
+- **Testing strategies** with specific approaches
+
+## Output Document Creation
+
+### 1. Create architecture.md
+Comprehensive architectural blueprint:
+
+```markdown
+# System Architecture
+
+## Architecture Overview
+**Architecture Personality**: [User's chosen approach from interview]
+**Core Philosophy**: [How system embodies user's design vision]
+**System Boundaries**: [What's included vs external dependencies]
+
+## Architectural Decisions
+
+### [Architecture Decision 1]
+**Decision**: [What was decided]
+**Rationale**: [User preference + research validation]
+**Implementation**: [How this translates to code structure]
+**Testing Strategy**: [How to validate this works]
+
+### [Architecture Decision 2]
+**Decision**: [What was decided]
+**Rationale**: [User preference + research validation]
+**Implementation**: [How this translates to code structure]
+**Testing Strategy**: [How to validate this works]
+
+## Component Architecture
+
+### Core Components
+[Major architectural components and their responsibilities]
+
+### Component Interactions
+[How components communicate and collaborate]
+
+### Data Flow Patterns
+[How information moves through the system]
+
+### State Management
+[How system handles state, if any]
+
+## Integration Architecture
+
+### Framework Integration
+[How library integrates with target frameworks]
+
+### Build Tool Integration
+[How library works with developer build processes]
+
+### IDE Integration
+[Developer tooling and IDE support strategy]
+
+### Package Ecosystem
+[How library fits into npm/node ecosystem]
+
+## Performance Architecture
+
+### Performance Strategy
+[Overall approach to performance optimization]
+
+### Optimization Points
+[Specific areas where performance is optimized]
+
+### Performance Monitoring
+[How performance is measured and maintained]
+
+### Scalability Considerations
+[How system handles increasing usage]
+
+## Security Architecture
+
+### Security Boundaries
+[What security concerns the library addresses]
+
+### Input Validation
+[How untrusted input is handled]
+
+### Error Information
+[What information is exposed in errors]
+
+### Dependency Security
+[How external dependencies are managed]
+
+## Evolution Strategy
+
+### Extension Points
+[How library can be extended in future]
+
+### Backward Compatibility
+[How to maintain compatibility as library evolves]
+
+### Migration Strategies
+[How users upgrade between versions]
+
+### Deprecation Approach
+[How outdated features are retired]
+```
+
+### 2. Create api-contracts.md
+Detailed API specifications:
+
+```markdown
+# API Contracts
+
+## API Design Philosophy
+**Design Approach**: [From user interview - explicit vs automatic etc.]
+**Error Handling Style**: [From user preference]
+**TypeScript Integration**: [Type-first approach]
+
+## Core API Structure
+
+### Public Interface
+[Main API surface that developers interact with]
+
+### Type Definitions
+[Core TypeScript types and interfaces]
+
+### Configuration API
+[How developers configure the library]
+
+### Event API
+[If applicable - how events are handled]
+
+## API Contracts
+
+### [Primary API Group 1]
+```typescript
+// Detailed TypeScript interface definitions
+// with clear documentation
+```
+
+**Contract**: [What this API guarantees]
+**Usage Pattern**: [How developers typically use this]
+**Error Conditions**: [What can go wrong and how it's handled]
+**Performance Characteristics**: [Speed/memory implications]
+
+### [Primary API Group 2] 
+```typescript
+// Additional API definitions
+```
+
+**Contract**: [What this API guarantees]
+**Usage Pattern**: [How developers typically use this]
+**Error Conditions**: [What can go wrong and how it's handled]
+**Performance Characteristics**: [Speed/memory implications]
+
+## Integration Contracts
+
+### Framework Adapters
+[How API adapts to different frameworks]
+
+### Build Tool Integration
+[API for build-time integration]
+
+### Plugin Interface
+[If applicable - how plugins interact with core]
+
+## Versioning Strategy
+
+### Semantic Versioning
+[How API changes are versioned]
+
+### Breaking Change Policy
+[When and how breaking changes are introduced]
+
+### Deprecation Timeline
+[How long deprecated APIs are supported]
+
+## Testing Contracts
+
+### Unit Test Requirements
+[What level of testing API requires]
+
+### Integration Test Strategy
+[How API integration is validated]
+
+### Performance Test Criteria
+[Performance standards API must meet]
+```
+
+### 3. Create technology-stack.md
+Technology choices and implementation guidance:
+
+```markdown
+# Technology Stack
+
+## Stack Philosophy
+**Selection Criteria**: [Minimal dependencies, TypeScript-first, etc.]
+**Research Validation**: [How choices were validated]
+**User Alignment**: [How stack serves user preferences]
+
+## Core Technologies
+
+### TypeScript Configuration
+**Version**: [Specific TypeScript version and rationale]
+**Configuration**: [tsconfig.json approach]
+**Build Strategy**: [How TypeScript compilation works]
+
+### Build System
+**Primary Tool**: [Chosen build tool with rationale]
+**Bundle Strategy**: [Single bundle vs modular approach]
+**Optimization**: [Tree-shaking, minification approach]
+
+### Package Management
+**Module System**: [ES modules, CommonJS, or both]
+**Package.json Strategy**: [Exports, types, etc.]
+**Distribution**: [How package is published and consumed]
+
+## Development Dependencies
+
+### Testing Framework
+**Unit Testing**: [Jest, Vitest, etc. with rationale]
+**Integration Testing**: [Strategy and tools]
+**End-to-End Testing**: [If applicable]
+
+### Development Tools
+**Linting**: [ESLint configuration approach]
+**Formatting**: [Prettier or similar]
+**Type Checking**: [How TypeScript checking is enforced]
+
+### Documentation
+**API Documentation**: [How API docs are generated]
+**Example Management**: [How examples are maintained]
+**Tutorial Strategy**: [Educational content approach]
+
+## Runtime Dependencies
+
+### Core Dependencies
+[Minimal list of required runtime dependencies]
+**[Dependency Name]**: [Why this is needed, what it provides]
+
+### Peer Dependencies
+[Dependencies expected in developer environment]
+**[Peer Dependency]**: [Why this is expected, compatibility range]
+
+### Optional Dependencies
+[Dependencies that enhance but aren't required]
+**[Optional Dependency]**: [What enhanced capability this provides]
+
+## Deployment Strategy
+
+### Package Publishing
+**Registry**: [npm, GitHub packages, etc.]
+**Release Process**: [How new versions are published]
+**CI/CD Integration**: [Automated testing and publishing]
+
+### Container Strategy
+**Development Container**: [Docker setup for development]
+**Testing Container**: [Isolated testing environment]
+**Example Container**: [How examples/demos are containerized]
+
+## Quality Assurance
+
+### Code Quality
+**Static Analysis**: [Tools for code quality checking]
+**Coverage Requirements**: [Test coverage standards]
+**Performance Benchmarks**: [How performance is measured]
+
+### Security
+**Dependency Scanning**: [How dependencies are checked for vulnerabilities]
+**Code Scanning**: [Static security analysis]
+**Update Strategy**: [How security updates are handled]
+
+## SvelteKit Integration
+
+### Optimization Opportunities
+[SvelteKit-specific optimizations available]
+
+### SSR/SSG Compatibility
+[How library works with server-side rendering]
+
+### Svelte Store Integration
+[If applicable - how library integrates with Svelte stores]
+
+### Build Integration
+[How library integrates with SvelteKit build process]
+```
+
+### 4. Create module-boundaries.md
+Clear component and module organization:
+
+```markdown
+# Module Boundaries
+
+## Module Design Philosophy
+**Separation Strategy**: [How functionality is divided]
+**Coupling Approach**: [Loose vs tight coupling decisions]
+**Cohesion Strategy**: [How related functionality is grouped]
+
+## Core Module Structure
+
+### [Module 1 Name]
+**Responsibility**: [What this module is responsible for]
+**Public Interface**: [What other modules can access]
+**Internal Implementation**: [What is hidden from other modules]
+**Dependencies**: [What this module depends on]
+
+### [Module 2 Name]
+**Responsibility**: [What this module is responsible for]
+**Public Interface**: [What other modules can access]
+**Internal Implementation**: [What is hidden from other modules]
+**Dependencies**: [What this module depends on]
+
+## Module Interactions
+
+### Communication Patterns
+[How modules interact with each other]
+
+### Data Sharing
+[How data is shared between modules]
+
+### Event Flow
+[How events/notifications flow between modules]
+
+### Error Propagation
+[How errors move between module boundaries]
+
+## Extension Boundaries
+
+### Plugin Points
+[Where external code can extend functionality]
+
+### Configuration Boundaries
+[How modules are configured independently]
+
+### Testing Boundaries
+[How modules can be tested in isolation]
+
+## Package Structure
+[How modules map to actual package/file structure]
+```
+
+### 5. Create quality-strategy.md
+Comprehensive quality assurance approach:
+
+```markdown
+# Quality Strategy
+
+## Quality Philosophy
+**User-Centric Quality**: [Quality means serving user design preferences]
+**Research-Backed Standards**: [Quality standards validated by research]
+**Continuous Validation**: [How quality is maintained over time]
+
+## Testing Strategy
+
+### Unit Testing
+**Framework**: [Chosen testing framework]
+**Coverage Standards**: [Required coverage levels]
+**Test Organization**: [How tests are structured]
+
+### Integration Testing
+**Integration Points**: [What integrations need testing]
+**Testing Approach**: [How integration testing is performed]
+**Environment Strategy**: [How test environments are managed]
+
+### Performance Testing
+**Performance Criteria**: [Speed/memory/bundle size requirements]
+**Benchmarking Strategy**: [How performance is measured]
+**Regression Detection**: [How performance regressions are caught]
+
+### User Experience Testing
+**Developer Experience Validation**: [How DX is tested]
+**API Usability Testing**: [How API design is validated]
+**Documentation Testing**: [How docs are validated for effectiveness]
+
+## Code Quality Standards
+
+### TypeScript Standards
+**Type Safety**: [Level of type safety required]
+**Generic Usage**: [How generics are used effectively]
+**Inference Optimization**: [How to optimize type inference]
+
+### Code Style
+**Formatting Standards**: [Code formatting approach]
+**Naming Conventions**: [Variable/function/class naming]
+**Documentation Standards**: [Code documentation requirements]
+
+### Architecture Quality
+**Dependency Management**: [How dependencies are controlled]
+**Coupling Metrics**: [Acceptable coupling levels]
+**Complexity Limits**: [Cyclomatic complexity limits]
+
+## Security Quality
+
+### Input Validation
+**Validation Strategy**: [How user input is validated]
+**Sanitization Approach**: [How potentially dangerous input is handled]
+**Error Information**: [What information is safe to expose]
+
+### Dependency Security
+**Vulnerability Scanning**: [How dependencies are checked]
+**Update Strategy**: [How security updates are applied]
+**Audit Trail**: [How security decisions are documented]
+
+## Performance Quality
+
+### Bundle Size
+**Size Targets**: [Maximum acceptable bundle sizes]
+**Tree-shaking Effectiveness**: [How unused code is eliminated]
+**Compression Strategy**: [How bundle is optimized for delivery]
+
+### Runtime Performance
+**Performance Targets**: [Speed requirements]
+**Memory Usage**: [Memory usage limits]
+**Optimization Strategy**: [How performance is optimized]
+
+## Continuous Quality
+
+### Automated Quality Gates
+**CI/CD Integration**: [How quality is enforced in CI]
+**Quality Metrics**: [What metrics are tracked]
+**Failure Handling**: [What happens when quality gates fail]
+
+### Quality Evolution
+**Metric Improvement**: [How quality standards evolve]
+**Feedback Integration**: [How user feedback improves quality]
+**Research Integration**: [How new research updates quality approach]
+```
+
+## Document Validation
+
+### Completeness Check
+- ✅ All user design decisions reflected in documentation
+- ✅ Research findings integrated into technical choices
+- ✅ Requirements fully addressed by architecture
+- ✅ Implementation guidance complete and actionable
+- ✅ Quality standards comprehensive and measurable
+
+### Consistency Validation
+- ✅ Technology choices align across all documents
+- ✅ API contracts match architectural decisions
+- ✅ Quality strategy supports chosen architecture
+- ✅ Module boundaries reflect system design
+- ✅ All decisions traceable to user preferences
+
+### Implementation Readiness
+- ✅ Sufficient detail for phase planning
+- ✅ Clear guidance for developer implementation
+- ✅ Testing strategy actionable
+- ✅ Quality criteria measurable
+- ✅ Documentation suitable for technical handoff
+
+## Quality Validation
+
+### Documentation Quality
+- ✅ Clear, actionable guidance for implementation
+- ✅ Design decisions fully justified
+- ✅ Technology choices research-validated
+- ✅ Quality standards comprehensive
+- ✅ Phase planning ready
+
+### Traceability Validation
+- ✅ Every decision links to user interview choice
+- ✅ Research findings properly integrated
+- ✅ Requirements coverage complete
+- ✅ Implementation gaps identified
+- ✅ Quality measures aligned with user goals
+
+## Termination Criteria
+
+The doc-creator terminates when:
+
+1. **Complete documentation set**: All 5 output documents created and validated
+2. **Decision synthesis complete**: All user choices and research integrated
+3. **Implementation readiness**: Documentation sufficient for development planning
+4. **Quality standards defined**: Clear, measurable quality criteria established
+5. **Phase planning ready**: Documentation structured for optimal phase breakdown
+
+## Handoff Message
+
+Upon successful completion, provide this standardized message:
+
+```
+📋 System Design Documentation Complete
+
+🏗️ Architecture Summary:
+- Core Pattern: [Primary architectural approach]
+- Technology Stack: [Key technology choices]
+- Module Structure: [How system is organized]
+- Quality Strategy: [Quality assurance approach]
+
+📚 Documentation Created:
+- ai_docs/{lib-name}/low_level/session-{id}/design/architecture.md
+- ai_docs/{lib-name}/low_level/session-{id}/design/api-contracts.md
+- ai_docs/{lib-name}/low_level/session-{id}/design/technology-stack.md
+- ai_docs/{lib-name}/low_level/session-{id}/design/module-boundaries.md
+- ai_docs/{lib-name}/low_level/session-{id}/design/quality-strategy.md
+
+✅ Implementation Readiness:
+- User design preferences fully captured
+- Research findings integrated throughout
+- Technology choices validated and justified
+- Quality standards defined and measurable
+
+🚀 Next Phase:
+The phaseplanner-agent will analyze this system design to create an optimal development phase breakdown.
+
+Ready to begin phase planning? [Yes/No]
+```
+
+## Documentation Philosophy
+
+- **Decision-driven**: Every choice traces back to user preferences and research
+- **Implementation-focused**: Documentation guides actual development work
+- **Quality-assured**: Comprehensive quality standards integrated throughout
+- **Evolution-ready**: Architecture supports future growth and change
+- **Developer-centric**: All choices optimize for developer experience
+
+## Agent Chain Commands
+
+Upon successful completion, execute:
+```bash
+# Deactivate doc-creator and activate phaseplanner-agent
+sed -i '4s/alwaysApply: true/alwaysApply: false/' .cursor/rules/systemdesign-agent/systemdesign-doc-creator.mdc && sed -i '4s/alwaysApply: false/alwaysApply: true/' .cursor/rules/phaseplanner-agent/phaseplanner-analyzer.mdc
+```
+
+Remember: Great system design documentation enables efficient implementation while staying true to user vision.
