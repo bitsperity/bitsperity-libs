@@ -625,5 +625,4 @@ Upon successful completion, execute:
 # Deactivate doc-creator and activate softwaredev-agent analyze_phase
 sed -i '4s/alwaysApply: true/alwaysApply: false/' .cursor/rules/phaseplanner-agent/phaseplanner-doc-creator.mdc && sed -i '4s/alwaysApply: false/alwaysApply: true/' .cursor/rules/softwaredev-agent/analyze_phase.mdc
 ```
-
 Remember: Great planning documents are those that enable great execution. Every detail should serve the ultimate goal of delivering working software that creates value for users.
