@@ -34,6 +34,11 @@
     "node_modules",
     "dist",
     "**/*.test.ts",
-    "**/*.spec.ts"
+    "**/*.spec.ts",
+    "src/crypto/core/**/*",
+    "src/crypto/nip44/**/*",
+    "src/crypto/__tests__/**/*",
+    "src/crypto/core.disabled/**/*",
+    "src/crypto/nip44.disabled/**/*"
   ]
 } 

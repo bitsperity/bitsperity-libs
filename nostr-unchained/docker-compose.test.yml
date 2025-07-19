@@ -1,0 +1,131 @@
+version: '3.8'
+
+services:
+  # Phase 2 Testing Environment
+  phase2-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.crypto-dev
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - test-results:/app/test-results
+    environment:
+      - NODE_ENV=test
+      - UMBREL_RELAY=ws://umbrel.local:4848
+      - CRYPTO_BACKEND=simple
+      - DEBUG_TESTS=true
+      - CI=true
+    command: npm run test:phase2:run
+    networks:
+      - test-network
+    depends_on:
+      - umbrel-relay-mock
+
+  # Mock Umbrel Relay for testing when real one not available
+  umbrel-relay-mock:
+    image: scsibug/nostr-rs-relay:latest
+    ports:
+      - "4848:8080"
+    volumes:
+      - ./test-config/relay-config.toml:/usr/src/app/config.toml
+    environment:
+      - RUST_LOG=info
+    networks:
+      - test-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Performance Testing
+  phase2-performance:
+    build:
+      context: .
+      dockerfile: Dockerfile.crypto-dev
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - benchmark-results:/app/benchmarks/results
+    environment:
+      - NODE_ENV=benchmark
+      - UMBREL_RELAY=ws://umbrel.local:4848
+      - CRYPTO_BACKEND=simple
+      - BENCHMARK_ITERATIONS=1000
+    command: npm run test:phase2:run -- src/__tests__/phase2-performance.test.ts
+    networks:
+      - test-network
+    profiles: ["performance"]
+
+  # Integration Testing with Real Umbrel Relay
+  phase2-integration:
+    build:
+      context: .
+      dockerfile: Dockerfile.crypto-dev
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - integration-results:/app/test-results
+    environment:
+      - NODE_ENV=test
+      - UMBREL_RELAY=ws://umbrel.local:4848
+      - CRYPTO_BACKEND=simple
+      - INTEGRATION_MODE=true
+    command: npm run test:phase2:run -- src/__tests__/phase2-integration.test.ts
+    networks:
+      - test-network
+    profiles: ["integration"]
+
+  # Coverage Reporting
+  phase2-coverage:
+    build:
+      context: .
+      dockerfile: Dockerfile.crypto-dev
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - coverage-reports:/app/coverage
+    environment:
+      - NODE_ENV=test
+      - UMBREL_RELAY=ws://umbrel.local:4848
+      - CRYPTO_BACKEND=simple
+    command: npm run test:phase2:coverage
+    networks:
+      - test-network
+    profiles: ["coverage"]
+
+  # Continuous Testing (Watch Mode)
+  phase2-watch:
+    build:
+      context: .
+      dockerfile: Dockerfile.crypto-dev
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - UMBREL_RELAY=ws://umbrel.local:4848
+      - CRYPTO_BACKEND=simple
+      - DEBUG_TESTS=true
+    command: npm run test:phase2
+    networks:
+      - test-network
+    profiles: ["development"]
+
+volumes:
+  test-results:
+    driver: local
+  benchmark-results:
+    driver: local
+  integration-results:
+    driver: local
+  coverage-reports:
+    driver: local
+
+networks:
+  test-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16 
