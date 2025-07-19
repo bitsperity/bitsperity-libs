@@ -155,4 +155,13 @@ export interface NostrUnchained extends Disposable {
 export interface NostrUnchainedConstructor {
   new (config?: NostrUnchainedConfig): NostrUnchained;
   builder(): NostrUnchainedBuilder;
-} 
+}
+
+// Phase 3 Store Types - Re-export from stores module
+export type { 
+  ConversationState, 
+  ConversationStoreConfig,
+  DMConversation,
+  MessageHistory,
+  StoreMetrics 
+} from '../stores/types';

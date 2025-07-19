@@ -1,0 +1,54 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "outDir": "./dist/phase3",
+    "rootDir": "./src",
+    
+    // Svelte-specific configurations
+    "allowJs": true,
+    "checkJs": false,
+    "resolveJsonModule": true,
+    "verbatimModuleSyntax": false,
+    
+    // Type checking optimizations
+    "incremental": true,
+    "composite": true,
+    "tsBuildInfoFile": "./dist/phase3/.tsbuildinfo",
+    
+    // Path mapping für clean imports
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/stores/*": ["./src/stores/*"],
+      "@/types/*": ["./src/types/*"],
+      "@/test-utils/*": ["./src/test-utils/*"],
+      "@/core/*": ["./src/core/*"]
+    }
+  },
+  "include": [
+    "src/**/*",
+    "src/stores/**/*",
+    "src/__tests__/phase3/**/*",
+    "vite.config.ts",
+    "vitest.phase3.config.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "coverage",
+    "test-results",
+    "src/__tests__/phase1/**/*",
+    "src/__tests__/phase2/**/*",
+    "src/__tests__/config.test.ts",
+    "src/__tests__/nostr-unchained.test.ts", 
+    "src/__tests__/phase2-integration.test.ts"
+  ]
+} 
