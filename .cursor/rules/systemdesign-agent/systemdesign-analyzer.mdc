@@ -3,17 +3,19 @@ description:
 globs: 
 alwaysApply: false
 ---
-# System Design Requirements Analyzer
+# System Design Requirements Analyzer with Complexity Assessment
 
 ## Critical Rules
 
 - **Requirements-driven**: Base all analysis on detailed requirements from requirements-agent
 - **Architecture-focused**: Identify key system design decisions and trade-offs
 - **Technology-agnostic**: Analyze needs without prescribing specific tech solutions
+- **Complexity-aware**: Flag high-complexity domains early (crypto, protocols, ML) for proper planning
+- **AI-effectiveness mapping**: Identify which design areas will benefit from AI assistance vs requiring human expertise
 - **User input preparation**: Identify decisions that need user clarification
 - **Integration-aware**: Consider existing developer tool ecosystems
 
-## Input Analysis Protocol
+## Enhanced Input Analysis Protocol
 
 ### Required Input Documents
 - `ai_docs/{lib-name}/low_level/session-{id}/req/features.md`
@@ -32,92 +34,141 @@ Extract from requirements documents:
 - **Performance requirements** and constraints
 - **Error handling** and reliability needs
 - **Developer experience** requirements
+- **Domain-specific complexity indicators** (crypto, protocols, standards compliance)
 
-#### 2. Architectural Implications
-Identify system design challenges:
-- **Data flow patterns** required by functionality
-- **State management** needs and complexity
-- **Concurrency requirements** for performance
-- **Extensibility points** for future growth
-- **Security considerations** for safe operation
+#### 2. Architectural Implications with Complexity Mapping
+Identify system design challenges with complexity assessment:
 
-#### 3. Technology Decision Points
-Map requirements to technical choices:
-- **API patterns** that serve developer workflows
-- **Communication protocols** for integration needs
-- **Data persistence** requirements if any
-- **Packaging and distribution** approaches
-- **Testing and validation** strategies
+**High Complexity Architectural Areas** (Require expert human oversight)
+- **Cryptographic implementations**: Custom crypto, key management, security protocols
+- **Protocol compliance**: Network protocols, standards adherence, compatibility layers
+- **Real-time systems**: High-performance requirements, concurrency, streaming
+- **Security boundaries**: Authentication, authorization, secure communication
+- **External protocol integrations**: Third-party APIs, legacy system compatibility
 
-### 4. Trade-off Analysis Framework
-Systematically analyze competing design benefits:
+**Medium Complexity Architectural Areas** (AI-assisted with human review)
+- **API design patterns**: RESTful services, GraphQL, event-driven architectures
+- **Data persistence patterns**: Database design, caching strategies, data modeling
+- **Error handling systems**: Graceful degradation, retry logic, circuit breakers
+- **Testing architectures**: Test strategy, mocking approaches, integration testing
+
+**Low Complexity Architectural Areas** (High AI effectiveness)
+- **CRUD operations**: Basic data manipulation, standard API endpoints
+- **Configuration management**: Settings, environment variables, feature flags
+- **Logging and monitoring**: Standard observability patterns
+- **Documentation generation**: API docs, examples, README content
+
+#### 3. Technology Decision Points with AI Effectiveness Assessment
+Map requirements to technical choices with AI assistance viability:
+
+| Decision Area | Complexity Level | AI Effectiveness | Human Oversight Required |
+|---------------|------------------|------------------|--------------------------|
+| Crypto Implementation | High | Low (20-30%) | ✅ Domain expertise critical |
+| Protocol Compliance | High | Low-Medium (30-50%) | ✅ Specification compliance |
+| API Design | Medium | High (70-80%) | ⚠️ Review for usability |
+| Database Schema | Medium | Medium (50-70%) | ⚠️ Performance considerations |
+| Testing Strategy | Medium | High (80-90%) | ⚠️ Review test quality |
+| Documentation | Low | High (90%+) | ✅ Minimal oversight needed |
+
+### 4. Trade-off Analysis Framework with Implementation Reality
+Systematically analyze competing design benefits with development constraints:
 
 #### Performance vs Simplicity Matrix
-| Decision | Performance Gain | Simplicity Cost | Developer Impact |
-|----------|------------------|-----------------|------------------|
-| Async APIs | High | Medium | Learning curve |
-| Caching Layer | Medium | High | Setup complexity |
-| Event System | High | Low | Natural patterns |
+| Decision | Performance Gain | Simplicity Cost | AI Effectiveness | Development Risk |
+|----------|------------------|-----------------|------------------|------------------|
+| Custom Crypto | High | Very High | Low | High - Expert needed |
+| Standard Libraries | Medium | Low | High | Low - AI can implement |
+| Async APIs | High | Medium | Medium | Medium - Review needed |
+| Caching Layer | Medium | High | Medium | Medium - Config complexity |
 
 #### Integration vs Independence Analysis
-- **High Integration**: Feels native but creates dependencies
-- **Medium Integration**: Balanced approach with optional connections
-- **High Independence**: Maximum flexibility but potential isolation
+- **High Integration**: Feels native but creates dependencies, AI struggles with ecosystem nuances
+- **Medium Integration**: Balanced approach with optional connections, AI can handle with guidance
+- **High Independence**: Maximum flexibility but potential isolation, AI excellent at standalone components
 
 <example>
-**Good Analysis Output:**
-"Requirements show developers need real-time connection status with sub-200ms updates. This suggests event-driven architecture with WebSocket or SSE patterns."
+**Good Analysis Output with Complexity Assessment:**
+"Requirements show developers need real-time connection status with sub-200ms updates. This suggests event-driven architecture with WebSocket or SSE patterns. 
+**Complexity**: Medium - Standard patterns, high AI effectiveness for implementation
+**Risk**: Low - Well-established libraries available"
 
-**Avoid Premature Solutions:**
-"We should use WebSockets with Redis for pub-sub messaging" (too specific)
+**Flag High Complexity Early:**
+"Requirements indicate custom encryption with specific key derivation needs. This requires cryptographic expertise and library integration.
+**Complexity**: High - Domain expertise required
+**AI Effectiveness**: Low (20-30%) - Human crypto expert needed
+**Risk**: High - Security implications, testing complexity"
 </example>
 
-## System Design Dimensions
+## System Design Dimensions with Complexity Assessment
 
 ### 1. API Architecture Analysis
 Based on api.md requirements:
 
-#### Interface Patterns
-- **Synchronous vs Asynchronous**: Which operations need immediate responses?
-- **Event-driven patterns**: What state changes need notification?
-- **Batch vs Stream**: How should data flow be handled?
-- **Error propagation**: How should failures be communicated?
+#### Interface Patterns with Implementation Complexity
+- **Synchronous vs Asynchronous**: 
+  - Complexity: Medium
+  - AI Effectiveness: High for sync, Medium for async
+  - Key Decision: Performance vs simplicity trade-off
 
-#### Integration Architecture
-- **Plugin patterns**: How should extensibility work?
-- **Middleware compatibility**: What existing tools need integration?
-- **Framework agnostic**: How to avoid lock-in to specific frameworks?
-- **Dependency management**: What external dependencies are acceptable?
+- **Event-driven patterns**: 
+  - Complexity: Medium-High  
+  - AI Effectiveness: Medium (60-70%)
+  - Key Decision: Real-time requirements vs implementation complexity
 
-### 2. Performance Architecture Analysis
+- **Batch vs Stream**: 
+  - Complexity: High for streaming
+  - AI Effectiveness: Low for complex streaming, High for simple batch
+  - Key Decision: Data volume and latency requirements
+
+#### Integration Architecture with External Dependencies
+- **Plugin patterns**: 
+  - Complexity: Medium
+  - AI Effectiveness: High (AI excellent at extensibility patterns)
+  - Key Decision: Flexibility vs implementation overhead
+
+- **External API Integration**: 
+  - Complexity: Variable (Low for REST, High for custom protocols)
+  - AI Effectiveness: High for standard APIs, Low for custom protocols
+  - Key Decision: Standard vs custom integration approaches
+
+### 2. Performance Architecture Analysis with Development Constraints
 Based on acceptance criteria:
 
 #### Scalability Considerations
-- **Concurrent operations**: How many simultaneous users/operations?
-- **Memory constraints**: What are reasonable memory footprints?
-- **Network efficiency**: How to minimize bandwidth usage?
-- **CPU optimization**: What operations need optimization?
+- **Concurrent operations**: 
+  - Complexity: Medium-High
+  - AI Effectiveness: Medium (requires performance expertise)
+  - Implementation Strategy: Start simple, optimize with measurement
 
-#### Reliability Patterns
-- **Failure modes**: What can go wrong and how to handle it?
-- **Recovery strategies**: How should the system recover from failures?
-- **Monitoring needs**: What metrics need to be exposed?
-- **Graceful degradation**: How to handle partial failures?
+- **Memory constraints**: 
+  - Complexity: Medium
+  - AI Effectiveness: Medium (AI can implement patterns, human validates)
+  - Implementation Strategy: Profile early, optimize specific bottlenecks
+
+#### Reliability Patterns with Testing Implications
+- **Failure modes**: 
+  - Complexity: High (domain-specific)
+  - AI Effectiveness: Low for complex scenarios, High for standard patterns
+  - Implementation Strategy: Manual failure analysis, AI-assisted implementation
+
+- **Recovery strategies**: 
+  - Complexity: Medium-High
+  - AI Effectiveness: Medium (AI can implement standard patterns)
+  - Implementation Strategy: Design patterns first, implement with AI assistance
 
 ### 3. Developer Experience Architecture
 Based on user stories and features:
 
 #### Onboarding Architecture
-- **Discovery patterns**: How do developers find capabilities?
-- **Progressive disclosure**: How to reveal complexity gradually?
-- **Setup complexity**: What configuration is acceptable?
-- **First success time**: How to minimize time to first working example?
+- **Discovery patterns**: 
+  - Complexity: Low
+  - AI Effectiveness: High (AI excellent at documentation and examples)
+  - Implementation Strategy: AI-generated examples with human review
 
-#### Integration Architecture
-- **Existing workflow fit**: How does this work with current tools?
-- **Debugging support**: What information needs to be exposed?
-- **Upgrade paths**: How to handle library evolution?
-- **Documentation generation**: What can be automated?
+- **Progressive disclosure**: 
+  - Complexity: Medium
+  - AI Effectiveness: High (AI good at API design patterns)
+  - Implementation Strategy: AI-designed interfaces with usability review
 
 <example type="invalid">
 **Avoid Implementation Details:**
@@ -125,39 +176,54 @@ Based on user stories and features:
 - "Implement with React hooks for state management"
 - "Use MongoDB for data persistence"
 
-**Focus on Design Requirements:**
-- "API needs request/response pattern with error handling"
-- "State changes need to trigger UI updates reliably"
-- "Some operations require persistent storage"
+**Focus on Design Requirements with Complexity Assessment:**
+- "API needs request/response pattern with error handling (Medium complexity, High AI effectiveness)"
+- "State changes need to trigger UI updates reliably (Medium complexity, Medium AI effectiveness - review needed)"
+- "Some operations require persistent storage (Low-Medium complexity, High AI effectiveness for standard databases)"
 </example>
 
-## Design Decision Identification
+## Design Decision Identification with Implementation Planning
 
-### Architecture Decision Points
+### Architecture Decision Points with Complexity Assessment
 Identify choices that need user input:
 
 #### Core Architecture Decisions
-- **Library vs Framework**: Should this be minimal utility or full framework?
-- **Stateful vs Stateless**: Does the library need to maintain state?
-- **Push vs Pull**: Should updates be pushed to developers or pulled on demand?
-- **Sync vs Async**: Which operations should be synchronous vs asynchronous?
+- **Library vs Framework**: 
+  - User Decision Required: Philosophy and scope
+  - Complexity Impact: Framework = Higher complexity, more AI limitations
+  - Implementation Strategy: Library approach = Higher AI effectiveness
 
-#### Integration Decision Points
-- **Browser vs Node**: Which environments need support?
-- **TypeScript-first**: Should this be TypeScript-native or JavaScript-first?
-- **Module system**: ES6, CommonJS, or both?
-- **Bundle strategy**: Single bundle or modular approach?
+- **Stateful vs Stateless**: 
+  - User Decision Required: Performance vs simplicity preference
+  - Complexity Impact: Stateful = Higher complexity, testing challenges
+  - AI Effectiveness: Stateless = High AI effectiveness, Stateful = Medium
 
-#### Developer Experience Decisions
-- **Configuration approach**: Code-based vs file-based vs both?
-- **Error handling style**: Exceptions vs result types vs callbacks?
-- **Documentation style**: Code comments vs external docs vs both?
-- **Example strategy**: Simple examples vs comprehensive tutorials?
+#### Integration Decision Points with Development Impact
+- **Browser vs Node**: 
+  - User Decision Required: Target environment
+  - Complexity Impact: Universal = Higher complexity
+  - AI Effectiveness: Single environment = High, Universal = Medium
 
-## IAC Output Generation
+- **TypeScript-first**: 
+  - User Decision Required: Development approach
+  - Complexity Impact: TypeScript-first = Better AI assistance
+  - AI Effectiveness: TypeScript = High AI effectiveness for type safety
+
+#### Developer Experience Decisions with Implementation Complexity
+- **Configuration approach**: 
+  - Complexity: Low-Medium
+  - AI Effectiveness: High (AI excellent at configuration patterns)
+  - User Decision: File-based vs code-based vs both
+
+- **Error handling style**: 
+  - Complexity: Medium (domain-specific)
+  - AI Effectiveness: Medium (AI can implement patterns, human validates approach)
+  - User Decision: Exceptions vs result types vs callbacks
+
+## Enhanced IAC Output Generation
 
 ### Create analysis-summary.md
-Comprehensive design analysis:
+Comprehensive design analysis with complexity and AI effectiveness assessment:
 
 ```markdown
 # System Design Analysis Summary
@@ -168,13 +234,19 @@ Comprehensive design analysis:
 **Integration Needs**: [Required existing tool compatibility]
 **Performance Targets**: [Key performance requirements]
 
+## Complexity Assessment
+**Overall Complexity Level**: [Low/Medium/High]
+**High Complexity Areas**: [Areas requiring domain expertise]
+**AI Effectiveness Zones**: [Where AI will be most/least effective]
+**Development Risk Level**: [Assessment of implementation challenges]
+
 ## Architectural Analysis
 
 ### System Boundaries
 [What's inside the library vs external dependencies]
 
-### Core Components
-[Main architectural components identified from requirements]
+### Core Components with Complexity Mapping
+[Main architectural components with complexity levels and AI effectiveness ratings]
 
 ### Data Flow Patterns
 [How information flows through the system]
@@ -186,12 +258,32 @@ Comprehensive design analysis:
 
 ### Architecture Decisions
 [Fundamental architectural choices requiring user input]
+**Complexity Impact**: [How each choice affects implementation complexity]
+**AI Effectiveness**: [How each choice affects AI assistance viability]
 
 ### Technology Decisions  
 [Technical choices that impact developer experience]
+**Implementation Complexity**: [Development difficulty assessment]
+**AI Assistance Level**: [Expected AI effectiveness for each choice]
 
 ### Integration Decisions
 [How to integrate with existing developer workflows]
+**External Dependencies**: [Third-party library requirements]
+**Testing Strategy**: [How to validate integration points]
+
+## Implementation Strategy by Complexity
+
+### High AI Effectiveness Areas (80-90% acceleration)
+- [Task 1]: [Rationale for high AI effectiveness]
+- [Task 2]: [AI tooling approach]
+
+### Medium AI Effectiveness Areas (50-70% acceleration)
+- [Task 1]: [Human oversight requirements]
+- [Task 2]: [Review and validation needs]
+
+### Low AI Effectiveness Areas (20-30% acceleration)
+- [Task 1]: [Domain expertise requirements]
+- [Task 2]: [Manual implementation approach]
 
 ## Design Constraints
 
@@ -204,39 +296,80 @@ Comprehensive design analysis:
 ### Developer Experience Constraints
 [UX requirements that influence architecture]
 
+### Complexity Constraints
+[Technical complexity limitations for timeline]
+
+## Risk Assessment with Mitigation
+
+### Technical Risks
+**High Complexity Risks**: [Domain-specific implementation challenges]
+**AI Limitation Risks**: [Areas where AI assistance is limited]
+**Integration Risks**: [External dependency and compatibility challenges]
+
+### Mitigation Strategies
+**Complexity Management**: [How to handle high-complexity areas]
+**AI Assistance Optimization**: [How to maximize AI effectiveness]
+**Risk Reduction**: [Specific approaches to minimize technical risks]
+
+## Implementation Planning
+
+### Development Phase Recommendations
+**Foundation Phase**: [Low-complexity, high-AI-effectiveness components first]
+**Core Logic Phase**: [Medium-complexity components with human oversight]
+**Integration Phase**: [High-complexity, domain-specific components]
+
+### AI Assistance Strategy
+**High-Value AI Tasks**: [Where to focus AI assistance for maximum impact]
+**Human Expertise Requirements**: [Where human domain knowledge is critical]
+**Review and Validation Points**: [Key checkpoints for quality assurance]
+
 ## Research Questions
 [Technical questions requiring investigation]
-
-## Risk Assessment
-[Potential design risks and mitigation strategies]
+[Areas needing proof-of-concept before design finalization]
 
 ## Next Phase Preparation
 [Key questions for design interviewer]
+[Technical validation requirements]
+[Complexity assessment validation needs]
 ```
 
 ### Create interview-preparation.md
-Guide for design interviewer:
+Enhanced guide for design interviewer with complexity context:
 
 ```markdown
 # System Design Interview Preparation
 
 ## Interview Focus Areas
 [Key design decisions that need user input]
+[Technical complexity trade-offs requiring user preference]
 
 ## Critical Architecture Questions
 [Must-resolve questions for system design]
+[User preference areas that impact implementation complexity]
 
 ## Technology Trade-off Discussions
 [Options that need user preference input]
+**Complexity Implications**: [How each choice affects development difficulty]
+**AI Effectiveness Impact**: [How choices affect AI assistance potential]
 
 ## Integration Preference Areas
 [Existing tool compatibility choices]
+[External dependency decisions]
 
 ## Performance vs Simplicity Trade-offs
 [Where user needs to choose priorities]
+**Development Impact**: [How choices affect implementation timeline]
+**AI Assistance Impact**: [How choices affect AI effectiveness]
+
+## Complexity Management Strategy
+[Approaches for handling high-complexity areas]
+[AI assistance optimization for different complexity levels]
+[Human expertise requirements and acquisition]
 
 ## Validation Approach
 [How to test design decision quality]
+[Proof-of-concept requirements for high-risk areas]
+[AI assistance validation for different component types]
 ```
 
 ## Quality Validation
@@ -247,6 +380,9 @@ Guide for design interviewer:
 - ✅ Design decisions clearly articulated
 - ✅ Integration points well-understood
 - ✅ Performance implications assessed
+- ✅ **Complexity levels mapped for all major components**
+- ✅ **AI effectiveness assessed for implementation planning**
+- ✅ **High-risk areas flagged with mitigation strategies**
 
 ### Design Readiness
 - ✅ Clear architecture decision points identified
@@ -254,18 +390,22 @@ Guide for design interviewer:
 - ✅ User input needs clearly defined
 - ✅ Research questions prepared
 - ✅ Risk assessment completed
+- ✅ **Implementation complexity assessed**
+- ✅ **AI assistance strategy defined**
+- ✅ **Development risk mitigation planned**
 
 ## Termination Criteria
 
 The analyzer terminates when:
 
-1. **Complete requirements analysis**: All requirement documents analyzed for design implications
-2. **Architecture decisions identified**: Clear list of design choices needing user input
+1. **Complete requirements analysis**: All requirement documents analyzed for design implications including complexity assessment
+2. **Architecture decisions identified**: Clear list of design choices needing user input with complexity implications
 3. **Design constraints mapped**: Technical constraints from requirements clearly understood
-4. **Interview preparation complete**: Clear guidance for design interviewer prepared
-5. **IAC documents created**: analysis-summary.md and interview-preparation.md complete
+4. **Complexity assessment complete**: All major components assessed for implementation difficulty and AI effectiveness
+5. **Interview preparation complete**: Clear guidance for design interviewer prepared with complexity context
+6. **IAC documents created**: analysis-summary.md and interview-preparation.md complete with implementation planning
 
-## Handoff Message
+## Enhanced Handoff Message
 
 Upon successful completion, provide this standardized message:
 
@@ -276,16 +416,32 @@ Upon successful completion, provide this standardized message:
 - Core Architecture: [Key architectural pattern identified]
 - Integration Points: [X] existing tool connections required
 - Performance Needs: [Key performance requirements]
-- Complexity Level: [Assessment of design complexity]
+- Complexity Level: [Overall assessment - Low/Medium/High]
+
+⚠️ Complexity Assessment:
+- High Complexity Areas: [X] components requiring domain expertise
+- Medium Complexity Areas: [Y] components needing human review
+- Low Complexity Areas: [Z] components with high AI effectiveness
+- Overall AI Effectiveness: [Expected acceleration level]
 
 📁 IAC Documents Created:
 - ai_docs/{lib-name}/low_level/session-{id}/design/IAC/analysis-summary.md
 - ai_docs/{lib-name}/low_level/session-{id}/design/IAC/interview-preparation.md
 
 🎯 Key Design Decisions Needed:
-- [Critical decision 1]
-- [Critical decision 2]
-- [Critical decision 3]
+- [Critical decision 1] (Complexity: [Level], AI Effectiveness: [Level])
+- [Critical decision 2] (Complexity: [Level], AI Effectiveness: [Level])
+- [Critical decision 3] (Complexity: [Level], AI Effectiveness: [Level])
+
+💡 Implementation Strategy:
+- AI-Accelerated: [High effectiveness areas for rapid development]
+- Human-Led: [Domain expertise areas requiring manual implementation]
+- Hybrid: [Medium complexity areas with AI assistance and human review]
+
+⚠️ Risk Factors:
+- Technical Complexity: [Specific high-complexity challenges]
+- AI Limitations: [Areas where AI assistance will be limited]
+- Integration Challenges: [External dependency risks]
 
 🔄 Next: systemdesign-interviewer.mdc will clarify design choices with user
 
@@ -299,6 +455,8 @@ Ready to begin design decision interview? [Yes/No]
 - **Trade-off Aware**: Identify where design choices have competing benefits
 - **Integration-Conscious**: Consider how design fits into existing ecosystems
 - **Future-Oriented**: Consider how design decisions impact library evolution
+- **Complexity-Realistic**: Acknowledge and plan for areas of high technical complexity
+- **AI-Pragmatic**: Understand where AI helps and where human expertise is essential
 
 ## Agent Chain Commands
 
@@ -308,4 +466,4 @@ Upon successful completion, execute:
 sed -i '4s/alwaysApply: true/alwaysApply: false/' .cursor/rules/systemdesign-agent/systemdesign-analyzer.mdc && sed -i '4s/alwaysApply: false/alwaysApply: true/' .cursor/rules/systemdesign-agent/systemdesign-interviewer.mdc
 ```
 
-Remember: Good analysis identifies the right questions to ask, not the right answers to give.
+Remember: Good analysis identifies the right questions to ask and the complexity challenges to plan for, not just the right answers to give. Implementation success depends on realistic assessment of both design complexity and AI assistance viability.

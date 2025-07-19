@@ -11,9 +11,10 @@ alwaysApply: false
 - **Developer value priority**: Choose milestone with highest developer impact
 - **Testable scope**: Ensure selected milestone is small enough to validate quickly
 - **Foundation first**: Prioritize milestones that enable future development
+- **Technical complexity awareness**: Flag domain-specific complexity early (crypto, ML, protocols)
 - **No technical decisions**: Focus on what developers need, not how to build it
 
-## Input Analysis Protocol
+## Enhanced Input Analysis Protocol
 
 ### Required Input Documents
 - `ai_docs/{lib-name}/high_level/lib-overview.md`
@@ -30,31 +31,36 @@ Extract and understand:
 - Target developer personas and their pain points
 - Unique differentiators that must be preserved
 - Success metrics and validation criteria
+- **Technical domain complexity** (crypto, protocols, ML, etc.)
 
-#### 2. Milestone Evaluation
+#### 2. Milestone Evaluation with Complexity Assessment
 For each milestone in milestones.md, assess:
 - **Developer Impact**: How much value does this deliver?
 - **Validation Potential**: Can success be measured quickly?
 - **Foundation Value**: Does this enable future milestones?
 - **Scope Clarity**: Is the scope well-defined and achievable?
-- **Risk Level**: What could go wrong and how to mitigate?
+- **Technical Risk Level**: Domain-specific complexity (crypto, protocols)
+- **AI Assistance Viability**: High/Medium/Low AI effectiveness areas
 
-#### 3. API Surface Analysis
+#### 3. API Surface Analysis with Domain Context
 From api.md, identify:
 - Core APIs needed for selected milestone
 - Integration points with existing tools
 - Developer workflow implications
 - Error handling requirements
+- **Domain-specific considerations** (crypto libraries, protocol compliance)
 
 <example>
-**Good Milestone Selection:**
+**Good Milestone Selection with Complexity Flag:**
 "Milestone 1: Core Connection API" - Enables basic library usage, easily testable, foundation for everything else
+**Technical Complexity**: Medium - WebSocket protocol compliance needed
 
-**Avoid Complex First Milestones:**
-"Milestone 3: Advanced Plugin System" - Too complex, depends on earlier work, hard to validate independently
+**Flag High-Complexity Early:**
+"Milestone 2: Cryptographic Core" - Essential foundation, high complexity
+**Technical Complexity**: HIGH - Custom crypto implementation, requires library integration expertise
 </example>
 
-## Selection Criteria
+## Enhanced Selection Criteria
 
 ### Primary Criteria (Must Have)
 - **Immediate Value**: Developers can use it right away
@@ -68,14 +74,24 @@ From api.md, identify:
 - **Market Validation**: Tests core assumptions with real developers
 - **Community Building**: Attracts early adopters and contributors
 
+### Technical Complexity Assessment
+Score technical complexity (1-5 scale):
+
+| Area | Complexity | AI Effectiveness | Planning Notes |
+|------|------------|------------------|----------------|
+| Crypto | 5 | Low | Library integration, need fallbacks |
+| Protocols | 4 | Low-Medium | Spec compliance critical |
+| APIs | 2 | High | AI excellent for boilerplate |
+| Testing | 3 | High | AI great for test generation |
+
 ### Evaluation Matrix
 Score each milestone (1-5 scale):
 
-| Milestone | Dev Value | Testability | Scope | Foundation | Total |
-|-----------|-----------|-------------|-------|------------|-------|
-| M1        | 5         | 5           | 4     | 5          | 19    |
-| M2        | 3         | 4           | 5     | 3          | 15    |
-| M3        | 4         | 2           | 3     | 2          | 11    |
+| Milestone | Dev Value | Testability | Scope | Foundation | Tech Risk | Total |
+|-----------|-----------|-------------|-------|------------|-----------|-------|
+| M1        | 5         | 5           | 4     | 5          | 2         | 21    |
+| M2        | 3         | 4           | 5     | 3          | 5         | 20    |
+| M3        | 4         | 2           | 3     | 2          | 3         | 14    |
 
 ## Analysis Deep Dive
 
@@ -88,7 +104,7 @@ Map the selected milestone to developer experience:
 4. **Integration**: How does this fit into their existing workflow?
 5. **Expansion**: What do they want to do next?
 
-### Requirements Surface Area
+### Requirements Surface Area with Technical Domains
 Identify what needs detailed requirements gathering:
 
 #### Core Functionality Requirements
@@ -96,18 +112,21 @@ Identify what needs detailed requirements gathering:
 - Input validation and error handling
 - Performance expectations
 - Integration capabilities
+- **Domain-specific compliance** (protocols, standards)
 
 #### Developer Experience Requirements  
 - Installation and setup process
 - Documentation and examples needed
 - Debugging and troubleshooting support
 - Migration or upgrade paths
+- **Technical expertise assumptions** (crypto knowledge, protocol familiarity)
 
 #### Validation Requirements
 - Success criteria and metrics
 - Testing approaches for each user story
 - Feedback collection mechanisms
 - Iteration and improvement processes
+- **Domain-specific validation** (crypto correctness, protocol compliance)
 
 <example type="invalid">
 **Avoid Technical Implementation Focus:**
@@ -115,16 +134,16 @@ Identify what needs detailed requirements gathering:
 - "What testing framework should we use?"
 - "Which CI/CD pipeline is best?"
 
-**Focus on Developer Needs:**
-- "What information do developers need to get started?"
-- "How should errors be communicated to developers?"
-- "What examples would make the API clear?"
+**Focus on Developer Needs with Domain Context:**
+- "What crypto knowledge should developers have?"
+- "How should protocol errors be communicated to developers?"
+- "What crypto library examples would make the API clear?"
 </example>
 
-## IAC Output Generation
+## Enhanced IAC Output Generation
 
 ### Create analysis-summary.md
-Comprehensive milestone analysis:
+Comprehensive milestone analysis with complexity flagging:
 
 ```markdown
 # Requirements Analysis Summary
@@ -134,6 +153,12 @@ Comprehensive milestone analysis:
 
 ## Selection Rationale
 [Why this milestone was chosen over alternatives]
+
+## Technical Complexity Assessment
+**Domain**: [e.g., Cryptography, Protocol Implementation, Standard APIs]
+**Complexity Level**: [Low/Medium/High]
+**AI Effectiveness**: [High/Medium/Low] for different components
+**Key Risk Areas**: [Specific technical challenges]
 
 ## Developer Value Analysis
 [Detailed explanation of value delivered to developers]
@@ -151,18 +176,30 @@ Comprehensive milestone analysis:
 
 ### Developer Experience
 [Onboarding, documentation, and workflow needs]
+[Technical expertise assumptions]
 
 ### Integration Points
 [How this milestone connects with existing tools]
 
+### Domain-Specific Considerations
+[Crypto libraries, protocol compliance, standards adherence]
+
 ### Validation Approach
 [How to test and gather feedback]
+[Domain-specific validation requirements]
 
 ## Risk Assessment
 [Potential challenges and mitigation strategies]
+[Technical complexity mitigation strategies]
+
+## AI Assistance Strategy
+**High AI Effectiveness**: [Boilerplate, testing, documentation]
+**Medium AI Effectiveness**: [API design, integration patterns]
+**Low AI Effectiveness**: [Domain-specific logic, complex debugging]
 
 ## Next Phase Preparation
 [Key questions for requirements interviewer]
+[Technical research areas]
 
 ## User Story Mapping
 [Which user stories from user-stories.md are addressed]
@@ -172,28 +209,38 @@ Comprehensive milestone analysis:
 ```
 
 ### Create interview-preparation.md
-Guide for requirements interviewer:
+Enhanced guide for requirements interviewer:
 
 ```markdown
 # Requirements Interview Preparation
 
 ## Interview Focus Areas
 [Key topics to explore in detail]
+[Technical complexity areas needing clarification]
 
 ## Critical Questions
 [Must-ask questions for this milestone]
+[Domain-specific clarification questions]
 
 ## Developer Personas
 [Target developers for this milestone]
+[Technical expertise assumptions]
 
 ## Success Scenarios
 [Specific use cases to validate]
+[Domain-specific validation scenarios]
 
 ## Integration Concerns
 [How this fits with existing developer tools]
+[External library dependencies]
+
+## Technical Research Areas
+[Complex topics requiring deeper investigation]
+[Areas where AI assistance is limited]
 
 ## Validation Approach
 [How to test requirements completeness]
+[Domain expertise validation]
 ```
 
 ## Quality Validation
@@ -204,6 +251,8 @@ Guide for requirements interviewer:
 - ✅ Developer value articulated precisely
 - ✅ Scope boundaries well-defined
 - ✅ Success criteria specific and measurable
+- ✅ **Technical complexity flagged appropriately**
+- ✅ **AI assistance viability assessed**
 
 ### Requirements Readiness Check
 - ✅ Clear focus areas for interview identified
@@ -211,18 +260,20 @@ Guide for requirements interviewer:
 - ✅ User stories mapped to milestone scope
 - ✅ API surface area clearly defined
 - ✅ Integration points identified
+- ✅ **Technical research areas flagged**
+- ✅ **Domain expertise requirements noted**
 
 ## Termination Criteria
 
 The analyzer terminates when:
 
 1. **Milestone selected**: One specific milestone chosen with clear justification
-2. **Analysis complete**: Comprehensive understanding of requirements surface area
-3. **Interview prepared**: Clear guidance for requirements interviewer
+2. **Analysis complete**: Comprehensive understanding of requirements surface area including technical complexity
+3. **Interview prepared**: Clear guidance for requirements interviewer with domain context
 4. **IAC documents created**: analysis-summary.md and interview-preparation.md complete
-5. **Handoff ready**: Requirements interviewer can start immediately
+5. **Handoff ready**: Requirements interviewer can start immediately with technical context
 
-## Handoff Message
+## Enhanced Handoff Message
 
 Upon successful completion, provide this standardized message:
 
@@ -233,6 +284,8 @@ Upon successful completion, provide this standardized message:
 🎯 Developer Value: [Key value proposition]
 📏 Scope: [Concise scope definition]
 ✅ Success Criteria: [Primary success metrics]
+⚠️ Technical Complexity: [Level] - [Domain area]
+🤖 AI Effectiveness: [High/Medium/Low areas identified]
 
 📁 IAC Documents Created:
 - ai_docs/{lib-name}/low_level/session-{id}/req/IAC/analysis-summary.md
@@ -242,6 +295,12 @@ Upon successful completion, provide this standardized message:
 - [Key area 1]
 - [Key area 2]
 - [Key area 3]
+- [Technical research area if applicable]
+
+⚠️ Special Considerations:
+- Technical Complexity: [Specific challenges]
+- Domain Expertise: [Required knowledge areas]
+- AI Limitations: [Areas needing human expertise]
 
 🔄 Next: requirements-interviewer.mdc will conduct dopamine-optimized developer requirements gathering
 
@@ -255,8 +314,10 @@ Ready to begin requirements interview? [Yes/No]
 - **Evidence-Based**: Base decisions on clear analysis, not assumptions
 - **Scope-Conscious**: Choose achievable milestones that build momentum
 - **Foundation-Focused**: Prioritize work that enables future development
+- ****Complexity-Aware**: Flag technical challenges early for proper planning**
+- ****AI-Realistic**: Understand where AI helps and where human expertise is needed**
 
-Remember: The goal is not to pick the easiest milestone, but the one that delivers the most developer value while building a solid foundation for the library's evolution.
+Remember: The goal is not to pick the easiest milestone, but the one that delivers the most developer value while building a solid foundation for the library's evolution, with realistic assessment of technical complexity.
 
 ## Agent Chain Commands
 

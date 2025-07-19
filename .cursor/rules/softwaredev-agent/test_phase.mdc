@@ -4,333 +4,526 @@ globs:
 alwaysApply: false
 ---
 
-# Comprehensive Testing and Validation
+# Library-Focused Testing and Validation
 
 ## Critical Rules
 
+- **Library-first testing**: All tests must validate actual library functionality, not implementation details or mock behavior
+- **Real integration testing**: Test against actual library APIs, not mocked versions
 - **Container-based testing**: All tests must run successfully in Docker environment to ensure deployment reliability
-- **AI-generated test validation**: Verify all AI-generated tests correctly validate business logic and edge cases
-- **Performance validation**: Ensure code meets performance requirements under realistic load conditions
-- **Security scanning**: Validate that no security vulnerabilities exist in dependencies or generated code
-- **Documentation testing**: Verify all examples and documentation work as described
+- **User scenario validation**: Tests must reflect how real developers will use the library
+- **Critical test review**: AI-generated tests require human validation for library correctness
+- **Performance validation**: Ensure library meets performance requirements under realistic load conditions
 
-## Testing Framework
+## Library Testing Philosophy
 
-### 1. Unit Testing Validation
-
-**AI-Generated Test Review**
+### What to Test (Library-Focused)
 ```typescript
-// Validate AI-generated tests cover:
-// 1. Happy path scenarios
-// 2. Edge cases and error conditions
-// 3. Input validation
-// 4. Type safety
-// 5. Async/await patterns
-// 6. Mock usage for external dependencies
+// ✅ GOOD: Test actual library behavior
+describe('LibraryAPI', () => {
+  it('should connect to real service and return data', async () => {
+    const lib = new MyLibrary();
+    const result = await lib.connect('real-endpoint');
+    expect(result.status).toBe('connected');
+    expect(result.data).toHaveProperty('version');
+  });
 
-// Example test validation checklist:
-describe('TestValidation', () => {
-  it('covers happy path') // ✅ AI generated
-  it('handles null/undefined inputs') // ✅ AI generated
-  it('validates input types') // ✅ AI generated
-  it('handles async errors properly') // ⚠️ Manual review needed
-})
+  it('should handle real network errors gracefully', async () => {
+    const lib = new MyLibrary();
+    // Test with actual unreachable endpoint
+    await expect(lib.connect('unreachable-endpoint')).rejects.toThrow();
+  });
+});
+
+// ❌ BAD: Testing mocks or implementation details  
+describe('LibraryAPI', () => {
+  it('should call internal method', () => {
+    const mockMethod = jest.fn();
+    // This tests the mock, not the library!
+  });
+
+  it('should use correct HTTP method', () => {
+    // Testing implementation detail, not behavior
+  });
+});
 ```
 
-**Container Test Execution**
-```bash
-# Run all tests in container environment
-docker-compose exec app npm run test
-docker-compose exec app npm run test:coverage
-docker-compose exec app npm run test:watch
-```
-
-### 2. Integration Testing
-
-**API Integration Tests**
+### Library Integration Testing Strategy
 ```typescript
-// Test all public APIs work correctly
-// Validate container-to-container communication
-// Test with realistic data volumes
-// Verify error handling across service boundaries
+// ✅ Test library as black box with real dependencies
+describe('Library Integration', () => {
+  beforeAll(async () => {
+    // Setup real test environment, not mocks
+    await setupRealTestEnvironment();
+  });
+
+  it('complete user workflow works end-to-end', async () => {
+    const lib = new MyLibrary();
+    
+    // Test the actual workflow developers will use
+    await lib.initialize();
+    const result = await lib.performCoreFunction(realTestData);
+    await lib.cleanup();
+    
+    // Validate actual library behavior
+    expect(result).toMatchLibrarySpecification();
+  });
+});
 ```
 
-**Container Integration Validation**
-```bash
-# Test service interactions
-docker-compose exec app npm run test:integration
-docker-compose exec app npm run test:e2e
+## AI-Generated Test Validation Framework
 
-# Validate container networking
-docker-compose exec app npm run test:network
-```
-
-### 3. Performance Testing
-
-**Performance Benchmarking**
-```bash
-# Run performance tests in container
-docker-compose exec app npm run test:performance
-docker-compose exec app npm run benchmark
-
-# Memory and CPU usage validation
-docker stats {container-name}
-```
-
-**Load Testing Validation**
+### Critical Test Review Process
 ```typescript
-// Validate performance under load
-// Test memory usage patterns
-// Validate response times
-// Check for memory leaks
-```
+// Human review required for all AI-generated tests:
 
-### 4. Security Testing
-
-**Security Scanning Pipeline**
-```bash
-# Dependency vulnerability scanning
-docker-compose exec app npm audit --audit-level moderate
-docker-compose exec app npm run security:scan
-
-# Container security validation
-docker scan {container-image}
-
-# SAST (Static Application Security Testing)
-docker-compose exec app npm run security:sast
-```
-
-**Security Validation Checklist**
-- ✅ No critical dependency vulnerabilities
-- ✅ Input validation implemented
-- ✅ No hardcoded secrets or credentials
-- ✅ Proper error handling (no information leakage)
-- ✅ Type safety prevents injection attacks
-
-## Testing Execution Strategy
-
-### Week 1: Core Testing (Days 1-7)
-
-**Days 1-2: Unit Test Validation**
-```bash
-# Validate all AI-generated tests
-docker-compose exec app npm run test:unit
-docker-compose exec app npm run test:coverage
-
-# Review test quality and coverage
-# Ensure business logic validation
-# Verify edge case handling
-```
-
-**Days 3-4: Integration Testing**
-```bash
-# Test component interactions
-docker-compose exec app npm run test:integration
-
-# Validate API contracts
-# Test error propagation
-# Verify data flow
-```
-
-**Days 5-7: Performance & Security**
-```bash
-# Performance validation
-docker-compose exec app npm run test:performance
-docker-compose exec app npm run benchmark
-
-# Security scanning
-docker-compose exec app npm audit
-docker-compose exec app npm run security:scan
-```
-
-### Week 2: Validation & Finalization (Days 8-14)
-
-**Days 8-10: End-to-End Testing**
-```bash
-# Full workflow testing
-docker-compose exec app npm run test:e2e
-
-# User scenario validation
-# Cross-browser testing (if applicable)
-# Integration with external services
-```
-
-**Days 11-12: Documentation Testing**
-```bash
-# Test all code examples in documentation
-# Validate API documentation accuracy
-# Test installation and setup instructions
-```
-
-**Days 13-14: Production Readiness**
-```bash
-# Production container testing
-docker build -f Dockerfile.prod -t {lib-name}:prod .
-docker run --rm {lib-name}:prod npm run test:production
-
-# Deployment validation
-# Performance under production conditions
-# Security hardening verification
-```
-
-## Quality Assurance Automation
-
-### Automated Testing Pipeline
-```yaml
-# GitHub Actions or similar CI/CD
-name: Comprehensive Testing
-on: [push, pull_request]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Build containers
-        run: docker-compose build
-      - name: Run unit tests
-        run: docker-compose exec app npm run test
-      - name: Run integration tests  
-        run: docker-compose exec app npm run test:integration
-      - name: Security scan
-        run: docker-compose exec app npm audit
-      - name: Performance test
-        run: docker-compose exec app npm run test:performance
-```
-
-### Test Coverage Requirements
-```json
-{
-  "jest": {
-    "coverageThreshold": {
-      "global": {
-        "branches": 80,
-        "functions": 90,
-        "lines": 85,
-        "statements": 85
-      }
-    }
-  }
+interface TestQualityChecklist {
+  // ✅ AI usually handles well
+  hasBasicStructure: boolean;     // AI generates good boilerplate
+  hasHappyPathCoverage: boolean;  // AI covers basic scenarios
+  hasProperAssertions: boolean;   // AI writes valid expect() calls
+  
+  // ⚠️ Requires human validation
+  testsActualLibrary: boolean;    // NOT implementation details
+  usesRealDependencies: boolean;  // NOT excessive mocking
+  reflectsUserWorkflow: boolean;  // NOT internal method calls
+  hasLibraryEdgeCases: boolean;   // Domain-specific edge cases
+  
+  // ❌ AI often misses
+  hasSecurityTests: boolean;      // Security boundary testing
+  hasPerformanceTests: boolean;   // Real performance validation
+  hasErrorRecovery: boolean;      // Complex error scenarios
 }
 ```
 
-## AI-Generated Test Quality Validation
-
-### Test Quality Checklist
+### Test Review Guidelines
 ```typescript
-// Review AI-generated tests for:
-// 1. Correct assertion patterns
-// 2. Realistic test data
-// 3. Proper mock usage  
-// 4. Error scenario coverage
-// 5. Performance considerations
+// Questions to ask when reviewing AI-generated tests:
 
-// Example quality validation:
-const validateAITest = (testCode: string) => ({
-  hasHappyPath: true,      // ✅ AI usually good at this
-  hasEdgeCases: true,      // ⚠️ Needs manual review
-  hasErrorHandling: false, // ❌ Often missing
-  hasRealisticData: true,  // ✅ AI usually good
-  hasProperMocking: false  // ⚠️ Needs manual review
-})
+const testReviewQuestions = [
+  // Library Focus Questions
+  "Does this test validate what developers actually care about?",
+  "Would this test catch a real bug that affects library users?", 
+  "Is this testing library behavior or implementation details?",
+  "Does this use real dependencies the library will use in production?",
+  
+  // User Workflow Questions  
+  "Does this reflect how developers will actually use the library?",
+  "Are we testing the public API surface, not internal methods?",
+  "Do edge cases reflect real-world usage scenarios?",
+  
+  // Quality Questions
+  "Would this test fail if the library breaks in ways users care about?",
+  "Are we testing too many mocks instead of actual library functionality?",
+  "Do integration tests use real external dependencies when possible?"
+];
 ```
 
-### Human Test Review Process
-```typescript
-// Manual review required for:
-// 1. Business logic correctness
-// 2. Complex error scenarios
-// 3. Security-sensitive tests
-// 4. Performance edge cases
-// 5. Integration boundary tests
+## Library Testing Framework
 
-// AI excels at:
-// 1. Boilerplate test structure
-// 2. Happy path scenarios
-// 3. Type validation tests
-// 4. Basic mocking patterns
+### 1. Public API Testing (Library Behavior)
+```typescript
+// Test the actual library API that developers use
+describe('Public Library API', () => {
+  let library: MyLibrary;
+  
+  beforeEach(() => {
+    // Test with real library instance, minimal mocking
+    library = new MyLibrary({
+      // Real configuration options
+      endpoint: process.env.TEST_ENDPOINT,
+      timeout: 5000
+    });
+  });
+
+  describe('Core Functionality', () => {
+    it('performs primary library function correctly', async () => {
+      // Test actual library behavior
+      const input = createRealTestData();
+      const result = await library.coreFunction(input);
+      
+      // Validate against library specification
+      expect(result).toMatchLibraryContract();
+      expect(result.success).toBe(true);
+    });
+
+    it('handles library-specific error conditions', async () => {
+      // Test real error scenarios the library should handle
+      const invalidInput = createInvalidTestData();
+      
+      await expect(library.coreFunction(invalidInput))
+        .rejects.toThrow(LibraryError);
+    });
+  });
+
+  describe('Library Configuration', () => {
+    it('respects configuration options', () => {
+      const customConfig = { timeout: 1000 };
+      const lib = new MyLibrary(customConfig);
+      
+      // Test that library actually uses configuration
+      expect(lib.getTimeout()).toBe(1000);
+    });
+  });
+});
 ```
 
-## Container Testing Validation
+### 2. Integration Testing (Real Dependencies)
+```typescript
+// Test library with real external dependencies
+describe('Library Integration', () => {
+  describe('External Service Integration', () => {
+    it('works with real external service', async () => {
+      const library = new MyLibrary();
+      
+      // Test against real service (test environment)
+      const result = await library.connectToService();
+      
+      // Validate actual integration works
+      expect(result.connected).toBe(true);
+      expect(result.serviceInfo).toBeDefined();
+    });
+
+    it('handles external service failures gracefully', async () => {
+      const library = new MyLibrary({
+        endpoint: 'http://unreachable-service.test'
+      });
+      
+      // Test real failure scenarios
+      await expect(library.connectToService())
+        .rejects.toThrow(/Connection failed/);
+    });
+  });
+
+  describe('File System Integration', () => {
+    it('reads and writes actual files', async () => {
+      const library = new MyLibrary();
+      const testFile = '/tmp/test-file.json';
+      
+      // Test with real file operations
+      await library.writeFile(testFile, { test: 'data' });
+      const result = await library.readFile(testFile);
+      
+      expect(result).toEqual({ test: 'data' });
+      
+      // Cleanup
+      await fs.unlink(testFile);
+    });
+  });
+});
+```
+
+### 3. User Workflow Testing (Developer Experience)
+```typescript
+// Test complete workflows developers will actually use
+describe('Developer Workflows', () => {
+  describe('Quick Start Workflow', () => {
+    it('supports the documented quick start example', async () => {
+      // Test exactly what's in the documentation
+      const library = new MyLibrary();
+      await library.initialize();
+      
+      const result = await library.quickStart();
+      
+      expect(result.success).toBe(true);
+      expect(result).toHaveProperty('data');
+    });
+  });
+
+  describe('Advanced Usage Workflow', () => {
+    it('supports advanced configuration workflow', async () => {
+      const library = new MyLibrary({
+        advanced: true,
+        customSettings: { feature: 'enabled' }
+      });
+      
+      const result = await library.advancedOperation();
+      
+      expect(result.features).toContain('advanced');
+    });
+  });
+
+  describe('Error Recovery Workflow', () => {
+    it('allows developers to recover from errors', async () => {
+      const library = new MyLibrary();
+      
+      // Simulate error condition
+      await expect(library.operationThatFails()).rejects.toThrow();
+      
+      // Test recovery workflow
+      library.reset();
+      const result = await library.operationThatSucceeds();
+      
+      expect(result.success).toBe(true);
+    });
+  });
+});
+```
+
+## Container-Based Testing Execution
 
 ### Development Container Tests
 ```bash
-# Ensure all tests pass in development environment
-docker-compose up -d
-docker-compose exec app npm install
-docker-compose exec app npm run test:all
-docker-compose exec app npm run lint
-docker-compose exec app npm run type-check
+# Run library tests in development container
+docker-compose exec app npm run test:library
+docker-compose exec app npm run test:integration  
+docker-compose exec app npm run test:workflows
+
+# Validate library behavior in containerized environment
+docker-compose exec app npm run test:container-specific
 ```
 
-### Production Container Tests
+### Production-Like Testing
 ```bash
-# Validate production readiness
-docker build -f Dockerfile.prod -t {lib-name}:test .
-docker run --rm {lib-name}:test npm run test:ci
-docker run --rm {lib-name}:test npm run build
-docker run --rm {lib-name}:test npm run start
+# Test library in production-like container
+docker build -f Dockerfile.prod -t library:test .
+docker run --rm -e NODE_ENV=test library:test npm run test:production
+
+# Test library installation and usage
+docker run --rm library:test npm pack
+docker run --rm library:test npm install ./library-*.tgz
 ```
 
-### Cross-Platform Container Testing
-```bash
-# Test on different architectures if needed
-docker buildx build --platform linux/amd64,linux/arm64 .
+## Performance Testing (Library-Focused)
+
+### Library Performance Benchmarks
+```typescript
+describe('Library Performance', () => {
+  it('meets performance requirements for typical usage', async () => {
+    const library = new MyLibrary();
+    const startTime = performance.now();
+    
+    // Test with realistic data volume
+    await library.processTypicalWorkload();
+    
+    const duration = performance.now() - startTime;
+    expect(duration).toBeLessThan(1000); // 1 second max
+  });
+
+  it('handles large data sets efficiently', async () => {
+    const library = new MyLibrary();
+    const largeDataSet = generateLargeTestData(10000);
+    
+    const result = await library.processLargeData(largeDataSet);
+    
+    expect(result.processed).toBe(10000);
+    expect(result.memory).toBeLessThan(100 * 1024 * 1024); // 100MB max
+  });
+});
 ```
+
+## Security Testing (Library-Focused)
+
+### Library Security Validation
+```typescript
+describe('Library Security', () => {
+  it('validates input parameters properly', async () => {
+    const library = new MyLibrary();
+    
+    // Test with malicious input
+    const maliciousInput = { 
+      script: '<script>alert("xss")</script>',
+      sql: "'; DROP TABLE users; --"
+    };
+    
+    await expect(library.processInput(maliciousInput))
+      .rejects.toThrow(/Invalid input/);
+  });
+
+  it('handles sensitive data securely', async () => {
+    const library = new MyLibrary();
+    const sensitiveData = { password: 'secret123' };
+    
+    const result = await library.processSensitiveData(sensitiveData);
+    
+    // Ensure sensitive data is not exposed
+    expect(JSON.stringify(result)).not.toContain('secret123');
+  });
+});
+```
+
+## Test Quality Validation Process
+
+### Automated Test Review
+```typescript
+// Automated checks for test quality
+const validateTestSuite = (testFiles: string[]) => {
+  const issues = [];
+  
+  testFiles.forEach(file => {
+    const content = readFileSync(file, 'utf8');
+    
+    // Check for mock overuse (indicates testing implementation, not behavior)
+    const mockCount = (content.match(/jest\.mock|mockReturnValue/g) || []).length;
+    const testCount = (content.match(/it\(/g) || []).length;
+    
+    if (mockCount > testCount * 0.3) {
+      issues.push(`${file}: Too many mocks (${mockCount}/${testCount})`);
+    }
+    
+    // Check for library API usage
+    if (!content.includes('new MyLibrary(')) {
+      issues.push(`${file}: Not testing actual library instantiation`);
+    }
+    
+    // Check for real assertions
+    if (!content.includes('expect(') || content.includes('expect(mock')) {
+      issues.push(`${file}: Testing mocks instead of library behavior`);
+    }
+  });
+  
+  return issues;
+};
+```
+
+### Manual Review Checklist
+```markdown
+## Test Review Checklist
+
+### Library Focus ✅
+- [ ] Tests instantiate actual library classes
+- [ ] Tests call public API methods, not internal functions  
+- [ ] Tests validate library behavior, not implementation details
+- [ ] Integration tests use real dependencies when possible
+- [ ] Tests reflect documented usage patterns
+
+### User Workflow ✅
+- [ ] Tests match documentation examples
+- [ ] Tests cover complete user workflows
+- [ ] Error handling tests reflect real error scenarios
+- [ ] Performance tests use realistic data volumes
+- [ ] Tests validate developer experience expectations
+
+### Quality Assurance ✅
+- [ ] Tests would fail if library behavior changes
+- [ ] Minimal mocking (only for external services)
+- [ ] Tests run against containerized library
+- [ ] Tests validate security boundaries
+- [ ] Tests cover edge cases specific to library domain
+```
+
+## Testing Execution Strategy
+
+### Week 1: Core Library Testing (Days 1-7)
+
+**Days 1-3: Public API Validation**
+- Review all AI-generated tests for library focus
+- Ensure tests validate actual library behavior
+- Add missing user workflow tests
+- Remove tests that only validate mocks
+
+**Days 4-5: Integration Testing**
+- Test library with real external dependencies
+- Validate container-based library operation
+- Test installation and usage workflows
+
+**Days 6-7: Performance & Security**
+- Performance testing with realistic data
+- Security testing with actual threat scenarios
+- Memory and resource usage validation
+
+### Week 2: Quality Assurance (Days 8-14)
+
+**Days 8-10: User Experience Testing**
+- Test documentation examples work correctly
+- Validate developer onboarding workflows
+- Test error messages and debugging experience
+
+**Days 11-12: Production Readiness**
+- Test library in production-like containers
+- Validate packaging and distribution
+- Test with different Node.js versions
+
+**Days 13-14: Final Validation**
+- Comprehensive library behavior validation
+- Performance benchmarking
+- Security scan and validation
 
 ## Quality Validation
 
 ### Testing Completeness Check
-- ✅ All unit tests pass in container environment
-- ✅ Integration tests validate component interactions
-- ✅ Performance meets established benchmarks
-- ✅ Security scans show no critical vulnerabilities
-- ✅ Documentation examples work correctly
-- ✅ Production container builds and runs successfully
-- ✅ Test coverage meets minimum thresholds
+- ✅ **Library behavior validated**: Tests focus on actual library functionality
+- ✅ **User workflows tested**: Tests reflect real developer usage
+- ✅ **Minimal mocking**: Tests use real dependencies where possible
+- ✅ **Container validation**: All tests pass in Docker environment
+- ✅ **Performance validated**: Library meets performance requirements
+- ✅ **Security cleared**: No critical security vulnerabilities found
+- ✅ **Documentation tested**: All examples work correctly
+
+### Library-Specific Validation
+- ✅ **API completeness**: All public APIs have behavior tests
+- ✅ **Error handling**: Real error scenarios tested
+- ✅ **Configuration**: Library options properly tested
+- ✅ **Integration**: External dependencies tested with real services
+- ✅ **Installation**: Package installation workflow validated
 
 ## Termination Criteria
 
 The test_phase rule terminates when:
 
-1. **All tests passing**: Unit, integration, and end-to-end tests pass in containers
-2. **Coverage targets met**: Code coverage meets or exceeds established thresholds
-3. **Performance validated**: All performance benchmarks pass
-4. **Security cleared**: No critical security vulnerabilities found
-5. **Documentation tested**: All examples and instructions work correctly
-6. **Production ready**: Production container validated and deployment-ready
+1. **Library behavior validated**: All tests focus on actual library functionality, not mocks
+2. **User workflows tested**: Complete developer usage scenarios validated
+3. **Container testing complete**: All tests pass in production-like containers
+4. **Performance benchmarks met**: Library meets performance requirements
+5. **Security validation passed**: No critical vulnerabilities in library
+6. **Documentation accuracy verified**: All examples and workflows tested
 
-## Agent Chain Handoff
+## Enhanced Handoff Message
 
-Upon successful completion:
+Upon successful completion, provide this standardized message:
 
-```bash
-# Deactivate current rule and activate next
-sed -i 's/alwaysApply: false/alwaysApply: true/' .cursor/rules/softwaredev-agent/finalize_phase.mdc
-sed -i 's/alwaysApply: true/alwaysApply: false/' .cursor/rules/softwaredev-agent/test_phase.mdc
 ```
-
-**Handoff Message:**
-```
-🧪 Testing Complete - All Quality Gates Passed
+🧪 Library Testing Complete - Real Functionality Validated
 
 📊 Testing Summary:
-- Unit Tests: ✅ {X} tests passed, {Y}% coverage
-- Integration Tests: ✅ All API contracts validated
-- Performance: ✅ Meets benchmarks ({X}ms response time)
-- Security: ✅ No critical vulnerabilities found
-- Container Validation: ✅ Production deployment ready
+- Library API Tests: ✅ {X} tests validating actual library behavior
+- User Workflow Tests: ✅ {Y} complete developer scenarios tested  
+- Integration Tests: ✅ Real dependencies tested (minimal mocking)
+- Performance: ✅ Library meets benchmarks under realistic load
+- Security: ✅ Library boundaries properly secured
+- Container Validation: ✅ All tests pass in production containers
+
+🎯 Quality Validation:
+- Mock Usage: {X}% (target: <30% of tests)
+- Library Coverage: {Y}% of public API tested
+- Workflow Coverage: {Z} complete user scenarios validated
+- Real Integration: {A}% of external dependencies tested without mocks
+
+⚠️ Test Review Results:
+- AI-Generated Tests Reviewed: ✅ {B} tests validated for library focus
+- Implementation Detail Tests Removed: ✅ {C} tests refactored
+- User Workflow Tests Added: ✅ {D} missing scenarios covered
 
 📁 Test Artifacts:
-- Test coverage reports
-- Performance benchmark results
-- Security scan reports
-- Production container validation
+- Library behavior test reports  
+- User workflow validation results
+- Performance benchmark data
+- Security validation reports
+- Container test execution logs
 
 🔄 Next: finalize_phase.mdc will create retrospective and prepare handoff
 
-All tests passing in containers? [✅ Yes]
-Performance benchmarks met? [✅ Yes]
-Security scans clear? [✅ Yes]
+Library functionality properly tested? [✅ Yes]
+User workflows validated? [✅ Yes] 
+Minimal mocking confirmed? [✅ Yes]
 Ready for phase finalization? [Yes/No]
+```
+
+## Testing Philosophy
+
+- **Library-First**: Test what developers actually use, not internal implementation
+- **Real-World Focus**: Use actual dependencies and realistic scenarios
+- **User-Centric**: Validate complete workflows developers will perform
+- **Quality-Driven**: Ensure tests catch real bugs that affect library users
+- **Container-Validated**: All testing in production-like environments
+- **AI-Assisted but Human-Validated**: Leverage AI for test generation, require human review for quality
+
+Remember: The goal is not just test coverage, but ensuring the library actually works correctly for real developers in real scenarios. Tests should validate library behavior, not implementation details.
+
+## Agent Chain Commands
+
+Upon successful completion, execute:
+```bash
+# Deactivate current rule and activate next
+sed -i 's/alwaysApply: true/alwaysApply: false/' .cursor/rules/softwaredev-agent/test_phase.mdc && sed -i 's/alwaysApply: false/alwaysApply: true/' .cursor/rules/softwaredev-agent/finalize_phase.mdc
 ```
