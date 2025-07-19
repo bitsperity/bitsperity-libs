@@ -65,29 +65,29 @@ export function validateConfig(config: Partial<NostrUnchainedConfigDefaults>): v
   }
   
   if (config.retry) {
-    if (typeof config.retry.maxAttempts !== 'number' || config.retry.maxAttempts < 1) {
+    if (config.retry.maxAttempts !== undefined && (typeof config.retry.maxAttempts !== 'number' || config.retry.maxAttempts < 1)) {
       throw new Error('retry.maxAttempts must be a positive number');
     }
     
-    if (typeof config.retry.initialDelay !== 'number' || config.retry.initialDelay < 0) {
+    if (config.retry.initialDelay !== undefined && (typeof config.retry.initialDelay !== 'number' || config.retry.initialDelay < 0)) {
       throw new Error('retry.initialDelay must be a non-negative number');
     }
     
-    if (typeof config.retry.maxDelay !== 'number' || config.retry.maxDelay < config.retry.initialDelay) {
+    if (config.retry.maxDelay !== undefined && (typeof config.retry.maxDelay !== 'number' || (config.retry.initialDelay !== undefined && config.retry.maxDelay < config.retry.initialDelay))) {
       throw new Error('retry.maxDelay must be greater than or equal to initialDelay');
     }
   }
   
   if (config.limits) {
-    if (typeof config.limits.maxConnections !== 'number' || config.limits.maxConnections < 1) {
+    if (config.limits.maxConnections !== undefined && (typeof config.limits.maxConnections !== 'number' || config.limits.maxConnections < 1)) {
       throw new Error('limits.maxConnections must be a positive number');
     }
     
-    if (typeof config.limits.maxMessageHistory !== 'number' || config.limits.maxMessageHistory < 1) {
+    if (config.limits.maxMessageHistory !== undefined && (typeof config.limits.maxMessageHistory !== 'number' || config.limits.maxMessageHistory < 1)) {
       throw new Error('limits.maxMessageHistory must be a positive number');
     }
     
-    if (typeof config.limits.maxMemoryUsage !== 'number' || config.limits.maxMemoryUsage < 1) {
+    if (config.limits.maxMemoryUsage !== undefined && (typeof config.limits.maxMemoryUsage !== 'number' || config.limits.maxMemoryUsage < 1)) {
       throw new Error('limits.maxMemoryUsage must be a positive number');
     }
   }

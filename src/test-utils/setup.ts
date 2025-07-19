@@ -1,9 +1,10 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach } from 'vitest';
+import { cleanup } from '@testing-library/react';
 
 // Cleanup nach jedem Test
 afterEach(() => {
-  // Grundlegendes Cleanup - keine React-spezifischen Dependencies nötig
+  cleanup();
 });
 
 // Einfache Test-Utilities ohne komplexe Mocks
