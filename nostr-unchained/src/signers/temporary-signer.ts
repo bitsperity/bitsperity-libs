@@ -22,12 +22,12 @@ export class TemporarySigner implements Signer {
    */
   public async initialize(): Promise<void> {
     try {
-      // Generate cryptographically secure random private key
-      this._privateKey = crypto.getRandomValues(new Uint8Array(32));
+      // Use same approach as working quick-umbrel-test.js
+      const secp256k1 = await import('noble-secp256k1');
       
-      // Derive public key from private key (simplified for now)
-      // In production, this would use secp256k1 curve
-      this._publicKey = await this.derivePublicKey(this._privateKey);
+      // Generate real key pair using secp256k1 like working script
+      this._privateKey = secp256k1.default.utils.randomPrivateKey();
+      this._publicKey = Buffer.from(secp256k1.default.getPublicKey(this._privateKey, true).slice(1)).toString('hex');
       
       const capabilities: SignerCapabilities = {
         canSign: true,
@@ -64,30 +64,27 @@ export class TemporarySigner implements Signer {
     }
 
     try {
-      const eventToSign = {
-        kind: event.kind!,
-        tags: event.tags?.map(tag => [...tag]) || [],
-        content: event.content!,
-        created_at: event.created_at || Math.floor(Date.now() / 1000),
-        pubkey: this._publicKey,
-      };
+      // Use the working external script for crypto
+      const { exec } = await import('child_process');
+      const { promisify } = await import('util');
+      const execAsync = promisify(exec);
 
-      // Generate event ID (simplified)
-      const eventId = await this.generateEventId(eventToSign);
+      const content = event.content || '';
+      const privateKeyHex = Buffer.from(this._privateKey).toString('hex');
       
-      // Sign the event (simplified)
-      const signature = await this.signMessage(eventId, this._privateKey);
-
-      return {
-        id: eventId,
-        pubkey: this._publicKey,
-        created_at: eventToSign.created_at,
-        kind: eventToSign.kind,
-        tags: eventToSign.tags.map(tag => [...tag] as readonly string[]),
-        content: eventToSign.content,
-        sig: signature,
-      };
+      console.log(`📝 Creating event with working script approach...`);
+      
+      const result = await execAsync(`node create-event.js "${content}" "${privateKeyHex}" "${this._publicKey}"`);
+      
+      const signedEvent = JSON.parse(result.stdout.trim()) as NostrEvent;
+      
+      console.log(`✅ Event created successfully using working crypto!`);
+      console.log(`   🆔 Event ID: ${signedEvent.id.substring(0, 16)}...`);
+      console.log(`   ✍️ Signature: ${signedEvent.sig.substring(0, 16)}...`);
+      
+      return signedEvent;
     } catch (error) {
+      console.error('❌ TemporarySigner signing error:', error);
       throw new SignerError('Failed to sign event', error as Error);
     }
   }

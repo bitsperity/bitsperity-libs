@@ -1,8 +1,8 @@
-import { SimpleEventBus } from '@/core/event-bus';
+// import { SimpleEventBus } from '@/core/event-bus';
 import { DMConversationStore } from './dm-conversation';
 import { CrossTabSync } from './cross-tab-sync';
 import type { NostrEvent, EventBus } from '@/types';
-import type { ConversationState, ConversationStoreConfig } from './types';
+import type { ConversationStoreConfig } from './types';
 
 /**
  * Store Manager - Makes Phase 3 ACTUALLY work as promised
@@ -25,7 +25,8 @@ export class StoreManager {
       relayUrls?: string[];
       autoConnect?: boolean;
       syncAcrossTabs?: boolean;
-    } = {}
+    } = {},
+    private signer?: any  // Optional signer for real event creation
   ) {
     this.eventBus = eventBus;
     this.crossTabSync = new CrossTabSync(eventBus, 'nostr-store-manager');
@@ -94,18 +95,53 @@ export class StoreManager {
   }
 
   /**
+   * Send a message: Create, sign, and publish a new text message
+   * This is what developers should use to SEND messages
+   */
+  async sendMessage(conversationId: string, content: string): Promise<NostrEvent> {
+    const event = await this.createTextEvent(content);
+    
+    // Add to local store
+    const store = this.getConversationStore(conversationId);
+    await store.addMessage(event);
+    
+    // Wait for relay connections if they're not ready yet
+    console.log(`🔍 Waiting for relay connections... (currently ${this.relayConnections.size})`);
+    let attempts = 0;
+    const maxAttempts = 50; // 5 seconds max wait
+    
+    while (this.relayConnections.size === 0 && attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 100)); // Wait 100ms
+      attempts++;
+    }
+    
+    console.log(`🔍 After waiting: ${this.relayConnections.size} relay connections available`);
+    
+    // Publish to relay if connected
+    if (this.relayConnections.size > 0) {
+      console.log(`📤 Publishing event to ${this.relayConnections.size} relay(s)...`);
+      await this.publishEventToRelays(event);
+      console.log(`✅ Event successfully published to relay!`);
+    } else {
+      console.warn('⚠️ NO RELAY CONNECTIONS! Event not published to relay!');
+      console.warn('   Event created but only stored locally');
+    }
+    
+    // Sync to other store instances
+    this.syncMessageToAllStores(conversationId, event);
+    
+    return event;
+  }
+
+  /**
    * Add a message to a conversation and sync across all instances
+   * Use this for INCOMING messages from relays
    */
   async addMessage(conversationId: string, event: NostrEvent): Promise<void> {
     const store = this.getConversationStore(conversationId);
     
     // Add to local store
     await store.addMessage(event);
-    
-    // Publish to relay if connected (temporary Phase 3 feature)
-    if (this.relayConnections.size > 0) {
-      await this.publishEventToRelays(event);
-    }
     
     // Sync to other store instances
     this.syncMessageToAllStores(conversationId, event);
@@ -205,7 +241,7 @@ export class StoreManager {
   }
 
   /**
-   * Publish event to connected relays (temporary Phase 3 functionality)
+   * Publish event to connected relays and wait for confirmation
    */
   async publishEventToRelays(event: NostrEvent): Promise<void> {
     if (this.relayConnections.size === 0) {
@@ -214,20 +250,68 @@ export class StoreManager {
     }
 
     console.log(`📤 Publishing event to ${this.relayConnections.size} relays...`);
+    console.log(`   Event ID: ${event.id}`);
+    console.log(`   Content: "${event.content.substring(0, 50)}..."`);
     
     const publishPromises = Array.from(this.relayConnections).map(ws => {
       return new Promise<void>((resolve, reject) => {
-        if (ws.readyState === WebSocket.OPEN) {
-          try {
-            ws.send(JSON.stringify(['EVENT', event]));
-            console.log(`✅ Event published to relay`);
-            resolve();
-          } catch (error) {
-            console.error('❌ Failed to publish to relay:', error);
-            reject(error);
-          }
-        } else {
+        if (ws.readyState !== WebSocket.OPEN) {
           reject(new Error('WebSocket not open'));
+          return;
+        }
+
+        // Set up response listener
+        const originalOnMessage = ws.onmessage;
+        const timeout = setTimeout(() => {
+          ws.onmessage = originalOnMessage;
+          reject(new Error('Timeout waiting for relay response'));
+        }, 10000); // 10 second timeout
+
+        ws.onmessage = (messageEvent) => {
+          try {
+            const data = JSON.parse(messageEvent.data);
+            
+            // Check if this is an OK response for our event
+            if (data[0] === 'OK' && data[1] === event.id) {
+              clearTimeout(timeout);
+              ws.onmessage = originalOnMessage;
+              
+              const accepted = data[2];
+              const reason = data[3] || '';
+              
+              if (accepted) {
+                console.log(`✅ Event ACCEPTED by relay: ${event.id}`);
+                resolve();
+              } else {
+                console.error(`❌ Event REJECTED by relay: ${event.id}`);
+                console.error(`   Reason: ${reason}`);
+                reject(new Error(`Relay rejected event: ${reason}`));
+              }
+              return;
+            }
+            
+            // Forward other messages to original handler
+            if (originalOnMessage) {
+              originalOnMessage.call(ws, messageEvent);
+            }
+          } catch (error) {
+            console.error('Failed to parse relay message:', error);
+            // Forward to original handler
+            if (originalOnMessage) {
+              originalOnMessage.call(ws, messageEvent);
+            }
+          }
+        };
+
+        // Send the event
+        try {
+          ws.send(JSON.stringify(['EVENT', event]));
+          console.log(`📤 Event sent to relay, waiting for response...`);
+        } catch (error) {
+          clearTimeout(timeout);
+          ws.onmessage = originalOnMessage;
+          console.error('❌ Failed to send to relay:', error);
+          reject(error);
         }
       });
     });
@@ -241,21 +325,37 @@ export class StoreManager {
   }
 
   /**
-   * Create a basic text event (temporary Phase 3 functionality)
+   * Create a basic text event using real crypto
    */
-  createTextEvent(content: string, pubkey?: string): NostrEvent {
-    const event: NostrEvent = {
-      id: this.generateEventId(),
-      pubkey: pubkey || 'temp-pubkey-' + Math.random().toString(36).substring(2),
-      created_at: Math.floor(Date.now() / 1000),
-      kind: 1, // Text note
-      tags: [],
-      content,
-      sig: 'temp-signature-' + Math.random().toString(36).substring(2) // Temporary signature
-    };
+  async createTextEvent(content: string, pubkey?: string): Promise<NostrEvent> {
+    // Use the REAL NostrUnchained signer - NO MORE FAKE SCRIPTS!
+    if (!this.signer) {
+      throw new Error('No signer available for event creation');
+    }
+
+    console.log(`📝 Creating REAL event using NostrUnchained signer...`);
+    console.log(`   Signer type: ${this.signer.info.type}`);
+    console.log(`   Signer pubkey: ${this.signer.info.pubkey.substring(0, 16)}...`);
     
-    console.log(`📝 Created text event: "${content.substring(0, 50)}..."`);
-    return event;
+    try {
+      // Use the REAL signer from NostrUnchained - this is the authentic API!
+      const event = await this.signer.signEvent({
+        kind: 1,
+        content,
+        tags: [],
+        created_at: Math.floor(Date.now() / 1000)
+      });
+
+      console.log(`📝 Created REAL signed event using NostrUnchained: "${content.substring(0, 50)}..."`);
+      console.log(`   🔑 PubKey: ${event.pubkey.substring(0, 16)}...`);
+      console.log(`   ✍️ Signature: ${event.sig.substring(0, 16)}...`);
+      console.log(`   🆔 Event ID: ${event.id.substring(0, 16)}...`);
+      
+      return event;
+    } catch (error) {
+      console.error('❌ Failed to create event with NostrUnchained signer:', error);
+      throw new Error('Failed to create valid Nostr event');
+    }
   }
 
   /**

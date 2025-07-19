@@ -1,4 +1,4 @@
-import type { Readable, Writable } from 'svelte/store';
+import type { Readable } from 'svelte/store';
 import type { NostrEvent } from '@/types';
 
 /**

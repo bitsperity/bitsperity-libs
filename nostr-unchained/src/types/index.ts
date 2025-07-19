@@ -140,15 +140,31 @@ export interface NostrUnchainedBuilder {
   create(): Promise<NostrUnchained>;
 }
 
+// Forward declarations for Phase 3 types
+export interface StoreManager {
+  getConversationStore(conversationId: string): DMConversationStore;
+  dispose(): Promise<void>;
+}
+
+export interface DMConversationStore {
+  readonly conversationId: string;
+  subscribe(callback: (state: any) => void): () => void;
+}
+
 // Main NostrUnchained Interface
 export interface NostrUnchained extends Disposable {
   readonly config: NostrUnchainedConfigDefaults;
   readonly signer: Signer | null;
   readonly isInitialized: boolean;
   readonly eventBus: EventBus;
+  readonly storeManager: StoreManager | null;
   
   // Lifecycle methods
   initialize(): Promise<void>;
+  
+  // Phase 3 Store System
+  getConversation(conversationId: string): DMConversationStore | null;
+  sendMessage(conversationId: string, content: string): Promise<NostrEvent | null>;
 }
 
 // NostrUnchained constructor function type

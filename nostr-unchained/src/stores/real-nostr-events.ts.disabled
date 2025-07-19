@@ -1,25 +1,27 @@
-import { sha256 } from 'noble-hashes/sha256';
+import { sha256 } from 'noble-hashes/lib/sha256.js';
 import * as secp256k1 from 'noble-secp256k1';
 import type { NostrEvent } from '@/types';
 
 /**
  * REAL Nostr Event Creator
  * Creates 100% valid Nostr events that any relay WILL accept
+ * Based on the working quick-umbrel-test.js script
  */
 export class RealNostrEventCreator {
   private readonly privateKey: Uint8Array;
   private readonly publicKey: string;
 
   constructor() {
-    // Generate a real secp256k1 keypair
+    // Generate a real secp256k1 keypair (same as quick-umbrel-test.js)
     this.privateKey = secp256k1.utils.randomPrivateKey();
     this.publicKey = Buffer.from(secp256k1.getPublicKey(this.privateKey, true).slice(1)).toString('hex');
   }
 
   /**
    * Create a valid text note event (kind 1) with REAL crypto
+   * Exact same logic as quick-umbrel-test.js
    */
-  createTextNote(content: string): NostrEvent {
+  async createTextNote(content: string): Promise<NostrEvent> {
     const event = {
       kind: 1,
       created_at: Math.floor(Date.now() / 1000),
@@ -38,11 +40,11 @@ export class RealNostrEventCreator {
       event.content
     ]);
 
-    // Real SHA256 hash
+    // Real SHA256 hash (same as quick-umbrel-test.js)
     const eventHash = Buffer.from(sha256(serialized)).toString('hex');
     
-    // Real secp256k1 signature
-    const signature = Buffer.from(secp256k1.sign(eventHash, this.privateKey).toCompactRawBytes()).toString('hex');
+    // Real Schnorr signature (EXACTLY like quick-umbrel-test.js)
+    const signature = await secp256k1.schnorr.sign(eventHash, this.privateKey);
 
     return {
       id: eventHash,
@@ -54,7 +56,7 @@ export class RealNostrEventCreator {
   /**
    * Create a valid profile event (kind 0)
    */
-  createProfile(name: string, about: string): NostrEvent {
+  async createProfile(name: string, about: string): Promise<NostrEvent> {
     const profile = {
       name,
       about,
@@ -79,7 +81,7 @@ export class RealNostrEventCreator {
     ]);
 
     const eventHash = Buffer.from(sha256(serialized)).toString('hex');
-    const signature = Buffer.from(secp256k1.sign(eventHash, this.privateKey).toCompactRawBytes()).toString('hex');
+    const signature = await secp256k1.schnorr.sign(eventHash, this.privateKey);
 
     return {
       id: eventHash,
@@ -91,7 +93,7 @@ export class RealNostrEventCreator {
   /**
    * Create a message with mention
    */
-  createMentionNote(content: string, mentionPubkey: string): NostrEvent {
+  async createMentionNote(content: string, mentionPubkey: string): Promise<NostrEvent> {
     const event = {
       kind: 1,
       created_at: Math.floor(Date.now() / 1000),
@@ -110,7 +112,7 @@ export class RealNostrEventCreator {
     ]);
 
     const eventHash = Buffer.from(sha256(serialized)).toString('hex');
-    const signature = Buffer.from(secp256k1.sign(eventHash, this.privateKey).toCompactRawBytes()).toString('hex');
+    const signature = await secp256k1.schnorr.sign(eventHash, this.privateKey);
 
     return {
       id: eventHash,

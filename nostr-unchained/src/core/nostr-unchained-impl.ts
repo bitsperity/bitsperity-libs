@@ -3,7 +3,8 @@ import type {
   NostrUnchainedConfig, 
   NostrUnchainedConfigDefaults, 
   Signer, 
-  EventBus 
+  EventBus,
+  NostrEvent
 } from '@/types';
 import { ConfigurationError } from '@/types';
 import { SimpleEventBus } from './event-bus';
@@ -11,6 +12,7 @@ import { SimpleResourceManager } from './resource-manager';
 import { Nip07Signer } from '@/signers/nip07-signer';
 import { TemporarySigner } from '@/signers/temporary-signer';
 import { mergeConfig } from '@/config/defaults';
+import { StoreManager, DMConversationStore } from '@/stores';
 
 /**
  * Hauptimplementierung der NostrUnchained-Klasse
@@ -21,6 +23,7 @@ export class NostrUnchainedImpl implements NostrUnchained {
   private readonly _eventBus: EventBus;
   private readonly _resourceManager: SimpleResourceManager;
   private _signer: Signer | null = null;
+  private _storeManager: StoreManager | null = null;
   private _isInitialized = false;
 
   public constructor(config: NostrUnchainedConfig = {}) {
@@ -47,6 +50,30 @@ export class NostrUnchainedImpl implements NostrUnchained {
 
   public get eventBus(): EventBus {
     return this._eventBus;
+  }
+
+  public get storeManager(): StoreManager | null {
+    return this._storeManager;
+  }
+
+  /**
+   * Get a conversation store for real-time messaging
+   */
+  public getConversation(conversationId: string): DMConversationStore | null {
+    if (!this._storeManager) {
+      return null;
+    }
+    return this._storeManager.getConversationStore(conversationId);
+  }
+
+  /**
+   * Send a message to a conversation (creates real signed events)
+   */
+  public async sendMessage(conversationId: string, content: string): Promise<NostrEvent | null> {
+    if (!this._storeManager) {
+      return null;
+    }
+    return await this._storeManager.sendMessage(conversationId, content);
   }
 
   /**
@@ -95,6 +122,18 @@ export class NostrUnchainedImpl implements NostrUnchained {
           dispose: () => this._signer!.cleanup!(),
         });
       }
+
+      // Initialize Store Manager (Phase 3) with signer for real event creation
+      this._storeManager = new StoreManager(this._eventBus, {
+        relayUrls: [...this._config.relays],
+        autoConnect: true,
+        syncAcrossTabs: true
+      }, this._signer);
+
+      // Register store manager for cleanup
+      this._resourceManager.addResource({
+        dispose: () => this._storeManager!.dispose(),
+      });
 
       this._isInitialized = true;
       this._eventBus.emit('initialization:completed', {

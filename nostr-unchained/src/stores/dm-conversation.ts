@@ -1,4 +1,4 @@
-import { readable, type Subscriber, type Unsubscriber } from 'svelte/store';
+import { type Subscriber, type Unsubscriber } from 'svelte/store';
 import type { NostrEvent, EventBus } from '@/types';
 import type { 
   DMConversation, 
