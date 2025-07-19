@@ -408,10 +408,10 @@ describe('DMConversationStore - Phase 3 Core Tests', () => {
 
       // Should throw error when trying to use disposed store
       await expect(store.addMessage(createMockNostrEvent()))
-        .rejects.toThrow('disposed store');
+        .rejects.toThrow('STORE_DISPOSED');
 
       expect(() => store.subscribe(() => {}))
-        .toThrow('disposed store');
+        .toThrow('STORE_DISPOSED');
     });
 
     it('should prevent operations on disposed store', async () => {

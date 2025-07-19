@@ -1,11 +1,11 @@
 // ===== Main Crypto Module Exports =====
 
 export { SimpleCrypto } from './simple-crypto';
-// Note: Complex implementations temporarily disabled due to dependency issues
-// export { NIP44Crypto } from './nip44';
-// export { CustomChaCha20Poly1305 } from './core/chacha20-poly1305';
-// export { NIP44KeyDerivation } from './nip44/key-derivation';
-// export { NIP44PaddingImpl } from './nip44/padding';
+// Complex implementations now re-enabled after fixing dependency issues
+export { NIP44Crypto } from './nip44';
+export { CustomChaCha20Poly1305 } from './core/chacha20-poly1305';
+export { NIP44KeyDerivation } from './nip44/key-derivation';
+export { NIP44PaddingImpl } from './nip44/padding';
 
 // ===== Type Exports =====
 export type {
