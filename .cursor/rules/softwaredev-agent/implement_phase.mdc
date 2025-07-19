@@ -4,60 +4,190 @@ globs:
 alwaysApply: false
 ---
 
-# AI-Assisted Implementation Execution
+# AI-Assisted Library Implementation with Real Testing
 
 ## Critical Rules
 
 - **AI-first implementation**: Maximize AI assistance for boilerplate, testing, and documentation while maintaining human oversight for critical decisions
+- **Library-focused testing**: All AI-generated tests must validate actual library functionality, not implementation details or mocks
 - **Container-validated development**: All code must run and pass tests in Docker environment before proceeding
+- **Real integration validation**: Tests must use actual library APIs and real dependencies where possible
 - **Iterative build approach**: Build incrementally with frequent container validation and AI-assisted refactoring
 - **State-of-the-art patterns**: Use modern TypeScript patterns, minimal dependencies, and efficient architectures
-- **Quality-first automation**: Automated testing, linting, and validation at every step
 
 ## AI-Assisted Implementation Framework
 
 ### 1. High AI Assistance Implementation (80-90% acceleration)
 
-**Boilerplate Code Generation**
+**Library Structure Generation**
 ```typescript
 // AI Prompt Template for TypeScript Library Bootstrap
 "Generate a TypeScript library structure with:
 - Modern ESM/CommonJS dual exports
 - TypeScript strict mode configuration  
 - Automated testing setup with Vitest
-- ESLint + Prettier configuration"
+- ESLint + Prettier configuration
+- Real library usage examples in tests"
 ```
 
-**Test Suite Creation**
+**Library-Focused Test Suite Creation**
 ```typescript
-// AI Prompt Template for Test Generation
-"Generate comprehensive tests for [function/class] that:
-- Covers happy path and edge cases
-- Uses Vitest with TypeScript support
-- Tests error handling and validation
-- Follows AAA pattern (Arrange, Act, Assert)"
+// AI Prompt Template for Library Test Generation
+"Generate comprehensive tests for [library functionality] that:
+- Test actual library instantiation: new MyLibrary()
+- Test public API methods, not internal implementation
+- Use real data and minimal mocking
+- Validate library behavior as users would experience it
+- Test complete user workflows end-to-end
+- Follow library testing best practices"
+
+// Example AI prompt for specific functionality:
+"Generate tests for the MyLibrary.connect() method that:
+- Creates real library instance: const lib = new MyLibrary()
+- Tests actual connection behavior, not mocked responses
+- Validates return values match library specification
+- Tests error scenarios with real error conditions
+- Tests configuration options actually work"
+```
+
+**Documentation with Working Examples**
+```typescript
+// AI Prompt Template for Library Documentation
+"Generate library documentation that:
+- Shows real usage examples that actually work
+- Includes complete code snippets developers can copy-paste
+- Has examples for all major library features
+- Shows error handling for real scenarios"
 ```
 
 ### 2. Medium AI Assistance Implementation (50-70% acceleration)
 
-**API Design and Interfaces**
+**Library API Design and Interfaces**
 ```typescript
-// AI Prompt Template for API Design
-"Design a TypeScript API for [functionality] that:
-- Follows modern patterns
-- Uses proper TypeScript types
-- Implements error handling patterns
-- Has clear separation of concerns"
+// AI Prompt Template for Library API Design
+"Design a TypeScript library API for [functionality] that:
+- Provides intuitive public methods for developers
+- Uses proper TypeScript types and interfaces
+- Implements consistent error handling patterns
+- Has clear separation between public API and internal implementation
+- Follows established library design patterns"
+```
+
+**Library Integration Patterns**
+```typescript
+// AI Prompt Template for Integration Code
+"Generate integration code for [external service] that:
+- Uses actual external dependencies, not mocks
+- Handles real error scenarios from external services
+- Implements proper retry and timeout logic
+- Can be tested with real external services in test environment"
 ```
 
 ### 3. Low AI Assistance Implementation (20-30% acceleration)
 
-**Core Business Logic** (Human-Led with AI Assistance)
+**Domain-Specific Business Logic** (Human-Led with AI Assistance)
 ```typescript
-// Manual implementation with AI consultation
-// 1. Design the core algorithm/business logic manually
-// 2. Use AI for syntax optimization and pattern suggestions
-// 3. Human validates business rule correctness
+// Manual implementation with AI consultation for:
+// 1. Complex algorithms requiring domain expertise
+// 2. Security-sensitive operations
+// 3. Performance-critical paths
+// 4. External protocol implementations
+```
+
+## Library Testing Implementation Strategy
+
+### Test Generation Guidelines for AI
+
+**Library Behavior Testing (Primary Focus)**
+```typescript
+// ✅ GOOD: AI-generated library behavior tests
+describe('Library Core Functionality', () => {
+  it('should initialize library with default configuration', () => {
+    const lib = new MyLibrary();
+    expect(lib.isInitialized()).toBe(true);
+    expect(lib.getVersion()).toMatch(/^\d+\.\d+\.\d+$/);
+  });
+
+  it('should perform core operation with real data', async () => {
+    const lib = new MyLibrary();
+    const realData = { input: 'test-data', type: 'real' };
+    
+    const result = await lib.processData(realData);
+    
+    expect(result).toBeDefined();
+    expect(result.success).toBe(true);
+    expect(result.processedData).toEqual(expect.objectContaining({
+      input: 'test-data',
+      processed: true
+    }));
+  });
+});
+
+// ❌ BAD: Implementation detail testing (discourage AI from generating)
+describe('Internal Implementation', () => {
+  it('should call private method', () => {
+    // Testing internal implementation, not library behavior
+  });
+  
+  it('should mock external dependency', () => {
+    // Testing mocks instead of library functionality
+  });
+});
+```
+
+**Real Integration Testing**
+```typescript
+// AI Prompt Template for Integration Tests
+"Generate integration tests that:
+- Test library with real external dependencies
+- Use actual configuration options
+- Test real error scenarios (network failures, invalid responses)
+- Validate library behavior in realistic conditions
+- Minimal mocking - only for destructive operations"
+
+// Example generated test:
+describe('Library External Integration', () => {
+  it('connects to real test endpoint successfully', async () => {
+    const lib = new MyLibrary({
+      endpoint: process.env.TEST_ENDPOINT,
+      timeout: 5000
+    });
+    
+    const connection = await lib.connect();
+    
+    expect(connection.status).toBe('connected');
+    expect(connection.serverInfo).toBeDefined();
+  });
+});
+```
+
+### AI Test Review and Validation
+
+**Test Quality Review Process**
+```typescript
+// Review AI-generated tests for library focus
+interface LibraryTestQuality {
+  // ✅ Required characteristics
+  instantiatesLibrary: boolean;     // Uses: new MyLibrary()
+  testsPublicAPI: boolean;          // Tests public methods only
+  usesRealData: boolean;            // Real test data, not simple strings
+  validatesLibraryBehavior: boolean; // Tests what users care about
+  minimalMocking: boolean;          // <30% of tests use mocks
+  
+  // ❌ Anti-patterns to avoid
+  testsInternalMethods: boolean;    // Private/internal method testing
+  overusesMocks: boolean;           // >50% of tests are mocked
+  testsImplementationDetails: boolean; // Tests how, not what
+}
+
+// Validation questions for AI-generated tests:
+const testValidationQuestions = [
+  "Does this test create an actual library instance?",
+  "Would this test catch a bug that affects library users?",
+  "Is this testing the public API or internal implementation?",
+  "Does this test use realistic data and scenarios?",
+  "Would this test work against the real library?"
+];
 ```
 
 ## Container-First Development Workflow
@@ -68,136 +198,227 @@ alwaysApply: false
 docker-compose up -d
 docker-compose exec app npm run type-check
 docker-compose exec app npm run lint
-docker-compose exec app npm run test
+docker-compose exec app npm run test:library  # Test actual library functionality
 ```
 
-### Continuous Container Validation
+### Continuous Library Validation
 ```bash
 # After each implementation increment
-docker-compose exec app npm run build  # Verify build works
-docker-compose exec app npm run test   # All tests pass
-docker-compose exec app npm run lint   # Code quality check
+docker-compose exec app npm run build          # Verify build works
+docker-compose exec app npm run test:library   # Library behavior tests pass
+docker-compose exec app npm run test:integration # Real integration tests pass
+docker-compose exec app npm run lint           # Code quality check
+```
+
+### Library Installation Testing
+```bash
+# Validate library can be installed and used
+docker-compose exec app npm pack
+docker-compose exec app npm install ./my-library-*.tgz
+docker-compose exec app node -e "const lib = require('./'); console.log(lib.version)"
 ```
 
 ## Implementation Execution Strategy
 
-### Week 1: Foundation Implementation
+### Week 1: Library Foundation Implementation
 
-**Days 1-2: Environment & Tooling Setup**
-- Generate Dockerfile.dev with hot-reload
-- Create docker-compose.yml for development
-- Set up TypeScript configuration
-- Configure ESLint and Prettier
+**Days 1-2: Library Structure & Environment**
+- Generate library-focused project structure
+- Create Dockerfile.dev with library development environment
+- Set up TypeScript configuration for library development
+- Configure testing for library behavior validation
 
-**Days 3-5: Core Implementation**
-- AI-generated project structure
-- Human-defined API interfaces
-- Core business logic implementation
-- Utility functions with AI assistance
+**Days 3-5: Core Library Implementation**
+- Implement public API methods (human oversight)
+- Generate library behavior tests (AI-assisted, human-reviewed)
+- Create real usage examples and documentation
+- Validate library works in container environment
 
-**Days 6-7: Testing Foundation**
-- AI-generated test scaffolding
-- Container-based test validation
-- Coverage reporting setup
+**Days 6-7: Library Testing Foundation**
+- Generate comprehensive library behavior test suite
+- Implement integration tests with real dependencies
+- Container-based library validation
+- Fix any tests that don't test actual library functionality
 
-### Week 2: Feature Completion & Validation
+### Week 2: Library Feature Completion & Validation
 
 **Days 8-10: Feature Implementation**
-- AI-assisted feature development
-- Integration testing
-- Error handling patterns
+- Complete library feature development
+- Generate user workflow tests (AI-assisted)
+- Test library with realistic usage scenarios
+- Validate error handling with real error conditions
 
-**Days 11-12: Quality Assurance**
-- Comprehensive testing in containers
-- Security scanning
-- Performance validation
+**Days 11-12: Library Quality Assurance**
+- Review all tests for library focus (remove implementation detail tests)
+- Performance testing with realistic library usage
+- Security testing of library boundaries
+- Documentation validation with working examples
 
-**Days 13-14: Phase Finalization**
-- AI-generated documentation
-- Container deployment validation
-- Git commit preparation
+**Days 13-14: Library Release Preparation**
+- Package library for distribution
+- Validate installation and usage workflows
+- Create deployment-ready containers
+- Prepare library for handoff to testing phase
 
-## AI Tool Integration Strategies
+## AI Tool Integration for Library Development
 
-### Primary AI Tools Configuration
+### AI Prompt Templates for Library-Focused Development
 
-**GitHub Copilot Integration**
-```json
-{
-  "github.copilot.enable": {
-    "*": true,
-    "typescript": true
-  }
-}
+**Library API Implementation**
+```typescript
+// Prompt for generating library methods
+"Generate a TypeScript method for MyLibrary class that:
+- Implements [specific functionality] as a public API
+- Takes [parameter types] and returns [return type]
+- Includes proper error handling for library users
+- Has TypeScript types for all parameters and return values
+- Can be easily tested with real data"
 ```
 
-### AI Prompt Engineering Best Practices
-
-**High-Quality Code Generation Prompts**
+**Library Test Generation**
 ```typescript
-// Template for complex code generation
-"Generate a TypeScript [component type] that:
-1. Implements [specific interface/pattern]
-2. Includes proper error handling
-3. Has comprehensive TypeScript types
-4. Is fully testable"
+// Prompt for generating library tests
+"Generate tests for MyLibrary.[method] that:
+- Create real library instance: const lib = new MyLibrary()
+- Test the actual method behavior, not mocks
+- Use realistic test data that represents real usage
+- Validate return values match the library specification
+- Test error scenarios that users might encounter
+- Follow the pattern: Arrange library instance, Act on real method, Assert real behavior"
+```
+
+**Library Documentation Examples**
+```typescript
+// Prompt for generating working examples
+"Generate documentation examples for MyLibrary that:
+- Show complete, working code snippets
+- Demonstrate real library usage patterns
+- Include error handling for common scenarios
+- Can be copy-pasted and run by developers
+- Cover the most common use cases for the library"
 ```
 
 ## Code Quality Assurance
 
-### Automated Quality Gates
+### Library-Focused Quality Gates
 ```json
 {
   "scripts": {
     "dev": "vite dev",
     "build": "tsc && vite build", 
     "test": "vitest",
+    "test:library": "vitest --config vitest.library.config.ts",
+    "test:integration": "vitest --config vitest.integration.config.ts",
     "lint": "eslint src --ext .ts",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "validate:library": "npm run build && npm run test:library && npm run test:integration"
   }
 }
+```
+
+### Library Test Configuration
+```typescript
+// vitest.library.config.ts - Focus on library behavior testing
+import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
+  test: {
+    name: 'library-behavior',
+    include: ['src/**/*.library.test.ts'],
+    environment: 'node',
+    coverage: {
+      include: ['src/**/*.ts'],
+      exclude: ['src/**/*.test.ts', 'src/internal/**']
+    }
+  }
+});
 ```
 
 ## Quality Validation
 
 ### Implementation Completeness Check
-- ✅ All phase requirements implemented and tested
-- ✅ AI assistance optimally utilized across development tasks
-- ✅ Container-based development and testing validated
-- ✅ Modern TypeScript toolchain configured and working
-- ✅ Code quality meets established standards
+- ✅ **Library functionality implemented**: All phase requirements implemented as usable library
+- ✅ **Library behavior tested**: Tests validate actual library functionality, not mocks
+- ✅ **Real integration validated**: Library works with actual external dependencies
+- ✅ **Container deployment validated**: Library runs successfully in Docker containers
+- ✅ **Documentation with working examples**: All examples can be copy-pasted and work
+- ✅ **Installation workflow validated**: Library can be installed and used as intended
+
+### Library-Specific Quality Checks
+- ✅ **Public API complete**: All documented methods implemented and working
+- ✅ **Error handling tested**: Real error scenarios handled appropriately
+- ✅ **Performance acceptable**: Library performs well under realistic usage
+- ✅ **TypeScript types accurate**: All types match actual library behavior
+- ✅ **Examples work**: Documentation examples are tested and functional
 
 ## Termination Criteria
 
 The implement_phase rule terminates when:
 
-1. **Feature implementation complete**: All phase requirements implemented and container-validated
-2. **Quality gates passed**: TypeScript, ESLint, tests all passing
-3. **Container deployment validated**: Production container builds and runs successfully
-4. **Documentation complete**: API docs and examples generated and reviewed
-5. **Git commits standardized**: All commits follow established format
+1. **Library implementation complete**: All phase requirements implemented as functional library
+2. **Library behavior validated**: Tests focus on actual library functionality, minimal mocking
+3. **Real integration working**: Library integrates with external dependencies successfully
+4. **Container deployment ready**: Library builds and runs in production containers
+5. **Documentation accurate**: All examples tested and work correctly
+6. **Installation workflow validated**: Library can be packaged, installed, and used
 
-## Agent Chain Handoff
+## Enhanced Handoff Message
 
-Upon successful completion:
+Upon successful completion, provide this standardized message:
 
-```bash
-# Deactivate current rule and activate next
-sed -i 's/alwaysApply: false/alwaysApply: true/' .cursor/rules/softwaredev-agent/test_phase.mdc
-sed -i 's/alwaysApply: true/alwaysApply: false/' .cursor/rules/softwaredev-agent/implement_phase.mdc
 ```
-
-**Handoff Message:**
-```
-🚀 Implementation Complete - Ready for Comprehensive Testing
+🚀 Library Implementation Complete - Ready for Comprehensive Testing
 
 📊 Implementation Summary:
-- Phase Features: {feature list} ✅ Complete
-- AI Acceleration: {efficiency metrics}
-- Container Validation: ✅ All development tests pass
-- Code Quality: ✅ TypeScript strict, ESLint clean
+- Library Features: {feature list} ✅ Complete and functional
+- Public API: ✅ All methods implemented and working
+- Library Tests: ✅ {X}% of tests validate actual library behavior
+- Real Integration: ✅ Library works with external dependencies
+- Container Validation: ✅ Library runs successfully in Docker
+- Documentation: ✅ All examples tested and working
 
-🔄 Next: test_phase.mdc will execute comprehensive testing
+🎯 Library Quality Metrics:
+- Test Focus: {X}% library behavior tests vs {Y}% implementation detail tests
+- Mock Usage: {Z}% (target: <30% for library testing)
+- API Coverage: {A}% of public methods have behavior tests
+- Example Accuracy: {B}/{C} documentation examples working
 
+⚠️ Implementation Review:
+- Library Instantiation: ✅ Tests create real library instances
+- Public API Testing: ✅ Tests validate user-facing functionality
+- Real Data Usage: ✅ Tests use realistic data and scenarios
+- Integration Validation: ✅ External dependencies tested appropriately
+
+📁 Implementation Artifacts:
+- Library source code with full functionality
+- Comprehensive test suite focused on library behavior
+- Working documentation examples
+- Container-ready deployment configuration
+- Package configuration for distribution
+
+🔄 Next: test_phase.mdc will execute comprehensive library testing
+
+Library functionality ready for testing? [✅ Yes]
+All tests focus on library behavior? [✅ Yes]
+Documentation examples working? [✅ Yes]
 Ready for comprehensive testing phase? [Yes/No]
+```
+
+## Implementation Philosophy
+
+- **Library-First Development**: Build functionality that developers will actually use
+- **Behavior-Driven Testing**: Test what the library does, not how it does it
+- **Real-World Validation**: Use actual dependencies and realistic scenarios
+- **User-Centric Design**: Focus on developer experience and usability
+- **Quality Through Testing**: Ensure library works correctly in real usage scenarios
+- **AI-Assisted but Human-Validated**: Leverage AI for implementation speed, ensure quality through review
+
+Remember: The goal is to build a library that works correctly for real developers in real scenarios. Implementation should focus on creating functional, testable library behavior rather than perfect internal architecture.
+
+## Agent Chain Commands
+
+Upon successful completion, execute:
+```bash
+# Deactivate current rule and activate next
+sed -i 's/alwaysApply: true/alwaysApply: false/' .cursor/rules/softwaredev-agent/implement_phase.mdc && sed -i 's/alwaysApply: false/alwaysApply: true/' .cursor/rules/softwaredev-agent/test_phase.mdc
 ```
