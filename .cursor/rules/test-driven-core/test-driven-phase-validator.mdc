@@ -1,0 +1,621 @@
+# Test-Driven Phase Validator
+
+## Mission: Test-Success = Phase-Success
+
+**Absolute Regel**: Eine Phase ist nur dann erfolgreich abgeschlossen, wenn 100% der Tests bestehen und alle Coverage-Schwellenwerte erreicht sind.
+
+## Phase Gate System
+
+### Gate 0: Test Infrastructure Validation
+```typescript
+// tests/infrastructure/test-setup.test.ts
+describe('Test Infrastructure Validation', () => {
+  it('should have Vitest properly configured', () => {
+    expect(vi).toBeDefined()
+    expect(describe).toBeDefined()
+    expect(it).toBeDefined()
+    expect(expect).toBeDefined()
+  })
+  
+  it('should support TypeScript compilation', () => {
+    interface TestInterface {
+      value: number
+    }
+    
+    const testObj: TestInterface = { value: 42 }
+    expect(testObj.value).toBe(42)
+  })
+  
+  it('should have coverage reporting enabled', () => {
+    // Verify coverage configuration exists
+    const config = globalThis.__vitest_config__
+    expect(config?.coverage?.enabled).toBe(true)
+  })
+  
+  it('should support async/await', async () => {
+    const asyncFunction = async () => Promise.resolve('test')
+    const result = await asyncFunction()
+    expect(result).toBe('test')
+  })
+  
+  it('should support mocking capabilities', () => {
+    const mockFn = vi.fn()
+    mockFn('test')
+    expect(mockFn).toHaveBeenCalledWith('test')
+  })
+})
+
+// Validation Command
+// npm run test:infrastructure
+```
+
+**Gate 0 Criteria**:
+- ✅ 100% Infrastructure Tests bestehen
+- ✅ Vitest konfiguriert und funktional
+- ✅ TypeScript compilation funktioniert
+- ✅ Coverage reporting aktiviert
+
+### Gate 1: Requirements Validation
+```typescript
+// tests/requirements/requirements-compliance.test.ts
+describe('Requirements Phase Validation', () => {
+  describe('Functional Requirements', () => {
+    it('should have testable acceptance criteria for each requirement', () => {
+      const requirements = getAllRequirements()
+      
+      requirements.forEach(requirement => {
+        expect(requirement.tests).toBeDefined()
+        expect(requirement.tests.length).toBeGreaterThan(0)
+        expect(requirement.acceptanceCriteria).toBeDefined()
+      })
+    })
+    
+    it('should have API-level tests for each functional requirement', () => {
+      const functionalRequirements = getFunctionalRequirements()
+      
+      functionalRequirements.forEach(req => {
+        const apiTests = req.tests.filter(test => test.type === 'api')
+        expect(apiTests.length).toBeGreaterThan(0)
+      })
+    })
+  })
+  
+  describe('Non-Functional Requirements', () => {
+    it('should have performance benchmarks defined', () => {
+      const performanceRequirements = getPerformanceRequirements()
+      
+      performanceRequirements.forEach(req => {
+        expect(req.benchmark).toBeDefined()
+        expect(req.threshold).toBeDefined()
+        expect(req.measurement).toBeDefined()
+      })
+    })
+    
+    it('should have usability requirements as executable tests', () => {
+      const usabilityRequirements = getUsabilityRequirements()
+      
+      usabilityRequirements.forEach(req => {
+        expect(req.userScenario).toBeDefined()
+        expect(req.successCriteria).toBeDefined()
+        expect(req.testImplementation).toBeDefined()
+      })
+    })
+  })
+})
+
+// Validation Command
+// npm run test:requirements
+```
+
+**Gate 1 Criteria**:
+- ✅ 100% Requirements haben entsprechende Tests
+- ✅ Alle Functional Requirements als API-Tests implementiert
+- ✅ Performance Requirements messbar definiert
+- ✅ Usability Requirements als User-Szenarien testbar
+
+### Gate 2: Architecture Validation
+```typescript
+// tests/architecture/architecture-compliance.test.ts
+describe('Architecture Phase Validation', () => {
+  describe('Architecture Decision Records', () => {
+    it('should have validation tests for all ADRs', async () => {
+      const adrs = getAllArchitectureDecisions()
+      
+      for (const adr of adrs) {
+        expect(adr.validationTests).toBeDefined()
+        expect(adr.validationTests.length).toBeGreaterThan(0)
+        
+        // Execute ADR validation tests
+        for (const validationTest of adr.validationTests) {
+          try {
+            await validationTest.test()
+          } catch (error) {
+            throw new Error(`ADR ${adr.title} validation failed: ${error.message}`)
+          }
+        }
+      }
+    })
+  })
+  
+  describe('Performance Architecture', () => {
+    it('should meet performance requirements', async () => {
+      const performanceSpecs = getPerformanceSpecs()
+      
+      for (const spec of performanceSpecs) {
+        const benchmark = await runPerformanceBenchmark(spec)
+        expect(benchmark.result).toBeLessThan(spec.threshold)
+      }
+    })
+  })
+  
+  describe('Modularity', () => {
+    it('should have loosely coupled modules', () => {
+      const couplingAnalysis = analyzeCoupling()
+      
+      couplingAnalysis.modules.forEach(module => {
+        expect(module.afferentCoupling).toBeLessThan(5)
+        expect(module.efferentCoupling).toBeLessThan(3)
+      })
+    })
+    
+    it('should have high cohesion within modules', () => {
+      const cohesionAnalysis = analyzeCohesion()
+      
+      cohesionAnalysis.modules.forEach(module => {
+        expect(module.cohesionScore).toBeGreaterThan(0.8)
+      })
+    })
+  })
+})
+
+// Validation Command
+// npm run test:architecture
+```
+
+**Gate 2 Criteria**:
+- ✅ Alle ADRs durch Tests validiert
+- ✅ Performance-Architektur bestätigt
+- ✅ Modularity-Metriken erreicht
+- ✅ Integration-Tests für Architektur-Komponenten bestehen
+
+### Gate 3: Implementation Validation
+```typescript
+// tests/implementation/implementation-compliance.test.ts
+describe('Implementation Phase Validation', () => {
+  describe('Unit Test Coverage', () => {
+    it('should achieve minimum coverage thresholds', async () => {
+      const coverage = await getCoverageReport()
+      
+      expect(coverage.lines.pct).toBeGreaterThanOrEqual(90)
+      expect(coverage.functions.pct).toBeGreaterThanOrEqual(90)
+      expect(coverage.branches.pct).toBeGreaterThanOrEqual(85)
+      expect(coverage.statements.pct).toBeGreaterThanOrEqual(90)
+    })
+    
+    it('should have no uncovered critical paths', async () => {
+      const coverage = await getCoverageReport()
+      const criticalPaths = getCriticalPaths()
+      
+      criticalPaths.forEach(path => {
+        const pathCoverage = coverage.files[path]
+        expect(pathCoverage.lines.pct).toBe(100)
+      })
+    })
+  })
+  
+  describe('API Test Coverage', () => {
+    it('should have comprehensive API tests', () => {
+      const publicAPI = getPublicAPI()
+      const apiTests = getAPITests()
+      
+      publicAPI.methods.forEach(method => {
+        const methodTests = apiTests.filter(test => test.targets.includes(method.name))
+        expect(methodTests.length).toBeGreaterThan(0)
+      })
+    })
+    
+    it('should test all public methods with real usage patterns', () => {
+      const publicMethods = getPublicMethods()
+      
+      publicMethods.forEach(method => {
+        const usageTests = getUsageTests(method.name)
+        expect(usageTests.length).toBeGreaterThanOrEqual(3) // Happy path + 2 edge cases
+      })
+    })
+  })
+  
+  describe('Integration Completeness', () => {
+    it('should have end-to-end workflow tests', async () => {
+      const workflows = getDefinedWorkflows()
+      
+      for (const workflow of workflows) {
+        const e2eTest = getE2ETest(workflow.name)
+        expect(e2eTest).toBeDefined()
+        
+        // Execute E2E test
+        try {
+          await e2eTest.execute()
+        } catch (error) {
+          throw new Error(`E2E test for ${workflow.name} failed: ${error.message}`)
+        }
+      }
+    })
+  })
+})
+
+// Validation Command
+// npm run test:implementation
+```
+
+**Gate 3 Criteria**:
+- ✅ 90%+ Coverage für Lines, Functions, Statements
+- ✅ 85%+ Coverage für Branches
+- ✅ 100% Coverage für kritische Pfade
+- ✅ Alle öffentlichen APIs durch Usage-Tests abgedeckt
+- ✅ End-to-End Workflows funktional
+
+## Automated Phase Gate Validation
+
+### Phase Gate Runner
+```typescript
+// scripts/validate-phase-gate.ts
+import { execSync } from 'child_process'
+import { readFileSync } from 'fs'
+
+interface PhaseGateResult {
+  gate: string
+  passed: boolean
+  details: {
+    testsRun: number
+    testsPassed: number
+    testsFailed: number
+    coverage: CoverageReport
+    errors: string[]
+  }
+}
+
+export class PhaseGateValidator {
+  async validateGate(gateNumber: number): Promise<PhaseGateResult> {
+    const gateName = `Gate ${gateNumber}`
+    console.log(`🔍 Validating ${gateName}...`)
+    
+    try {
+      const testResults = await this.runGateTests(gateNumber)
+      const coverageResults = await this.getCoverageResults()
+      
+      const passed = this.evaluateGateCriteria(gateNumber, testResults, coverageResults)
+      
+      return {
+        gate: gateName,
+        passed,
+        details: {
+          testsRun: testResults.total,
+          testsPassed: testResults.passed,
+          testsFailed: testResults.failed,
+          coverage: coverageResults,
+          errors: testResults.errors
+        }
+      }
+    } catch (error) {
+      return {
+        gate: gateName,
+        passed: false,
+        details: {
+          testsRun: 0,
+          testsPassed: 0,
+          testsFailed: 0,
+          coverage: null,
+          errors: [error.message]
+        }
+      }
+    }
+  }
+  
+  private async runGateTests(gateNumber: number): Promise<TestResults> {
+    const gateCommands = {
+      0: 'npm run test:infrastructure',
+      1: 'npm run test:requirements', 
+      2: 'npm run test:architecture',
+      3: 'npm run test:implementation'
+    }
+    
+    const command = gateCommands[gateNumber]
+    if (!command) {
+      throw new Error(`Unknown gate number: ${gateNumber}`)
+    }
+    
+    try {
+      const output = execSync(command, { encoding: 'utf8' })
+      return this.parseTestResults(output)
+    } catch (error) {
+      throw new Error(`Gate tests failed: ${error.message}`)
+    }
+  }
+  
+  private evaluateGateCriteria(gate: number, testResults: TestResults, coverage: CoverageReport): boolean {
+    // Gate 0: Infrastructure
+    if (gate === 0) {
+      return testResults.failed === 0
+    }
+    
+    // Gate 1: Requirements  
+    if (gate === 1) {
+      return testResults.failed === 0 && this.validateRequirementsCoverage()
+    }
+    
+    // Gate 2: Architecture
+    if (gate === 2) {
+      return testResults.failed === 0 && this.validateArchitectureCompliance()
+    }
+    
+    // Gate 3: Implementation
+    if (gate === 3) {
+      return testResults.failed === 0 && 
+             coverage.lines.pct >= 90 &&
+             coverage.functions.pct >= 90 &&
+             coverage.branches.pct >= 85 &&
+             coverage.statements.pct >= 90
+    }
+    
+    return false
+  }
+}
+
+// CLI Usage
+export async function validateCurrentPhase(phase: string): Promise<void> {
+  const validator = new PhaseGateValidator()
+  const gateNumber = getGateNumberForPhase(phase)
+  
+  const result = await validator.validateGate(gateNumber)
+  
+  if (result.passed) {
+    console.log(`✅ ${result.gate} PASSED`)
+    console.log(`   Tests: ${result.details.testsPassed}/${result.details.testsRun}`)
+    if (result.details.coverage) {
+      console.log(`   Coverage: ${result.details.coverage.lines.pct}% lines`)
+    }
+  } else {
+    console.log(`❌ ${result.gate} FAILED`)
+    console.log(`   Tests: ${result.details.testsPassed}/${result.details.testsRun}`)
+    result.details.errors.forEach(error => {
+      console.log(`   Error: ${error}`)
+    })
+    process.exit(1)
+  }
+}
+```
+
+### Continuous Gate Validation
+```typescript
+// scripts/continuous-validation.ts
+import { watch } from 'chokidar'
+import { debounce } from 'lodash'
+
+export class ContinuousValidator {
+  private currentPhase: string = 'implementation'
+  private isValidating: boolean = false
+  
+  start(): void {
+    console.log('🔄 Starting continuous phase validation...')
+    
+    const debouncedValidation = debounce(async () => {
+      if (this.isValidating) return
+      
+      this.isValidating = true
+      try {
+        await this.validateCurrentPhase()
+      } finally {
+        this.isValidating = false
+      }
+    }, 1000)
+    
+    // Watch for changes in source and test files
+    watch(['src/**/*.ts', 'tests/**/*.test.ts'], { ignored: /node_modules/ })
+      .on('change', debouncedValidation)
+      .on('add', debouncedValidation)
+  }
+  
+  private async validateCurrentPhase(): Promise<void> {
+    const validator = new PhaseGateValidator()
+    const gateNumber = this.getGateNumberForPhase(this.currentPhase)
+    
+    try {
+      const result = await validator.validateGate(gateNumber)
+      
+      if (result.passed) {
+        console.log(`✅ ${this.currentPhase} phase validation PASSED`)
+      } else {
+        console.log(`❌ ${this.currentPhase} phase validation FAILED`)
+        console.log('Fix the following issues:')
+        result.details.errors.forEach(error => console.log(`  - ${error}`))
+      }
+    } catch (error) {
+      console.log(`💥 Validation error: ${error.message}`)
+    }
+  }
+}
+
+// Start continuous validation
+if (require.main === module) {
+  const validator = new ContinuousValidator()
+  validator.start()
+}
+```
+
+## Phase Transition Rules
+
+### Strict Phase Gates
+```typescript
+// scripts/phase-transition.ts
+export class PhaseTransitionManager {
+  async canTransitionToPhase(targetPhase: string): Promise<boolean> {
+    const currentPhase = await this.getCurrentPhase()
+    const requiredGates = this.getRequiredGatesForTransition(currentPhase, targetPhase)
+    
+    for (const gate of requiredGates) {
+      const validator = new PhaseGateValidator()
+      const result = await validator.validateGate(gate)
+      
+      if (!result.passed) {
+        console.log(`❌ Cannot transition to ${targetPhase}: Gate ${gate} not passed`)
+        return false
+      }
+    }
+    
+    return true
+  }
+  
+  async transitionToPhase(targetPhase: string): Promise<void> {
+    const canTransition = await this.canTransitionToPhase(targetPhase)
+    
+    if (!canTransition) {
+      throw new Error(`Phase transition blocked: Not all gates passed`)
+    }
+    
+    await this.setCurrentPhase(targetPhase)
+    console.log(`✅ Successfully transitioned to ${targetPhase}`)
+  }
+  
+  private getRequiredGatesForTransition(from: string, to: string): number[] {
+    const phaseOrder = ['infrastructure', 'requirements', 'architecture', 'implementation']
+    const fromIndex = phaseOrder.indexOf(from)
+    const toIndex = phaseOrder.indexOf(to)
+    
+    // Must pass all gates up to target phase
+    return Array.from({ length: toIndex + 1 }, (_, i) => i)
+  }
+}
+```
+
+### Development Workflow Integration
+```json
+{
+  "scripts": {
+    "validate:gate0": "vitest run tests/infrastructure --reporter=basic",
+    "validate:gate1": "vitest run tests/requirements --reporter=basic", 
+    "validate:gate2": "vitest run tests/architecture --reporter=basic",
+    "validate:gate3": "vitest run tests/implementation --reporter=basic && npm run test:coverage",
+    
+    "gate:check": "node scripts/validate-phase-gate.js",
+    "gate:continuous": "node scripts/continuous-validation.js",
+    
+    "phase:transition": "node scripts/phase-transition.js",
+    "phase:status": "node scripts/get-phase-status.js",
+    
+    "dev": "concurrently \"npm run gate:continuous\" \"npm run test:watch\"",
+    "validate:all": "npm run validate:gate0 && npm run validate:gate1 && npm run validate:gate2 && npm run validate:gate3"
+  }
+}
+```
+
+## Quality Gates Dashboard
+
+### Real-time Phase Status
+```typescript
+// scripts/generate-dashboard.ts
+export class QualityGatesDashboard {
+  async generateReport(): Promise<string> {
+    const validator = new PhaseGateValidator()
+    
+    const gates = [
+      { number: 0, name: 'Infrastructure', description: 'Test setup and tooling' },
+      { number: 1, name: 'Requirements', description: 'Testable requirements' },
+      { number: 2, name: 'Architecture', description: 'Validated design decisions' },
+      { number: 3, name: 'Implementation', description: 'Feature completion' }
+    ]
+    
+    let report = '# Quality Gates Status\n\n'
+    
+    for (const gate of gates) {
+      const result = await validator.validateGate(gate.number)
+      const status = result.passed ? '✅ PASSED' : '❌ FAILED'
+      
+      report += `## Gate ${gate.number}: ${gate.name} - ${status}\n`
+      report += `${gate.description}\n\n`
+      
+      if (result.details.coverage) {
+        report += `**Coverage:** ${result.details.coverage.lines.pct}% lines, ${result.details.coverage.functions.pct}% functions\n`
+      }
+      
+      report += `**Tests:** ${result.details.testsPassed}/${result.details.testsRun} passed\n\n`
+      
+      if (result.details.errors.length > 0) {
+        report += '**Issues:**\n'
+        result.details.errors.forEach(error => {
+          report += `- ${error}\n`
+        })
+        report += '\n'
+      }
+    }
+    
+    return report
+  }
+}
+```
+
+## Integration mit Pipeline
+
+### CI/CD Pipeline Gates
+```yaml
+# .github/workflows/quality-gates.yml
+name: Quality Gates Validation
+
+on: [push, pull_request]
+
+jobs:
+  gate-0-infrastructure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - run: npm ci
+      - run: npm run validate:gate0
+  
+  gate-1-requirements:
+    needs: gate-0-infrastructure
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - run: npm ci
+      - run: npm run validate:gate1
+  
+  gate-2-architecture:
+    needs: gate-1-requirements
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18' 
+      - run: npm ci
+      - run: npm run validate:gate2
+  
+  gate-3-implementation:
+    needs: gate-2-architecture
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - run: npm ci
+      - run: npm run validate:gate3
+      - run: npm run test:coverage
+```
+
+## Critical Success Factors
+
+1. **Automated Validation**: Alle Gates automatisch prüfbar
+2. **Continuous Feedback**: Real-time Validation während Development
+3. **Strict Enforcement**: Phase-Übergänge nur bei 100% Gate-Success
+4. **Comprehensive Coverage**: Unit + API + Integration + E2E Tests
+5. **Maintainable Gates**: Gate-Kriterien bleiben aktuell und relevant
+description:
+globs:
+alwaysApply: false
+---

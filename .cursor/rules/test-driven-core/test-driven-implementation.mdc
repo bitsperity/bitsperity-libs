@@ -1,0 +1,892 @@
+# Test-Driven Implementation Agent
+
+## Mission: 100% Test-First Implementation
+
+**Kern-Prinzip**: Kein Produktionscode ohne vorherigen Test. Red-Green-Refactor-Cycle in jeder Implementierung.
+
+## TDD Workflow Implementation
+
+### Red-Green-Refactor Pattern (Verpflichtend)
+```typescript
+// SCHRITT 1: RED - Failing Test schreiben
+describe('UserService', () => {
+  it('should create user with valid data', async () => {
+    const userService = new UserService()
+    const userData = { name: 'John Doe', email: 'john@example.com' }
+    
+    const user = await userService.createUser(userData)
+    
+    expect(user.id).toBeDefined()
+    expect(user.name).toBe('John Doe')
+    expect(user.email).toBe('john@example.com')
+    expect(user.createdAt).toBeInstanceOf(Date)
+  })
+})
+
+// Test läuft: ❌ FAIL - UserService existiert nicht
+
+// SCHRITT 2: GREEN - Minimal Implementation
+export class UserService {
+  async createUser(userData: { name: string; email: string }) {
+    return {
+      id: 'generated-id',
+      name: userData.name,
+      email: userData.email,
+      createdAt: new Date()
+    }
+  }
+}
+
+// Test läuft: ✅ PASS
+
+// SCHRITT 3: REFACTOR - Code verbessern bei grünen Tests
+export class UserService {
+  private generateId(): string {
+    return `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  }
+  
+  async createUser(userData: { name: string; email: string }) {
+    if (!userData.name || !userData.email) {
+      throw new Error('Name and email are required')
+    }
+    
+    return {
+      id: this.generateId(),
+      name: userData.name.trim(),
+      email: userData.email.toLowerCase().trim(),
+      createdAt: new Date()
+    }
+  }
+}
+
+// Tests laufen: ✅ PASS - Refactoring erfolgreich
+```
+
+### Triangulation Pattern für Edge Cases
+```typescript
+// Test 1: Grundfunktionalität
+it('should validate email format', () => {
+  const validator = new EmailValidator()
+  expect(validator.isValid('test@example.com')).toBe(true)
+})
+
+// Test 2: Edge Case 1
+it('should reject invalid email format', () => {
+  const validator = new EmailValidator()
+  expect(validator.isValid('invalid-email')).toBe(false)
+})
+
+// Test 3: Edge Case 2  
+it('should reject empty email', () => {
+  const validator = new EmailValidator()
+  expect(validator.isValid('')).toBe(false)
+})
+
+// Test 4: Edge Case 3
+it('should handle null/undefined', () => {
+  const validator = new EmailValidator()
+  expect(validator.isValid(null)).toBe(false)
+  expect(validator.isValid(undefined)).toBe(false)
+})
+
+// Implementation entsteht durch Triangulation
+export class EmailValidator {
+  isValid(email: any): boolean {
+    if (!email || typeof email !== 'string') {
+      return false
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email.trim())
+  }
+}
+```
+
+## Test-First Feature Implementation
+
+### Feature Development Pattern
+```typescript
+// 1. FEATURE: API Rate Limiting
+// Tests definieren das Interface und Verhalten
+
+describe('RateLimiter', () => {
+  let rateLimiter: RateLimiter
+  
+  beforeEach(() => {
+    rateLimiter = new RateLimiter({ maxRequests: 5, windowMs: 1000 })
+  })
+  
+  it('should allow requests within rate limit', async () => {
+    for (let i = 0; i < 5; i++) {
+      const result = await rateLimiter.checkLimit('user123')
+      expect(result.allowed).toBe(true)
+      expect(result.remaining).toBe(4 - i)
+    }
+  })
+  
+  it('should block requests exceeding rate limit', async () => {
+    // Exhaust rate limit
+    for (let i = 0; i < 5; i++) {
+      await rateLimiter.checkLimit('user123')
+    }
+    
+    // Next request should be blocked
+    const result = await rateLimiter.checkLimit('user123')
+    expect(result.allowed).toBe(false)
+    expect(result.remaining).toBe(0)
+    expect(result.resetTime).toBeInstanceOf(Date)
+  })
+  
+  it('should reset limit after time window', async () => {
+    // Exhaust rate limit
+    for (let i = 0; i < 5; i++) {
+      await rateLimiter.checkLimit('user123')
+    }
+    
+    // Wait for window to reset (fast-forward time in tests)
+    vi.advanceTimersByTime(1001)
+    
+    const result = await rateLimiter.checkLimit('user123')
+    expect(result.allowed).toBe(true)
+    expect(result.remaining).toBe(4)
+  })
+  
+  it('should handle multiple users independently', async () => {
+    // User1 exhausts limit
+    for (let i = 0; i < 5; i++) {
+      await rateLimiter.checkLimit('user1')
+    }
+    
+    // User2 should still have full limit
+    const user2Result = await rateLimiter.checkLimit('user2')
+    expect(user2Result.allowed).toBe(true)
+    expect(user2Result.remaining).toBe(4)
+  })
+})
+
+// 2. IMPLEMENTATION basierend auf Tests
+export interface RateLimitResult {
+  allowed: boolean
+  remaining: number
+  resetTime?: Date
+}
+
+export interface RateLimiterConfig {
+  maxRequests: number
+  windowMs: number
+}
+
+export class RateLimiter {
+  private requests = new Map<string, { count: number; resetTime: number }>()
+  
+  constructor(private config: RateLimiterConfig) {}
+  
+  async checkLimit(identifier: string): Promise<RateLimitResult> {
+    const now = Date.now()
+    const windowStart = now - this.config.windowMs
+    
+    const userRequests = this.requests.get(identifier)
+    
+    if (!userRequests || userRequests.resetTime <= now) {
+      // New window or expired
+      this.requests.set(identifier, {
+        count: 1,
+        resetTime: now + this.config.windowMs
+      })
+      
+      return {
+        allowed: true,
+        remaining: this.config.maxRequests - 1
+      }
+    }
+    
+    if (userRequests.count >= this.config.maxRequests) {
+      return {
+        allowed: false,
+        remaining: 0,
+        resetTime: new Date(userRequests.resetTime)
+      }
+    }
+    
+    userRequests.count++
+    
+    return {
+      allowed: true,
+      remaining: this.config.maxRequests - userRequests.count
+    }
+  }
+}
+```
+
+### API-First Implementation mit Tests
+```typescript
+// API-Tests definieren externe Schnittstelle
+describe('HTTP Client API', () => {
+  let client: HttpClient
+  
+  beforeEach(() => {
+    client = new HttpClient({
+      baseUrl: 'https://api.example.com',
+      timeout: 5000
+    })
+  })
+  
+  describe('GET requests', () => {
+    it('should make successful GET request', async () => {
+      const response = await client.get('/users/123')
+      
+      expect(response.status).toBe(200)
+      expect(response.data).toHaveProperty('id', 123)
+      expect(response.headers).toBeDefined()
+    })
+    
+    it('should handle query parameters', async () => {
+      const response = await client.get('/users', { 
+        params: { limit: 10, offset: 20 } 
+      })
+      
+      expect(response.request.url).toContain('limit=10')
+      expect(response.request.url).toContain('offset=20')
+    })
+    
+    it('should handle custom headers', async () => {
+      const response = await client.get('/users', {
+        headers: { 'Authorization': 'Bearer token123' }
+      })
+      
+      expect(response.request.headers.Authorization).toBe('Bearer token123')
+    })
+  })
+  
+  describe('Error handling', () => {
+    it('should throw HttpError for 4xx status codes', async () => {
+      await expect(client.get('/users/999'))
+        .rejects.toThrow(HttpError)
+      
+      try {
+        await client.get('/users/999')
+      } catch (error) {
+        expect(error.status).toBe(404)
+        expect(error.message).toContain('Not Found')
+        expect(error.url).toBe('https://api.example.com/users/999')
+      }
+    })
+    
+    it('should retry on network errors', async () => {
+      const clientWithRetry = new HttpClient({
+        baseUrl: 'https://api.example.com',
+        retry: { attempts: 3, delay: 100 }
+      })
+      
+      // Mock network failure then success
+      vi.mocked(fetch)
+        .mockRejectedValueOnce(new Error('Network error'))
+        .mockRejectedValueOnce(new Error('Network error'))
+        .mockResolvedValueOnce(new Response(JSON.stringify({ data: 'success' })))
+      
+      const response = await clientWithRetry.get('/data')
+      
+      expect(response.data).toEqual({ data: 'success' })
+      expect(fetch).toHaveBeenCalledTimes(3) // 2 retries + 1 success
+    })
+  })
+})
+
+// Implementation folgt aus Tests
+export class HttpClient {
+  constructor(private config: HttpClientConfig) {}
+  
+  async get(url: string, options: RequestOptions = {}): Promise<HttpResponse> {
+    return this.request('GET', url, options)
+  }
+  
+  private async request(method: string, url: string, options: RequestOptions): Promise<HttpResponse> {
+    const fullUrl = `${this.config.baseUrl}${url}`
+    const requestOptions = this.buildRequestOptions(method, options)
+    
+    try {
+      const response = await this.executeWithRetry(fullUrl, requestOptions)
+      
+      if (!response.ok) {
+        throw new HttpError(response.status, response.statusText, fullUrl)
+      }
+      
+      const data = await response.json()
+      
+      return {
+        status: response.status,
+        data,
+        headers: Object.fromEntries(response.headers.entries()),
+        request: { url: fullUrl, headers: requestOptions.headers }
+      }
+    } catch (error) {
+      if (error instanceof HttpError) {
+        throw error
+      }
+      throw new HttpError(0, error.message, fullUrl)
+    }
+  }
+  
+  private async executeWithRetry(url: string, options: RequestInit): Promise<Response> {
+    const retryConfig = this.config.retry || { attempts: 1, delay: 0 }
+    
+    for (let attempt = 1; attempt <= retryConfig.attempts; attempt++) {
+      try {
+        return await fetch(url, options)
+      } catch (error) {
+        if (attempt === retryConfig.attempts) {
+          throw error
+        }
+        await this.delay(retryConfig.delay)
+      }
+    }
+    
+    throw new Error('All retry attempts failed')
+  }
+}
+```
+
+## Mock-Strategien für Test-Driven Development
+
+### Integration vs. Unit Testing Balance
+```typescript
+// Unit Tests: Mock externe Dependencies
+describe('UserService Unit Tests', () => {
+  let userService: UserService
+  let mockDatabase: MockDatabase
+  let mockEmailService: MockEmailService
+  
+  beforeEach(() => {
+    mockDatabase = createMockDatabase()
+    mockEmailService = createMockEmailService()
+    userService = new UserService(mockDatabase, mockEmailService)
+  })
+  
+  it('should create user and send welcome email', async () => {
+    mockDatabase.save.mockResolvedValue({ id: 'user123' })
+    mockEmailService.send.mockResolvedValue(true)
+    
+    const user = await userService.createUser({
+      name: 'John',
+      email: 'john@example.com'
+    })
+    
+    expect(user.id).toBe('user123')
+    expect(mockDatabase.save).toHaveBeenCalledWith({
+      name: 'John',
+      email: 'john@example.com'
+    })
+    expect(mockEmailService.send).toHaveBeenCalledWith({
+      to: 'john@example.com',
+      subject: 'Welcome!',
+      template: 'welcome'
+    })
+  })
+})
+
+// Integration Tests: Real Dependencies wo möglich
+describe('UserService Integration Tests', () => {
+  let userService: UserService
+  let testDatabase: TestDatabase
+  
+  beforeEach(async () => {
+    testDatabase = await createTestDatabase()
+    const emailService = new EmailService({ mock: true }) // Test mode
+    userService = new UserService(testDatabase, emailService)
+  })
+  
+  afterEach(async () => {
+    await testDatabase.cleanup()
+  })
+  
+  it('should handle complete user creation flow', async () => {
+    const userData = {
+      name: 'Integration Test User',
+      email: 'integration@test.com'
+    }
+    
+    const user = await userService.createUser(userData)
+    
+    // Verify user was actually saved
+    const savedUser = await testDatabase.findById(user.id)
+    expect(savedUser).toEqual(expect.objectContaining(userData))
+    
+    // Verify email was queued (not actually sent in test)
+    const emailQueue = await testDatabase.getEmailQueue()
+    expect(emailQueue).toHaveLength(1)
+    expect(emailQueue[0]).toEqual(expect.objectContaining({
+      to: 'integration@test.com',
+      subject: 'Welcome!'
+    }))
+  })
+})
+```
+
+### Test Doubles für verschiedene Szenarien
+```typescript
+// Spy: Beobachten ohne Verhalten zu ändern
+describe('Analytics Tracking', () => {
+  it('should track user events', () => {
+    const analytics = new AnalyticsService()
+    const trackSpy = vi.spyOn(analytics, 'track')
+    
+    const userService = new UserService(mockDb, mockEmail, analytics)
+    userService.createUser({ name: 'John', email: 'john@test.com' })
+    
+    expect(trackSpy).toHaveBeenCalledWith('user.created', {
+      userId: expect.any(String),
+      email: 'john@test.com'
+    })
+  })
+})
+
+// Stub: Vordefinierte Rückgabewerte
+describe('External API Integration', () => {
+  it('should handle API service responses', async () => {
+    const apiService = createApiServiceStub({
+      '/user/validate': { valid: true, score: 0.95 },
+      '/user/enrich': { location: 'US', timezone: 'EST' }
+    })
+    
+    const userService = new UserService(mockDb, mockEmail, null, apiService)
+    const user = await userService.createUser({
+      name: 'John',
+      email: 'john@example.com'
+    })
+    
+    expect(user.validationScore).toBe(0.95)
+    expect(user.location).toBe('US')
+  })
+})
+
+// Mock: Vollständige Kontrolle über Verhalten
+describe('Error Handling', () => {
+  it('should handle database errors gracefully', async () => {
+    const mockDb = createMockDatabase()
+    mockDb.save.mockRejectedValue(new DatabaseError('Connection failed'))
+    
+    const userService = new UserService(mockDb, mockEmail)
+    
+    await expect(userService.createUser({
+      name: 'John',
+      email: 'john@test.com'
+    })).rejects.toThrow('Failed to create user: Connection failed')
+    
+    // Verify rollback behavior
+    expect(mockEmail.send).not.toHaveBeenCalled()
+  })
+})
+```
+
+## Test-Driven Error Handling
+
+### Comprehensive Error Scenarios
+```typescript
+describe('Robust Error Handling', () => {
+  describe('Network Errors', () => {
+    it('should handle connection timeouts', async () => {
+      const client = new ApiClient({ timeout: 100 })
+      
+      // Mock slow response
+      vi.mocked(fetch).mockImplementation(() => 
+        new Promise(resolve => setTimeout(resolve, 200))
+      )
+      
+      await expect(client.get('/slow-endpoint'))
+        .rejects.toThrow(TimeoutError)
+    })
+    
+    it('should handle connection refused', async () => {
+      vi.mocked(fetch).mockRejectedValue(new Error('ECONNREFUSED'))
+      
+      const client = new ApiClient()
+      
+      await expect(client.get('/unreachable'))
+        .rejects.toThrow(ConnectionError)
+    })
+    
+    it('should handle DNS resolution failures', async () => {
+      vi.mocked(fetch).mockRejectedValue(new Error('ENOTFOUND'))
+      
+      const client = new ApiClient()
+      
+      await expect(client.get('/invalid-domain'))
+        .rejects.toThrow(DnsError)
+    })
+  })
+  
+  describe('HTTP Status Errors', () => {
+    it('should handle 401 Unauthorized', async () => {
+      vi.mocked(fetch).mockResolvedValue(new Response(
+        JSON.stringify({ error: 'Invalid token' }),
+        { status: 401 }
+      ))
+      
+      const client = new ApiClient()
+      
+      try {
+        await client.get('/protected')
+      } catch (error) {
+        expect(error).toBeInstanceOf(AuthenticationError)
+        expect(error.status).toBe(401)
+        expect(error.message).toContain('Invalid token')
+        expect(error.isRetryable).toBe(false)
+      }
+    })
+    
+    it('should handle 429 Rate Limited with retry info', async () => {
+      vi.mocked(fetch).mockResolvedValue(new Response(
+        JSON.stringify({ error: 'Too many requests' }),
+        { 
+          status: 429,
+          headers: { 'Retry-After': '60' }
+        }
+      ))
+      
+      const client = new ApiClient()
+      
+      try {
+        await client.get('/rate-limited')
+      } catch (error) {
+        expect(error).toBeInstanceOf(RateLimitError)
+        expect(error.retryAfter).toBe(60)
+        expect(error.isRetryable).toBe(true)
+      }
+    })
+  })
+  
+  describe('Data Validation Errors', () => {
+    it('should handle malformed JSON responses', async () => {
+      vi.mocked(fetch).mockResolvedValue(new Response('invalid json'))
+      
+      const client = new ApiClient()
+      
+      await expect(client.get('/malformed'))
+        .rejects.toThrow(ParseError)
+    })
+    
+    it('should validate response schema', async () => {
+      vi.mocked(fetch).mockResolvedValue(new Response(
+        JSON.stringify({ wrongField: 'value' })
+      ))
+      
+      const client = new ApiClient()
+      
+      try {
+        await client.getUser('/user/123') // expects User schema
+      } catch (error) {
+        expect(error).toBeInstanceOf(ValidationError)
+        expect(error.violations).toContain('Missing required field: id')
+      }
+    })
+  })
+})
+```
+
+## Performance-Driven Implementation
+
+### Performance Tests als Implementation Guide
+```typescript
+describe('Performance-Driven Implementation', () => {
+  describe('Data Processing Performance', () => {
+    it('should process 10k items under 100ms', async () => {
+      const processor = new DataProcessor()
+      const testData = Array.from({ length: 10000 }, (_, i) => ({
+        id: i,
+        value: `item-${i}`,
+        tags: [`tag-${i % 10}`, `category-${i % 5}`]
+      }))
+      
+      const startTime = performance.now()
+      const result = await processor.processAll(testData)
+      const endTime = performance.now()
+      
+      expect(endTime - startTime).toBeLessThan(100)
+      expect(result).toHaveLength(10000)
+      expect(result.every(item => item.processed === true)).toBe(true)
+    })
+    
+    it('should maintain memory efficiency', async () => {
+      const processor = new DataProcessor()
+      const largeDataset = Array.from({ length: 50000 }, (_, i) => ({
+        id: i,
+        data: 'x'.repeat(1000) // 1KB per item = 50MB total
+      }))
+      
+      const initialMemory = process.memoryUsage().heapUsed
+      await processor.processAll(largeDataset)
+      const finalMemory = process.memoryUsage().heapUsed
+      
+      const memoryIncrease = finalMemory - initialMemory
+      expect(memoryIncrease).toBeLessThan(100 * 1024 * 1024) // < 100MB increase
+    })
+  })
+  
+  describe('Caching Performance', () => {
+    it('should show significant speedup with caching', async () => {
+      const service = new CachedApiService()
+      
+      // First call (cache miss)
+      const start1 = performance.now()
+      const result1 = await service.getExpensiveData('key1')
+      const end1 = performance.now()
+      
+      // Second call (cache hit)
+      const start2 = performance.now()
+      const result2 = await service.getExpensiveData('key1')
+      const end2 = performance.now()
+      
+      const firstCallTime = end1 - start1
+      const secondCallTime = end2 - start2
+      
+      expect(result1).toEqual(result2)
+      expect(secondCallTime).toBeLessThan(firstCallTime * 0.1) // 90% faster
+    })
+  })
+})
+
+// Implementation optimiert für Performance-Tests
+export class DataProcessor {
+  async processAll(items: any[]): Promise<any[]> {
+    // Batch processing für bessere Performance
+    const batchSize = 1000
+    const results: any[] = []
+    
+    for (let i = 0; i < items.length; i += batchSize) {
+      const batch = items.slice(i, i + batchSize)
+      const batchResults = await this.processBatch(batch)
+      results.push(...batchResults)
+    }
+    
+    return results
+  }
+  
+  private async processBatch(batch: any[]): Promise<any[]> {
+    // Concurrent processing innerhalb des Batches
+    return Promise.all(batch.map(item => this.processItem(item)))
+  }
+  
+  private async processItem(item: any): Promise<any> {
+    // Effiziente Item-Verarbeitung
+    return {
+      ...item,
+      processed: true,
+      timestamp: Date.now()
+    }
+  }
+}
+```
+
+## Test-Coverage-Driven Implementation
+
+### Coverage-Guided Development
+```typescript
+// Coverage Reports informieren Implementation
+describe('Complete Feature Coverage', () => {
+  describe('UserManager - All Paths Covered', () => {
+    let userManager: UserManager
+    
+    beforeEach(() => {
+      userManager = new UserManager()
+    })
+    
+    // Happy Path
+    it('should create user successfully', async () => {
+      const user = await userManager.createUser({
+        name: 'John Doe',
+        email: 'john@example.com',
+        age: 30
+      })
+      
+      expect(user.id).toBeDefined()
+      expect(user.status).toBe('active')
+    })
+    
+    // Error Paths - alle Branches abdecken
+    it('should reject user with invalid email', async () => {
+      await expect(userManager.createUser({
+        name: 'John',
+        email: 'invalid-email',
+        age: 30
+      })).rejects.toThrow('Invalid email format')
+    })
+    
+    it('should reject user under minimum age', async () => {
+      await expect(userManager.createUser({
+        name: 'Young User',
+        email: 'young@example.com',
+        age: 12
+      })).rejects.toThrow('User must be at least 13 years old')
+    })
+    
+    it('should reject user with empty name', async () => {
+      await expect(userManager.createUser({
+        name: '',
+        email: 'test@example.com',
+        age: 25
+      })).rejects.toThrow('Name is required')
+    })
+    
+    // Edge Cases - 100% Statement Coverage
+    it('should handle duplicate email gracefully', async () => {
+      await userManager.createUser({
+        name: 'First User',
+        email: 'duplicate@example.com',
+        age: 25
+      })
+      
+      await expect(userManager.createUser({
+        name: 'Second User', 
+        email: 'duplicate@example.com',
+        age: 30
+      })).rejects.toThrow('Email already exists')
+    })
+    
+    it('should handle special characters in name', async () => {
+      const user = await userManager.createUser({
+        name: 'José María O\'Connor',
+        email: 'jose@example.com',
+        age: 28
+      })
+      
+      expect(user.name).toBe('José María O\'Connor')
+    })
+  })
+})
+
+// Implementation getrieben durch Coverage-Anforderungen
+export class UserManager {
+  private users = new Map<string, User>()
+  
+  async createUser(userData: UserData): Promise<User> {
+    // Branch 1: Name validation
+    if (!userData.name || userData.name.trim().length === 0) {
+      throw new Error('Name is required')
+    }
+    
+    // Branch 2: Email validation
+    if (!this.isValidEmail(userData.email)) {
+      throw new Error('Invalid email format')
+    }
+    
+    // Branch 3: Age validation
+    if (userData.age < 13) {
+      throw new Error('User must be at least 13 years old')
+    }
+    
+    // Branch 4: Duplicate email check
+    if (this.users.has(userData.email)) {
+      throw new Error('Email already exists')
+    }
+    
+    // Branch 5: Successful creation
+    const user: User = {
+      id: this.generateId(),
+      name: userData.name.trim(),
+      email: userData.email.toLowerCase(),
+      age: userData.age,
+      status: 'active',
+      createdAt: new Date()
+    }
+    
+    this.users.set(userData.email, user)
+    return user
+  }
+  
+  private isValidEmail(email: string): boolean {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
+  }
+  
+  private generateId(): string {
+    return `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  }
+}
+```
+
+## Continuous Test Execution
+
+### Watch Mode Integration
+```typescript
+// vitest.config.ts - Optimiert für TDD Workflow
+export default defineConfig({
+  test: {
+    globals: true,
+    environment: 'node',
+    watch: true, // Immer aktiv während Development
+    
+    // Hot Reload für TDD
+    watchExclude: ['**/node_modules/**', '**/dist/**'],
+    
+    // Schnelles Feedback
+    reporters: ['basic', 'hanging-process'],
+    
+    // Coverage während Development
+    coverage: {
+      enabled: true,
+      reporter: ['text', 'html'],
+      reportsDirectory: './coverage',
+      thresholds: {
+        lines: 90,
+        functions: 90,
+        branches: 85,
+        statements: 90
+      }
+    },
+    
+    // Parallelisierung für Speed
+    threads: true,
+    maxThreads: 4,
+    
+    // Test-Isolation
+    isolate: true,
+    
+    // Custom Matchers für bessere DX
+    setupFiles: ['./tests/setup.ts']
+  }
+})
+```
+
+### Automated Test Execution
+```json
+{
+  "scripts": {
+    "dev": "concurrently \"npm run test:watch\" \"npm run build:watch\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:unit": "vitest run tests/unit",
+    "test:api": "vitest run tests/api", 
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui",
+    "validate": "npm run test && npm run lint && npm run type-check"
+  }
+}
+```
+
+## Implementation Success Metrics
+
+### Quantitative Erfolgs-Kriterien
+1. **Test Coverage**: 90%+ Lines, Functions, Branches
+2. **Test Performance**: < 10 Sekunden für komplette Test Suite
+3. **Test-to-Code Ratio**: Mindestens 1:1 (gleichviel Test- wie Produktions-Code)
+4. **Red-Green-Refactor Cycles**: Alle Features durch TDD-Zyklus implementiert
+5. **API Test Coverage**: 100% der öffentlichen APIs getestet
+
+### Qualitative Erfolgs-Kriterien
+1. **Test Readability**: Tests dienen als ausführbare Dokumentation
+2. **Test Maintainability**: Tests sind robust gegen Refactoring
+3. **Implementation Confidence**: Jede Änderung durch Tests abgesichert
+4. **Bug Detection**: Tests fangen Regressions effektiv ab
+5. **Developer Experience**: TDD unterstützt, statt behindert Entwicklung
+
+## Critical Implementation Success Factors
+
+1. **Red-Green-Refactor Discipline**: Strikte Einhaltung des TDD-Zyklus
+2. **Test-First Mindset**: Kein Code ohne vorherigen Test
+3. **Fast Feedback Loops**: Tests laufen kontinuierlich < 10 Sekunden
+4. **Comprehensive Coverage**: Unit + API + Integration Tests
+5. **Real-World Testing**: Tests spiegeln echte Nutzungsszenarien wider
+description:
+globs:
+alwaysApply: false
+---

@@ -1,0 +1,345 @@
+# Test-Driven Pipeline Orchestrator
+
+## Mission: 100% Test-Driven TypeScript Library Development
+
+**Kern-Philosophie**: Kein Code existiert ohne entsprechende Tests. Jede Phase wird durch Testsuccess validiert.
+
+## Framework: Vitest 3.2+ State-of-the-Art (2025)
+
+### Technology Stack (Verpflichtend)
+```typescript
+// package.json dependencies
+{
+  "devDependencies": {
+    "vitest": "^3.2.0",
+    "@vitest/ui": "^3.2.0", 
+    "@vitest/coverage-v8": "^3.2.0",
+    "typescript": "^5.3.0",
+    "@types/node": "^20.0.0"
+  }
+}
+
+// vitest.config.ts - Minimale High-Performance Config
+export default defineConfig({
+  test: {
+    globals: true,
+    environment: 'node',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      threshold: {
+        lines: 90,
+        functions: 90,
+        branches: 85,
+        statements: 90
+      }
+    },
+    watch: true // Continuous testing
+  }
+})
+```
+
+## Dual-Testing Framework (Verpflichtend)
+
+### 1. Unit-Testing: Interne Funktionsvalidierung
+```typescript
+// tests/unit/*.test.ts
+// Testet alle Klassen, Funktionen, Module isoliert
+
+import { describe, it, expect, vi } from 'vitest'
+import { MyLibraryCore } from '../src/core'
+
+describe('MyLibraryCore', () => {
+  it('should initialize with default config', () => {
+    const lib = new MyLibraryCore()
+    expect(lib.isReady()).toBe(true)
+    expect(lib.getConfig()).toEqual(expect.objectContaining({
+      timeout: 5000,
+      retries: 3
+    }))
+  })
+})
+```
+
+### 2. API-Level Testing: User-Experience Validierung  
+```typescript
+// tests/api/*.test.ts
+// Testet die Library genau so wie echte Anwender sie nutzen würden
+
+import { describe, it, expect } from 'vitest'
+import { createClient } from '../src/index'
+
+describe('API Usage - Real User Scenarios', () => {
+  it('should work for typical user workflow', async () => {
+    // Exakt so wie ein Entwickler die Library nutzen würde
+    const client = createClient({
+      apiKey: 'test-key',
+      endpoint: 'https://api.example.com'
+    })
+    
+    const result = await client.fetchData('user/123')
+    expect(result).toHaveProperty('id', 'user/123')
+    expect(result).toHaveProperty('data')
+  })
+  
+  it('should handle errors gracefully like real users expect', async () => {
+    const client = createClient({ apiKey: 'invalid' })
+    
+    await expect(client.fetchData('user/123')).rejects.toThrow('Authentication failed')
+  })
+})
+```
+
+## Phase-by-Phase Test-Driven Workflow
+
+### Phase 0: Test Infrastructure Setup (IMMER ZUERST)
+**Dauer**: 30-60 Minuten
+**Exit Criteria**: 100% der Test-Infrastructure Tests bestehen
+
+```bash
+# Automatisierte Test-Setup Validierung
+npm run test:infrastructure  # Muss vor jeder anderen Phase bestehen
+```
+
+**Infrastructure Tests**:
+```typescript
+// tests/infrastructure.test.ts
+describe('Test Infrastructure', () => {
+  it('should run unit tests successfully', () => {
+    expect(true).toBe(true) // Vitest funktional
+  })
+  
+  it('should support TypeScript compilation', () => {
+    const result: number = 42
+    expect(typeof result).toBe('number')
+  })
+  
+  it('should have coverage reporting enabled', () => {
+    // Coverage-Konfiguration validieren
+    expect(process.env.NODE_ENV).toBeDefined()
+  })
+})
+```
+
+### Phase N: Feature Implementation Pattern
+**Jede Entwicklungsphase folgt diesem Muster**:
+
+1. **Test-First**: Schreibe failing Tests für gewünschte Funktionalität
+2. **Implementation**: Implementiere minimal notwendigen Code für Test-Pass
+3. **Refactor**: Verbessere Code bei grünen Tests
+4. **Validation**: 100% Test-Pass = Phase erfolgreich
+
+```typescript
+// Beispiel: Phase "Authentication"
+
+// Step 1: Failing Test (Test-First)
+describe('Authentication', () => {
+  it('should authenticate user with valid credentials', () => {
+    const auth = new AuthService()
+    const result = auth.login('user', 'password')
+    expect(result.success).toBe(true) // FAILS initially
+  })
+})
+
+// Step 2: Minimal Implementation
+class AuthService {
+  login(username: string, password: string) {
+    return { success: true } // Minimal für Test-Pass
+  }
+}
+
+// Step 3: Real Implementation (mit Tests)
+class AuthService {
+  async login(username: string, password: string) {
+    if (!username || !password) {
+      throw new Error('Credentials required')
+    }
+    // Real implementation...
+    return { success: true, token: 'jwt-token' }
+  }
+}
+```
+
+## Continuous Testing (Verpflichtend)
+
+### Watch Mode: Permanent aktiv
+```bash
+# Läuft kontinuierlich während Development
+npm run test:watch   # Vitest watch mode
+
+# Coverage tracking
+npm run test:coverage  # Läuft nach jeder Phase
+```
+
+### Test Success Gates
+**Keine Phase darf ohne Test-Success beendet werden**:
+
+```typescript
+// scripts/validate-phase.ts
+import { execSync } from 'child_process'
+
+function validatePhase(phaseName: string): boolean {
+  try {
+    // Alle Tests müssen bestehen
+    execSync('npm run test', { stdio: 'inherit' })
+    
+    // Coverage-Schwellenwerte müssen erreicht sein
+    const coverage = JSON.parse(execSync('npm run test:coverage:json').toString())
+    
+    return coverage.total.lines.pct >= 90 &&
+           coverage.total.functions.pct >= 90 &&
+           coverage.total.branches.pct >= 85
+  } catch (error) {
+    console.error(`Phase ${phaseName} failed: Tests or coverage insufficient`)
+    return false
+  }
+}
+```
+
+## Generische TypeScript Library Support
+
+### Library Type Detection & Testing
+```typescript
+// tests/lib-type-detection.test.ts
+import { detectLibraryType, generateTestSuite } from '../scripts/lib-analyzer'
+
+describe('Generic Library Support', () => {
+  it('should detect utility library type', () => {
+    const type = detectLibraryType('./src')
+    expect(['utility', 'api-client', 'ui-component', 'data-processing']).toContain(type)
+  })
+  
+  it('should generate appropriate test templates', () => {
+    const testSuite = generateTestSuite('api-client')
+    expect(testSuite).toContain('authentication tests')
+    expect(testSuite).toContain('request/response tests')
+    expect(testSuite).toContain('error handling tests')
+  })
+})
+```
+
+### Generic Test Templates per Library Type
+```typescript
+// scripts/test-templates.ts
+export const testTemplates = {
+  'api-client': {
+    unit: ['authentication', 'request-building', 'response-parsing', 'error-handling'],
+    api: ['end-to-end-requests', 'retry-logic', 'timeout-handling']
+  },
+  'utility': {
+    unit: ['core-functions', 'edge-cases', 'type-safety'],
+    api: ['public-interface', 'composition', 'real-world-usage']
+  },
+  'ui-component': {
+    unit: ['rendering', 'props-handling', 'state-management'],
+    api: ['user-interactions', 'accessibility', 'responsive-behavior']
+  }
+}
+```
+
+## Leichtgewichtige Automatisierung
+
+### Minimale Dependencies (No Enterprise Bloat)
+```json
+{
+  "dependencies": {},
+  "devDependencies": {
+    "vitest": "^3.2.0",
+    "@vitest/ui": "^3.2.0",
+    "@vitest/coverage-v8": "^3.2.0", 
+    "typescript": "^5.3.0"
+  }
+}
+```
+
+### Efficient Scripts
+```json
+{
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui", 
+    "test:coverage": "vitest run --coverage",
+    "test:phase": "vitest run && node scripts/validate-phase.js",
+    "dev": "vitest --watch"
+  }
+}
+```
+
+## Phase Success Criteria
+
+### Absolute Requirements (Nicht verhandelbar)
+1. **100% Test Pass Rate**: Alle Tests grün
+2. **Coverage Thresholds**: 90% Lines, 90% Functions, 85% Branches  
+3. **No Skipped Tests**: Keine TODO oder skipped Tests
+4. **API-Level Validation**: Mindestens 3 realistische User-Szenarien getestet
+5. **Type Safety**: Vollständige TypeScript-Typisierung ohne `any`
+
+### Soft Requirements (Angestrebt)
+1. **Performance**: Tests laufen unter 10 Sekunden
+2. **Readability**: Tests sind selbst-dokumentierend
+3. **Maintainability**: Tests nutzen DRY-Prinzipien
+
+## Error Recovery & Debug Strategy
+
+### Test Failures = Development Blocker
+```typescript
+// scripts/handle-test-failure.ts
+function handleTestFailure(error: TestError): void {
+  console.error(`🚨 Test Failure in Phase: ${currentPhase}`)
+  console.error(`📍 Failed Test: ${error.testName}`)
+  console.error(`💡 Suggestion: ${generateSuggestion(error)}`)
+  
+  // Blockiere weitere Entwicklung bis Tests grün
+  process.exit(1)
+}
+```
+
+### AI-Assisted Test Debugging
+```typescript
+// Prompt Templates für AI-Assisted Debugging
+const debugPrompts = {
+  unitTestFailure: `
+    Test failed: {testName}
+    Error: {error}
+    Code: {sourceCode}
+    
+    Generate fix that makes test pass while maintaining functionality.
+  `,
+  
+  apiTestFailure: `
+    API test failed: {testName}
+    Expected: {expected}
+    Actual: {actual}
+    
+    Fix the implementation to match expected API behavior.
+  `
+}
+```
+
+## Integration mit bestehender Pipeline
+
+### Adapter für bestehende Agents
+```typescript
+// agents/test-driven-adapter.ts
+export function adaptExistingAgent(agentOutput: AgentOutput): TestDrivenOutput {
+  return {
+    ...agentOutput,
+    testRequirements: extractTestRequirements(agentOutput),
+    testSuccess: false, // Muss durch Tests validiert werden
+    validationCommand: generateValidationCommand(agentOutput)
+  }
+}
+```
+
+## Critical Success Factors
+
+1. **Test-First Mindset**: Kein Feature ohne vorherigen Test
+2. **Continuous Validation**: Tests laufen kontinuierlich, nicht nur am Ende
+3. **Real-World Testing**: API-Tests spiegeln echte Nutzung wider
+4. **Lightweight Tooling**: Minimale Dependencies, maximale Effizienz
+5. **Developer Experience**: Tests unterstützen, nicht behindern Entwicklung
+description:
+globs:
+alwaysApply: false
+---

@@ -1,0 +1,590 @@
+# Test-Driven Architecture Agent
+
+## Mission: Testbare Architektur-Entscheidungen
+
+**Kern-Prinzip**: Jede Architektur-Entscheidung muss durch Tests validierbar sein.
+
+## Architektur-Entscheidungen durch Tests
+
+### 1. API Design Validation durch Tests
+```typescript
+// Architektur-Entscheidung: "Welches API Pattern?"
+// Test-basierte Evaluation verschiedener Patterns
+
+describe('API Design Evaluation', () => {
+  describe('Fluent API Pattern', () => {
+    it('should enable chainable method calls', () => {
+      const query = new QueryBuilder()
+        .select('name', 'email')
+        .from('users')
+        .where('active', true)
+        .limit(10)
+      
+      expect(query.toSQL()).toBe('SELECT name, email FROM users WHERE active = true LIMIT 10')
+    })
+    
+    it('should provide type safety through chaining', () => {
+      const query = new QueryBuilder()
+        .select('name') // TypeScript sollte nur gültige Felder zulassen
+        
+      // Compile-time type checking test
+      expect(typeof query.where).toBe('function')
+    })
+  })
+  
+  describe('Builder Pattern Alternative', () => {
+    it('should handle complex configurations', () => {
+      const config = QueryBuilder.create()
+        .setFields(['name', 'email'])
+        .setTable('users')
+        .addFilter('active', true)
+        .build()
+      
+      expect(config.isValid()).toBe(true)
+      expect(config.getSQL()).toBeDefined()
+    })
+  })
+})
+
+// Test-Ergebnis bestimmt Architektur-Entscheidung:
+// Fluent API gewinnt wenn Tests zeigen bessere Developer Experience
+```
+
+### 2. Performance Architecture Testing
+```typescript
+// Architektur-Entscheidung: "Synchron vs. Asynchron?"
+// Performance-Tests entscheiden Architektur
+
+describe('Synchronous vs Asynchronous Architecture', () => {
+  const testData = Array.from({ length: 1000 }, (_, i) => ({ id: i, value: `data${i}` }))
+  
+  it('should process data synchronously for small datasets', () => {
+    const processor = new SyncDataProcessor()
+    
+    const startTime = performance.now()
+    const result = processor.processAll(testData.slice(0, 100))
+    const endTime = performance.now()
+    
+    expect(endTime - startTime).toBeLessThan(10) // < 10ms für sync
+    expect(result).toHaveLength(100)
+  })
+  
+  it('should process data asynchronously for large datasets', async () => {
+    const processor = new AsyncDataProcessor()
+    
+    const startTime = performance.now()
+    const result = await processor.processAll(testData) // 1000 items
+    const endTime = performance.now()
+    
+    expect(endTime - startTime).toBeLessThan(100) // < 100ms für async
+    expect(result).toHaveLength(1000)
+  })
+  
+  it('should handle concurrent processing efficiently', async () => {
+    const processor = new AsyncDataProcessor()
+    const chunks = [
+      testData.slice(0, 250),
+      testData.slice(250, 500), 
+      testData.slice(500, 750),
+      testData.slice(750, 1000)
+    ]
+    
+    const startTime = performance.now()
+    const results = await Promise.all(chunks.map(chunk => processor.processAll(chunk)))
+    const endTime = performance.now()
+    
+    expect(endTime - startTime).toBeLessThan(50) // Concurrent sollte schneller sein
+    expect(results.flat()).toHaveLength(1000)
+  })
+})
+
+// Test-Ergebnis: Hybrid-Architektur
+// Sync für < 100 Items, Async für >= 100 Items
+```
+
+### 3. Error Handling Architecture Testing
+```typescript
+// Architektur-Entscheidung: "Error Handling Strategy?"
+// Tests definieren beste Error-Architektur
+
+describe('Error Handling Architecture', () => {
+  describe('Exception-based Error Handling', () => {
+    it('should throw specific errors for different failure types', async () => {
+      const service = new ApiService()
+      
+      // Network errors
+      await expect(service.request('/timeout-endpoint'))
+        .rejects.toThrow(NetworkError)
+      
+      // Authentication errors  
+      await expect(service.request('/protected', { token: 'invalid' }))
+        .rejects.toThrow(AuthenticationError)
+      
+      // Validation errors
+      await expect(service.request('/validate', { data: null }))
+        .rejects.toThrow(ValidationError)
+    })
+    
+    it('should provide useful error context', async () => {
+      const service = new ApiService()
+      
+      try {
+        await service.request('/invalid-endpoint')
+      } catch (error) {
+        expect(error).toBeInstanceOf(ApiError)
+        expect(error.statusCode).toBe(404)
+        expect(error.endpoint).toBe('/invalid-endpoint')
+        expect(error.suggestion).toContain('Check endpoint URL')
+      }
+    })
+  })
+  
+  describe('Result-based Error Handling', () => {
+    it('should return Result<T, E> for predictable errors', async () => {
+      const service = new ApiServiceWithResults()
+      
+      const result = await service.request('/user/123')
+      
+      if (result.isSuccess()) {
+        expect(result.getValue()).toHaveProperty('id', 123)
+      } else {
+        expect(result.getError()).toBeInstanceOf(ApiError)
+      }
+    })
+    
+    it('should enable fluent error handling', async () => {
+      const service = new ApiServiceWithResults()
+      
+      const userData = await service.request('/user/123')
+        .then(result => result.mapError(err => new CustomError(err.message)))
+        .then(result => result.getValue())
+      
+      expect(userData).toBeDefined()
+    })
+  })
+})
+
+// Test-Ergebnis bestimmt: Hybrid approach
+// Exceptions für unerwartete Fehler, Results für Business Logic
+```
+
+### 4. Dependency Management Architecture
+```typescript
+// Architektur-Entscheidung: "Dependency Injection vs Factory vs Service Locator?"
+// Tests validieren Dependency-Architektur
+
+describe('Dependency Management Architecture', () => {
+  describe('Constructor Injection', () => {
+    it('should enable explicit dependencies', () => {
+      const httpClient = new HttpClient()
+      const logger = new Logger()
+      const apiService = new ApiService(httpClient, logger)
+      
+      expect(apiService.isConfigured()).toBe(true)
+      expect(() => apiService.makeRequest('/test')).not.toThrow()
+    })
+    
+    it('should enable easy testing with mocks', () => {
+      const mockHttp = createMockHttpClient()
+      const mockLogger = createMockLogger()
+      const apiService = new ApiService(mockHttp, mockLogger)
+      
+      apiService.makeRequest('/test')
+      
+      expect(mockHttp.get).toHaveBeenCalledWith('/test')
+      expect(mockLogger.info).toHaveBeenCalled()
+    })
+  })
+  
+  describe('Service Factory Pattern', () => {
+    it('should enable lazy initialization', () => {
+      const factory = new ServiceFactory()
+      
+      // Services created on demand
+      const service1 = factory.createApiService()
+      const service2 = factory.createApiService()
+      
+      expect(service1).not.toBe(service2) // New instances
+      expect(service1.isConfigured()).toBe(true)
+    })
+    
+    it('should handle configuration centrally', () => {
+      const factory = new ServiceFactory({
+        apiBaseUrl: 'https://api.example.com',
+        timeout: 5000
+      })
+      
+      const service = factory.createApiService()
+      
+      expect(service.getBaseUrl()).toBe('https://api.example.com')
+      expect(service.getTimeout()).toBe(5000)
+    })
+  })
+  
+  describe('Container-based DI', () => {
+    it('should resolve complex dependency graphs', () => {
+      const container = new Container()
+      container.register('HttpClient', HttpClient)
+      container.register('Logger', Logger)
+      container.register('ApiService', ApiService)
+      
+      const service = container.resolve<ApiService>('ApiService')
+      
+      expect(service).toBeInstanceOf(ApiService)
+      expect(service.isConfigured()).toBe(true)
+    })
+  })
+})
+
+// Test-Ergebnis: Constructor Injection für Libraries
+// Bessere Testbarkeit und explizite Dependencies
+```
+
+## Testable Architecture Patterns
+
+### 1. Modular Architecture Testing
+```typescript
+// Architektur-Validierung: Modulare Struktur
+describe('Modular Architecture', () => {
+  it('should have clear module boundaries', () => {
+    const core = new CoreModule()
+    const auth = new AuthModule()
+    const api = new ApiModule()
+    
+    // Module sollten unabhängig funktionieren
+    expect(core.isStandalone()).toBe(true)
+    expect(auth.getDependencies()).not.toContain('ApiModule')
+    expect(api.getDependencies()).toContain('CoreModule')
+  })
+  
+  it('should enable selective feature loading', async () => {
+    const app = new App()
+    
+    // Nur Core-Features laden
+    await app.loadModule('core')
+    expect(app.hasFeature('logging')).toBe(true)
+    expect(app.hasFeature('authentication')).toBe(false)
+    
+    // Authentication optional hinzufügen
+    await app.loadModule('auth')
+    expect(app.hasFeature('authentication')).toBe(true)
+  })
+  
+  it('should maintain stable interfaces between modules', () => {
+    const coreInterface = new CoreModule().getPublicInterface()
+    const authInterface = new AuthModule().getPublicInterface()
+    
+    // Interfaces sollten stabil sein (Breaking Change Detection)
+    expect(coreInterface).toEqual(expect.objectContaining({
+      log: expect.any(Function),
+      configure: expect.any(Function),
+      version: expect.any(String)
+    }))
+    
+    expect(authInterface).toEqual(expect.objectContaining({
+      login: expect.any(Function),
+      logout: expect.any(Function),
+      isAuthenticated: expect.any(Function)
+    }))
+  })
+})
+```
+
+### 2. Scalability Architecture Testing
+```typescript
+// Performance-basierte Architektur-Entscheidungen
+describe('Scalability Architecture', () => {
+  it('should handle increasing load gracefully', async () => {
+    const processor = new ScalableProcessor()
+    
+    // Test mit steigender Last
+    const loads = [10, 100, 1000, 5000]
+    const results = []
+    
+    for (const load of loads) {
+      const startTime = performance.now()
+      await processor.processItems(Array.from({ length: load }, (_, i) => i))
+      const endTime = performance.now()
+      
+      results.push({
+        load,
+        timeMs: endTime - startTime,
+        timePerItem: (endTime - startTime) / load
+      })
+    }
+    
+    // Performance sollte sublinear skalieren
+    const timePerItem = results.map(r => r.timePerItem)
+    expect(timePerItem[3]).toBeLessThan(timePerItem[0] * 2) // Nicht linear
+  })
+  
+  it('should handle concurrent operations', async () => {
+    const processor = new ConcurrentProcessor()
+    const concurrentTasks = Array.from({ length: 10 }, (_, i) => 
+      processor.processData(`task-${i}`)
+    )
+    
+    const startTime = performance.now()
+    const results = await Promise.all(concurrentTasks)
+    const endTime = performance.now()
+    
+    expect(results).toHaveLength(10)
+    expect(endTime - startTime).toBeLessThan(1000) // < 1s für 10 concurrent tasks
+  })
+})
+```
+
+### 3. Maintainability Architecture Testing
+```typescript
+// Code-Qualität durch Architektur-Tests
+describe('Maintainability Architecture', () => {
+  it('should have low coupling between components', () => {
+    const analyzer = new ArchitectureAnalyzer()
+    const coupling = analyzer.analyzeCoupling([
+      'src/core',
+      'src/auth', 
+      'src/api',
+      'src/utils'
+    ])
+    
+    // Jedes Modul sollte weniger als 3 direkte Dependencies haben
+    Object.values(coupling).forEach(dependencies => {
+      expect(dependencies.length).toBeLessThan(3)
+    })
+  })
+  
+  it('should have high cohesion within components', () => {
+    const analyzer = new ArchitectureAnalyzer()
+    const cohesion = analyzer.analyzeCohesion('src/auth')
+    
+    // Auth-Modul sollte hohe Kohäsion haben (> 0.8)
+    expect(cohesion.score).toBeGreaterThan(0.8)
+    expect(cohesion.violations).toHaveLength(0)
+  })
+  
+  it('should follow consistent architectural patterns', () => {
+    const validator = new ArchitectureValidator()
+    const violations = validator.validatePatterns([
+      'dependency-direction', // Dependencies sollten nur nach innen zeigen
+      'interface-segregation', // Interfaces sollten klein und fokussiert sein
+      'single-responsibility' // Klassen sollten nur eine Verantwortung haben
+    ])
+    
+    expect(violations).toHaveLength(0)
+  })
+})
+```
+
+## AI-Prompt Templates für Architecture Testing
+
+### Architecture Decision Template
+```typescript
+const architectureTestPrompt = `
+Generate architecture validation tests for this decision:
+"${architectureDecision}"
+
+Create tests that validate:
+1. Performance characteristics
+2. Maintainability metrics
+3. Testability requirements
+4. Integration complexity
+5. Developer experience
+
+Use Vitest and include both positive and negative test cases.
+Provide quantitative metrics where possible.
+
+Example output:
+describe('${architectureDecision} Validation', () => {
+  it('should meet performance requirements', () => {
+    // Performance test
+  })
+  
+  it('should enable easy testing', () => {
+    // Testability validation
+  })
+  
+  it('should integrate well with existing code', () => {
+    // Integration test
+  })
+})
+`
+```
+
+### Pattern Evaluation Template
+```typescript
+const patternEvaluationPrompt = `
+Compare these architectural patterns through tests:
+Patterns: ${patterns.join(', ')}
+Context: ${context}
+
+Generate comparative tests that show:
+1. Which pattern performs better under load
+2. Which is easier to test and mock
+3. Which has better error handling
+4. Which provides better developer experience
+5. Which is more maintainable
+
+Use realistic scenarios and provide clear metrics for comparison.
+`
+```
+
+## Architecture Decision Records (ADRs) mit Tests
+
+### Test-Driven ADR Format
+```typescript
+// adr/001-api-design-pattern.ts
+export const ADR001 = {
+  title: "API Design Pattern Selection",
+  status: "accepted",
+  context: "Need to choose between Fluent API vs Builder Pattern",
+  
+  decision: "Use Fluent API for primary interface",
+  
+  validationTests: [
+    {
+      name: "Developer Experience Test",
+      test: () => {
+        const api = new FluentApi()
+        const result = api.select('name').from('users').where('active', true)
+        expect(result.toString()).toBe('SELECT name FROM users WHERE active = true')
+      }
+    },
+    {
+      name: "Type Safety Test", 
+      test: () => {
+        const api = new FluentApi()
+        // TypeScript should catch invalid chaining
+        expect(() => api.from('users').select('name')).toCompile()
+      }
+    },
+    {
+      name: "Performance Test",
+      test: () => {
+        const api = new FluentApi()
+        const startTime = performance.now()
+        
+        for (let i = 0; i < 1000; i++) {
+          api.select('name').from('users').build()
+        }
+        
+        const endTime = performance.now()
+        expect(endTime - startTime).toBeLessThan(10) // < 10ms for 1000 builds
+      }
+    }
+  ],
+  
+  consequences: [
+    "Positive: Better developer experience",
+    "Positive: More intuitive API",
+    "Negative: Slightly more complex implementation",
+    "Risk: Method chaining can become complex"
+  ]
+}
+```
+
+### ADR Validation Framework
+```typescript
+// scripts/validate-architecture-decisions.ts
+import { getAllADRs } from './adr-loader'
+
+async function validateAllArchitectureDecisions(): Promise<boolean> {
+  const adrs = getAllADRs()
+  let allValid = true
+  
+  for (const adr of adrs) {
+    console.log(`Validating ADR: ${adr.title}`)
+    
+    for (const validationTest of adr.validationTests) {
+      try {
+        await validationTest.test()
+        console.log(`  ✅ ${validationTest.name}`)
+      } catch (error) {
+        console.log(`  ❌ ${validationTest.name}: ${error.message}`)
+        allValid = false
+      }
+    }
+  }
+  
+  return allValid
+}
+```
+
+## Integration mit Test-Pipeline
+
+### Architecture Tests als Pipeline Stage
+```typescript
+// vitest.config.ts - erweitert um Architecture Tests
+export default defineConfig({
+  test: {
+    globals: true,
+    environment: 'node',
+    testTimeout: 10000,
+    
+    // Separate test suites
+    include: [
+      'tests/unit/**/*.test.ts',
+      'tests/api/**/*.test.ts', 
+      'tests/architecture/**/*.test.ts', // Architecture validation
+      'tests/performance/**/*.test.ts'  // Performance architecture
+    ]
+  }
+})
+```
+
+### Architecture Validation Commands
+```json
+{
+  "scripts": {
+    "test": "vitest run",
+    "test:unit": "vitest run tests/unit",
+    "test:api": "vitest run tests/api", 
+    "test:architecture": "vitest run tests/architecture",
+    "test:performance": "vitest run tests/performance",
+    "validate:architecture": "node scripts/validate-architecture-decisions.js"
+  }
+}
+```
+
+## Output für Implementation Agent
+
+```typescript
+export interface TestDrivenArchitecture {
+  coreDecisions: {
+    decision: string
+    validationTests: TestCase[]
+    metrics: PerformanceMetric[]
+    tradeoffs: Tradeoff[]
+  }[]
+  
+  patterns: {
+    pattern: string
+    implementation: CodeExample
+    validationCommand: string
+    benchmarks: BenchmarkTest[]
+  }[]
+  
+  constraints: {
+    performance: PerformanceConstraint[]
+    maintainability: QualityConstraint[]
+    testability: TestabilityRequirement[]
+  }
+  
+  validationPipeline: {
+    architectureTestCommand: string
+    performanceTestCommand: string
+    qualityGateCommand: string
+  }
+}
+```
+
+## Critical Architecture Success Factors
+
+1. **Test-Driven Decisions**: Alle Architektur-Entscheidungen durch Tests validiert
+2. **Performance Validation**: Messbare Performance-Charakteristika
+3. **Maintainability Metrics**: Quantifizierbare Code-Qualität  
+4. **Integration Testing**: Architektur-Komponenten zusammen getestet
+5. **Continuous Architecture Validation**: Architektur-Tests in CI/CD Pipeline
+description:
+globs:
+alwaysApply: false
+---

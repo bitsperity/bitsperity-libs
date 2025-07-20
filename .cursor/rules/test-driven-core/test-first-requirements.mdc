@@ -1,0 +1,426 @@
+# Test-First Requirements Agent
+
+## Mission: Testbare Anforderungen von Session 1
+
+**Kern-Prinzip**: Jede Anforderung muss als Test formulierbar sein, bevor implementiert wird.
+
+## Input-Output-Transformation
+
+### Eingabe: Vage Anforderungen
+```text
+"Die Library soll Benutzer authentifizieren können"
+```
+
+### Ausgabe: Testbare Spezifikationen
+```typescript
+// tests/requirements/authentication.test.ts
+describe('Authentication Requirements', () => {
+  it('should authenticate user with valid credentials', async () => {
+    const auth = new AuthService()
+    const result = await auth.login('testuser', 'password123')
+    
+    expect(result.success).toBe(true)
+    expect(result.token).toBeDefined()
+    expect(result.user.id).toBeDefined()
+  })
+  
+  it('should reject invalid credentials', async () => {
+    const auth = new AuthService()
+    
+    await expect(auth.login('invalid', 'wrong')).rejects.toThrow('Invalid credentials')
+  })
+  
+  it('should handle network errors gracefully', async () => {
+    const auth = new AuthService({ timeout: 1 }) // Force timeout
+    
+    await expect(auth.login('user', 'pass')).rejects.toThrow(/timeout|network/i)
+  })
+})
+```
+
+## Anforderungs-zu-Test-Mapping Framework
+
+### 1. Funktionale Anforderungen → Unit Tests
+```typescript
+// Input: "Die Library soll Daten validieren"
+// Output: Konkrete Validierungs-Tests
+
+describe('Data Validation', () => {
+  const validator = new DataValidator()
+  
+  it('should validate email format', () => {
+    expect(validator.isValid('test@example.com', 'email')).toBe(true)
+    expect(validator.isValid('invalid-email', 'email')).toBe(false)
+  })
+  
+  it('should validate required fields', () => {
+    const data = { name: 'John', email: 'john@test.com' }
+    const rules = { name: 'required', email: 'required|email' }
+    
+    expect(validator.validate(data, rules).isValid).toBe(true)
+  })
+  
+  it('should return detailed error messages', () => {
+    const result = validator.validate({}, { name: 'required' })
+    
+    expect(result.isValid).toBe(false)
+    expect(result.errors).toContain('name is required')
+  })
+})
+```
+
+### 2. Performance-Anforderungen → Benchmark Tests
+```typescript
+// Input: "Die Library soll schnell sein"
+// Output: Messbare Performance-Tests
+
+describe('Performance Requirements', () => {
+  it('should process 1000 items under 100ms', async () => {
+    const processor = new DataProcessor()
+    const testData = Array.from({ length: 1000 }, (_, i) => ({ id: i, value: `test${i}` }))
+    
+    const startTime = performance.now()
+    const result = await processor.processAll(testData)
+    const endTime = performance.now()
+    
+    expect(endTime - startTime).toBeLessThan(100)
+    expect(result).toHaveLength(1000)
+  })
+  
+  it('should handle large datasets efficiently', async () => {
+    const processor = new DataProcessor()
+    const largeDataset = Array.from({ length: 10000 }, (_, i) => ({ id: i }))
+    
+    const memoryBefore = process.memoryUsage().heapUsed
+    await processor.processAll(largeDataset)
+    const memoryAfter = process.memoryUsage().heapUsed
+    
+    const memoryIncrease = memoryAfter - memoryBefore
+    expect(memoryIncrease).toBeLessThan(50 * 1024 * 1024) // < 50MB
+  })
+})
+```
+
+### 3. Usability-Anforderungen → API Usage Tests  
+```typescript
+// Input: "Die Library soll einfach zu verwenden sein"
+// Output: Real-World Usage Tests
+
+describe('API Usability Requirements', () => {
+  it('should work with minimal configuration', () => {
+    // Minimaler Setup-Code für Entwickler
+    const client = new ApiClient()
+    
+    expect(() => client.get('/users')).not.toThrow()
+  })
+  
+  it('should have intuitive method names', () => {
+    const client = new ApiClient()
+    
+    // API sollte selbsterklärend sein
+    expect(typeof client.get).toBe('function')
+    expect(typeof client.post).toBe('function')
+    expect(typeof client.put).toBe('function')
+    expect(typeof client.delete).toBe('function')
+  })
+  
+  it('should provide helpful error messages', async () => {
+    const client = new ApiClient()
+    
+    try {
+      await client.get('/nonexistent')
+    } catch (error) {
+      expect(error.message).toMatch(/404|not found/i)
+      expect(error.endpoint).toBe('/nonexistent')
+      expect(error.suggestion).toBeDefined()
+    }
+  })
+})
+```
+
+## Test-First Interview Framework
+
+### Dopamine-optimierte Fragen mit Test-Fokus
+```typescript
+// Statt: "Wie soll die Authentication funktionieren?"
+// Besser: Test-orientierte Szenarien
+
+const interviewQuestions = {
+  authentication: {
+    scenario: "Ein Entwickler integriert deine Library zum ersten Mal...",
+    options: [
+      {
+        label: "🚀 Instant Auth",
+        test: "expect(auth.quickStart()).resolves.toHaveProperty('token')",
+        description: "Ein Einzeiler für Standard-Authentication"
+      },
+      {
+        label: "🔧 Flexible Setup", 
+        test: "expect(auth.configure({provider: 'custom'})).resolves.toBeDefined()",
+        description: "Konfigurierbare Authentication-Provider"
+      },
+      {
+        label: "🛡️ Security First",
+        test: "expect(auth.validateToken(token)).resolves.toHaveProperty('isValid', true)",
+        description: "Eingebaute Token-Validierung und Security-Features"
+      }
+    ]
+  }
+}
+```
+
+### Requirements-to-Tests Transformation Pipeline
+
+```typescript
+// 1. Input: Natural Language Requirement
+const requirement = "Users should be able to upload files"
+
+// 2. Test Generation Template
+const testTemplate = generateTestFromRequirement(requirement)
+
+// 3. Generated Test Suite
+describe('File Upload Requirements', () => {
+  it('should upload single file successfully', async () => {
+    const uploader = new FileUploader()
+    const file = new File(['test content'], 'test.txt', { type: 'text/plain' })
+    
+    const result = await uploader.upload(file)
+    
+    expect(result.success).toBe(true)
+    expect(result.fileId).toBeDefined()
+    expect(result.url).toMatch(/https?:\/\/.*/)
+  })
+  
+  it('should handle multiple file uploads', async () => {
+    const uploader = new FileUploader()
+    const files = [
+      new File(['content1'], 'file1.txt'),
+      new File(['content2'], 'file2.txt')
+    ]
+    
+    const results = await uploader.uploadMultiple(files)
+    
+    expect(results).toHaveLength(2)
+    expect(results.every(r => r.success)).toBe(true)
+  })
+  
+  it('should validate file types and sizes', async () => {
+    const uploader = new FileUploader({ 
+      allowedTypes: ['text/plain'], 
+      maxSize: 1024 
+    })
+    
+    const tooLargeFile = new File(['x'.repeat(2048)], 'large.txt')
+    const wrongTypeFile = new File([''], 'image.jpg', { type: 'image/jpeg' })
+    
+    await expect(uploader.upload(tooLargeFile)).rejects.toThrow(/size/i)
+    await expect(uploader.upload(wrongTypeFile)).rejects.toThrow(/type/i)
+  })
+})
+```
+
+## AI-Prompt Templates für Test-Generation
+
+### Funktionale Test-Generation
+```typescript
+const functionalTestPrompt = `
+Generate Vitest tests for this requirement:
+"${requirement}"
+
+Requirements:
+- Use describe/it/expect from Vitest
+- Test both success and failure cases
+- Include edge cases and error handling
+- Make tests executable and realistic
+- Use TypeScript with proper typing
+
+Example format:
+describe('Requirement: ${requirement}', () => {
+  it('should handle normal case', () => {
+    // Test implementation
+  })
+  
+  it('should handle edge cases', () => {
+    // Edge case tests
+  })
+  
+  it('should handle errors gracefully', () => {
+    // Error handling tests
+  })
+})
+`
+```
+
+### API Usage Test-Generation
+```typescript
+const apiUsageTestPrompt = `
+Generate real-world usage tests for:
+"${requirement}"
+
+Focus on:
+- How developers will actually use this feature
+- Common usage patterns
+- Integration with other features
+- TypeScript type safety
+- Error handling from user perspective
+
+Generate tests that validate the external API, not internal implementation.
+`
+```
+
+## Test-Driven Requirements Documentation
+
+### Executable Requirements Format
+```typescript
+// requirements/executable-specs.ts
+export const executableRequirements = {
+  authentication: {
+    description: "Library should handle user authentication",
+    tests: [
+      {
+        name: "successful login",
+        test: async () => {
+          const auth = new AuthService()
+          const result = await auth.login('user', 'pass')
+          expect(result.success).toBe(true)
+        }
+      },
+      {
+        name: "failed login", 
+        test: async () => {
+          const auth = new AuthService()
+          await expect(auth.login('wrong', 'creds')).rejects.toThrow()
+        }
+      }
+    ],
+    acceptanceCriteria: [
+      "Users can login with valid credentials",
+      "Invalid credentials are rejected", 
+      "Network errors are handled gracefully"
+    ]
+  }
+}
+```
+
+### Requirements Validation Framework
+```typescript
+// scripts/validate-requirements.ts
+import { executableRequirements } from '../requirements/executable-specs'
+
+async function validateRequirements(): Promise<boolean> {
+  let allPassed = true
+  
+  for (const [featureName, feature] of Object.entries(executableRequirements)) {
+    console.log(`Validating ${featureName}...`)
+    
+    for (const testCase of feature.tests) {
+      try {
+        await testCase.test()
+        console.log(`  ✅ ${testCase.name}`)
+      } catch (error) {
+        console.log(`  ❌ ${testCase.name}: ${error.message}`)
+        allPassed = false
+      }
+    }
+  }
+  
+  return allPassed
+}
+```
+
+## Integration mit Pipeline
+
+### Phase Validation durch Requirements-Tests
+```typescript
+// scripts/phase-gate.ts
+export async function validatePhaseCompletion(phaseName: string): Promise<boolean> {
+  // 1. Alle Unit-Tests müssen bestehen
+  const unitTestsPass = await runTests('tests/unit/**/*.test.ts')
+  
+  // 2. Alle API-Tests müssen bestehen  
+  const apiTestsPass = await runTests('tests/api/**/*.test.ts')
+  
+  // 3. Requirements für diese Phase müssen erfüllt sein
+  const requirementsPass = await validatePhaseRequirements(phaseName)
+  
+  // 4. Coverage-Schwellenwerte müssen erreicht sein
+  const coveragePass = await validateCoverage()
+  
+  return unitTestsPass && apiTestsPass && requirementsPass && coveragePass
+}
+```
+
+### Continuous Requirements Validation
+```typescript
+// vitest.config.ts - erweitert
+export default defineConfig({
+  test: {
+    globals: true,
+    environment: 'node',
+    setupFiles: ['./tests/setup.ts'],
+    // Custom test sequencer für Requirements-First
+    sequence: {
+      hooks: 'stack'
+    },
+    // Hooks für Requirements-Validation
+    globalSetup: './scripts/validate-requirements-setup.ts'
+  }
+})
+```
+
+## Success Metrics für Requirements
+
+### Quantitative Metriken
+1. **Test Coverage**: 100% der Requirements haben entsprechende Tests
+2. **Test Success Rate**: 100% der Requirements-Tests bestehen
+3. **API Coverage**: Alle öffentlichen APIs sind durch Usage-Tests abgedeckt
+4. **Performance Compliance**: Alle Performance-Requirements werden eingehalten
+
+### Qualitative Metriken  
+1. **Test Readability**: Tests sind selbst-dokumentierend
+2. **Real-World Relevance**: Tests spiegeln echte Nutzungsszenarien wider
+3. **Maintainability**: Tests sind robust gegen Refactoring
+4. **Developer Experience**: Tests helfen beim Verstehen der Library
+
+## Output-Format für nachgelagerte Agents
+
+```typescript
+export interface TestFirstRequirements {
+  functionalRequirements: {
+    description: string
+    tests: TestCase[]
+    acceptanceCriteria: string[]
+  }[]
+  
+  nonFunctionalRequirements: {
+    performance: PerformanceTest[]
+    usability: UsabilityTest[]
+    security: SecurityTest[]
+  }
+  
+  apiRequirements: {
+    publicAPI: APITest[]
+    integrationPatterns: IntegrationTest[]
+    errorHandling: ErrorTest[]
+  }
+  
+  validationCommands: {
+    unitTestCommand: string
+    apiTestCommand: string
+    performanceTestCommand: string
+    fullValidationCommand: string
+  }
+}
+```
+
+## Critical Success Factors
+
+1. **100% Test Coverage**: Jede Anforderung hat entsprechende Tests
+2. **Executable Specifications**: Requirements sind direkt ausführbar
+3. **Real-World Testing**: Tests spiegeln echte Nutzung wider  
+4. **Continuous Validation**: Requirements werden kontinuierlich validiert
+5. **Developer-Centric**: Tests unterstützen Library-Nutzer optimal
+description:
+globs:
+alwaysApply: false
+---
