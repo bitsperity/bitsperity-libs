@@ -11,12 +11,12 @@ import { createMockNostrEvent } from '../../test-utils/setup-phase3';
 describe('🔥 NostrUnchained + Phase 3 Store Integration', () => {
   let client: NostrUnchained;
   
-  const UMBREL_RELAY = 'ws://umbrel.local:4848';
+  const WORKING_RELAY = 'wss://relay.damus.io';
   
   beforeEach(async () => {
     // This is how REAL developers will use nostr-unchained
     client = await NostrUnchained.create({
-      relays: [UMBREL_RELAY],
+      relays: [WORKING_RELAY],
       timeout: 10000,
       debug: true
     });
@@ -151,8 +151,8 @@ describe('🔥 NostrUnchained + Phase 3 Store Integration', () => {
       console.log(`🌐 Connected to ${status.connectedRelays} relay(s)`);
       
       // Verify Umbrel is in the relay list
-      expect(client.config.relays).toContain(UMBREL_RELAY);
-      console.log(`✅ Umbrel relay configured: ${UMBREL_RELAY}`);
+      expect(client.config.relays).toContain(WORKING_RELAY);
+      console.log(`✅ Working relay configured: ${WORKING_RELAY}`);
     });
   });
 

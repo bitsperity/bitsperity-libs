@@ -102,20 +102,17 @@ export class TemporarySigner implements Signer {
         .map(b => b.toString(16).padStart(2, '0'))
         .join('');
 
-      // Sign event ID using secp256k1 (HMAC already configured in initialize)
+      // Use proven Schnorr signing approach from working create-event.js
       const secp256k1 = await import('@noble/secp256k1');
-      
-      const privateKeyHex = Array.from(this._privateKey)
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('');
       
       // Convert eventHash to hex string for signing
       const eventHashHex = Array.from(eventHash)
         .map(b => b.toString(16).padStart(2, '0'))
         .join('');
       
-      const signature = secp256k1.sign(eventHashHex, privateKeyHex);
-      nostrEvent.sig = signature.toCompactHex();
+      // Use Schnorr signing (requires no HMAC setup) - proven working approach
+      const signature = await secp256k1.default.schnorr.sign(eventHashHex, this._privateKey);
+      nostrEvent.sig = signature;
       
       const signedEvent = nostrEvent;
       

@@ -10,11 +10,11 @@ import { NostrUnchained } from '../../index';
 describe('🚀 Real Event Publishing - Phase 3 Beyond Expectations', () => {
   let client: NostrUnchained;
   
-  const UMBREL_RELAY = 'ws://umbrel.local:4848';
+  const WORKING_RELAY = 'wss://relay.damus.io';
   
   beforeEach(async () => {
     client = await NostrUnchained.create({
-      relays: [UMBREL_RELAY],
+      relays: [WORKING_RELAY],
       timeout: 10000,
       debug: true
     });
