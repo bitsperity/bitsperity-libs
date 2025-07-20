@@ -22,8 +22,17 @@ export class TemporarySigner implements Signer {
    */
   public async initialize(): Promise<void> {
     try {
-      // Use same approach as working quick-umbrel-test.js
+      // Import required crypto modules and setup secp256k1
       const secp256k1 = await import('noble-secp256k1');
+      const { hmac } = await import('@noble/hashes/hmac');
+      const { sha256 } = await import('@noble/hashes/sha256');
+      
+      // Setup HMAC for secp256k1 - CRITICAL for signing to work
+      secp256k1.default.utils.hmacSha256Sync = (key, ...msgs) => {
+        const h = hmac.create(sha256, key);
+        msgs.forEach(msg => h.update(msg));
+        return h.digest();
+      };
       
       // Generate real key pair using secp256k1 like working script
       this._privateKey = secp256k1.default.utils.randomPrivateKey();
@@ -93,17 +102,8 @@ export class TemporarySigner implements Signer {
         .map(b => b.toString(16).padStart(2, '0'))
         .join('');
 
-      // Sign event ID using secp256k1
+      // Sign event ID using secp256k1 (HMAC already configured in initialize)
       const secp256k1 = await import('@noble/secp256k1');
-      const { hmac } = await import('@noble/hashes/hmac');
-      const { sha256 } = await import('@noble/hashes/sha256');
-      
-      // Set up the required hash function for secp256k1
-      secp256k1.utils.hmacSha256Sync = (key, ...msgs) => {
-        const h = hmac.create(sha256, key);
-        msgs.forEach(msg => h.update(msg));
-        return h.digest();
-      };
       
       const privateKeyHex = Array.from(this._privateKey)
         .map(b => b.toString(16).padStart(2, '0'))

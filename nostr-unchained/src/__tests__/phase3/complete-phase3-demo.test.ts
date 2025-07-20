@@ -5,7 +5,8 @@ import {
   createTestEventBus, 
   PerformanceTracker,
   testUmbrelConnection,
-  setupPhase3Test
+  setupPhase3Test,
+  WORKING_RELAYS
 } from '@/test-utils/setup-phase3';
 
 /**
@@ -24,7 +25,11 @@ describe('🎯 Phase 3 COMPLETE - Real-time Stores + Umbrel Events', () => {
   let performanceTracker: PerformanceTracker;
   let signer: any;
   
-  const UMBREL_RELAY = 'ws://umbrel.local:4848';
+  const TEST_RELAYS = [
+    'wss://relay.damus.io',
+    'wss://offchain.pub', 
+    'wss://relay.getalby.com'
+  ];
   
   beforeEach(async () => {
     // Setup with proper signer
@@ -36,7 +41,7 @@ describe('🎯 Phase 3 COMPLETE - Real-time Stores + Umbrel Events', () => {
     
     // Create Store Manager with Umbrel relay AND SIGNER
     storeManager = new StoreManager(eventBus, {
-      relayUrls: [UMBREL_RELAY],
+      relayUrls: WORKING_RELAYS,
       autoConnect: true,
       syncAcrossTabs: true
     }, signer); // <- NOW WITH SIGNER!

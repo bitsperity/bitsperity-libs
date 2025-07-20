@@ -4,7 +4,13 @@ import { SimpleEventBus } from '@/core/event-bus';
 import { TemporarySigner } from '@/signers/temporary-signer';
 
 // Environment setup für Phase 3 tests
-export const UMBREL_RELAY = process.env.UMBREL_RELAY || 'ws://umbrel.local:4848';
+// Use reliable public relays from nostr.watch instead of umbrel.local
+export const WORKING_RELAYS = [
+  'wss://relay.damus.io',
+  'wss://offchain.pub', 
+  'wss://relay.getalby.com'
+];
+export const UMBREL_RELAY = WORKING_RELAYS[0]; // Keep compatibility
 export const STORE_TEST_RELAY = process.env.STORE_TEST_RELAY || UMBREL_RELAY;
 
 // Mock Svelte environment for testing
