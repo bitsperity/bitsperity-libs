@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { CustomChaCha20Poly1305 } from '../core/chacha20-poly1305';
-import { CryptoError } from '../types';
+import '../test-setup'; // <- WICHTIG: setup importieren!
+import { CustomChaCha20Poly1305 } from '../chacha20-poly1305/custom-chacha20-poly1305';
+import { CryptoError } from '../errors';
 
 /**
  * AI-Generated Comprehensive Test Suite for ChaCha20-Poly1305

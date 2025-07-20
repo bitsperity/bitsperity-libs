@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import '../test-setup'; // <- WICHTIG: setup importieren!
 import { NIP44Crypto } from '../nip44';
 import { NIP44KeyDerivation } from '../nip44/key-derivation';
 import { NIP44PaddingImpl } from '../nip44/padding';

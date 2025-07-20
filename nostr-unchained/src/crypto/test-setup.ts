@@ -1,14 +1,20 @@
 import { vi, beforeEach, afterEach } from 'vitest';
 
 // Mock WebCrypto API für Node.js Test-Umgebung
+const nodeCrypto = require('crypto');
+
+// Vollständige WebCrypto-API-Mock
 Object.defineProperty(global, 'crypto', {
   value: {
     getRandomValues: (arr: Uint8Array) => {
-      // Use Node.js crypto für echte Zufallszahlen
-      const crypto = require('crypto');
-      const bytes = crypto.randomBytes(arr.length);
+      const bytes = nodeCrypto.randomBytes(arr.length);
       arr.set(bytes);
       return arr;
+    },
+    subtle: {
+      // Minimal mock für WebCrypto.subtle wenn nötig
+      generateKey: () => Promise.reject(new Error('WebCrypto.subtle not implemented in tests')),
+      importKey: () => Promise.reject(new Error('WebCrypto.subtle not implemented in tests'))
     }
   }
 });
