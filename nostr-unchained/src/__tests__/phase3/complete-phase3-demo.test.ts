@@ -4,7 +4,8 @@ import { StoreManager } from '@/stores/store-manager';
 import { 
   createTestEventBus, 
   PerformanceTracker,
-  testUmbrelConnection 
+  testUmbrelConnection,
+  setupPhase3Test
 } from '@/test-utils/setup-phase3';
 
 /**
@@ -21,19 +22,24 @@ describe('🎯 Phase 3 COMPLETE - Real-time Stores + Umbrel Events', () => {
   let eventBus: SimpleEventBus;
   let storeManager: StoreManager;
   let performanceTracker: PerformanceTracker;
+  let signer: any;
   
   const UMBREL_RELAY = 'ws://umbrel.local:4848';
   
   beforeEach(async () => {
-    eventBus = new SimpleEventBus();
+    // Setup with proper signer
+    const setup = await setupPhase3Test();
+    eventBus = setup.eventBus;
+    signer = setup.signer;
+    
     performanceTracker = new PerformanceTracker();
     
-    // Create Store Manager with Umbrel relay
+    // Create Store Manager with Umbrel relay AND SIGNER
     storeManager = new StoreManager(eventBus, {
       relayUrls: [UMBREL_RELAY],
       autoConnect: true,
       syncAcrossTabs: true
-    });
+    }, signer); // <- NOW WITH SIGNER!
     
     // Give it time to connect
     await new Promise(resolve => setTimeout(resolve, 2000));

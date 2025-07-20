@@ -78,11 +78,11 @@ export default defineConfig({
   
   resolve: {
     alias: {
-      '@': '/app/src',
-      '@/stores': '/app/src/stores',
-      '@/types': '/app/src/types',
-      '@/test-utils': '/app/src/test-utils',
-      '@/core': '/app/src/core'
+      '@': '/workspace/nostr-unchained/src',
+      '@/stores': '/workspace/nostr-unchained/src/stores',
+      '@/types': '/workspace/nostr-unchained/src/types',
+      '@/test-utils': '/workspace/nostr-unchained/src/test-utils',
+      '@/core': '/workspace/nostr-unchained/src/core'
     }
   },
   

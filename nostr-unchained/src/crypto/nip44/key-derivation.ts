@@ -49,13 +49,13 @@ export class NIP44KeyDerivation implements KeyDerivation {
         if (i > 1) {
           // Add T(i-1) für i > 1
           const prevBlock = output.slice(offset - sha256.outputLen, offset);
-          hmac.update(prevBlock);
+          hmacInstance.update(prevBlock);
         }
         
-        hmac.update(info);
-        hmac.update(new Uint8Array([i])); // Counter byte
+        hmacInstance.update(info);
+        hmacInstance.update(new Uint8Array([i])); // Counter byte
         
-        const block = hmac.digest();
+        const block = hmacInstance.digest();
         const copyLength = Math.min(block.length, length - offset);
         output.set(block.slice(0, copyLength), offset);
         offset += copyLength;

@@ -2,7 +2,10 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { SimpleEventBus } from '@/core/event-bus';
 import { StoreManager } from '@/stores/store-manager';
 import { SimpleEventCreator } from '@/stores/simple-event-creator';
-import { PerformanceTracker } from '@/test-utils/setup-phase3';
+import { 
+  PerformanceTracker,
+  setupPhase3Test
+} from '@/test-utils/setup-phase3';
 
 /**
  * 🎯 UMBREL REAL EVENTS TEST
@@ -24,11 +27,14 @@ describe('🌐 Umbrel Relay - REAL Valid Events', () => {
     performanceTracker = new PerformanceTracker();
     
     // Create Store Manager with Umbrel relay
+    // Setup with proper signer
+    const { signer } = await setupPhase3Test();
+    
     storeManager = new StoreManager(eventBus, {
       relayUrls: [UMBREL_RELAY],
       autoConnect: true,
       syncAcrossTabs: false // Focus on relay publishing
-    });
+    }, signer); // <- SIGNER HINZUGEFÜGT!
     
     // Give it time to connect
     await new Promise(resolve => setTimeout(resolve, 3000));
