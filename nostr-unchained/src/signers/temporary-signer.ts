@@ -1,5 +1,6 @@
 import type { Signer, SignerInfo, SignerCapabilities, NostrEvent } from '@/types';
 import { SignerError } from '@/types';
+import { secp256k1 } from '@/crypto/secp256k1-setup'; // Globally configured secp256k1
 
 /**
  * Temporary Signer für sichere Fallback-Keys
@@ -22,21 +23,10 @@ export class TemporarySigner implements Signer {
    */
   public async initialize(): Promise<void> {
     try {
-      // Import required crypto modules and setup secp256k1
-      const secp256k1 = await import('noble-secp256k1');
-      const { hmac } = await import('@noble/hashes/hmac');
-      const { sha256 } = await import('@noble/hashes/sha256');
-      
-      // Setup HMAC for secp256k1 - CRITICAL for signing to work
-      secp256k1.default.utils.hmacSha256Sync = (key, ...msgs) => {
-        const h = hmac.create(sha256, key);
-        msgs.forEach(msg => h.update(msg));
-        return h.digest();
-      };
-      
-      // Generate real key pair using secp256k1 like working script
-      this._privateKey = secp256k1.default.utils.randomPrivateKey();
-      this._publicKey = Buffer.from(secp256k1.default.getPublicKey(this._privateKey, true).slice(1)).toString('hex');
+      // Use modern @noble/secp256k1 API (HMAC already configured)
+      this._privateKey = secp256k1.utils.randomPrivateKey();
+      const publicKeyBytes = secp256k1.getPublicKey(this._privateKey, true); // compressed
+      this._publicKey = secp256k1.etc.bytesToHex(publicKeyBytes.slice(1)); // remove 0x02/0x03 prefix
       
       const capabilities: SignerCapabilities = {
         canSign: true,
@@ -102,17 +92,12 @@ export class TemporarySigner implements Signer {
         .map(b => b.toString(16).padStart(2, '0'))
         .join('');
 
-      // Use proven Schnorr signing approach from working create-event.js
-      const secp256k1 = await import('@noble/secp256k1');
+      // Use modern @noble/secp256k1 API for signing
+      const eventHashHex = secp256k1.etc.bytesToHex(eventHash);
       
-      // Convert eventHash to hex string for signing
-      const eventHashHex = Array.from(eventHash)
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('');
-      
-      // Use Schnorr signing (requires no HMAC setup) - proven working approach
-      const signature = await secp256k1.default.schnorr.sign(eventHashHex, this._privateKey);
-      nostrEvent.sig = signature;
+      // Modern ECDSA signing using @noble/secp256k1
+      const signature = secp256k1.sign(eventHashHex, this._privateKey);
+      nostrEvent.sig = signature.toCompactHex();
       
       const signedEvent = nostrEvent;
       
