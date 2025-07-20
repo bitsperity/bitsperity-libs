@@ -10,11 +10,11 @@ import { NostrUnchained } from '../../index';
 describe('🔍 Relay Response Validation', () => {
   let client: NostrUnchained;
   
-  const UMBREL_RELAY = 'ws://umbrel.local:4848';
+  const WORKING_RELAY = 'wss://relay.damus.io';
   
   beforeEach(async () => {
     client = await NostrUnchained.create({
-      relays: [UMBREL_RELAY],
+      relays: [WORKING_RELAY],
       timeout: 15000,  // Longer timeout for thorough testing
       debug: true
     });

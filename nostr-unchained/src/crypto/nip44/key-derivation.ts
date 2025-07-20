@@ -49,13 +49,13 @@ export class NIP44KeyDerivation implements KeyDerivation {
         if (i > 1) {
           // Add T(i-1) für i > 1
           const prevBlock = output.slice(offset - sha256.outputLen, offset);
-          hmac.update(prevBlock);
+          hmacInstance.update(prevBlock);
         }
         
-        hmac.update(info);
-        hmac.update(new Uint8Array([i])); // Counter byte
+        hmacInstance.update(info);
+        hmacInstance.update(new Uint8Array([i])); // Counter byte
         
-        const block = hmac.digest();
+        const block = hmacInstance.digest();
         const copyLength = Math.min(block.length, length - offset);
         output.set(block.slice(0, copyLength), offset);
         offset += copyLength;
@@ -114,12 +114,25 @@ export class NIP44KeyDerivation implements KeyDerivation {
       this.validatePrivateKey(privateKey);
       this.validatePublicKey(publicKey);
 
+      // Convert keys to hex strings for Noble compatibility
+      const hexPrivateKey = Array.from(privateKey)
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+      const hexPublicKey = Array.from(publicKey)
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+        
       // Use Noble secp256k1 für ECDH
-      const sharedPoint = secp256k1.getSharedSecret(privateKey, publicKey, true); // compressed
+      const sharedPoint = secp256k1.getSharedSecret(hexPrivateKey, hexPublicKey, true); // compressed
+      
+      // Convert result back to Uint8Array if needed
+      const sharedPointBytes = typeof sharedPoint === 'string' 
+        ? new Uint8Array(Buffer.from(sharedPoint, 'hex'))
+        : new Uint8Array(sharedPoint);
       
       // Extract x-coordinate (32 bytes) from compressed point
-      // Remove first byte (compression flag) to get x-coordinate
-      const sharedSecret = sharedPoint.slice(1, 33);
+      // Remove first byte (compression flag) to get x-coordinate  
+      const sharedSecret = sharedPointBytes.slice(1, 33);
       
       return sharedSecret;
     } catch (error) {
@@ -180,14 +193,17 @@ export class NIP44KeyDerivation implements KeyDerivation {
     }
     
     try {
-      // Validate with Noble secp256k1
-      const point = secp256k1.Point.fromHex(publicKey);
-      if (!point.hasEvenY()) {
-        // For NIP-44, we typically use even Y coordinates
-        // But this is not strictly required, just validate point is on curve
-      }
-    } catch {
-      throw new InvalidKeyError('Invalid secp256k1 public key');
+      // Convert Uint8Array to hex string for Noble
+      const hexKey = Array.from(publicKey)
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+      
+      // Validate with Noble secp256k1 - just check if point is valid
+      const point = secp256k1.Point.fromHex(hexKey);
+      // Point.fromHex throws if invalid, so if we get here it's valid
+      // hasEvenY() check removed as it may not be available in all versions
+    } catch (error) {
+      throw new InvalidKeyError(`Invalid secp256k1 public key: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

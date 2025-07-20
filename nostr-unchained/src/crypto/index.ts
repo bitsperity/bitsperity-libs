@@ -7,6 +7,9 @@ export { CustomChaCha20Poly1305 } from './core/chacha20-poly1305';
 export { NIP44KeyDerivation } from './nip44/key-derivation';
 export { NIP44PaddingImpl } from './nip44/padding';
 
+// Global secp256k1 setup (globally configured)
+export { secp256k1 } from './secp256k1-setup';
+
 // ===== Type Exports =====
 export type {
   CryptoModule,

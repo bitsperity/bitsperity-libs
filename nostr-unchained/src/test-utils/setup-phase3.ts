@@ -1,9 +1,16 @@
 import { vi, beforeEach, afterEach } from 'vitest';
 import type { NostrEvent } from '@/types';
 import { SimpleEventBus } from '@/core/event-bus';
+import { TemporarySigner } from '@/signers/temporary-signer';
 
 // Environment setup für Phase 3 tests
-export const UMBREL_RELAY = process.env.UMBREL_RELAY || 'ws://umbrel.local:4848';
+// Use reliable public relays from nostr.watch instead of umbrel.local
+export const WORKING_RELAYS = [
+  'wss://relay.damus.io',
+  'wss://offchain.pub', 
+  'wss://relay.getalby.com'
+];
+export const UMBREL_RELAY = WORKING_RELAYS[0]; // Keep compatibility
 export const STORE_TEST_RELAY = process.env.STORE_TEST_RELAY || UMBREL_RELAY;
 
 // Mock Svelte environment for testing
@@ -99,6 +106,32 @@ export function createMockConversationEvents(count: number, participantPubkeys: 
 
 export function createTestEventBus(): SimpleEventBus {
   return new SimpleEventBus();
+}
+
+/**
+ * Create a test signer for Phase 3 tests
+ */
+export async function createTestSigner(): Promise<TemporarySigner> {
+  console.log('🔑 Creating test signer for Phase 3 tests...');
+  const signer = new TemporarySigner();
+  await signer.initialize(); // Initialize before accessing info
+  console.log(`   Test signer pubkey: ${signer.info.pubkey.substring(0, 16)}...`);
+  return signer;
+}
+
+/**
+ * Setup for Phase 3 tests with proper signer
+ */
+export async function setupPhase3Test() {
+  const eventBus = new SimpleEventBus();
+  const signer = await createTestSigner();
+  
+  console.log('🧪 Phase 3 test setup complete');
+  console.log(`   Event bus ready: ${!!eventBus}`);
+  console.log(`   Signer ready: ${!!signer}`);
+  console.log(`   Signer type: ${signer.info.type}`);
+  
+  return { eventBus, signer };
 }
 
 // Relay connection testing utilities

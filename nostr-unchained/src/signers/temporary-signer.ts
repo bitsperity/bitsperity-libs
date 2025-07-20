@@ -1,5 +1,6 @@
 import type { Signer, SignerInfo, SignerCapabilities, NostrEvent } from '@/types';
 import { SignerError } from '@/types';
+import { secp256k1 } from '@/crypto/secp256k1-setup'; // Globally configured secp256k1
 
 /**
  * Temporary Signer für sichere Fallback-Keys
@@ -22,12 +23,10 @@ export class TemporarySigner implements Signer {
    */
   public async initialize(): Promise<void> {
     try {
-      // Use same approach as working quick-umbrel-test.js
-      const secp256k1 = await import('noble-secp256k1');
-      
-      // Generate real key pair using secp256k1 like working script
-      this._privateKey = secp256k1.default.utils.randomPrivateKey();
-      this._publicKey = Buffer.from(secp256k1.default.getPublicKey(this._privateKey, true).slice(1)).toString('hex');
+      // Use modern @noble/secp256k1 API (HMAC already configured)
+      this._privateKey = secp256k1.utils.randomPrivateKey();
+      const publicKeyBytes = secp256k1.getPublicKey(this._privateKey, true); // compressed
+      this._publicKey = secp256k1.etc.bytesToHex(publicKeyBytes.slice(1)); // remove 0x02/0x03 prefix
       
       const capabilities: SignerCapabilities = {
         canSign: true,
@@ -64,19 +63,43 @@ export class TemporarySigner implements Signer {
     }
 
     try {
-      // Use the working external script for crypto
-      const { exec } = await import('child_process');
-      const { promisify } = await import('util');
-      const execAsync = promisify(exec);
+      console.log(`📝 Creating event with direct TypeScript implementation...`);
+      
+      // Create proper NostrEvent
+      const nostrEvent: NostrEvent = {
+        id: '',
+        pubkey: this._publicKey,
+        created_at: event.created_at || Math.floor(Date.now() / 1000),
+        kind: event.kind || 1,
+        tags: event.tags || [],
+        content: event.content || '',
+        sig: ''
+      };
 
-      const content = event.content || '';
-      const privateKeyHex = Buffer.from(this._privateKey).toString('hex');
+      // Generate event ID using proper serialization
+      const eventData = [
+        0,
+        nostrEvent.pubkey,
+        nostrEvent.created_at,
+        nostrEvent.kind,
+        nostrEvent.tags,
+        nostrEvent.content
+      ];
       
-      console.log(`📝 Creating event with working script approach...`);
+      const eventString = JSON.stringify(eventData);
+      const eventHash = await this.sha256(new TextEncoder().encode(eventString));
+      nostrEvent.id = Array.from(eventHash)
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+
+      // Use modern @noble/secp256k1 API for signing
+      const eventHashHex = secp256k1.etc.bytesToHex(eventHash);
       
-      const result = await execAsync(`node create-event.js "${content}" "${privateKeyHex}" "${this._publicKey}"`);
+      // Modern ECDSA signing using @noble/secp256k1
+      const signature = secp256k1.sign(eventHashHex, this._privateKey);
+      nostrEvent.sig = signature.toCompactHex();
       
-      const signedEvent = JSON.parse(result.stdout.trim()) as NostrEvent;
+      const signedEvent = nostrEvent;
       
       console.log(`✅ Event created successfully using working crypto!`);
       console.log(`   🆔 Event ID: ${signedEvent.id.substring(0, 16)}...`);
@@ -141,6 +164,11 @@ export class TemporarySigner implements Signer {
   /**
    * Sign message with private key
    */
+  private async sha256(data: Uint8Array): Promise<Uint8Array> {
+    const { sha256 } = await import('@noble/hashes/sha256');
+    return sha256(data);
+  }
+
   private async signMessage(message: string, privateKey: Uint8Array): Promise<string> {
     // Simplified implementation - in production use secp256k1 signing
     const hash = await crypto.subtle.digest('SHA-256', 
