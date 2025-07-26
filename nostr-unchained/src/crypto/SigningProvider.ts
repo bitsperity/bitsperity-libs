@@ -83,6 +83,14 @@ export class TemporarySigner implements SigningProvider {
     // Return signature as hex string
     return bytesToHex(signature);
   }
+
+  /**
+   * Get private key for NIP-44 encryption
+   * WARNING: Only for testing/development. Production should use secure key derivation.
+   */
+  async getPrivateKeyForEncryption(): Promise<string> {
+    return this.privateKey;
+  }
 }
 
 /**

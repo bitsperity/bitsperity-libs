@@ -1,0 +1,68 @@
+{
+  "v": 2,
+  "vectors": {
+    "get_conversation_key": [
+      {
+        "sec1": "0000000000000000000000000000000000000000000000000000000000000001",
+        "pub2": "0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+        "conversation_key": "c41c775356fd92eadc63ff5a0dc1da211b268cbea22316767095b2871ea1412d"
+      }
+    ],
+    "get_message_keys": [
+      {
+        "conversation_key": "c41c775356fd92eadc63ff5a0dc1da211b268cbea22316767095b2871ea1412d",
+        "nonce": "0000000000000000000000000000000000000000000000000000000000000000",
+        "chacha_key": "76e0979165b6c8dc1b0b576ba2a6b1b2f1b85e4b85c5de0ba5b8cf8c9baaffe7",
+        "chacha_nonce": "000000000000000000000000",
+        "hmac_key": "be9b4d0c4fba56efe1d124c7aecebf48a5e30b6e1ac85bc5af81b5e2b9a1bf96"
+      }
+    ],
+    "calc_padded_len": [
+      {
+        "unpadded_len": 16,
+        "padded_len": 32
+      },
+      {
+        "unpadded_len": 32,
+        "padded_len": 32
+      },
+      {
+        "unpadded_len": 33,
+        "padded_len": 64
+      },
+      {
+        "unpadded_len": 64,
+        "padded_len": 64
+      },
+      {
+        "unpadded_len": 65,
+        "padded_len": 128
+      }
+    ],
+    "encrypt_decrypt": [
+      {
+        "conversation_key": "c41c775356fd92eadc63ff5a0dc1da211b268cbea22316767095b2871ea1412d",
+        "nonce": "0001020304050607080910111213141516171819202122232425262728293031",
+        "plaintext": "",
+        "payload": "AgABAgMEBQYHCAkQERITFBUWFxgZICEiIyQlJicoKTA15r4S9CWfB2q5cE5OlmBVj+dYWnz7zZc="
+      },
+      {
+        "conversation_key": "c41c775356fd92eadc63ff5a0dc1da211b268cbea22316767095b2871ea1412d",
+        "nonce": "0001020304050607080910111213141516171819202122232425262728293031",
+        "plaintext": "a",
+        "payload": "AgABAgMEBQYHCAkQERITFBUWFxgZICEiIyQlJicoKTA1eZ5bIoT4bKrLu5XHIV5/0kXQfyO1A8E="
+      },
+      {
+        "conversation_key": "c41c775356fd92eadc63ff5a0dc1da211b268cbea22316767095b2871ea1412d",
+        "nonce": "0001020304050607080910111213141516171819202122232425262728293031",
+        "plaintext": "hello world",
+        "payload": "AgABAgMEBQYHCAkQERITFBUWFxgZICEiIyQlJicoKTA1tNq8jqe0HftGPZBUY1WG7GBxEJKNMdZ6HDy7Y5QPJPl4/Bp9Dg=="
+      }
+    ],
+    "invalid": {
+      "encrypt_msg_lengths": [],
+      "get_conversation_key": [],
+      "decrypt": []
+    }
+  }
+}

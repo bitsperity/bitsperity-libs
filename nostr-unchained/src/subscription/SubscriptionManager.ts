@@ -608,7 +608,9 @@ export class SubscriptionManager {
   }
 
   private setupRelayMessageHandling(): void {
-    // In a real implementation, this would set up listeners for relay messages
-    // For now, we'll implement the interface that tests expect
+    // Register this SubscriptionManager to handle EVENT and EOSE messages from RelayManager
+    this.relayManager.setMessageHandler((relayUrl: string, message: any) => {
+      this.handleRelayMessage(relayUrl, message);
+    });
   }
 }

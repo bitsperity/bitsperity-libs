@@ -49,6 +49,7 @@ export interface RelayConnection {
 export class RelayManager {
   private connections = new Map<string, RelayConnection>();
   private debug: boolean;
+  private messageHandler?: (relayUrl: string, message: RelayMessage) => void;
 
   constructor(relayUrls: string[], options: { debug?: boolean } = {}) {
     this.debug = options.debug ?? false;
@@ -287,6 +288,13 @@ export class RelayManager {
         if (this.debug) {
           console.log(`Notice from ${relayUrl}:`, notice);
         }
+      } else if (message[0] === 'EVENT' || message[0] === 'EOSE') {
+        // Forward subscription-related messages to message handler
+        if (this.messageHandler) {
+          this.messageHandler(relayUrl, message);
+        } else if (this.debug) {
+          console.log(`No message handler registered for ${message[0]} message`);
+        }
       }
     } catch (error) {
       if (this.debug) {
@@ -411,6 +419,13 @@ export class RelayManager {
     if (this.debug) {
       console.log(`📤 Sent to ${url}:`, messageStr);
     }
+  }
+
+  /**
+   * Register a message handler for subscription messages (EVENT, EOSE)
+   */
+  setMessageHandler(handler: (relayUrl: string, message: RelayMessage) => void): void {
+    this.messageHandler = handler;
   }
 
   /**
