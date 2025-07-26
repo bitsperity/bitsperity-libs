@@ -11,6 +11,8 @@ import { SigningProviderFactory, ExtensionSigner } from '../crypto/SigningProvid
 import { ErrorHandler } from '../utils/errors.js';
 import { DEFAULT_RELAYS, DEFAULT_CONFIG } from '../utils/constants.js';
 import { EventsModule } from '../events/FluentEventBuilder.js';
+import { DMModule } from '../dm/api/DMModule.js';
+import { SubscriptionManager } from '../subscription/SubscriptionManager.js';
 
 import type {
   NostrUnchainedConfig,
@@ -24,12 +26,16 @@ import type {
 
 export class NostrUnchained {
   private relayManager: RelayManager;
+  private subscriptionManager: SubscriptionManager;
   private signingProvider?: SigningProvider;
   private signingMethod?: 'extension' | 'temporary';
   private config: Required<NostrUnchainedConfig>;
   
   // Fluent Event Builder API
   public readonly events: EventsModule;
+  
+  // Direct Message API
+  public readonly dm: DMModule;
 
   constructor(config: NostrUnchainedConfig = {}) {
     // Merge with defaults
@@ -46,8 +52,19 @@ export class NostrUnchained {
       debug: this.config.debug
     });
 
+    // Initialize subscription manager
+    this.subscriptionManager = new SubscriptionManager(this.relayManager);
+
     // Initialize events module
     this.events = new EventsModule(this);
+
+    // Initialize DM module (will be fully initialized after signing provider is set)
+    this.dm = new DMModule({
+      subscriptionManager: this.subscriptionManager,
+      relayManager: this.relayManager,
+      signingProvider: undefined as any, // Will be set when initialized
+      debug: this.config.debug
+    });
 
     if (this.config.debug) {
       console.log('NostrUnchained initialized with relays:', this.config.relays);
@@ -77,6 +94,9 @@ export class NostrUnchained {
     const { provider, method } = await SigningProviderFactory.createBestAvailable();
     this.signingProvider = provider;
     this.signingMethod = method;
+
+    // Update DM module with signing provider
+    await this.dm.updateSigningProvider(this.signingProvider);
 
     if (this.config.debug) {
       console.log(`Initialized signing with method: ${method}`);

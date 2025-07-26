@@ -60,6 +60,9 @@ export type {
   StoreStatus 
 } from './store/NostrStore.js';
 
+// Direct Message Module (NIP-44 & NIP-59)
+export * as DM from './dm/index.js';
+
 // Constants
 export { DEFAULT_RELAYS, EVENT_KINDS } from './utils/constants.js';
 
