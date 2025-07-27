@@ -12,6 +12,7 @@ import { ErrorHandler } from '../utils/errors.js';
 import { DEFAULT_RELAYS, DEFAULT_CONFIG } from '../utils/constants.js';
 import { EventsModule } from '../events/FluentEventBuilder.js';
 import { DMModule } from '../dm/api/DMModule.js';
+import { SocialModule } from '../social/api/SocialModule.js';
 import { SubscriptionManager } from '../subscription/SubscriptionManager.js';
 
 import type {
@@ -36,6 +37,9 @@ export class NostrUnchained {
   
   // Direct Message API
   public readonly dm: DMModule;
+  
+  // Social Media API
+  public readonly social: SocialModule;
 
   constructor(config: NostrUnchainedConfig = {}) {
     // Merge with defaults
@@ -63,6 +67,15 @@ export class NostrUnchained {
       subscriptionManager: this.subscriptionManager,
       relayManager: this.relayManager,
       signingProvider: undefined as any, // Will be set when initialized
+      debug: this.config.debug
+    });
+
+    // Initialize Social module (will be fully initialized after signing provider is set)
+    this.social = new SocialModule({
+      subscriptionManager: this.subscriptionManager,
+      relayManager: this.relayManager,
+      signingProvider: undefined as any, // Will be set when initialized
+      eventBuilder: new EventBuilder(), // Create separate EventBuilder instance
       debug: this.config.debug
     });
 
@@ -97,6 +110,9 @@ export class NostrUnchained {
 
     // Update DM module with signing provider
     await this.dm.updateSigningProvider(this.signingProvider);
+
+    // Update Social module with signing provider
+    await this.social.updateSigningProvider(this.signingProvider);
 
     if (this.config.debug) {
       console.log(`Initialized signing with method: ${method}`);
