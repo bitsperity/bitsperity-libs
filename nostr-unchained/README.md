@@ -321,6 +321,34 @@ npm run lint:fix
 npm run format
 ```
 
+### Using with Local Applications
+
+If you're developing applications that use this library locally, add it as a file dependency:
+
+```json
+// In your application's package.json
+"dependencies": {
+  "nostr-unchained": "file:../path/to/nostr-unchained"
+}
+```
+
+Then just:
+```bash
+# Build the library first
+npm run build
+
+# In your application directory
+npm install
+```
+
+**Common Issue**: If `npm install` fails with tarball or integrity errors:
+```bash
+# Clean up corrupted cache
+rm -rf node_modules package-lock.json
+npm cache clean --force
+npm install
+```
+
 ## 📄 License
 
 MIT License - see [LICENSE](./LICENSE) file for details.

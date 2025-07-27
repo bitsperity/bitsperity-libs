@@ -41,6 +41,6 @@
 		"vitest": "^3.2.4"
 	},
 	"dependencies": {
-		"nostr-unchained": "file:../nostr-unchained/nostr-unchained-0.1.0.tgz"
+		"nostr-unchained": "file:../nostr-unchained"
 	}
 }

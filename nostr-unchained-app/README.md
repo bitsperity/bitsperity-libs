@@ -1,38 +1,67 @@
-# sv
+# Nostr Unchained App
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+A Svelte-based demo application for the [nostr-unchained](../nostr-unchained) library.
 
-## Creating a project
+## Local Development Setup
 
-If you're seeing this, you've probably already done this step. Congrats!
+This app uses the local `nostr-unchained` library. Follow these steps:
 
-```sh
-# create a new project in the current directory
-npx sv create
+1. **Setup the library first**:
+   ```bash
+   cd nostr-unchained
+   npm install
+   npm run build
+   ```
 
-# create a new project in my-app
-npx sv create my-app
-```
+2. **Setup the app**:
+   ```bash
+   cd ../nostr-unchained-app
+   npm install
+   ```
 
 ## Developing
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+Once you've set up dependencies, start the development server:
 
-```sh
+```bash
 npm run dev
 
 # or start the server and open the app in a new browser tab
 npm run dev -- --open
 ```
 
+## Common Issue: npm install fails
+
+**Problem**: You might see errors like:
+```
+npm error ENOENT: no such file or directory, open '/path/to/nostr-unchained-0.1.0.tgz'
+```
+or
+```
+npm error sha512-... integrity checksum failed
+```
+or
+```
+npm error code EUNSUPPORTEDPROTOCOL
+npm error Unsupported URL Type "link:": link:../nostr-unchained
+```
+
+**Solution**: 
+1. Clean up:
+   ```bash
+   rm -rf node_modules package-lock.json
+   npm cache clean --force
+   ```
+2. Follow the setup steps above
+
+**Why this happens**: These errors occur when npm tries to use corrupted tarball files. The app now uses `file:../nostr-unchained` which points directly to the local directory.
+
 ## Building
 
 To create a production version of your app:
 
-```sh
+```bash
 npm run build
 ```
 
 You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
