@@ -1,0 +1,59 @@
+{
+  "allowedTools": [
+    "Edit",
+    "Bash(npm:*)",
+    "Bash(git:*)",
+    "Bash(docker:*)",
+    "Bash(mkdir:*)",
+    "Bash(echo:*)",
+    "Bash(cat:*)",
+    "Bash(find:*)",
+    "Bash(grep:*)",
+    "Bash(ls:*)",
+    "Bash(cd:*)",
+    "Bash(cp:*)",
+    "Bash(mv:*)",
+    "FileRead",
+    "FileWrite",
+    "DirectoryList",
+    "ProcessExecute"
+  ],
+  "trustedDomains": [
+    "docs.anthropic.com",
+    "github.com",
+    "npmjs.com",
+    "nodejs.org",
+    "docker.com",
+    "vitejs.dev",
+    "vitest.dev",
+    "typescript.org"
+  ],
+  "pipeline": {
+    "defaultSession": "session-{{timestamp}}",
+    "testFramework": "vitest",
+    "buildTool": "vite",
+    "containerRuntime": "docker",
+    "qualityGates": {
+      "testCoverage": 90,
+      "performanceThreshold": 100,
+      "securityScore": 95
+    }
+  },
+  "aiAssistanceLevels": {
+    "high": ["tests", "boilerplate", "documentation", "configuration"],
+    "medium": ["api-design", "utilities", "integrations", "refactoring"],
+    "low": ["core-logic", "algorithms", "architecture-decisions"]
+  },
+  "notifications": {
+    "phaseCompletion": true,
+    "testFailures": true,
+    "qualityGateFailures": true,
+    "performanceRegression": true
+  },
+  "development": {
+    "autoWatch": true,
+    "incrementalBuilds": true,
+    "hotReload": true,
+    "debugMode": false
+  }
+} 

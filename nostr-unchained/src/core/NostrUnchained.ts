@@ -397,4 +397,11 @@ export class NostrUnchained {
   getStats() {
     return this.relayManager.getStats();
   }
+
+  /**
+   * Get the subscription manager for advanced query operations
+   */
+  getSubscriptionManager(): SubscriptionManager {
+    return this.subscriptionManager;
+  }
 }
