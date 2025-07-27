@@ -50,35 +50,21 @@
 		try {
 			const nostrService = await getService<NostrService>('nostr');
 			
-			// Load DM events - both legacy (kind 4) and NIP-17 (kind 1059)
-			const dmEvents = await nostrService.query()
-				.kinds([4, 1059])
-				.authors([authState.publicKey!])
-				.limit(50)
-				.execute();
+			// Use the Library's DM API instead of manual parsing
+			// This handles NIP-17 decryption and proper conversation grouping
+			const conversationSummaries = nostrService.nostr.dm.getConversations();
 			
-			// Group by conversation partners
-			const convMap = new Map();
-			dmEvents?.forEach(event => {
-				const partnerId = event.tags.find((t: any) => t[0] === 'p')?.[1];
-				if (partnerId) {
-					// Include self-chats (where partnerId equals own publicKey)
-					if (!convMap.has(partnerId)) {
-						convMap.set(partnerId, {
-							partnerId,
-							partnerName: partnerId === authState.publicKey 
-								? 'Me (Self-Chat)' 
-								: partnerId.substring(0, 8) + '...',
-							lastMessage: event.content,
-							lastTime: event.created_at,
-							unread: 0
-						});
-					}
-				}
-			});
-			
-			conversations = Array.from(convMap.values())
-				.sort((a, b) => b.lastTime - a.lastTime);
+			// Convert Library format to App format
+			conversations = conversationSummaries.map(summary => ({
+				partnerId: summary.pubkey,
+				partnerName: summary.pubkey === authState.publicKey 
+					? 'Me (Self-Chat)' 
+					: summary.pubkey.substring(0, 8) + '...',
+				lastMessage: summary.latestMessage?.content || 'No messages yet',
+				lastTime: summary.lastActivity || 0,
+				unread: 0,
+				isActive: summary.isActive
+			})).sort((a, b) => b.lastTime - a.lastTime);
 			
 			logger.info('Loaded conversations', { count: conversations.length });
 		} catch (error) {

@@ -413,6 +413,9 @@ export class NIP44Crypto {
       // Decode from base64 (browser-compatible)
       const binaryString = atob(payloadBase64);
       const payload = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        payload[i] = binaryString.charCodeAt(i);
+      }
       const minLength = this.VERSION_SIZE + this.NONCE_SIZE + this.MAC_SIZE;
       
       if (payload.length < minLength) return false;

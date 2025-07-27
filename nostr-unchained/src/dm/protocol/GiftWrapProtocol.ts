@@ -37,14 +37,15 @@ export class GiftWrapProtocol {
   static async createGiftWrappedDM(
     message: string,
     senderPrivateKey: string,
-    config: GiftWrapConfig
+    config: GiftWrapConfig,
+    subject?: string
   ): Promise<GiftWrapProtocolResult> {
     try {
       // Validate inputs
       this.validateCreateDMInputs(message, senderPrivateKey, config);
       
       // Step 1: Create the rumor (unsigned event with the actual message)
-      const rumor = this.createRumor(message, senderPrivateKey);
+      const rumor = this.createRumor(message, senderPrivateKey, subject);
       
       // Step 2: Create seals for each recipient
       // Each recipient needs their own seal due to different conversation keys
@@ -156,15 +157,21 @@ export class GiftWrapProtocol {
   /**
    * Create a rumor (unsigned event) containing the message
    */
-  private static createRumor(message: string, senderPrivateKey: string): Rumor {
+  private static createRumor(message: string, senderPrivateKey: string, subject?: string): Rumor {
     // Get sender's public key
     const senderPublicKey = this.getPublicKeyFromPrivate(senderPrivateKey);
+    
+    // Build tags array - add subject tag if provided (per NIP-17)
+    const tags: string[][] = [];
+    if (subject) {
+      tags.push(['subject', subject]);
+    }
     
     return {
       pubkey: senderPublicKey,
       created_at: Math.floor(Date.now() / 1000),
-      kind: 4, // Direct message kind
-      tags: [], // Usually empty for DMs, can be customized
+      kind: 14, // Chat message kind (NIP-17, not 4)
+      tags,
       content: message
     };
   }

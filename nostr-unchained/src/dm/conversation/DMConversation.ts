@@ -134,7 +134,8 @@ export class DMConversation {
       const giftWrapResult = await GiftWrapProtocol.createGiftWrappedDM(
         content,
         this.config.senderPrivateKey,
-        giftWrapConfig
+        giftWrapConfig,
+        subject
       );
 
       // Publish gift wraps to relays

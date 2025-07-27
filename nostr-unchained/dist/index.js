@@ -959,7 +959,7 @@ class bt {
     return this.create().kind(7).content(t).tag("e", e);
   }
 }
-function P(a) {
+function A(a) {
   const e = /* @__PURE__ */ new Set();
   let t = a;
   return {
@@ -1103,11 +1103,11 @@ class ge {
 }
 class Ce {
   constructor(e, t, s = {}, i = {}) {
-    h(this, "_events", P([]));
-    h(this, "_status", P("connecting"));
-    h(this, "_error", P(null));
-    h(this, "_loading", P(!1));
-    h(this, "_count", P(0));
+    h(this, "_events", A([]));
+    h(this, "_status", A("connecting"));
+    h(this, "_error", A(null));
+    h(this, "_loading", A(!1));
+    h(this, "_count", A(0));
     h(this, "_readIds", /* @__PURE__ */ new Set());
     h(this, "subscription");
     h(this, "subscriptionManager");
@@ -1364,7 +1364,7 @@ de.create = (a, e) => new He(a, e);
 function wt(a, e, t) {
   return Re(a), t === void 0 && (t = new Uint8Array(a.outputLen)), de(a, he(t), he(e));
 }
-const Pe = /* @__PURE__ */ Uint8Array.from([0]), xe = /* @__PURE__ */ Uint8Array.of();
+const Ae = /* @__PURE__ */ Uint8Array.from([0]), xe = /* @__PURE__ */ Uint8Array.of();
 function Et(a, e, t, s = 32) {
   Re(a), Se(s);
   const i = a.outputLen;
@@ -1374,8 +1374,8 @@ function Et(a, e, t, s = 32) {
   t === void 0 && (t = xe);
   const r = new Uint8Array(n * i), o = de.create(a, e), c = o._cloneInto(), l = new Uint8Array(o.outputLen);
   for (let u = 0; u < n; u++)
-    Pe[0] = u + 1, c.update(u === 0 ? xe : l).update(t).update(Pe).digestInto(l), r.set(l, i * u), o._cloneInto(c);
-  return o.destroy(), c.destroy(), ue(l, Pe), r.slice(0, s);
+    Ae[0] = u + 1, c.update(u === 0 ? xe : l).update(t).update(Ae).digestInto(l), r.set(l, i * u), o._cloneInto(c);
+  return o.destroy(), c.destroy(), ue(l, Ae), r.slice(0, s);
 }
 const Fe = (a, e, t, s, i) => Et(a, wt(a, e, t), s, i);
 /*! noble-ciphers - MIT License (c) 2023 Paul Miller (paulmillr.com) */
@@ -1386,7 +1386,7 @@ function Ue(a) {
   if (typeof a != "boolean")
     throw new Error(`boolean expected, not ${a}`);
 }
-function Ae(a) {
+function Pe(a) {
   if (!Number.isSafeInteger(a) || a < 0)
     throw new Error("positive integer expected, got " + a);
 }
@@ -1411,7 +1411,7 @@ function _t(a, e) {
 function Ke(a) {
   return Uint8Array.from(a);
 }
-const Be = (a) => Uint8Array.from(a.split("").map((e) => e.charCodeAt(0))), It = Be("expand 16-byte k"), Pt = Be("expand 32-byte k"), At = te(It), St = te(Pt);
+const Be = (a) => Uint8Array.from(a.split("").map((e) => e.charCodeAt(0))), It = Be("expand 16-byte k"), At = Be("expand 32-byte k"), Pt = te(It), St = te(At);
 function m(a, e) {
   return a << e | a >>> 32 - e;
 }
@@ -1443,10 +1443,10 @@ function Rt(a, e) {
   const { allowShortKeys: t, extendNonceFn: s, counterLength: i, counterRight: n, rounds: r } = _t({ allowShortKeys: !1, counterLength: 8, counterRight: !1, rounds: 20 }, e);
   if (typeof a != "function")
     throw new Error("core must be a function");
-  return Ae(i), Ae(r), Ue(n), Ue(t), (o, c, l, u, g = 0) => {
+  return Pe(i), Pe(r), Ue(n), Ue(t), (o, c, l, u, g = 0) => {
     pe(o), pe(c), pe(l);
     const d = l.length;
-    if (u === void 0 && (u = new Uint8Array(d)), pe(u), Ae(g), g < 0 || g >= ze)
+    if (u === void 0 && (u = new Uint8Array(d)), pe(u), Pe(g), g < 0 || g >= ze)
       throw new Error("arx: counter overflow");
     if (u.length < d)
       throw new Error(`arx: output (${u.length}) is shorter than data (${d})`);
@@ -1455,7 +1455,7 @@ function Rt(a, e) {
     if (f === 32)
       p.push(w = Ke(o)), I = St;
     else if (f === 16 && t)
-      w = new Uint8Array(32), w.set(o), w.set(o, 16), I = At, p.push(w);
+      w = new Uint8Array(32), w.set(o), w.set(o, 16), I = Pt, p.push(w);
     else
       throw new Error(`arx: invalid 32-byte key, got length=${f}`);
     Te(c) || p.push(c = Ke(c));
@@ -1496,7 +1496,7 @@ class k extends Error {
   }
 }
 var R = /* @__PURE__ */ ((a) => (a.INVALID_KEY = "INVALID_KEY", a.INVALID_NONCE = "INVALID_NONCE", a.INVALID_PAYLOAD = "INVALID_PAYLOAD", a.ENCRYPTION_FAILED = "ENCRYPTION_FAILED", a.DECRYPTION_FAILED = "DECRYPTION_FAILED", a.MAC_VERIFICATION_FAILED = "MAC_VERIFICATION_FAILED", a.INVALID_PLAINTEXT_LENGTH = "INVALID_PLAINTEXT_LENGTH", a.PADDING_ERROR = "PADDING_ERROR", a))(R || {});
-class A {
+class P {
   /**
    * Derive conversation key using secp256k1 ECDH + HKDF
    */
@@ -1699,14 +1699,17 @@ class A {
    */
   static validatePayload(e) {
     try {
-      const t = atob(e), s = new Uint8Array(t.length), i = this.VERSION_SIZE + this.NONCE_SIZE + this.MAC_SIZE;
+      const t = atob(e), s = new Uint8Array(t.length);
+      for (let n = 0; n < t.length; n++)
+        s[n] = t.charCodeAt(n);
+      const i = this.VERSION_SIZE + this.NONCE_SIZE + this.MAC_SIZE;
       return !(s.length < i || s[0] !== this.VERSION);
     } catch {
       return !1;
     }
   }
 }
-h(A, "VERSION", 2), h(A, "SALT", new TextEncoder().encode(Ct.saltInfo)), h(A, "NONCE_SIZE", 32), h(A, "CHACHA_KEY_SIZE", 32), h(A, "CHACHA_NONCE_SIZE", 12), h(A, "HMAC_KEY_SIZE", 32), h(A, "MAC_SIZE", 32), h(A, "VERSION_SIZE", 1);
+h(P, "VERSION", 2), h(P, "SALT", new TextEncoder().encode(Ct.saltInfo)), h(P, "NONCE_SIZE", 32), h(P, "CHACHA_KEY_SIZE", 32), h(P, "CHACHA_NONCE_SIZE", 12), h(P, "HMAC_KEY_SIZE", 32), h(P, "MAC_SIZE", 32), h(P, "VERSION_SIZE", 1);
 class y extends Error {
   constructor(e, t, s) {
     super(e), this.code = t, this.details = s, this.name = "NIP59Error";
@@ -1729,10 +1732,10 @@ class we {
   static async createSeal(e, t, s) {
     try {
       this.validateRumor(e), this.validatePrivateKey(t), this.validatePublicKey(s);
-      const i = JSON.stringify(e), n = A.deriveConversationKey(
+      const i = JSON.stringify(e), n = P.deriveConversationKey(
         t,
         s
-      ), r = A.encrypt(i, n), o = this.getPublicKeyFromPrivate(t), c = {
+      ), r = P.encrypt(i, n), o = this.getPublicKeyFromPrivate(t), c = {
         pubkey: o,
         created_at: Math.floor(Date.now() / 1e3),
         kind: Z.SEAL_KIND,
@@ -1766,10 +1769,10 @@ class we {
         return { rumor: null, isValid: !1 };
       if (e.tags.length !== 0)
         return { rumor: null, isValid: !1 };
-      const s = A.deriveConversationKey(
+      const s = P.deriveConversationKey(
         t,
         e.pubkey
-      ), i = A.decrypt(e.content, s);
+      ), i = P.decrypt(e.content, s);
       if (!i.isValid)
         return { rumor: null, isValid: !1 };
       const n = JSON.parse(i.plaintext);
@@ -2072,10 +2075,10 @@ class ve {
           "Invalid ephemeral key pair",
           b.GIFT_WRAP_CREATION_FAILED
         );
-      const r = i || ke.generateRandomizedTimestamp(), o = JSON.stringify(e), c = A.deriveConversationKey(
+      const r = i || ke.generateRandomizedTimestamp(), o = JSON.stringify(e), c = P.deriveConversationKey(
         n.privateKey,
         t.pubkey
-      ), l = A.encrypt(o, c), u = t.relayHint ? ["p", t.pubkey, t.relayHint] : ["p", t.pubkey], g = {
+      ), l = P.encrypt(o, c), u = t.relayHint ? ["p", t.pubkey, t.relayHint] : ["p", t.pubkey], g = {
         pubkey: n.publicKey,
         created_at: r,
         kind: Z.GIFT_WRAP_KIND,
@@ -2136,10 +2139,10 @@ class ve {
     try {
       if (!this.isValidGiftWrap(e))
         return { seal: null, isValid: !1 };
-      const s = A.deriveConversationKey(
+      const s = P.deriveConversationKey(
         t,
         e.pubkey
-      ), i = A.decrypt(e.content, s);
+      ), i = P.decrypt(e.content, s);
       if (!i.isValid)
         return { seal: null, isValid: !1 };
       const n = JSON.parse(i.plaintext);
@@ -2261,40 +2264,40 @@ class ce {
    * Create gift-wrapped direct messages for multiple recipients
    * This is the main entry point for the NIP-59 protocol
    */
-  static async createGiftWrappedDM(e, t, s) {
+  static async createGiftWrappedDM(e, t, s, i) {
     try {
       this.validateCreateDMInputs(e, t, s);
-      const i = this.createRumor(e, t), n = [];
-      for (const o of s.recipients) {
-        const c = await we.createSeal(
-          i,
+      const n = this.createRumor(e, t, i), r = [];
+      for (const c of s.recipients) {
+        const l = await we.createSeal(
+          n,
           t,
-          o.pubkey
-        ), l = await ve.createGiftWrap(
-          c,
+          c.pubkey
+        ), u = await ve.createGiftWrap(
+          l,
           {
-            pubkey: o.pubkey,
-            relayHint: o.relayHint || s.relayHint
+            pubkey: c.pubkey,
+            relayHint: c.relayHint || s.relayHint
           }
         );
-        n.push(l);
+        r.push(u);
       }
-      const r = await we.createSeal(
-        i,
+      const o = await we.createSeal(
+        n,
         t,
         s.recipients[0].pubkey
       );
       return {
-        rumor: i,
-        seal: r,
-        giftWraps: n,
+        rumor: n,
+        seal: o,
+        giftWraps: r,
         senderPrivateKey: t
       };
-    } catch (i) {
-      throw i instanceof y ? i : new y(
-        `Gift wrap protocol failed: ${i.message}`,
+    } catch (n) {
+      throw n instanceof y ? n : new y(
+        `Gift wrap protocol failed: ${n.message}`,
         b.GIFT_WRAP_CREATION_FAILED,
-        i
+        n
       );
     }
   }
@@ -2343,14 +2346,14 @@ class ce {
   /**
    * Create a rumor (unsigned event) containing the message
    */
-  static createRumor(e, t) {
-    return {
-      pubkey: this.getPublicKeyFromPrivate(t),
+  static createRumor(e, t, s) {
+    const i = this.getPublicKeyFromPrivate(t), n = [];
+    return s && n.push(["subject", s]), {
+      pubkey: i,
       created_at: Math.floor(Date.now() / 1e3),
-      kind: 4,
-      // Direct message kind
-      tags: [],
-      // Usually empty for DMs, can be customized
+      kind: 14,
+      // Chat message kind (NIP-17, not 4)
+      tags: n,
       content: e
     };
   }
@@ -2503,7 +2506,7 @@ class je {
     h(this, "latest");
     h(this, "error");
     h(this, "subject");
-    this.config = e, this._state = P({
+    this.config = e, this._state = A({
       messages: [],
       status: "connecting",
       latest: null,
@@ -2536,7 +2539,8 @@ class je {
       ), c = await ce.createGiftWrappedDM(
         e,
         this.config.senderPrivateKey,
-        o
+        o,
+        t
       );
       let l = !1, u;
       for (const g of c.giftWraps)
@@ -2724,7 +2728,7 @@ class Ye {
     h(this, "participants");
     h(this, "error");
     var t;
-    this.config = e, this.roomId = this.generateRoomId(), this._state = P({
+    this.config = e, this.roomId = this.generateRoomId(), this._state = A({
       messages: [],
       status: "connecting",
       latest: null,
@@ -2986,7 +2990,7 @@ class Ze {
     h(this, "_senderPubkey", null);
     h(this, "_senderPrivateKey", null);
     // Reactive stores
-    h(this, "_conversationList", P([]));
+    h(this, "_conversationList", A([]));
     h(this, "conversations$");
     this.config = e, this.conversations$ = this._conversationList, this.config.signingProvider && this.initializeSender();
   }
@@ -3208,8 +3212,8 @@ class Dt {
     h(this, "activeSubscriptions", /* @__PURE__ */ new Map());
     // pubkey -> subscriptionId
     // Reactive stores
-    h(this, "_myProfile", P(null));
-    h(this, "_profileUpdates", P(/* @__PURE__ */ new Map()));
+    h(this, "_myProfile", A(null));
+    h(this, "_profileUpdates", A(/* @__PURE__ */ new Map()));
     // Public reactive properties
     h(this, "mine");
     h(this, "updates");
@@ -3437,8 +3441,8 @@ class Lt {
     h(this, "activeSubscriptions", /* @__PURE__ */ new Map());
     // pubkey -> subscriptionId
     // Reactive stores
-    h(this, "_myContacts", P(null));
-    h(this, "_contactUpdates", P(/* @__PURE__ */ new Map()));
+    h(this, "_myContacts", A(null));
+    h(this, "_contactUpdates", A(/* @__PURE__ */ new Map()));
     // Public reactive properties
     h(this, "mine");
     h(this, "updates");
@@ -3663,8 +3667,8 @@ class Ot {
     h(this, "activeSubscriptions", /* @__PURE__ */ new Map());
     // threadId -> subscriptionId
     // Reactive stores
-    h(this, "_watchedThreads", P(/* @__PURE__ */ new Map()));
-    h(this, "_threadUpdates", P(/* @__PURE__ */ new Map()));
+    h(this, "_watchedThreads", A(/* @__PURE__ */ new Map()));
+    h(this, "_threadUpdates", A(/* @__PURE__ */ new Map()));
     // Public reactive properties
     h(this, "watchedThreads");
     h(this, "updates");
@@ -4061,8 +4065,8 @@ class xt {
     h(this, "activeSubscriptions", /* @__PURE__ */ new Map());
     // eventId -> subscriptionId
     // Reactive stores
-    h(this, "_reactionUpdates", P(/* @__PURE__ */ new Map()));
-    h(this, "_watchedEvents", P(/* @__PURE__ */ new Map()));
+    h(this, "_reactionUpdates", A(/* @__PURE__ */ new Map()));
+    h(this, "_watchedEvents", A(/* @__PURE__ */ new Map()));
     // Public reactive properties
     h(this, "updates");
     h(this, "watchedEvents");
@@ -4316,8 +4320,8 @@ class Ft {
     h(this, "feedCache", /* @__PURE__ */ new Map());
     h(this, "activeSubscriptions", /* @__PURE__ */ new Map());
     // Reactive stores
-    h(this, "_globalFeed", P([]));
-    h(this, "_followingFeed", P([]));
+    h(this, "_globalFeed", A([]));
+    h(this, "_followingFeed", A([]));
     // Public reactive properties
     h(this, "globalFeed");
     h(this, "followingFeed");
@@ -5300,7 +5304,7 @@ const Jt = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   EphemeralKeyManager: Ee,
   GiftWrapCreator: ve,
   GiftWrapProtocol: ce,
-  NIP44Crypto: A,
+  NIP44Crypto: P,
   SealCreator: we,
   TimestampRandomizer: ke
 }, Symbol.toStringTag, { value: "Module" })), Qt = "0.1.0";
@@ -5330,5 +5334,5 @@ export {
   E as derived,
   Xt as query,
   Bt as setDefaultSubscriptionManager,
-  P as writable
+  A as writable
 };
