@@ -53,8 +53,9 @@ export class AuthService {
 		try {
 			this.logger.info('Initializing AuthService...');
 			
-			// Check for existing session
-			await this.restoreSession();
+			// Clear any existing sessions to force fresh login
+			await this.clearSession();
+			console.log('🧹 Cleared existing sessions for fresh login');
 			
 			// Detect available extensions
 			const extensions = await this.detectExtensions();
@@ -91,6 +92,17 @@ export class AuthService {
 		};
 
 		try {
+			// Debug window.nostr availability
+			console.log('🔍 Extension Detection Debug:', {
+				hasWindow: typeof window !== 'undefined',
+				hasNostr: typeof window !== 'undefined' && !!window.nostr,
+				nostrMethods: typeof window !== 'undefined' && window.nostr ? 
+					Object.keys(window.nostr) : [],
+				userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
+				nostrProvider: typeof window !== 'undefined' && window.nostr ? 
+					window.nostr._provider || window.nostr.provider || 'unknown' : 'none'
+			});
+
 			// Check for window.nostr (standard)
 			if (typeof window !== 'undefined' && window.nostr) {
 				extensions.getNostr = {
@@ -98,29 +110,35 @@ export class AuthService {
 					isAvailable: true,
 					version: await this.getExtensionVersion()
 				};
+				
+				console.log('✅ window.nostr detected');
+			} else {
+				console.log('❌ window.nostr not found');
 			}
 
-			// Check for Alby specifically
+			// Check for Alby specifically (don't enable yet, just detect)
 			if (typeof window !== 'undefined' && window.nostr?.enable) {
-				try {
-					const enabled = await window.nostr.enable();
-					if (enabled) {
-						extensions.alby.isAvailable = true;
-					}
-				} catch (error) {
-					this.logger.debug('Alby detection failed', { error });
-				}
+				// Just check if enable method exists - don't call it yet!
+				extensions.alby.isAvailable = true;
+				console.log('✅ Alby extension detected (enable method available)');
+			} else {
+				console.log('❌ Alby extension not detected');
 			}
 
 			// Check for nos2x
 			if (typeof window !== 'undefined' && window.nostr?.getPublicKey) {
 				extensions.nos2x.isAvailable = true;
+				console.log('✅ nos2x detected');
+			} else {
+				console.log('❌ nos2x not detected');
 			}
 
 		} catch (error) {
+			console.log('❌ Extension detection error:', error);
 			this.logger.warn('Extension detection error', { error });
 		}
 
+		console.log('🔧 Final extension state:', extensions);
 		return extensions;
 	}
 
@@ -141,52 +159,113 @@ export class AuthService {
 
 	async loginWithExtension(): Promise<LoginResult> {
 		try {
+			console.log('🔐 Starting extension login process...');
 			this.logger.info('Attempting extension login...');
 			
-			const nostrService = await getService('nostr');
-			if (!nostrService) {
-				throw new Error('NostrService not available');
-			}
-
-			// Check extension availability
-			const hasExtension = await nostrService.hasExtension();
-			if (!hasExtension) {
+			// First verify that we actually have a working extension
+			if (typeof window === 'undefined' || !window.nostr) {
+				console.log('❌ No window.nostr available');
 				return {
 					success: false,
 					error: createAuthError('NO_EXTENSION', 'No Nostr extension found')
 				};
 			}
 
-			// Get public key from extension
-			const pubkeyResult = await nostrService.getPublicKey();
-			if (!pubkeyResult.success || !pubkeyResult.data) {
+			// Try to enable the extension first
+			if (window.nostr.enable) {
+				console.log('🔄 Enabling extension...', {
+					provider: window.nostr._provider || window.nostr.provider || 'unknown',
+					hasGetPublicKey: !!window.nostr.getPublicKey,
+					hasSignEvent: !!window.nostr.signEvent
+				});
+				try {
+					const enabled = await window.nostr.enable();
+					console.log('🔧 Enable result:', enabled, typeof enabled);
+					if (!enabled) {
+						console.log('❌ Extension enable returned false - user denied or extension locked');
+						// Try without enable for some extensions
+						if (window.nostr.getPublicKey) {
+							console.log('🔄 Trying direct getPublicKey without enable...');
+							try {
+								const pubkey = await window.nostr.getPublicKey();
+								if (pubkey) {
+									console.log('✅ Got pubkey without enable:', pubkey.substring(0, 16) + '...');
+									// Continue with the pubkey we got
+								} else {
+									return {
+										success: false,
+										error: createAuthError('EXTENSION_DENIED', 'Extension access denied by user')
+									};
+								}
+							} catch (directError) {
+								console.log('❌ Direct getPublicKey also failed:', directError);
+								return {
+									success: false,
+									error: createAuthError('EXTENSION_DENIED', 'Extension access denied by user')
+								};
+							}
+						} else {
+							return {
+								success: false,
+								error: createAuthError('EXTENSION_DENIED', 'Extension access denied by user')
+							};
+						}
+					} else {
+						console.log('✅ Extension enabled successfully');
+					}
+				} catch (enableError) {
+					console.log('❌ Extension enable failed:', enableError);
+					return {
+						success: false,
+						error: createAuthError('EXTENSION_DENIED', 'Extension access denied')
+					};
+				}
+			}
+
+			// Get public key directly from extension
+			if (!window.nostr.getPublicKey) {
+				console.log('❌ Extension missing getPublicKey method');
 				return {
 					success: false,
-					error: pubkeyResult.error || createAuthError('EXTENSION_DENIED', 'Extension access denied')
+					error: createAuthError('NO_EXTENSION', 'Extension missing required methods')
 				};
 			}
 
+			console.log('🔑 Getting public key from extension...');
+			const pubkey = await window.nostr.getPublicKey();
+			
+			if (!pubkey || typeof pubkey !== 'string' || pubkey.length !== 64) {
+				console.log('❌ Invalid public key from extension:', pubkey);
+				return {
+					success: false,
+					error: createAuthError('EXTENSION_DENIED', 'Invalid public key from extension')
+				};
+			}
+
+			console.log('✅ Got valid public key:', pubkey.substring(0, 16) + '...');
+
 			// Create user profile
 			const profile: UserProfile = {
-				pubkey: pubkeyResult.data,
+				pubkey: pubkey,
 				verified: false
 			};
 
 			// Update auth state
-			await this.setAuthenticatedState('extension', pubkeyResult.data, profile);
+			await this.setAuthenticatedState('extension', pubkey, profile);
 
 			this.logger.info('Extension login successful', { 
-				pubkey: pubkeyResult.data.substring(0, 16) + '...' 
+				pubkey: pubkey.substring(0, 16) + '...' 
 			});
 
 			return {
 				success: true,
 				user: profile,
-				publicKey: pubkeyResult.data,
+				publicKey: pubkey,
 				method: 'extension'
 			};
 
 		} catch (error) {
+			console.log('❌ Extension login error:', error);
 			const authError = createAuthError('EXTENSION_DENIED', 'Extension login failed');
 			this.logger.logError(authError, { error });
 			

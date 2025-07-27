@@ -110,6 +110,16 @@ export class ServiceContainer {
 	}
 
 	/**
+	 * Force re-create a singleton service
+	 */
+	recreate<T>(name: string): void {
+		const registration = this.services.get(name);
+		if (registration && registration.singleton) {
+			registration.instance = undefined;
+		}
+	}
+
+	/**
 	 * Get service descriptors for debugging
 	 */
 	getDescriptors(): ServiceDescriptor[] {
@@ -141,6 +151,10 @@ export function registerService<T>(
 
 export async function getService<T>(name: string): Promise<T> {
 	return serviceContainer.resolve<T>(name);
+}
+
+export function recreateService(name: string): void {
+	serviceContainer.recreate(name);
 }
 
 // =============================================================================
@@ -179,9 +193,14 @@ registerService('config', () => new DefaultConfigService(), true);
 // Register NostrService
 registerService('nostr', async () => {
 	const { createNostrService } = await import('./NostrService.js');
+	
+	// Check if we should create a temporary account service
+	const isTempAccount = typeof window !== 'undefined' && 
+		sessionStorage.getItem('temp_signer_active') === 'true';
+	
 	return createNostrService({
 		relays: ['ws://umbrel.local:4848'],
-		debug: true,
+		debug: isTempAccount ? true : true, // Always debug for now
 		timeout: 10000
 	});
 }, true);

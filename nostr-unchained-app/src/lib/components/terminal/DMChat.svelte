@@ -20,10 +20,11 @@
 	
 	let conversations = $state<any[]>([]);
 	let activeConversation = $state<string | null>(null);
+	let activeConversationInstance = $state<any>(null); // DMConversation instance
 	let messages = $state<any[]>([]);
 	let isLoading = $state(false);
 	let newMessage = $state('');
-	let chatContainer: HTMLElement;
+	let chatContainer = $state<HTMLElement>();
 	
 	const logger = createContextLogger('DMChat');
 	
@@ -32,6 +33,15 @@
 	// =============================================================================
 	
 	onMount(async () => {
+		// Start inbox subscription to receive DMs
+		try {
+			const nostrService = await getService<NostrService>('nostr');
+			await nostrService.startDMInboxSubscription();
+			logger.info('DM inbox subscription started');
+		} catch (error) {
+			logger.error('Failed to start DM inbox subscription', { error });
+		}
+		
 		await loadConversations();
 	});
 	
@@ -40,9 +50,9 @@
 		try {
 			const nostrService = await getService<NostrService>('nostr');
 			
-			// Load DM events (kind 4) for current user
+			// Load DM events - both legacy (kind 4) and NIP-17 (kind 1059)
 			const dmEvents = await nostrService.query()
-				.kinds([4])
+				.kinds([4, 1059])
 				.authors([authState.publicKey!])
 				.limit(50)
 				.execute();
@@ -51,11 +61,14 @@
 			const convMap = new Map();
 			dmEvents?.forEach(event => {
 				const partnerId = event.tags.find((t: any) => t[0] === 'p')?.[1];
-				if (partnerId && partnerId !== authState.publicKey) {
+				if (partnerId) {
+					// Include self-chats (where partnerId equals own publicKey)
 					if (!convMap.has(partnerId)) {
 						convMap.set(partnerId, {
 							partnerId,
-							partnerName: partnerId.substring(0, 8) + '...',
+							partnerName: partnerId === authState.publicKey 
+								? 'Me (Self-Chat)' 
+								: partnerId.substring(0, 8) + '...',
 							lastMessage: event.content,
 							lastTime: event.created_at,
 							unread: 0
@@ -77,7 +90,41 @@
 	
 	async function openConversation(partnerId: string) {
 		activeConversation = partnerId;
-		await loadMessages(partnerId);
+		
+		try {
+			const nostrService = await getService<NostrService>('nostr');
+			
+			// Get the DMConversation instance (this is reactive)
+			activeConversationInstance = await nostrService.getDMConversation(partnerId);
+			
+			// Subscribe to the conversation's messages store for reactive updates
+			if (activeConversationInstance && activeConversationInstance.messages) {
+				activeConversationInstance.messages.subscribe((conversationMessages: any[]) => {
+					// Convert DMMessage format to our UI format
+					messages = conversationMessages.map(msg => ({
+						id: msg.id,
+						content: msg.content,
+						fromMe: msg.isFromMe,
+						timestamp: msg.timestamp,
+						pubkey: msg.senderPubkey,
+						status: msg.status
+					}));
+					
+					// Auto-scroll to bottom when new messages arrive
+					setTimeout(() => {
+						if (chatContainer) {
+							chatContainer.scrollTop = chatContainer.scrollHeight;
+						}
+					}, 50);
+				});
+				
+				logger.info('Subscribed to reactive conversation messages', { partnerId });
+			}
+		} catch (error) {
+			logger.error('Failed to open conversation', { error });
+			// Fallback to old loading method
+			await loadMessages(partnerId);
+		}
 	}
 	
 	async function loadMessages(partnerId: string) {
@@ -85,9 +132,9 @@
 		try {
 			const nostrService = await getService<NostrService>('nostr');
 			
-			// Load messages between current user and partner
+			// For DMs, we need to look for both encrypted messages (kind 4) and gift-wrapped messages (kind 1059)
 			const messageEvents = await nostrService.query()
-				.kinds([4])
+				.kinds([4, 1059]) // Include both legacy DMs and NIP-17 gift-wrapped messages
 				.authors([authState.publicKey!, partnerId])
 				.limit(100)
 				.execute();
@@ -97,6 +144,13 @@
 				?.filter(event => {
 					// Check if message involves both parties
 					const pTag = event.tags.find((t: any) => t[0] === 'p')?.[1];
+					
+					// Special case: self-messages (sender and recipient are the same)
+					if (authState.publicKey === partnerId) {
+						return event.pubkey === authState.publicKey && pTag === authState.publicKey;
+					}
+					
+					// Normal case: messages between two different parties
 					return (
 						(event.pubkey === authState.publicKey && pTag === partnerId) ||
 						(event.pubkey === partnerId && pTag === authState.publicKey)
@@ -129,32 +183,51 @@
 		if (!newMessage.trim() || !activeConversation) return;
 		
 		try {
-			const nostrService = await getService<NostrService>('nostr');
+			// Add detailed debugging for the browser environment
+			console.log('🔍 DMChat sendMessage debug:', {
+				hasActiveConversation: !!activeConversationInstance,
+				hasSendMethod: !!(activeConversationInstance?.send),
+				conversationType: typeof activeConversationInstance,
+				messageToSend: newMessage.trim()
+			});
 			
-			// Encrypt and send DM (simplified - real implementation would use NIP-17)
-			const result = await nostrService.publish(newMessage.trim());
-			
-			if (result.success) {
-				// Add message to local state optimistically
-				messages.push({
-					id: Date.now().toString(),
-					content: newMessage.trim(),
-					fromMe: true,
-					timestamp: Math.floor(Date.now() / 1000),
-					pubkey: authState.publicKey!
-				});
+			// Use the reactive conversation instance to send message
+			if (activeConversationInstance && activeConversationInstance.send) {
+				console.log('🚀 Attempting to send via conversation instance...');
+				const result = await activeConversationInstance.send(newMessage.trim());
 				
-				newMessage = '';
+				console.log('📤 Send result:', result);
 				
-				// Scroll to bottom
-				setTimeout(() => {
-					if (chatContainer) {
-						chatContainer.scrollTop = chatContainer.scrollHeight;
-					}
-				}, 50);
+				if (result.success) {
+					newMessage = '';
+					logger.info('Message sent via reactive conversation', { messageId: result.messageId });
+					// Messages will automatically appear via the reactive subscription
+				} else {
+					throw new Error(result.error || 'Failed to send message');
+				}
+			} else {
+				// Fallback to service method
+				console.log('🔄 Using service fallback...');
+				const nostrService = await getService<NostrService>('nostr');
+				const result = await nostrService.publishDM(activeConversation, newMessage.trim());
+				
+				if (result.success) {
+					newMessage = '';
+					logger.info('Message sent via service fallback');
+				} else {
+					throw new Error('Failed to send message via service');
+				}
 			}
 		} catch (error) {
+			console.error('❌ Detailed error in sendMessage:', {
+				error: error,
+				message: error.message,
+				stack: error.stack,
+				activeConversation,
+				activeConversationInstanceType: typeof activeConversationInstance
+			});
 			logger.error('Failed to send message', { error });
+			alert('Fehler beim Senden der Nachricht: ' + (error.message || 'Unbekannter Fehler'));
 		}
 	}
 	
@@ -172,15 +245,17 @@
 	
 	function goBack() {
 		activeConversation = null;
+		activeConversationInstance = null;
 		messages = [];
 	}
 
 	function startNewConversation() {
 		// For now, show a simple prompt - in a real app this would be a proper modal
-		const recipientPubkey = prompt('Gib die npub oder pubkey des Empfängers ein:');
-		if (recipientPubkey) {
-			// Convert npub to pubkey if needed, then open conversation
-			let pubkey = recipientPubkey.trim();
+		const recipientPubkey = prompt('Gib die npub oder pubkey des Empfängers ein (leer lassen für Self-Chat):');
+		if (recipientPubkey !== null) {
+			// If empty, use own pubkey for self-chat
+			let pubkey = recipientPubkey.trim() || authState.publicKey!;
+			
 			if (pubkey.startsWith('npub')) {
 				// TODO: Convert npub to hex pubkey
 				alert('npub-Konvertierung noch nicht implementiert. Bitte verwende die hex pubkey.');
@@ -188,6 +263,16 @@
 			}
 			
 			if (pubkey.length === 64 && /^[0-9a-fA-F]+$/.test(pubkey)) {
+				// Add to conversations if not already there
+				if (!conversations.find(c => c.partnerId === pubkey)) {
+					conversations.unshift({
+						partnerId: pubkey,
+						partnerName: pubkey === authState.publicKey ? 'Me (Self-Chat)' : pubkey.substring(0, 8) + '...',
+						lastMessage: 'New conversation',
+						lastTime: Math.floor(Date.now() / 1000),
+						unread: 0
+					});
+				}
 				openConversation(pubkey);
 			} else {
 				alert('Ungültige pubkey. Muss 64 Zeichen hex format sein.');
@@ -263,7 +348,7 @@
 					</svg>
 				</button>
 				<div class="chat-info">
-					<h3>{conversations.find(c => c.partnerId === activeConversation)?.partnerName}</h3>
+					<h3>{conversations.find(c => c.partnerId === activeConversation)?.partnerName || (activeConversation === authState.publicKey ? 'Me (Self-Chat)' : activeConversation?.substring(0, 8) + '...')}</h3>
 					<span class="status">🟢 Active</span>
 				</div>
 				<button class="chat-options" title="Chat options">

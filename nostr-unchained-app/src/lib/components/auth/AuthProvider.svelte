@@ -150,8 +150,9 @@
 
 	async function checkSessionValidity(): Promise<void> {
 		const currentState = await new Promise(resolve => {
-			const unsubscribe = authStore.subscribe(state => {
-				unsubscribe();
+			let unsubscribe: (() => void) | undefined;
+			unsubscribe = authStore.subscribe(state => {
+				if (unsubscribe) unsubscribe();
 				resolve(state);
 			});
 		});

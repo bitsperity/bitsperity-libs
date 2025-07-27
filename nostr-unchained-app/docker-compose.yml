@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  nostr-app:
+    build:
+      context: ..
+      dockerfile: nostr-unchained-app/Dockerfile.dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - VITE_HOST=0.0.0.0
+      - VITE_PORT=3000
+    volumes:
+      # Mount source for hot reload
+      - ./src:/app/nostr-unchained-app/src
+      - ./static:/app/nostr-unchained-app/static
+      - ./vite.config.ts:/app/nostr-unchained-app/vite.config.ts
+      - ../nostr-unchained/dist:/app/nostr-unchained/dist
+    networks:
+      - nostr-network
+
+  # Optional: Local relay for testing
+  # nostr-relay:
+  #   image: scsibug/nostr-rs-relay:latest
+  #   ports:
+  #     - "8080:8080"
+  #   networks:
+  #     - nostr-network
+
+networks:
+  nostr-network:
+    driver: bridge

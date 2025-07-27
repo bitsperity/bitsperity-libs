@@ -1,0 +1,45 @@
+# Development Dockerfile for SvelteKit + nostr-unchained
+FROM node:20-alpine
+
+# Install dependencies for native modules
+RUN apk add --no-cache python3 make g++
+
+# Set working directory
+WORKDIR /app
+
+# Copy nostr-unchained library
+COPY ../nostr-unchained ./nostr-unchained
+WORKDIR /app/nostr-unchained
+
+# Build nostr-unchained
+RUN npm ci
+RUN npm run build
+
+# Copy app source
+WORKDIR /app/nostr-unchained-app
+COPY ./nostr-unchained-app/package*.json ./
+RUN npm install
+
+# Copy rest of app files (exclude node_modules)
+COPY ./nostr-unchained-app/src ./src
+COPY ./nostr-unchained-app/static ./static
+COPY ./nostr-unchained-app/svelte.config.js ./svelte.config.js
+COPY ./nostr-unchained-app/vite.config.ts ./vite.config.ts
+COPY ./nostr-unchained-app/tsconfig.json ./tsconfig.json
+COPY ./nostr-unchained-app/vitest.config.ts ./vitest.config.ts
+
+# Install local nostr-unchained after copying source
+RUN npm install ../nostr-unchained
+
+# Create node_modules/.vite directory for caching
+RUN mkdir -p node_modules/.vite
+
+# Set environment variables for development
+ENV NODE_ENV=development
+ENV VITE_HOST=0.0.0.0
+ENV VITE_PORT=3000
+
+EXPOSE 3000
+
+# Start development server with verbose logging
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3000", "--debug"]

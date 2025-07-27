@@ -11,9 +11,10 @@
 	import Button from '../ui/Button.svelte';
 	import BaseComponent from '../ui/BaseComponent.svelte';
 	import { authStore, authActions } from '../../stores/AuthStore.js';
-	import { getService } from '../../services/ServiceContainer.js';
+	import { getService, recreateService } from '../../services/ServiceContainer.js';
 	import { createContextLogger } from '../../utils/Logger.js';
 	import type { AuthService } from '../../services/AuthService.js';
+	import type { NostrService } from '../../services/NostrService.js';
 	import type { SupportedExtensions } from '../../types/auth.js';
 
 	// =============================================================================
@@ -149,38 +150,51 @@
 		try {
 			logger.info('Creating temporary account...');
 			
-			// Generate a new key pair for temporary account
-			// In a real implementation, you'd use proper crypto libraries
-			// For now, we'll generate a simple hex key
-			const tempPrivateKey = generateRandomHex(64);
-			const tempPublicKey = generateRandomHex(64);
+			// Clear any existing temporary account data completely
+			sessionStorage.removeItem('temp_private_key');
+			sessionStorage.removeItem('temp_public_key');
+			sessionStorage.removeItem('temp_signer_active');
+			
+			// Force complete service recreation before setting the temp flag
+			// This ensures we start with a fresh NostrService instance
+			recreateService('nostr');
+			
+			// Set flag for temporary account AFTER service recreation
+			sessionStorage.setItem('temp_signer_active', 'true');
+			
+			// Force another recreation now that the temp flag is set
+			// This ensures the new service instance recognizes the temp flag
+			recreateService('nostr');
+			
+			// Get new service with fresh TemporarySigner
+			const nostrService = await getService<NostrService>('nostr');
+			const result = await nostrService.createTemporaryAccount();
+			
+			if (!result.success || !result.data) {
+				throw new Error(result.error?.message || 'Failed to create temporary account');
+			}
 			
 			// Store as temporary account
-			authActions.setAuthenticated('temporary', tempPublicKey);
+			authActions.setAuthenticated('temporary', result.data, {
+				pubkey: result.data,
+				name: 'Temp User',
+				about: 'Temporary account user',
+				verified: false
+			});
 			
-			// Store temp keys in sessionStorage (lost when browser closes)
-			sessionStorage.setItem('temp_private_key', tempPrivateKey);
-			sessionStorage.setItem('temp_public_key', tempPublicKey);
-			
-			logger.info('Temporary account created successfully');
+			logger.info('Temporary account created successfully', { 
+				publicKey: result.data.substring(0, 16) + '...' 
+			} as any);
 			onSuccess?.();
 		} catch (err) {
 			const message = err instanceof Error ? err.message : 'Fehler beim Erstellen des temporären Kontos';
 			error = message;
-			logger.error('Temporary account creation failed', { error: err });
+			logger.error('Temporary account creation failed', { error: err } as any);
 		} finally {
 			isLoading = false;
 		}
 	}
 
-	function generateRandomHex(length: number): string {
-		const chars = '0123456789abcdef';
-		let result = '';
-		for (let i = 0; i < length; i++) {
-			result += chars.charAt(Math.floor(Math.random() * chars.length));
-		}
-		return result;
-	}
 
 	function goBack(): void {
 		if (currentStep === 'method') {
@@ -200,14 +214,14 @@
 	// =============================================================================
 
 	let hasExtensions = $derived(extensions && (
-		extensions.alby.isAvailable || 
-		extensions.nos2x.isAvailable || 
-		extensions.getNostr.isAvailable
+		extensions.alby?.isAvailable || 
+		extensions.nos2x?.isAvailable || 
+		extensions.getNostr?.isAvailable
 	));
 
-	let extensionName = $derived(extensions?.alby.isAvailable ? 'Alby' :
-		extensions?.nos2x.isAvailable ? 'nos2x' :
-		extensions?.getNostr.isAvailable ? 'Browser Extension' :
+	let extensionName = $derived(extensions?.alby?.isAvailable ? 'Alby' :
+		extensions?.nos2x?.isAvailable ? 'nos2x' :
+		extensions?.getNostr?.isAvailable ? 'Browser Extension' :
 		'Extension');
 </script>
 

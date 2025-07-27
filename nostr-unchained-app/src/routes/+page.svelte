@@ -39,7 +39,7 @@
 	}
 </script>
 
-<AuthProvider>
+<AuthProvider autoRestore={false}>
 	{#if currentView === 'login'}
 		<LoginView onSuccess={handleAuthSuccess} />
 	{:else if currentView === 'keys'}

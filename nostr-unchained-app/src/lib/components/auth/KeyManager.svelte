@@ -178,8 +178,9 @@
 			error = null;
 
 			const authState = await new Promise(resolve => {
-				const unsubscribe = authStore.subscribe(state => {
-					unsubscribe();
+				let unsubscribe: (() => void) | undefined;
+				unsubscribe = authStore.subscribe(state => {
+					if (unsubscribe) unsubscribe();
 					resolve(state);
 				});
 			});

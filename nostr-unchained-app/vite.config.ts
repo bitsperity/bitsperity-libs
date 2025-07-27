@@ -8,17 +8,7 @@ export default defineConfig({
 	build: {
 		target: 'es2022',
 		minify: 'esbuild',
-		sourcemap: true,
-		rollupOptions: {
-			output: {
-				manualChunks: {
-					// Vendor chunk for large dependencies
-					vendor: ['nostr-unchained'],
-					// UI chunk for Svelte components
-					ui: ['@sveltejs/kit']
-				}
-			}
-		}
+		sourcemap: true
 	},
 	
 	// Development optimization
