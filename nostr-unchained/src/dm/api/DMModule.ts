@@ -420,13 +420,25 @@ export class DMModule {
       try {
         const privateKey = await (this.config.signingProvider as any).getPrivateKeyForEncryption();
         if (this.config.debug) {
-          console.log('Using real private key from signing provider for NIP-44 encryption');
+          console.log('🔐 DMModule: Retrieved private key from signing provider:', {
+            type: typeof privateKey,
+            length: privateKey?.length,
+            isString: typeof privateKey === 'string',
+            prefix: privateKey?.substring(0, 8) + '...'
+          });
         }
+        
+        // Validate private key
+        if (!privateKey || typeof privateKey !== 'string' || privateKey.length !== 64) {
+          throw new Error(`Invalid private key from signing provider: type=${typeof privateKey}, length=${privateKey?.length}`);
+        }
+        
         return privateKey;
       } catch (error) {
         if (this.config.debug) {
           console.warn('Failed to get private key from signing provider:', error);
         }
+        throw error; // Re-throw to surface the real issue
       }
     }
 

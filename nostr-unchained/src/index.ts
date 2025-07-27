@@ -30,7 +30,7 @@ export type {
 // Utilities for advanced usage
 export { EventBuilder } from './core/EventBuilder.js';
 export { RelayManager } from './relay/RelayManager.js';
-export { SigningProviderFactory, ExtensionSigner, TemporarySigner } from './crypto/SigningProvider.js';
+export { SigningProviderFactory, ExtensionSigner, LocalKeySigner, QuickSigner, TemporarySigner } from './crypto/SigningProvider.js';
 export { ErrorHandler } from './utils/errors.js';
 
 // Event Builder API

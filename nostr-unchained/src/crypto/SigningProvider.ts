@@ -50,13 +50,13 @@ export class ExtensionSigner implements SigningProvider {
 }
 
 /**
- * Temporary Key Signer (Development/Testing)
+ * Local Key Signer
  * 
- * Generates a temporary private key for signing when no extension is available.
+ * Generates a local private key for signing when no extension is available.
  * Uses @noble/secp256k1 for secure cryptographic operations.
- * WARNING: This is only for development/testing. Keys are not persistent.
+ * Perfect for testing, development, or standalone usage.
  */
-export class TemporarySigner implements SigningProvider {
+export class LocalKeySigner implements SigningProvider {
   private privateKey: string;
   private publicKey: string;
 
@@ -94,6 +94,18 @@ export class TemporarySigner implements SigningProvider {
 }
 
 /**
+ * User-friendly alias for LocalKeySigner
+ * Perfect for quick starts and demos
+ */
+export class QuickSigner extends LocalKeySigner {}
+
+/**
+ * @deprecated Use LocalKeySigner or QuickSigner instead
+ * Kept for backwards compatibility
+ */
+export class TemporarySigner extends LocalKeySigner {}
+
+/**
  * Signing Provider Factory
  * 
  * Automatically selects the best available signing method
@@ -118,9 +130,9 @@ export class SigningProviderFactory {
       }
     }
 
-    // Fallback to temporary signer
+    // Fallback to local key signer
     return {
-      provider: new TemporarySigner(),
+      provider: new LocalKeySigner(),
       method: 'temporary'
     };
   }

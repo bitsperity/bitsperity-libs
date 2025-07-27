@@ -294,7 +294,9 @@ export class GiftWrapCreator {
     ]);
     
     const hash = sha256(new TextEncoder().encode(serialized));
-    return Buffer.from(hash).toString('hex');
+    return Array.from(hash)
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
   }
 
   /**
@@ -303,7 +305,9 @@ export class GiftWrapCreator {
   private static async signEvent(event: any, eventId: string, privateKey: string): Promise<string> {
     try {
       const signature = await secp256k1.schnorr.sign(eventId, privateKey);
-      return Buffer.from(signature).toString('hex');
+      return Array.from(signature)
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
     } catch (error) {
       throw new NIP59Error(
         'Failed to sign gift wrap event',

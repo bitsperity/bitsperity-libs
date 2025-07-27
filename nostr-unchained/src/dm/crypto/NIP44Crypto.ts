@@ -275,8 +275,8 @@ export class NIP44Crypto {
       
       payload.set(mac, offset);
       
-      // Encode to base64
-      const payloadBase64 = Buffer.from(payload).toString('base64');
+      // Encode to base64 (browser-compatible)
+      const payloadBase64 = btoa(String.fromCharCode(...payload));
       
       return {
         payload: payloadBase64,
@@ -301,8 +301,12 @@ export class NIP44Crypto {
     conversationKey: Uint8Array
   ): DecryptionResult {
     try {
-      // Decode from base64
-      const payload = new Uint8Array(Buffer.from(payloadBase64, 'base64'));
+      // Decode from base64 (browser-compatible)
+      const binaryString = atob(payloadBase64);
+      const payload = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        payload[i] = binaryString.charCodeAt(i);
+      }
       
       // Validate minimum length
       const minLength = this.VERSION_SIZE + this.NONCE_SIZE + this.MAC_SIZE;
@@ -406,7 +410,9 @@ export class NIP44Crypto {
    */
   static validatePayload(payloadBase64: string): boolean {
     try {
-      const payload = Buffer.from(payloadBase64, 'base64');
+      // Decode from base64 (browser-compatible)
+      const binaryString = atob(payloadBase64);
+      const payload = new Uint8Array(binaryString.length);
       const minLength = this.VERSION_SIZE + this.NONCE_SIZE + this.MAC_SIZE;
       
       if (payload.length < minLength) return false;

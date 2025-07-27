@@ -20,14 +20,19 @@ export class EphemeralKeyManager {
       // Generate cryptographically secure random private key
       const privateKeyBytes = randomBytes(32);
       
-      // Convert to hex string
-      const privateKey = Buffer.from(privateKeyBytes).toString('hex');
+      // Convert to hex string (browser-compatible)
+      const privateKey = Array.from(privateKeyBytes)
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
       
       // Derive public key from private key using getPublicKey
       const publicKeyBytes = secp256k1.getPublicKey(privateKey, false); // uncompressed
       
-      // Extract x-coordinate (32 bytes) as per NIP-44 format  
-      const publicKey = Buffer.from(publicKeyBytes.slice(1, 33)).toString('hex');
+      // Extract x-coordinate (32 bytes) as per NIP-44 format (browser-compatible)
+      const publicKeySlice = publicKeyBytes.slice(1, 33);
+      const publicKey = Array.from(publicKeySlice)
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
       
       return {
         privateKey,
@@ -81,7 +86,10 @@ export class EphemeralKeyManager {
       
       // Verify that the public key corresponds to the private key
       const derivedPublicKeyBytes = secp256k1.getPublicKey(keyPair.privateKey, false);
-      const expectedPublicKey = Buffer.from(derivedPublicKeyBytes.slice(1, 33)).toString('hex');
+      const expectedPublicKeySlice = derivedPublicKeyBytes.slice(1, 33);
+      const expectedPublicKey = Array.from(expectedPublicKeySlice)
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
       
       return keyPair.publicKey.toLowerCase() === expectedPublicKey.toLowerCase();
       

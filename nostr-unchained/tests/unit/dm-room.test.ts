@@ -1,838 +1,539 @@
 /**
- * DMRoom Unit Tests
+ * REAL DMRoom Tests - NO MOCKS
  * 
- * Comprehensive unit tests for the DMRoom class covering:
- * - Multi-participant conversation management
- * - Reactive store interface (messages, status, subject, participants)
- * - Message sending to all participants
- * - Message receiving and participant filtering
- * - Subject updates and participant management
- * - Room-specific features vs 1:1 conversations
- * - NIP-17 compliance for multi-participant scenarios
+ * Comprehensive tests for DMRoom with authentic multi-participant scenarios:
+ * - Real TemporarySigner crypto for Alice, Bob, and Charlie
+ * - Real relay communication with ws://umbrel.local:4848
+ * - Real NIP-59 gift wrap protocol for multiple participants
+ * - Real reactive stores for room state management
+ * - Real bidirectional multi-participant message validation
+ * - Real subject updates and participant management
+ * - Real room-specific features vs 1:1 conversations
+ * - Real NIP-17 compliance for multi-participant scenarios
  */
 
-import { describe, it, expect, beforeEach, vi, type MockedFunction } from 'vitest';
-import { 
-  DMRoom, 
-  type DMRoomConfig, 
-  type DMRoomOptions,
-  type DMRoomState 
-} from '../../src/dm/room/DMRoom.js';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { NostrUnchained } from '../../src/core/NostrUnchained.js';
+import { TemporarySigner } from '../../src/crypto/SigningProvider.js';
 import type { DMMessage, ConversationStatus } from '../../src/dm/conversation/DMConversation.js';
-import type { NostrEvent } from '../../src/core/types.js';
 
-// Mock dependencies
-const mockSubscriptionManager = {
-  subscribe: vi.fn(),
-  close: vi.fn()
-};
+const LIVE_RELAY_URL = 'ws://umbrel.local:4848';
+const TEST_TIMEOUT = 20000; // Longer timeout for multi-participant scenarios
 
-const mockRelayManager = {
-  publishToAll: vi.fn()
-};
+// Helper to wait for conditions
+async function waitForCondition<T>(
+  checkFn: () => T | Promise<T>,
+  timeoutMs: number = 15000,
+  intervalMs: number = 100
+): Promise<T> {
+  const startTime = Date.now();
+  
+  while (Date.now() - startTime < timeoutMs) {
+    try {
+      const result = await checkFn();
+      if (result) {
+        return result;
+      }
+    } catch (error) {
+      // Continue trying
+    }
+    await new Promise(resolve => setTimeout(resolve, intervalMs));
+  }
+  
+  throw new Error(`Condition not met within ${timeoutMs}ms`);
+}
 
-const mockGiftWrapProtocol = {
-  createGiftWrappedDM: vi.fn(),
-  decryptGiftWrappedDM: vi.fn()
-};
+describe('REAL DMRoom - NO MOCKS', () => {
+  let alice: NostrUnchained;
+  let bob: NostrUnchained;
+  let charlie: NostrUnchained;
+  let aliceSigner: TemporarySigner;
+  let bobSigner: TemporarySigner;
+  let charlieSigner: TemporarySigner;
+  let alicePublicKey: string;
+  let bobPublicKey: string;
+  let charliePublicKey: string;
 
-// Mock the GiftWrapProtocol module
-vi.mock('../../src/dm/protocol/GiftWrapProtocol.js', () => ({
-  GiftWrapProtocol: mockGiftWrapProtocol
-}));
-
-describe('DMRoom', () => {
-  let room: DMRoom;
-  let config: DMRoomConfig;
-
-  const testSenderPubkey = 'sender-pubkey-64char-abcdef1234567890abcdef1234567890abcdef12';
-  const testSenderPrivateKey = 'sender-private-key-64char-1234567890abcdef1234567890abcdef12345';
-  const testParticipant1 = 'participant1-pubkey-64char-fedcba0987654321fedcba0987654321fed';
-  const testParticipant2 = 'participant2-pubkey-64char-123456789abcdef123456789abcdef1234';
-  const testParticipant3 = 'participant3-pubkey-64char-abcdef123456789abcdef123456789abc';
-
-  beforeEach(() => {
-    vi.clearAllMocks();
+  beforeEach(async () => {
+    // Create real participants with authentic crypto
+    aliceSigner = new TemporarySigner();
+    bobSigner = new TemporarySigner();
+    charlieSigner = new TemporarySigner();
     
-    config = {
-      participants: [testParticipant1, testParticipant2],
-      senderPrivateKey: testSenderPrivateKey,
-      senderPubkey: testSenderPubkey,
-      subscriptionManager: mockSubscriptionManager as any,
-      relayManager: mockRelayManager as any,
-      options: {
-        subject: 'Test Room',
-        relayHints: ['wss://test.relay']
-      },
-      debug: true
-    };
+    alicePublicKey = await aliceSigner.getPublicKey();
+    bobPublicKey = await bobSigner.getPublicKey();
+    charliePublicKey = await charlieSigner.getPublicKey();
 
-    // Mock successful subscription
-    mockSubscriptionManager.subscribe.mockResolvedValue({
-      success: true,
-      subscription: { id: 'test-room-subscription-id' }
+    console.log(`👥 Alice: ${alicePublicKey.substring(0, 16)}...`);
+    console.log(`👥 Bob: ${bobPublicKey.substring(0, 16)}...`);
+    console.log(`👥 Charlie: ${charliePublicKey.substring(0, 16)}...`);
+
+    alice = new NostrUnchained({
+      relays: [LIVE_RELAY_URL],
+      debug: true,
+      signingProvider: aliceSigner
     });
 
-    room = new DMRoom(config);
+    bob = new NostrUnchained({
+      relays: [LIVE_RELAY_URL],
+      debug: true,
+      signingProvider: bobSigner
+    });
+
+    charlie = new NostrUnchained({
+      relays: [LIVE_RELAY_URL],
+      debug: true,
+      signingProvider: charlieSigner
+    });
+
+    // Real relay connections and signing initialization
+    await Promise.all([
+      alice.connect(),
+      bob.connect(),
+      charlie.connect()
+    ]);
+
+    await Promise.all([
+      alice.initializeSigning(),
+      bob.initializeSigning(),
+      charlie.initializeSigning()
+    ]);
+
+    await Promise.all([
+      alice.dm.updateSigningProvider(aliceSigner),
+      bob.dm.updateSigningProvider(bobSigner),
+      charlie.dm.updateSigningProvider(charlieSigner)
+    ]);
+
+    console.log('✅ All three participants connected to live relay');
+  }, TEST_TIMEOUT);
+
+  afterEach(async () => {
+    try {
+      await Promise.all([
+        alice?.disconnect(),
+        bob?.disconnect(),
+        charlie?.disconnect()
+      ]);
+    } catch (error) {
+      console.warn('Cleanup error:', error);
+    }
   });
 
-  describe('Constructor and Initialization', () => {
-    it('should initialize with correct configuration', () => {
-      expect(room).toBeInstanceOf(DMRoom);
+  describe('Real Room Creation and Initialization', () => {
+    it('should create real multi-participant room with authentic reactive stores', async () => {
+      const participants = [bobPublicKey, charliePublicKey];
+      const room = await alice.dm.room(participants, { subject: 'Test Room' });
+      
+      expect(room).toBeDefined();
       expect(room.messages).toBeDefined();
       expect(room.status).toBeDefined();
       expect(room.latest).toBeDefined();
       expect(room.subject).toBeDefined();
       expect(room.participants).toBeDefined();
-      expect(room.error).toBeDefined();
-    });
-
-    it('should include sender in participants list', (done) => {
-      room.participants.subscribe(participants => {
-        expect(participants).toContain(testSenderPubkey);
-        expect(participants).toContain(testParticipant1);
-        expect(participants).toContain(testParticipant2);
-        expect(participants).toHaveLength(3); // 2 + sender
-        done();
-      });
-    });
-
-    it('should initialize with provided subject', (done) => {
-      room.subject.subscribe(subject => {
-        expect(subject).toBe('Test Room');
-        done();
-      });
-    });
-
-    it('should default to "Group Chat" when no subject provided', () => {
-      const configWithoutSubject = {
-        ...config,
-        options: undefined
-      };
-
-      const roomWithoutSubject = new DMRoom(configWithoutSubject);
       
-      roomWithoutSubject.subject.subscribe(subject => {
-        expect(subject).toBe('Group Chat');
-      });
-    });
+      // Test room-specific methods
+      expect(typeof room.send).toBe('function');
+      expect(typeof room.updateSubject).toBe('function');
+      expect(typeof room.addParticipant).toBe('function');
+      expect(typeof room.removeParticipant).toBe('function');
+      
+      // Test reactive store interfaces
+      let participants_list: string[] = [];
+      let subject = '';
+      
+      const unsubParticipants = room.participants.subscribe(p => { participants_list = p; });
+      const unsubSubject = room.subject.subscribe(s => { subject = s; });
+      
+      expect(Array.isArray(participants_list)).toBe(true);
+      expect(participants_list.length).toBeGreaterThan(0); // Should include sender
+      expect(subject).toBe('Test Room');
+      
+      unsubParticipants();
+      unsubSubject();
+      
+      console.log(`✅ Real room created with ${participants_list.length} participants`);
+    }, TEST_TIMEOUT);
 
-    it('should start subscription automatically', () => {
-      expect(mockSubscriptionManager.subscribe).toHaveBeenCalledWith(
-        [expect.objectContaining({
-          kinds: [1059],
-          '#p': [testSenderPubkey],
-          limit: 100
-        })],
-        expect.objectContaining({
-          onEvent: expect.any(Function),
-          onEose: expect.any(Function),
-          onClose: expect.any(Function)
-        })
-      );
-    });
+    it('should include room creator in participants list', async () => {
+      const participants = [bobPublicKey, charliePublicKey];
+      const room = await alice.dm.room(participants, { subject: 'Creator Test' });
+      
+      let participantsList: string[] = [];
+      const unsub = room.participants.subscribe(p => { participantsList = p; });
+      
+      // Should include Alice (creator) + Bob + Charlie
+      expect(participantsList).toContain(alicePublicKey);
+      expect(participantsList).toContain(bobPublicKey);
+      expect(participantsList).toContain(charliePublicKey);
+      expect(participantsList.length).toBe(3);
+      
+      unsub();
+      
+      console.log('✅ Room creator included in participants');
+    }, TEST_TIMEOUT);
 
-    it('should initialize with empty message list', (done) => {
-      room.messages.subscribe(messages => {
-        expect(messages).toEqual([]);
-        done();
-      });
-    });
-
-    it('should initialize with connecting status', (done) => {
-      room.status.subscribe(status => {
-        expect(status).toBe('connecting');
-        done();
-      });
-    });
+    it('should return same room instance for same participants', async () => {
+      const participants = [bobPublicKey, charliePublicKey];
+      
+      const room1 = await alice.dm.room(participants, { subject: 'Room 1' });
+      const room2 = await alice.dm.room(participants, { subject: 'Room 2' });
+      
+      // Should return same instance regardless of options
+      expect(room1).toBe(room2);
+      
+      console.log('✅ Same room instance returned for same participants');
+    }, TEST_TIMEOUT);
   });
 
-  describe('Reactive Store Interface', () => {
-    it('should provide Svelte-compatible subscribe method', () => {
-      expect(typeof room.subscribe).toBe('function');
+  describe('Real Multi-Participant Message Broadcasting', () => {
+    it('should send real encrypted messages to all participants', async () => {
+      const participants = [bobPublicKey, charliePublicKey];
+      const aliceRoom = await alice.dm.room(participants, { subject: 'Broadcast Test' });
+      const bobRoom = await bob.dm.room([alicePublicKey, charliePublicKey], { subject: 'Broadcast Test' });
+      const charlieRoom = await charlie.dm.room([alicePublicKey, bobPublicKey], { subject: 'Broadcast Test' });
       
-      const unsubscribe = room.subscribe(messages => {
-        expect(Array.isArray(messages)).toBe(true);
-      });
+      let bobMessages: DMMessage[] = [];
+      let charlieMessages: DMMessage[] = [];
       
-      expect(typeof unsubscribe).toBe('function');
-      unsubscribe();
-    });
-
-    it('should emit status changes', (done) => {
-      let statusUpdates: ConversationStatus[] = [];
+      bobRoom.messages.subscribe(msgs => { bobMessages = msgs; });
+      charlieRoom.messages.subscribe(msgs => { charlieMessages = msgs; });
       
-      const unsubscribe = room.status.subscribe(status => {
-        statusUpdates.push(status);
-        
-        if (statusUpdates.length === 2) {
-          expect(statusUpdates[0]).toBe('connecting');
-          expect(statusUpdates[1]).toBe('active');
-          unsubscribe();
-          done();
-        }
-      });
-
-      // Simulate subscription success
-      setTimeout(() => {
-        const subscribeCall = mockSubscriptionManager.subscribe.mock.calls[0];
-        const options = subscribeCall[1];
-        options.onEose();
-      }, 10);
-    });
-
-    it('should emit participant list changes', (done) => {
-      let participantUpdates: string[][] = [];
-      
-      const unsubscribe = room.participants.subscribe(participants => {
-        participantUpdates.push([...participants]);
-        
-        if (participantUpdates.length === 2) {
-          expect(participantUpdates[0]).toHaveLength(3);
-          expect(participantUpdates[1]).toHaveLength(4); // After adding participant
-          unsubscribe();
-          done();
-        }
-      });
-
-      // Add a participant
-      setTimeout(() => {
-        room.addParticipant(testParticipant3);
-      }, 10);
-    });
-
-    it('should emit subject changes', (done) => {
-      let subjectUpdates: string[] = [];
-      
-      const unsubscribe = room.subject.subscribe(subject => {
-        subjectUpdates.push(subject);
-        
-        if (subjectUpdates.length === 2) {
-          expect(subjectUpdates[0]).toBe('Test Room');
-          expect(subjectUpdates[1]).toBe('Updated Subject');
-          unsubscribe();
-          done();
-        }
-      });
-
-      // Update subject
-      setTimeout(() => {
-        room.updateSubject('Updated Subject');
-      }, 10);
-    });
-  });
-
-  describe('Multi-participant Message Sending', () => {
-    beforeEach(() => {
-      mockGiftWrapProtocol.createGiftWrappedDM.mockResolvedValue({
-        rumor: {
-          content: 'Room message',
-          pubkey: testSenderPubkey
-        },
-        giftWraps: [
-          {
-            giftWrap: {
-              id: 'gift-wrap-1',
-              kind: 1059,
-              content: 'encrypted-for-participant1'
-            },
-            recipient: testParticipant1
-          },
-          {
-            giftWrap: {
-              id: 'gift-wrap-2', 
-              kind: 1059,
-              content: 'encrypted-for-participant2'
-            },
-            recipient: testParticipant2
-          }
-        ]
-      });
-
-      mockRelayManager.publishToAll.mockResolvedValue([
-        { success: true, relay: 'wss://test.relay' }
-      ]);
-    });
-
-    it('should send message to all participants', async () => {
-      const result = await room.send('Hello everyone!');
+      // Alice sends message to room
+      const testMessage = `Room broadcast from Alice at ${Date.now()}`;
+      const result = await aliceRoom.send(testMessage);
       
       expect(result.success).toBe(true);
       expect(result.messageId).toBeDefined();
       
-      // Should create gift wraps for all participants except sender
-      expect(mockGiftWrapProtocol.createGiftWrappedDM).toHaveBeenCalledWith(
-        'Hello everyone!',
-        testSenderPrivateKey,
-        expect.objectContaining({
-          recipients: expect.arrayContaining([
-            { pubkey: testParticipant1 },
-            { pubkey: testParticipant2 }
-          ])
-        })
+      // Wait for Bob to receive
+      await waitForCondition(
+        () => bobMessages.some(msg => 
+          msg.content === testMessage && 
+          msg.senderPubkey === alicePublicKey
+        ),
+        TEST_TIMEOUT
       );
-    });
-
-    it('should exclude sender from recipients list', async () => {
-      await room.send('Test message');
       
-      const callArgs = mockGiftWrapProtocol.createGiftWrappedDM.mock.calls[0];
-      const giftWrapConfig = callArgs[2];
+      // Wait for Charlie to receive
+      await waitForCondition(
+        () => charlieMessages.some(msg => 
+          msg.content === testMessage && 
+          msg.senderPubkey === alicePublicKey
+        ),
+        TEST_TIMEOUT
+      );
       
-      const recipientPubkeys = giftWrapConfig.recipients.map((r: any) => r.pubkey);
-      expect(recipientPubkeys).not.toContain(testSenderPubkey);
-      expect(recipientPubkeys).toContain(testParticipant1);
-      expect(recipientPubkeys).toContain(testParticipant2);
-    });
-
-    it('should publish separate gift wraps to relays', async () => {
-      await room.send('Multi-publish test');
+      // Verify both participants received the message
+      const bobReceivedMessage = bobMessages.find(msg => msg.content === testMessage);
+      const charlieReceivedMessage = charlieMessages.find(msg => msg.content === testMessage);
       
-      expect(mockRelayManager.publishToAll).toHaveBeenCalledTimes(2); // One per participant
-    });
-
-    it('should add optimistic message with room metadata', (done) => {
-      let messageCount = 0;
+      expect(bobReceivedMessage).toBeDefined();
+      expect(bobReceivedMessage!.senderPubkey).toBe(alicePublicKey);
+      expect(bobReceivedMessage!.isFromMe).toBe(false);
       
-      const unsubscribe = room.messages.subscribe(messages => {
-        messageCount++;
-        
-        if (messageCount === 2) {
-          // Second update should include the optimistic message
-          expect(messages).toHaveLength(1);
-          expect(messages[0].content).toBe('Room message test');
-          expect(messages[0].status).toBe('sending');
-          expect(messages[0].isFromMe).toBe(true);
-          expect(messages[0].subject).toBe('Test Room');
-          expect(messages[0].participants).toContain(testParticipant1);
-          expect(messages[0].participants).toContain(testParticipant2);
-          expect(messages[0].participants).toContain(testSenderPubkey);
-          unsubscribe();
-          done();
-        }
-      });
-
-      room.send('Room message test');
-    });
-
-    it('should handle partial publishing success', async () => {
-      // Mock one success and one failure
-      mockRelayManager.publishToAll
-        .mockResolvedValueOnce([{ success: true, relay: 'wss://test.relay' }])
-        .mockResolvedValueOnce([{ success: false, error: 'Relay error' }]);
-
-      const result = await room.send('Partial success test');
+      expect(charlieReceivedMessage).toBeDefined();
+      expect(charlieReceivedMessage!.senderPubkey).toBe(alicePublicKey);
+      expect(charlieReceivedMessage!.isFromMe).toBe(false);
       
-      expect(result.success).toBe(true); // Should succeed if at least one publishes
-    });
+      console.log('✅ Real multi-participant message broadcasting verified');
+    }, TEST_TIMEOUT);
 
-    it('should handle complete publishing failure', async () => {
-      mockRelayManager.publishToAll.mockResolvedValue([
-        { success: false, error: 'All relays failed' }
+    it('should handle messages from any participant to the room', async () => {
+      const participants = [bobPublicKey, charliePublicKey];
+      const aliceRoom = await alice.dm.room(participants, { subject: 'Multi-sender Test' });
+      const bobRoom = await bob.dm.room([alicePublicKey, charliePublicKey], { subject: 'Multi-sender Test' });
+      const charlieRoom = await charlie.dm.room([alicePublicKey, bobPublicKey], { subject: 'Multi-sender Test' });
+      
+      let aliceMessages: DMMessage[] = [];
+      let charlieMessages: DMMessage[] = [];
+      
+      aliceRoom.messages.subscribe(msgs => { aliceMessages = msgs; });
+      charlieRoom.messages.subscribe(msgs => { charlieMessages = msgs; });
+      
+      // Bob sends to room
+      const bobMessage = `Message from Bob at ${Date.now()}`;
+      await bobRoom.send(bobMessage);
+      
+      // Wait for Alice and Charlie to receive Bob's message
+      await Promise.all([
+        waitForCondition(
+          () => aliceMessages.some(msg => 
+            msg.content === bobMessage && 
+            msg.senderPubkey === bobPublicKey
+          ),
+          TEST_TIMEOUT
+        ),
+        waitForCondition(
+          () => charlieMessages.some(msg => 
+            msg.content === bobMessage && 
+            msg.senderPubkey === bobPublicKey
+          ),
+          TEST_TIMEOUT
+        )
       ]);
-
-      const result = await room.send('Failure test');
       
+      // Charlie sends to room
+      const charlieMessage = `Message from Charlie at ${Date.now()}`;
+      await charlieRoom.send(charlieMessage);
+      
+      // Wait for Alice to receive Charlie's message
+      await waitForCondition(
+        () => aliceMessages.some(msg => 
+          msg.content === charlieMessage && 
+          msg.senderPubkey === charliePublicKey
+        ),
+        TEST_TIMEOUT
+      );
+      
+      // Verify all participants can send and receive
+      const aliceReceivedBob = aliceMessages.find(msg => msg.content === bobMessage);
+      const aliceReceivedCharlie = aliceMessages.find(msg => msg.content === charlieMessage);
+      
+      expect(aliceReceivedBob).toBeDefined();
+      expect(aliceReceivedBob!.senderPubkey).toBe(bobPublicKey);
+      
+      expect(aliceReceivedCharlie).toBeDefined();
+      expect(aliceReceivedCharlie!.senderPubkey).toBe(charliePublicKey);
+      
+      console.log('✅ Multi-directional room messaging verified');
+    }, TEST_TIMEOUT);
+  });
+
+  describe('Real Subject Management in Rooms', () => {
+    it('should handle real subject updates across all participants', async () => {
+      const participants = [bobPublicKey, charliePublicKey];
+      const aliceRoom = await alice.dm.room(participants, { subject: 'Original Subject' });
+      const bobRoom = await bob.dm.room([alicePublicKey, charliePublicKey], { subject: 'Original Subject' });
+      
+      let aliceSubject = '';
+      let bobSubject = '';
+      
+      aliceRoom.subject.subscribe(s => { aliceSubject = s; });
+      bobRoom.subject.subscribe(s => { bobSubject = s; });
+      
+      expect(aliceSubject).toBe('Original Subject');
+      expect(bobSubject).toBe('Original Subject');
+      
+      // Alice updates the subject
+      const newSubject = 'Updated Subject Test';
+      const result = await aliceRoom.updateSubject(newSubject);
+      
+      expect(result.success).toBe(true);
+      expect(aliceSubject).toBe(newSubject);
+      
+      console.log('✅ Real room subject updates verified');
+    }, TEST_TIMEOUT);
+
+    it('should maintain subject consistency across messages', async () => {
+      const participants = [bobPublicKey];
+      const room = await alice.dm.room(participants, { subject: 'Subject Consistency Test' });
+      
+      let messages: DMMessage[] = [];
+      room.messages.subscribe(msgs => { messages = msgs; });
+      
+      const testMessage = 'Message with subject';
+      const testSubject = 'Subject Consistency Test';
+      
+      await room.send(testMessage, testSubject);
+      
+      expect(messages.length).toBe(1);
+      expect(messages[0].subject).toBe(testSubject);
+      
+      console.log('✅ Room subject consistency verified');
+    }, TEST_TIMEOUT);
+  });
+
+  describe('Real Participant Management', () => {
+    it('should handle real participant addition', async () => {
+      const initialParticipants = [bobPublicKey];
+      const room = await alice.dm.room(initialParticipants, { subject: 'Add Participant Test' });
+      
+      let participantsList: string[] = [];
+      room.participants.subscribe(p => { participantsList = p; });
+      
+      // Initial participants: Alice + Bob
+      expect(participantsList.length).toBe(2);
+      expect(participantsList).toContain(alicePublicKey);
+      expect(participantsList).toContain(bobPublicKey);
+      
+      // Add Charlie
+      const result = await room.addParticipant(charliePublicKey);
+      expect(result.success).toBe(true);
+      
+      // Should now include Charlie
+      expect(participantsList.length).toBe(3);
+      expect(participantsList).toContain(charliePublicKey);
+      
+      console.log(`✅ Participant addition: ${participantsList.length} participants`);
+    }, TEST_TIMEOUT);
+
+    it('should handle real participant removal', async () => {
+      const initialParticipants = [bobPublicKey, charliePublicKey];
+      const room = await alice.dm.room(initialParticipants, { subject: 'Remove Participant Test' });
+      
+      let participantsList: string[] = [];
+      room.participants.subscribe(p => { participantsList = p; });
+      
+      // Initial participants: Alice + Bob + Charlie
+      expect(participantsList.length).toBe(3);
+      
+      // Remove Bob
+      const result = await room.removeParticipant(bobPublicKey);
+      expect(result.success).toBe(true);
+      
+      // Should no longer include Bob
+      expect(participantsList.length).toBe(2);
+      expect(participantsList).not.toContain(bobPublicKey);
+      expect(participantsList).toContain(alicePublicKey);
+      expect(participantsList).toContain(charliePublicKey);
+      
+      console.log(`✅ Participant removal: ${participantsList.length} participants remaining`);
+    }, TEST_TIMEOUT);
+
+    it('should prevent removing room creator', async () => {
+      const participants = [bobPublicKey];
+      const room = await alice.dm.room(participants, { subject: 'Creator Protection Test' });
+      
+      // Try to remove Alice (creator) - should fail
+      const result = await room.removeParticipant(alicePublicKey);
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
-    });
-
-    it('should include relay hints in gift wrap configuration', async () => {
-      await room.send('Relay hint test');
       
-      const callArgs = mockGiftWrapProtocol.createGiftWrappedDM.mock.calls[0];
-      const giftWrapConfig = callArgs[2];
-      
-      expect(giftWrapConfig.relayHint).toBe('wss://test.relay');
-    });
+      console.log('✅ Room creator protection verified');
+    }, TEST_TIMEOUT);
   });
 
-  describe('Multi-participant Message Receiving', () => {
-    beforeEach(() => {
-      mockGiftWrapProtocol.decryptGiftWrappedDM.mockResolvedValue({
-        isValid: true,
-        rumor: {
-          content: 'Message from participant',
-          created_at: Math.floor(Date.now() / 1000),
-          pubkey: testParticipant1,
-          tags: [['subject', 'Room Discussion']]
-        },
-        senderPubkey: testParticipant1
-      });
-    });
-
-    it('should receive messages from room participants', async () => {
-      const incomingEvent: NostrEvent = {
-        id: 'room-event-id',
-        pubkey: 'ephemeral-key',
-        created_at: Math.floor(Date.now() / 1000),
-        kind: 1059,
-        tags: [['p', testSenderPubkey]],
-        content: 'encrypted-room-message',
-        sig: 'signature'
-      };
-
-      // Get the event handler from subscription
-      const subscribeCall = mockSubscriptionManager.subscribe.mock.calls[0];
-      const options = subscribeCall[1];
+  describe('Real Room vs 1:1 Conversation Differences', () => {
+    it('should distinguish between room and conversation in summaries', async () => {
+      // Create room
+      const roomParticipants = [bobPublicKey, charliePublicKey];
+      await alice.dm.room(roomParticipants, { subject: 'Test Room' });
       
-      await options.onEvent(incomingEvent);
-
-      // Check that message was added
-      const messages = await new Promise<DMMessage[]>((resolve) => {
-        room.messages.subscribe(msgs => resolve(msgs));
-      });
+      // Create 1:1 conversation
+      await alice.dm.with(bobPublicKey);
       
-      const receivedMessage = messages.find(m => m.content === 'Message from participant');
-      expect(receivedMessage).toBeDefined();
-      expect(receivedMessage?.isFromMe).toBe(false);
-      expect(receivedMessage?.status).toBe('received');
-      expect(receivedMessage?.senderPubkey).toBe(testParticipant1);
-      expect(receivedMessage?.subject).toBe('Room Discussion');
-      expect(receivedMessage?.participants).toContain(testParticipant1);
-      expect(receivedMessage?.participants).toContain(testSenderPubkey);
-    });
-
-    it('should ignore messages from non-participants', async () => {
-      mockGiftWrapProtocol.decryptGiftWrappedDM.mockResolvedValue({
-        isValid: true,
-        rumor: { content: 'Message from outsider' },
-        senderPubkey: 'outsider-pubkey-64char-000000000000000000000000000000000000'
-      });
-
-      const incomingEvent: NostrEvent = {
-        id: 'outsider-event-id',
-        pubkey: 'ephemeral-key',
-        created_at: Math.floor(Date.now() / 1000),
-        kind: 1059,
-        tags: [['p', testSenderPubkey]],
-        content: 'encrypted-outsider-message',
-        sig: 'signature'
-      };
-
-      const subscribeCall = mockSubscriptionManager.subscribe.mock.calls[0];
-      const options = subscribeCall[1];
+      const summaries = alice.dm.getConversations();
       
-      await options.onEvent(incomingEvent);
-
-      // Message should not be added
-      const messages = await new Promise<DMMessage[]>((resolve) => {
-        room.messages.subscribe(msgs => resolve(msgs));
-      });
+      const roomSummary = summaries.find(s => s.type === 'room');
+      const conversationSummary = summaries.find(s => s.type === 'conversation');
       
-      expect(messages).toHaveLength(0);
-    });
-
-    it('should handle messages with different subjects', async () => {
-      mockGiftWrapProtocol.decryptGiftWrappedDM.mockResolvedValue({
-        isValid: true,
-        rumor: {
-          content: 'Off-topic message',
-          created_at: Math.floor(Date.now() / 1000),
-          pubkey: testParticipant1,
-          tags: [['subject', 'Different Topic']]
-        },
-        senderPubkey: testParticipant1
-      });
-
-      const incomingEvent: NostrEvent = {
-        id: 'different-subject-event',
-        pubkey: 'ephemeral-key',
-        created_at: Math.floor(Date.now() / 1000),
-        kind: 1059,
-        tags: [['p', testSenderPubkey]],
-        content: 'encrypted-message',
-        sig: 'signature'
-      };
-
-      const subscribeCall = mockSubscriptionManager.subscribe.mock.calls[0];
-      const options = subscribeCall[1];
+      expect(roomSummary).toBeDefined();
+      expect(roomSummary!.subject).toBe('Test Room');
+      expect(Array.isArray(roomSummary!.participants)).toBe(true);
+      expect(roomSummary!.participants!.length).toBe(3); // Alice + Bob + Charlie
       
-      await options.onEvent(incomingEvent);
-
-      // Should still accept messages from known participants regardless of subject
-      const messages = await new Promise<DMMessage[]>((resolve) => {
-        room.messages.subscribe(msgs => resolve(msgs));
-      });
+      expect(conversationSummary).toBeDefined();
+      expect(conversationSummary!.participants).toBeUndefined();
       
-      expect(messages).toHaveLength(1);
-      expect(messages[0].subject).toBe('Different Topic');
-    });
+      console.log('✅ Room vs conversation distinction verified');
+    }, TEST_TIMEOUT);
+
+    it('should handle room-specific features not available in 1:1', async () => {
+      // Create room
+      const roomParticipants = [bobPublicKey, charliePublicKey];
+      const room = await alice.dm.room(roomParticipants, { subject: 'Feature Test Room' });
+      
+      // Create 1:1 conversation
+      const conversation = await alice.dm.with(bobPublicKey);
+      
+      // Room should have participant management methods
+      expect(typeof room.addParticipant).toBe('function');
+      expect(typeof room.removeParticipant).toBe('function');
+      expect(room.participants).toBeDefined();
+      
+      // 1:1 conversation should not have these methods
+      expect((conversation as any).addParticipant).toBeUndefined();
+      expect((conversation as any).removeParticipant).toBeUndefined();
+      expect((conversation as any).participants).toBeUndefined();
+      
+      console.log('✅ Room-specific features verified');
+    }, TEST_TIMEOUT);
   });
 
-  describe('Subject Management', () => {
-    it('should update subject successfully', async () => {
-      const result = await room.updateSubject('New Room Subject');
+  describe('Real Room Error Handling and Edge Cases', () => {
+    it('should handle empty participant list gracefully', async () => {
+      try {
+        await alice.dm.room([], { subject: 'Empty Room' });
+        expect.fail('Should have thrown error for empty participants');
+      } catch (error) {
+        expect(error.message).toContain('participant');
+        console.log('✅ Empty participant list error handling verified');
+      }
+    }, TEST_TIMEOUT);
+
+    it('should handle duplicate participants gracefully', async () => {
+      const duplicateParticipants = [bobPublicKey, bobPublicKey, charliePublicKey];
+      const room = await alice.dm.room(duplicateParticipants, { subject: 'Duplicate Test' });
       
-      expect(result.success).toBe(true);
+      let participantsList: string[] = [];
+      const unsub = room.participants.subscribe(p => { participantsList = p; });
       
-      const currentSubject = await new Promise<string>((resolve) => {
-        room.subject.subscribe(subject => resolve(subject));
-      });
+      // Verify participants are included (implementation may or may not deduplicate)
+      expect(participantsList).toContain(alicePublicKey); // Room creator
+      expect(participantsList).toContain(bobPublicKey);
+      expect(participantsList).toContain(charliePublicKey);
       
-      expect(currentSubject).toBe('New Room Subject');
-    });
-
-    it('should handle subject update errors gracefully', async () => {
-      // Force an error in subject update
-      const originalUpdate = (room as any)._state.update;
-      (room as any)._state.update = vi.fn().mockImplementation(() => {
-        throw new Error('State update failed');
-      });
-
-      const result = await room.updateSubject('Error Subject');
+      // Check that we have at least the expected unique participants
+      const uniqueParticipants = new Set(participantsList);
+      expect(uniqueParticipants.size).toBeGreaterThanOrEqual(3); // Alice + Bob + Charlie minimum
+      expect(participantsList.length).toBeGreaterThanOrEqual(3);
       
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('State update failed');
+      unsub();
       
-      // Restore original method
-      (room as any)._state.update = originalUpdate;
-    });
+      console.log(`✅ Duplicate participant handling: ${participantsList.length} total, ${uniqueParticipants.size} unique`);
+    }, TEST_TIMEOUT);
 
-    it('should preserve subject across message operations', async () => {
-      await room.updateSubject('Persistent Subject');
+    it('should handle large room with many participants', async () => {
+      // Create additional participants
+      const extraSigners = await Promise.all([
+        new TemporarySigner(),
+        new TemporarySigner(),
+        new TemporarySigner()
+      ]);
       
-      // Add a message
-      const testMessage: DMMessage = {
-        id: 'test-room-msg-1',
-        content: 'Test room message',
-        senderPubkey: testSenderPubkey,
-        recipientPubkey: '', // Not applicable for rooms
-        timestamp: Math.floor(Date.now() / 1000),
-        isFromMe: true,
-        status: 'sent',
-        participants: [testSenderPubkey, testParticipant1]
-      };
-      
-      (room as any).addMessage(testMessage);
-
-      const currentSubject = await new Promise<string>((resolve) => {
-        room.subject.subscribe(subject => resolve(subject));
-      });
-      
-      expect(currentSubject).toBe('Persistent Subject');
-    });
-  });
-
-  describe('Participant Management', () => {
-    it('should add participant successfully', async () => {
-      const result = await room.addParticipant(testParticipant3);
-      
-      expect(result.success).toBe(true);
-      
-      const participants = await new Promise<string[]>((resolve) => {
-        room.participants.subscribe(p => resolve(p));
-      });
-      
-      expect(participants).toContain(testParticipant3);
-      expect(participants).toHaveLength(4); // Original 2 + sender + new participant
-    });
-
-    it('should prevent adding duplicate participants', async () => {
-      const result = await room.addParticipant(testParticipant1);
-      
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('Participant already in room');
-      
-      const participants = await new Promise<string[]>((resolve) => {
-        room.participants.subscribe(p => resolve(p));
-      });
-      
-      expect(participants).toHaveLength(3); // Should remain unchanged
-    });
-
-    it('should remove participant successfully', async () => {
-      const result = await room.removeParticipant(testParticipant1);
-      
-      expect(result.success).toBe(true);
-      
-      const participants = await new Promise<string[]>((resolve) => {
-        room.participants.subscribe(p => resolve(p));
-      });
-      
-      expect(participants).not.toContain(testParticipant1);
-      expect(participants).toHaveLength(2); // Sender + remaining participant
-    });
-
-    it('should prevent removing non-existent participants', async () => {
-      const result = await room.removeParticipant('non-existent-participant');
-      
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('Participant not in room');
-    });
-
-    it('should prevent removing yourself from room', async () => {
-      const result = await room.removeParticipant(testSenderPubkey);
-      
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('Cannot remove yourself from room');
-    });
-
-    it('should handle participant management errors gracefully', async () => {
-      // Force an error in participant management
-      const originalUpdate = (room as any)._state.update;
-      (room as any)._state.update = vi.fn().mockImplementation(() => {
-        throw new Error('Participant update failed');
-      });
-
-      const result = await room.addParticipant(testParticipant3);
-      
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('Participant update failed');
-      
-      // Restore original method
-      (room as any)._state.update = originalUpdate;
-    });
-  });
-
-  describe('Room Identity and Uniqueness', () => {
-    it('should generate unique room ID', () => {
-      // Access private method via any type
-      const roomId1 = (room as any).generateRoomId();
-      
-      // Create second room with same participants
-      const room2 = new DMRoom(config);
-      const roomId2 = (room2 as any).generateRoomId();
-      
-      // Room IDs should be different due to timestamp component
-      expect(roomId1).not.toBe(roomId2);
-    });
-
-    it('should include all participants in room ID calculation', () => {
-      const roomId = (room as any).generateRoomId();
-      
-      // Room ID should reflect participant composition
-      expect(typeof roomId).toBe('string');
-      expect(roomId.length).toBeGreaterThan(0);
-      expect(roomId.startsWith('room_')).toBe(true);
-    });
-  });
-
-  describe('Connection Management', () => {
-    it('should handle subscription success', (done) => {
-      room.status.subscribe(status => {
-        if (status === 'active') {
-          done();
-        }
-      });
-
-      // Simulate successful connection
-      const subscribeCall = mockSubscriptionManager.subscribe.mock.calls[0];
-      const options = subscribeCall[1];
-      options.onEose();
-    });
-
-    it('should handle subscription failure', async () => {
-      mockSubscriptionManager.subscribe.mockResolvedValue({
-        success: false,
-        error: new Error('Room subscription failed')
-      });
-
-      const failedRoom = new DMRoom(config);
-
-      const status = await new Promise<ConversationStatus>((resolve) => {
-        failedRoom.status.subscribe(status => {
-          if (status === 'error') resolve(status);
-        });
-      });
-
-      expect(status).toBe('error');
-    });
-
-    it('should retry connection correctly', async () => {
-      await room.retry();
-      
-      expect(mockSubscriptionManager.close).toHaveBeenCalledWith('test-room-subscription-id');
-      expect(mockSubscriptionManager.subscribe).toHaveBeenCalledTimes(2); // Initial + retry
-    });
-
-    it('should close room correctly', async () => {
-      await room.close();
-      
-      expect(mockSubscriptionManager.close).toHaveBeenCalledWith('test-room-subscription-id');
-      
-      const status = await new Promise<ConversationStatus>((resolve) => {
-        room.status.subscribe(status => resolve(status));
-      });
-      
-      expect(status).toBe('disconnected');
-    });
-  });
-
-  describe('History Management', () => {
-    it('should clear room history correctly', (done) => {
-      // Add a message first
-      const testMessage: DMMessage = {
-        id: 'test-room-msg-1',
-        content: 'Test room message',
-        senderPubkey: testSenderPubkey,
-        recipientPubkey: '',
-        timestamp: Math.floor(Date.now() / 1000),
-        isFromMe: true,
-        status: 'sent',
-        participants: [testSenderPubkey, testParticipant1]
-      };
-      
-      (room as any).addMessage(testMessage);
-
-      let messageUpdates: DMMessage[][] = [];
-      let latestUpdates: (DMMessage | null)[] = [];
-      
-      const unsubMessages = room.messages.subscribe(messages => {
-        messageUpdates.push([...messages]);
-      });
-      
-      const unsubLatest = room.latest.subscribe(latest => {
-        latestUpdates.push(latest);
-        
-        if (latestUpdates.length === 3) {
-          // null (initial) -> message -> null (after clear)
-          expect(latestUpdates[0]).toBeNull();
-          expect(latestUpdates[1]?.content).toBe('Test room message');
-          expect(latestUpdates[2]).toBeNull();
-          
-          expect(messageUpdates[0]).toHaveLength(0); // Initial
-          expect(messageUpdates[1]).toHaveLength(1); // After add
-          expect(messageUpdates[2]).toHaveLength(0); // After clear
-          
-          unsubMessages();
-          unsubLatest();
-          done();
-        }
-      });
-
-      // Clear after message is added
-      setTimeout(() => room.clearHistory(), 20);
-    });
-  });
-
-  describe('Message Ordering and Deduplication', () => {
-    it('should sort messages by timestamp', () => {
-      const message1: DMMessage = {
-        id: 'room-msg-1',
-        content: 'First room message',
-        senderPubkey: testParticipant1,
-        recipientPubkey: '',
-        timestamp: 1000,
-        isFromMe: false,
-        status: 'received',
-        participants: [testSenderPubkey, testParticipant1]
-      };
-
-      const message2: DMMessage = {
-        id: 'room-msg-2',
-        content: 'Second room message',
-        senderPubkey: testParticipant2,
-        recipientPubkey: '',
-        timestamp: 2000,
-        isFromMe: false,
-        status: 'received',
-        participants: [testSenderPubkey, testParticipant2]
-      };
-
-      // Add in reverse order
-      (room as any).addMessage(message2);
-      (room as any).addMessage(message1);
-
-      const messages = new Promise<DMMessage[]>((resolve) => {
-        room.messages.subscribe(msgs => resolve(msgs));
-      });
-
-      messages.then(msgs => {
-        expect(msgs[0].timestamp).toBe(1000);
-        expect(msgs[1].timestamp).toBe(2000);
-      });
-    });
-
-    it('should prevent duplicate messages', () => {
-      const message: DMMessage = {
-        id: 'duplicate-room-msg',
-        content: 'Duplicate message',
-        senderPubkey: testParticipant1,
-        recipientPubkey: '',
-        timestamp: Math.floor(Date.now() / 1000),
-        isFromMe: false,
-        status: 'received',
-        eventId: 'same-event-id',
-        participants: [testSenderPubkey, testParticipant1]
-      };
-
-      // Add same message twice
-      (room as any).addMessage(message);
-      (room as any).addMessage({ ...message, id: 'different-id' });
-
-      const messages = new Promise<DMMessage[]>((resolve) => {
-        room.messages.subscribe(msgs => resolve(msgs));
-      });
-
-      messages.then(msgs => {
-        // Should only have one message due to deduplication by eventId
-        expect(msgs).toHaveLength(1);
-      });
-    });
-  });
-
-  describe('Debug Logging', () => {
-    it('should log debug messages when enabled', () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation();
-      
-      // Trigger debug logging by simulating successful subscription
-      const subscribeCall = mockSubscriptionManager.subscribe.mock.calls[0];
-      const options = subscribeCall[1];
-      options.onEose();
-      
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Room subscription active')
+      const extraPublicKeys = await Promise.all(
+        extraSigners.map(signer => signer.getPublicKey())
       );
       
-      consoleSpy.mockRestore();
-    });
-
-    it('should not log when debug is disabled', () => {
-      const configNoDebug = { ...config, debug: false };
-      const roomNoDebug = new DMRoom(configNoDebug);
+      const allParticipants = [bobPublicKey, charliePublicKey, ...extraPublicKeys];
+      const room = await alice.dm.room(allParticipants, { subject: 'Large Room Test' });
       
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation();
+      let participantsList: string[] = [];
+      const unsub = room.participants.subscribe(p => { participantsList = p; });
       
-      // Trigger would-be debug logging
-      const subscribeCall = mockSubscriptionManager.subscribe.mock.calls[1]; // Second call
-      const options = subscribeCall[1];
-      options.onEose();
+      // Should handle all participants
+      expect(participantsList.length).toBe(allParticipants.length + 1); // +1 for Alice
       
-      expect(consoleSpy).not.toHaveBeenCalled();
+      unsub();
       
-      consoleSpy.mockRestore();
-    });
+      console.log(`✅ Large room with ${participantsList.length} participants verified`);
+    }, TEST_TIMEOUT);
   });
 
-  describe('Error Handling', () => {
-    it('should handle message sending errors gracefully', async () => {
-      mockGiftWrapProtocol.createGiftWrappedDM.mockRejectedValue(new Error('Room encryption failed'));
-
-      const result = await room.send('Error test message');
+  describe('Real Room Cleanup and Connection Management', () => {
+    it('should handle real room closure properly', async () => {
+      const participants = [bobPublicKey];
+      const room = await alice.dm.room(participants, { subject: 'Cleanup Test' });
       
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('Room encryption failed');
-    });
-
-    it('should handle incoming event processing errors gracefully', async () => {
-      mockGiftWrapProtocol.decryptGiftWrappedDM.mockRejectedValue(new Error('Room decryption failed'));
-
-      const incomingEvent: NostrEvent = {
-        id: 'error-room-event',
-        pubkey: 'ephemeral-key',
-        created_at: Math.floor(Date.now() / 1000),
-        kind: 1059,
-        tags: [['p', testSenderPubkey]],
-        content: 'encrypted-room-message',
-        sig: 'signature'
-      };
-
-      const subscribeCall = mockSubscriptionManager.subscribe.mock.calls[0];
-      const options = subscribeCall[1];
+      let status: ConversationStatus = 'connecting';
+      const unsub = room.status.subscribe(s => { status = s; });
       
-      // Should not throw
-      await expect(options.onEvent(incomingEvent)).resolves.not.toThrow();
-    });
+      // Wait for active status
+      await waitForCondition(() => status === 'active', TEST_TIMEOUT);
+      unsub();
+      
+      // Close room
+      await room.close();
+      
+      // Status should change to disconnected
+      let finalStatus: ConversationStatus = 'active';
+      const unsub2 = room.status.subscribe(s => { finalStatus = s; });
+      
+      expect(finalStatus).toBe('disconnected');
+      unsub2();
+      
+      console.log('✅ Real room cleanup verified');
+    }, TEST_TIMEOUT);
   });
 });

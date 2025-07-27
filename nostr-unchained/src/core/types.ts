@@ -30,6 +30,7 @@ export interface NostrUnchainedConfig {
   retryAttempts?: number;
   retryDelay?: number;
   timeout?: number;
+  signingProvider?: SigningProvider;
 }
 
 // Publishing Results

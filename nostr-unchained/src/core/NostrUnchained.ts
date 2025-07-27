@@ -30,7 +30,7 @@ export class NostrUnchained {
   private subscriptionManager: SubscriptionManager;
   private signingProvider?: SigningProvider;
   private signingMethod?: 'extension' | 'temporary';
-  private config: Required<NostrUnchainedConfig>;
+  private config: Required<Omit<NostrUnchainedConfig, 'signingProvider'>> & { signingProvider?: SigningProvider };
   
   // Fluent Event Builder API
   public readonly events: EventsModule;
@@ -42,13 +42,17 @@ export class NostrUnchained {
   public readonly social: SocialModule;
 
   constructor(config: NostrUnchainedConfig = {}) {
+    // Version info for debugging - ALWAYS show
+    console.log('🔥 NostrUnchained v0.1.0-FIX (build:', new Date().toISOString().substring(0, 19) + 'Z)');
+    
     // Merge with defaults
     this.config = {
       relays: config.relays ?? DEFAULT_RELAYS,
       debug: config.debug ?? false,
       retryAttempts: config.retryAttempts ?? DEFAULT_CONFIG.RETRY_ATTEMPTS,
       retryDelay: config.retryDelay ?? DEFAULT_CONFIG.RETRY_DELAY,
-      timeout: config.timeout ?? DEFAULT_CONFIG.PUBLISH_TIMEOUT
+      timeout: config.timeout ?? DEFAULT_CONFIG.PUBLISH_TIMEOUT,
+      signingProvider: config.signingProvider
     };
 
     // Initialize relay manager
@@ -79,6 +83,19 @@ export class NostrUnchained {
       debug: this.config.debug
     });
 
+    // Set signing provider immediately if provided
+    if (this.config.signingProvider) {
+      this.signingProvider = this.config.signingProvider;
+      this.signingMethod = 'temporary';
+      if (this.config.debug) {
+        console.log('🎯 NostrUnchained initialized with PROVIDED signing provider (should be TemporarySigner)');
+      }
+    } else {
+      if (this.config.debug) {
+        console.log('🚨 NostrUnchained initialized WITHOUT signing provider - will auto-detect later');
+      }
+    }
+
     if (this.config.debug) {
       console.log('NostrUnchained initialized with relays:', this.config.relays);
     }
@@ -101,12 +118,23 @@ export class NostrUnchained {
   /**
    * Initialize signing provider
    */
-  private async initializeSigning(): Promise<void> {
-    if (this.signingProvider) return;
-
-    const { provider, method } = await SigningProviderFactory.createBestAvailable();
-    this.signingProvider = provider;
-    this.signingMethod = method;
+  async initializeSigning(): Promise<void> {
+    if (this.signingProvider) {
+      // Already initialized (either from constructor or previous call)
+      if (this.config.debug) {
+        console.log(`🚫 Signing already initialized with method: ${this.signingMethod} - KEEPING IT!`);
+      }
+      return; // IMPORTANT: Don't override existing signing provider!
+    } else {
+      // Auto-detect the best available signing provider
+      const { provider, method } = await SigningProviderFactory.createBestAvailable();
+      this.signingProvider = provider;
+      this.signingMethod = method;
+      
+      if (this.config.debug) {
+        console.log(`🔍 Auto-detected signing with method: ${this.signingMethod} (this should NOT happen for temp accounts!)`);
+      }
+    }
 
     // Update DM module with signing provider
     await this.dm.updateSigningProvider(this.signingProvider);
@@ -115,7 +143,7 @@ export class NostrUnchained {
     await this.social.updateSigningProvider(this.signingProvider);
 
     if (this.config.debug) {
-      console.log(`Initialized signing with method: ${method}`);
+      console.log(`Initialized signing with method: ${this.signingMethod}`);
     }
   }
 
