@@ -391,10 +391,66 @@ export class DMModule {
 
 
   private async handleGlobalInboxEvent(event: NostrEvent): Promise<void> {
-    // This could be used for notifications or conversation auto-creation
-    // For now, individual conversations handle their own events
     if (this.config.debug) {
-      console.log('Global inbox received event:', event.id);
+      console.log('🎁 Processing gift wrap event:', event.id);
+    }
+
+    try {
+      // Import the gift wrap protocol to handle decryption
+      const { GiftWrapProtocol } = await import('../protocol/GiftWrapProtocol.js');
+      
+      // Get our private key for decryption
+      const privateKey = await this.getPrivateKeySecurely();
+      
+      // Decrypt the gift wrap to reveal the actual event (could be DM, post, reaction, etc.)
+      const decryptedEvent = await GiftWrapProtocol.unwrapGiftWrap(event, privateKey);
+      
+      if (decryptedEvent) {
+        // Extract sender from the decrypted content
+        const senderPubkey = decryptedEvent.pubkey;
+        
+        if (this.config.debug) {
+          console.log('✅ Decrypted event (kind ' + decryptedEvent.kind + ') from:', senderPubkey.substring(0, 8) + '...');
+        }
+        
+        // Check if this is a DM/chat message (kind 4 or 14)
+        if (decryptedEvent.kind === 4 || decryptedEvent.kind === 14) {
+          // Auto-create or get existing conversation for DMs
+          let conversation = this.conversations.get(senderPubkey);
+          if (!conversation) {
+            if (this.config.debug) {
+              console.log('🆕 Auto-creating conversation with:', senderPubkey.substring(0, 8) + '...');
+            }
+            
+            // Create conversation dynamically - this achieves the zero-config DX
+            conversation = await this.with(senderPubkey);
+          }
+          
+          // Forward the decrypted event to the conversation for processing
+          if (conversation && typeof conversation.handleDecryptedEvent === 'function') {
+            conversation.handleDecryptedEvent(decryptedEvent);
+          }
+          
+          // Update conversation list to reflect new activity
+          this.updateConversationList();
+          
+          if (this.config.debug) {
+            console.log('🔄 Updated conversations, total:', this.conversations.size);
+          }
+        } else {
+          // TODO: For non-DM events, add to a general encrypted event cache
+          // This is where the real power lies - ANY event type can be encrypted!
+          if (this.config.debug) {
+            console.log('🔮 Received encrypted event kind ' + decryptedEvent.kind + ' - not a DM, caching for future use');
+          }
+        }
+      }
+      
+    } catch (error) {
+      if (this.config.debug) {
+        console.error('❌ Failed to process gift wrap event:', error);
+      }
+      // Don't throw - we want the inbox to keep working even if some events fail
     }
   }
 

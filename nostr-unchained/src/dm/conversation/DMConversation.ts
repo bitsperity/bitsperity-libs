@@ -220,6 +220,19 @@ export class DMConversation {
     await this.initializeSubscription();
   }
 
+  /**
+   * Handle a decrypted event forwarded from the global inbox
+   * This enables transparent caching and zero-config DX
+   */
+  handleDecryptedEvent(decryptedEvent: NostrEvent): void {
+    if (this.config.debug) {
+      console.log('📨 Processing decrypted event in conversation:', decryptedEvent.id);
+    }
+    
+    // Process the event using our existing handler
+    this.handleInboxEvent(decryptedEvent);
+  }
+
   // Private methods
 
   private async initializeSubscription(): Promise<void> {

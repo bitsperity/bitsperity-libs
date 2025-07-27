@@ -389,4 +389,72 @@ export class GiftWrapProtocol {
       uniqueRecipients: recipientSet.size
     };
   }
+
+  /**
+   * Unwrap any gift-wrapped event to reveal the actual content
+   * This is the core method for transparent caching of any encrypted event type
+   * DMs are just one use case - this works for ANY event kind wrapped in gift wrap
+   */
+  static async unwrapGiftWrap(giftWrapEvent: NostrEvent, recipientPrivateKey: string): Promise<NostrEvent | null> {
+    try {
+      // Validate input
+      if (!giftWrapEvent || giftWrapEvent.kind !== 1059) {
+        return null;
+      }
+
+      if (!/^[0-9a-f]{64}$/i.test(recipientPrivateKey)) {
+        throw new NIP59Error(
+          'Invalid recipient private key format',
+          NIP59ErrorCode.INVALID_PRIVATE_KEY
+        );
+      }
+
+      // Import seal unwrapping functionality
+      const { SealCreator } = await import('./SealCreator.js');
+      const { NIP44Crypto } = await import('../crypto/NIP44Crypto.js');
+
+      // First, unwrap the gift wrap to get the seal
+      const unwrappedSeal = await NIP44Crypto.decrypt(
+        giftWrapEvent.content,
+        recipientPrivateKey,
+        giftWrapEvent.pubkey
+      );
+
+      if (!unwrappedSeal) {
+        return null;
+      }
+
+      // Parse the seal event
+      const sealEvent = JSON.parse(unwrappedSeal);
+      
+      if (!sealEvent || sealEvent.kind !== 13) {
+        return null;
+      }
+
+      // Now unwrap the seal to get the actual rumor (DM)
+      const rumorContent = await NIP44Crypto.decrypt(
+        sealEvent.content,
+        recipientPrivateKey,
+        sealEvent.pubkey
+      );
+
+      if (!rumorContent) {
+        return null;
+      }
+
+      // Parse the rumor (actual encrypted content - can be ANY event kind!)
+      const rumorEvent = JSON.parse(rumorContent);
+      
+      // Validate it's a valid event structure (no kind restrictions - this is the power!)
+      if (!rumorEvent || typeof rumorEvent.kind !== 'number') {
+        return null;
+      }
+
+      return rumorEvent;
+
+    } catch (error) {
+      console.error('Failed to unwrap gift wrapped DM:', error);
+      return null;
+    }
+  }
 }
