@@ -14,6 +14,8 @@ import { EventsModule } from '../events/FluentEventBuilder.js';
 import { DMModule } from '../dm/api/DMModule.js';
 import { SocialModule } from '../social/api/SocialModule.js';
 import { SubscriptionManager } from '../subscription/SubscriptionManager.js';
+import { UniversalEventCache } from '../cache/UniversalEventCache.js';
+import { UniversalQueryBuilder, UniversalSubBuilder } from '../query/UniversalQueryBuilder.js';
 
 import type {
   NostrUnchainedConfig,
@@ -28,6 +30,7 @@ import type {
 export class NostrUnchained {
   private relayManager: RelayManager;
   private subscriptionManager: SubscriptionManager;
+  private cache: UniversalEventCache;
   private signingProvider?: SigningProvider;
   private signingMethod?: 'extension' | 'temporary';
   private config: Required<Omit<NostrUnchainedConfig, 'signingProvider'>> & { signingProvider?: SigningProvider };
@@ -62,6 +65,9 @@ export class NostrUnchained {
 
     // Initialize subscription manager
     this.subscriptionManager = new SubscriptionManager(this.relayManager);
+
+    // Initialize Universal Cache (will be fully initialized when signing provider is set)
+    this.cache = new UniversalEventCache('', {}); // Temporary empty key
 
     // Initialize events module
     this.events = new EventsModule(this);
@@ -141,6 +147,19 @@ export class NostrUnchained {
 
     // Update Social module with signing provider
     await this.social.updateSigningProvider(this.signingProvider);
+
+    // Initialize Universal Cache with private key for gift wrap decryption
+    try {
+      const privateKey = await this.signingProvider.getPrivateKeyForEncryption();
+      this.cache = new UniversalEventCache(privateKey, {});
+      if (this.config.debug) {
+        console.log('🎯 Universal Cache initialized with private key');
+      }
+    } catch (error) {
+      if (this.config.debug) {
+        console.log('⚠️ Could not get private key for cache, using empty key (no gift wrap decryption)');
+      }
+    }
 
     if (this.config.debug) {
       console.log(`Initialized signing with method: ${this.signingMethod}`);
@@ -431,5 +450,21 @@ export class NostrUnchained {
    */
   getSubscriptionManager(): SubscriptionManager {
     return this.subscriptionManager;
+  }
+
+  /**
+   * Query API - Immediate cache lookup
+   * Implements the elegant Universal Cache architecture from the session plan
+   */
+  query(): UniversalQueryBuilder {
+    return new UniversalQueryBuilder(this.cache);
+  }
+
+  /**
+   * Subscription API - Live data updates
+   * Implements the elegant Universal Cache architecture from the session plan
+   */
+  sub(): UniversalSubBuilder {
+    return new UniversalSubBuilder(this.cache, this.subscriptionManager);
   }
 }

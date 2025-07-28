@@ -105,6 +105,16 @@ export class DMConversation {
    */
   async send(content: string, subject?: string): Promise<{ success: boolean; error?: string; messageId?: string }> {
     try {
+      if (this.config.debug) {
+        console.log('📤 DMConversation.send called:', {
+          content: content.substring(0, 20) + '...',
+          subject,
+          recipientPubkey: this.config.recipientPubkey.substring(0, 8) + '...',
+          hasSenderPrivateKey: !!this.config.senderPrivateKey,
+          senderPrivateKeyLength: this.config.senderPrivateKey?.length
+        });
+      }
+
       this.updateStatus('active');
 
       // Create temporary message ID
@@ -131,6 +141,10 @@ export class DMConversation {
         this.config.relayHints?.[0]
       );
 
+      if (this.config.debug) {
+        console.log('🎁 Creating gift wrap with config:', giftWrapConfig);
+      }
+
       const giftWrapResult = await GiftWrapProtocol.createGiftWrappedDM(
         content,
         this.config.senderPrivateKey,
@@ -138,13 +152,34 @@ export class DMConversation {
         subject
       );
 
+      if (this.config.debug) {
+        console.log('🎁 Gift wrap result:', {
+          hasRumor: !!giftWrapResult.rumor,
+          hasSeal: !!giftWrapResult.seal,
+          giftWrapCount: giftWrapResult.giftWraps.length
+        });
+      }
+
       // Publish gift wraps to relays
       let publishSuccess = false;
       let publishError: string | undefined;
 
       for (const giftWrapData of giftWrapResult.giftWraps) {
         try {
+          if (this.config.debug) {
+            console.log('📡 Publishing gift wrap:', {
+              id: giftWrapData.giftWrap.id,
+              kind: giftWrapData.giftWrap.kind,
+              tags: giftWrapData.giftWrap.tags
+            });
+          }
+
           const publishResult = await this.config.relayManager.publishToAll(giftWrapData.giftWrap);
+          
+          if (this.config.debug) {
+            console.log('📡 Publish result:', publishResult);
+          }
+
           const successful = publishResult.some(result => result.success);
           
           if (successful) {
@@ -154,6 +189,9 @@ export class DMConversation {
           }
         } catch (error) {
           publishError = error instanceof Error ? error.message : 'Publishing failed';
+          if (this.config.debug) {
+            console.error('❌ Publish error:', error);
+          }
         }
       }
 
@@ -161,19 +199,25 @@ export class DMConversation {
       if (publishSuccess) {
         this.updateMessageStatus(messageId, 'sent');
         if (this.config.debug) {
-          console.log(`DM sent successfully: ${messageId}`);
+          console.log(`✅ DM sent successfully: ${messageId}`);
         }
         return { success: true, messageId };
       } else {
         this.updateMessageStatus(messageId, 'failed');
         const errorMsg = publishError || 'Failed to publish to any relay';
         this.setError(errorMsg);
+        if (this.config.debug) {
+          console.error(`❌ DM send failed: ${errorMsg}`);
+        }
         return { success: false, error: errorMsg, messageId };
       }
 
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error sending message';
       this.setError(errorMsg);
+      if (this.config.debug) {
+        console.error('❌ Exception in send:', error);
+      }
       return { success: false, error: errorMsg };
     }
   }
