@@ -66,14 +66,14 @@
 ## Non-Functional Requirements
 
 ### NFR-1: Zero-Config Developer Experience
-**Requirement**: Encryption must be completely transparent to developers
-**Implementation**: New 4-layer architecture eliminates encryption complexity
+**Requirement**: Perfect DX through elegant, generic architecture
+**Implementation**: Query/Sub symmetry with universal cache
 
 **Design Principles**:
-- **Layer 4 API**: `await room.sendMessage("Hello!")` - no encryption visible
-- **Auto-decryption**: All gift wraps processed automatically in background
-- **Transparent caching**: Decrypted events cached invisibly
-- **Universal encryption**: ANY event type can be gift-wrapped
+- **Identical APIs**: `query()` and `sub()` have same fluent interface
+- **DMs are queries**: No special DM logic - just `query().kinds([14])`
+- **Auto-decryption**: Gift wraps unwrapped transparently
+- **Universal encryption**: ANY event type can be encrypted
 
 ### NFR-2: Performance & Reliability
 **Requirement**: DM functionality must be production-ready
@@ -107,35 +107,40 @@
 
 ## Implementation Strategy
 
-### Phase 1: Layer 1 Protocol Fixes (Day 1)
-**Focus**: Fix core protocol implementation bugs
-- Fix NIP44Crypto.validatePayload bug (Uint8Array population)
-- Enhance GiftWrapProtocol.unwrapGiftWrap for universal event support
-- Add subject parameter support in createGiftWrappedDM
+### Phase 1: Universal Event Cache (Day 1)
+**Focus**: Core cache with auto-decryption
+- Implement UniversalEventCache with efficient indexing
+- Auto-unwrap gift wraps (kind 1059) transparently
+- O(log n) query performance with proper indexes
+- Memory management with configurable limits
 
-### Phase 2: Layer 2 Event Processing (Day 2)
-**Focus**: Implement universal encrypted event processor
-- Create EncryptedEventProcessor with transparent caching
-- Auto-decryption pipeline with proper error handling
-- Subscription management for kind 1059 events
+### Phase 2: Query/Sub Engine (Day 2)
+**Focus**: Perfect API symmetry
+- QueryBuilder for cache lookups
+- SubBuilder for live subscriptions
+- Unified NostrStore interface
+- Simple subscription deduplication
 
-### Phase 3: Layer 3 Unified Rooms (Day 3)
-**Focus**: Eliminate Room/Conversation distinction  
-- Implement NostrRoom with participants + subject identity
-- Message aggregation across all participants
-- Subject as part of room identity calculation
+### Phase 3: Protocol Fixes & Integration (Day 3)
+**Focus**: Fix bugs and wire up cache
+- Fix NIP44Crypto.validatePayload bug
+- Enhance GiftWrapProtocol for universal events
+- Integrate cache with NostrUnchained
+- Start gift wrap subscription on init
 
-### Phase 4: Layer 4 Zero-Config API (Day 4)
-**Focus**: Perfect developer experience
-- Simple `room.sendMessage()` API
-- Transparent encryption/decryption
-- Universal `publishEncrypted()` for any event type
+### Phase 4: Specialized APIs (Day 4)
+**Focus**: Convenience wrappers
+- DMModule as simple query wrapper
+- SocialModule for common queries
+- ProfileModule for kind 0 events
+- Backward compatibility maintained
 
-### Phase 5: Integration & Testing (Day 5)
+### Phase 5: Testing & Optimization (Day 5)
 **Focus**: End-to-end validation
 - All DM tests passing
-- Performance benchmarks met
-- Documentation and examples updated
+- Performance benchmarking
+- Memory usage validation
+- Documentation and examples
 
 ## Success Criteria
 
