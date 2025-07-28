@@ -179,25 +179,61 @@ await nostr.events
 ```typescript
 const nostr = new NostrUnchained();
 
-// Automatically detects and uses window.nostr
-await nostr.useExtensionSigner();
+// User explicitly chooses extension signing
+const result = await nostr.useExtensionSigner();
 
-// Now all events are signed with the user's extension
-await nostr.publish("Signed with my extension! 🔐");
+if (result.success) {
+  console.log(`Using extension signer: ${result.pubkey}`);
+  await nostr.publish("Signed with my extension! 🔐");
+} else {
+  console.log(`Extension not available: ${result.error}`);
+}
 ```
 
-### Temporary Keys (Testing)
+### Local Key Signer (Testing & Development)
 
 ```typescript
-import { TemporarySigner } from 'nostr-unchained';
+const nostr = new NostrUnchained();
+
+// User explicitly chooses local key signer
+const result = await nostr.useLocalKeySigner();
+
+if (result.success) {
+  console.log(`Using local key: ${result.pubkey}`);
+  await nostr.publish("Testing with local keys");
+} else {
+  console.log(`Local signer failed: ${result.error}`);
+}
+```
+
+### Custom Signing Provider
+
+```typescript
+import { LocalKeySigner } from 'nostr-unchained';
 
 const nostr = new NostrUnchained();
-const tempSigner = new TemporarySigner();
+const customSigner = new LocalKeySigner(); // Or your own implementation
 
-await nostr.setSigningProvider(tempSigner);
+// User provides custom signer
+const result = await nostr.useCustomSigner(customSigner);
 
-console.log(`Temp pubkey: ${await tempSigner.getPublicKey()}`);
-await nostr.publish("Testing with temporary keys");
+if (result.success) {
+  console.log(`Using custom signer: ${result.pubkey}`);
+  await nostr.publish("Signed with custom provider!");
+}
+```
+
+### Automatic Fallback (Only when no explicit choice)
+
+```typescript
+const nostr = new NostrUnchained();
+
+// If no signer chosen, createBestAvailable() is used as fallback
+await nostr.publish("This uses automatic signer detection");
+
+// Check what signer is being used
+const signingInfo = nostr.getSigningInfo();
+console.log(`Active signer: ${signingInfo.method}`); // 'extension' or 'temporary'
 ```
 
 ### Custom Signing Provider

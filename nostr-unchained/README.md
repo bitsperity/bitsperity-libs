@@ -3,29 +3,70 @@
 [![NPM Version](https://img.shields.io/npm/v/nostr-unchained)](https://www.npmjs.com/package/nostr-unchained)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3+-blue)](https://www.typescriptlang.org/)
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
-[![Test Coverage](https://img.shields.io/badge/Coverage-76%20tests-brightgreen)](#testing)
+[![Test Coverage](https://img.shields.io/badge/Coverage-90%25-brightgreen)](#testing)
 
-> **SQL-like elegance for decentralized event graphs.**  
-> Zero-config Nostr publishing, reactive data flows, and enterprise-grade social protocols.
+> **Universal Cache Architecture for decentralized social protocols.**  
+> Zero-config Nostr with lazy loading, user control, and reactive data flows.
 
-**Nostr Unchained** is a TypeScript-first Nostr library that combines the simplicity of modern web APIs with the power of decentralized protocols. Built for developers who want to create social applications without wrestling with low-level complexity.
+**Nostr Unchained** is a TypeScript-first Nostr library built on the **Universal Cache Architecture** - a sophisticated 4-layer system that combines instant cache access with live relay subscriptions. Perfect for developers who want powerful Nostr applications without complexity.
 
-## ✨ Philosophy
+---
 
-**Simple by Design, Powerful by Nature**
+## 📖 Documentation Walkthrough
 
-- **Zero Configuration** - Works out of the box with sensible defaults
-- **SQL-like Queries** - Familiar syntax for event graph traversal  
-- **Reactive Architecture** - Real-time updates using Svelte stores
-- **Type Safety First** - Complete TypeScript coverage with intelligent inference
-- **Production Ready** - Battle-tested with 100% real relay integration tests
+This README provides an overview and quickstart guide. For comprehensive documentation, follow this learning path:
+
+### 🚀 **Start Here:** [Universal Query & Subscription Engine](./docs/query/README.md)
+Learn the core architecture with **identical APIs** for cache queries and live subscriptions. This is the foundation everything else builds on.
+
+### 💬 **Then:** [Direct Messages](./docs/dm/README.md)
+See how DMs work as elegant **query wrappers** with lazy gift wrap subscriptions and end-to-end encryption.
+
+### 🏪 **Next:** [Universal Store System](./docs/stores/README.md) 
+Understand how **reactive Svelte stores** provide automatic UI updates across all data access.
+
+### 📝 **Build:** [Event Publishing](./docs/events/README.md)
+Master zero-config publishing with **user-controlled signing** providers and fluent event builders.
+
+### 👥 **Scale:** [Social Media Core](./docs/social/README.md)
+Build complete social apps with profiles, contacts, threading, reactions, and feeds.
+
+---
+
+## ✨ Core Philosophy
+
+**Universal, Reactive, User-Controlled**
+
+- 🏗️ **Universal Cache Architecture** - 4-layer system: Cache → Query/Sub → APIs → Zero-Config DX
+- 🔄 **Identical APIs** - Same fluent interface for cache queries and live subscriptions
+- ⚡ **Lazy Loading** - Features activate only when needed (like DM gift wrap subscriptions)
+- 🎛️ **User Control** - Full control over signing providers and subscriptions
+- 📊 **Reactive Everything** - Svelte stores everywhere for automatic UI updates
 
 ```typescript
-// This is all you need to start publishing to Nostr
+// This is all you need for a complete Nostr app
 import { NostrUnchained } from 'nostr-unchained';
 
 const nostr = new NostrUnchained();
+await nostr.connect();
+
+// 📝 Publishing
 await nostr.publish("Hello, decentralized world! 🌍");
+
+// 🔍 Queries (instant cache access)
+const cachedPosts = nostr.query().kinds([1]).execute();
+
+// 📡 Subscriptions (live relay updates)  
+const livePosts = nostr.sub().kinds([1]).execute();
+
+// 💬 Direct Messages (lazy-loaded gift wrap subscriptions)
+const chat = nostr.dm.with('recipient-pubkey');
+await chat.send('Encrypted message!');
+
+// 🏪 All return reactive Svelte stores
+cachedPosts.subscribe(posts => console.log('Cache:', posts.length));
+livePosts.subscribe(posts => console.log('Live:', posts.length));
+chat.subscribe(messages => console.log('DMs:', messages.length));
 ```
 
 ## 🚀 Quick Start
@@ -40,226 +81,186 @@ yarn add nostr-unchained
 pnpm add nostr-unchained
 ```
 
-### Basic Usage
+### 5-Minute Setup
 
 ```typescript
 import { NostrUnchained } from 'nostr-unchained';
 
-// Initialize with zero config
+// 1️⃣ Initialize with zero config
 const nostr = new NostrUnchained();
 
-// Publish a note
+// 2️⃣ Connect to relays (no automatic subscriptions)
+await nostr.connect();
+
+// 3️⃣ Choose your signing provider (user control)
+await nostr.useExtensionSigner(); // Browser extension (recommended)
+// or await nostr.useLocalKeySigner(); // For development
+
+// 4️⃣ Start building!
+// 📝 Publish content
 const result = await nostr.publish("My first Nostr note!");
 console.log(`Published to ${result.successCount} relays`);
 
-// Query events with SQL-like syntax
-const posts = await nostr.query()
-  .kind(1)
-  .since('1 hour ago')
-  .limit(10)
-  .fetch();
+// 🔍 Query cached data (instant)
+const posts = nostr.query().kinds([1]).execute();
+console.log(`Found ${posts.current.length} cached posts`);
 
-console.log(`Found ${posts.length} recent posts`);
+// 📡 Subscribe to live updates 
+const liveData = nostr.sub().kinds([1]).execute();
+liveData.subscribe(events => console.log(`Live: ${events.length}`));
+
+// 💬 Send encrypted DMs
+const chat = nostr.dm.with('recipient-pubkey');
+await chat.send('Hello! 🔐');
+chat.subscribe(messages => console.log(`${messages.length} messages`));
 ```
 
-### With Configuration
+> **Next Step:** Read the [Query & Subscription Guide](./docs/query/README.md) to understand the core architecture.
 
+## 🏗️ Universal Cache Architecture Overview
+
+Nostr Unchained is built around a sophisticated **4-layer architecture**:
+
+```
+┌─────────────────────────────────────────┐
+│  Layer 4: Zero-Config Developer API     │ ← You work here
+├─────────────────────────────────────────┤
+│  Layer 3: Specialized APIs (DM, Social) │ ← Built on queries
+├─────────────────────────────────────────┤
+│  Layer 2: Query/Sub Engine              │ ← Identical APIs  
+├─────────────────────────────────────────┤
+│  Layer 1: Universal Event Cache         │ ← Auto gift wrap handling
+└─────────────────────────────────────────┘
+```
+
+**Key Benefits:**
+- 🔄 **Identical APIs**: `nostr.query()` and `nostr.sub()` work the same way
+- ⚡ **Cache-First**: Instant results with live updates
+- 🎁 **Auto Gift Wraps**: Kind 1059 → 14 transparent unwrapping
+- 📊 **Reactive**: Svelte stores everywhere
+- 🔐 **User Control**: Choose signing providers and lazy loading
+
+> **Deep Dive:** Read the [Query & Subscription Engine](./docs/query/README.md) guide to understand how this elegant architecture works.
+
+## 🎛️ User Control Philosophy
+
+**Users decide, code automates.**
+
+### 🔐 Signing Provider Control
 ```typescript
-const nostr = new NostrUnchained({
-  relays: ['wss://relay.damus.io', 'wss://nos.lol'],
-  debug: true
-});
+// ✅ Users choose explicitly
+await nostr.useExtensionSigner();  // Browser extension
+await nostr.useLocalKeySigner();   // Local keys  
+await nostr.useCustomSigner(signer); // Custom provider
 
-// The library handles signing automatically via browser extension
-await nostr.publish("Hello from my configured instance!");
+// 🔍 Check what's active
+const info = nostr.getSigningInfo();
+console.log(`Using: ${info.method}`);
 ```
 
-## 🏗️ Architecture
-
-Nostr Unchained is built around **five core modules**, each designed for specific use cases:
-
-### 📝 [Event Publishing](./docs/events/README.md)
-Zero-config publishing with automatic signing and relay management.
-
+### ⚡ Lazy Loading
 ```typescript
-// Simple publishing
-await nostr.publish("Hello world!");
+// ✅ Connect = relay connections only
+await nostr.connect(); 
 
-// Fluent API for complex events
-await nostr.events
-  .kind(1)
-  .content("Rich content with tags")
-  .tag('p', 'npub...')
-  .tag('t', 'nostr')
-  .publish();
+// ✅ Other features work without DM overhead
+await nostr.publish('Hello!'); 
+const posts = nostr.query().kinds([1]).execute();
+
+// 🎁 First DM usage = gift wrap subscription starts
+const chat = nostr.dm.with(pubkey);
 ```
 
-### 🔍 [Query Engine](./docs/query/README.md)
-SQL-like queries for the Nostr event graph.
+> **Complete Guide:** See [Event Publishing](./docs/events/README.md) for all signing options and patterns.
 
-```typescript
-// Find all replies to a specific note
-const replies = await nostr.query()
-  .kind(1)
-  .tag('e', originalNoteId)
-  .since('1 day ago')
-  .fetch();
+## 📚 Complete Documentation Guide
 
-// Reactive feeds with real-time updates
-const feed = nostr.createFeed()
-  .kind(1)
-  .authors(['npub1...', 'npub2...'])
-  .limit(50)
-  .subscribe();
+### 🎯 **Learning Path** (Recommended Order)
 
-feed.subscribe(events => {
-  console.log(`Feed updated: ${events.length} events`);
-});
-```
+#### 1️⃣ **Foundation:** [Universal Query & Subscription Engine](./docs/query/README.md)
+**Start here!** Learn the core identical APIs that power everything:
+- 🔍 **Queries**: Instant cache lookups with `nostr.query()`
+- 📡 **Subscriptions**: Live relay updates with `nostr.sub()`  
+- 📊 **Reactive Stores**: Automatic UI updates everywhere
 
-### 💬 [Direct Messages](./docs/dm/README.md)
-NIP-17/NIP-44 encrypted private messaging with gift wrap protocol.
+#### 2️⃣ **Messaging:** [Direct Messages](./docs/dm/README.md) 
+See the architecture in action with **elegant DM implementation**:
+- 💬 **Conversations**: `nostr.dm.with()` as query wrappers
+- 🎁 **Lazy Loading**: Gift wrap subscriptions start when needed
+- 🔐 **End-to-End Encryption**: NIP-17/NIP-44 transparency
 
-```typescript
-// Send encrypted DM
-await nostr.dm.send({
-  recipient: 'npub1...',
-  content: 'This message is end-to-end encrypted'
-});
+#### 3️⃣ **State Management:** [Universal Store System](./docs/stores/README.md)
+Master **reactive data flow** across your entire app:
+- 🏪 **Svelte Stores**: Compatible with all frameworks 
+- 🔄 **Automatic Updates**: Cache changes update all stores
+- ⚡ **Current Access**: Synchronous data when needed
 
-// Create a conversation
-const conversation = await nostr.dm.conversation('npub1...');
-await conversation.send('Hello!');
+#### 4️⃣ **Publishing:** [Event Publishing](./docs/events/README.md)
+Build rich **content creation** with user control:
+- 📝 **Zero-Config**: `nostr.publish()` just works
+- 🎛️ **User Control**: Choose extension, local, or custom signers
+- 🔧 **Fluent Builder**: Complex events made simple
 
-// Listen for new messages
-conversation.messages.subscribe(messages => {
-  console.log(`${messages.length} messages in conversation`);
-});
-```
+#### 5️⃣ **Social Features:** [Social Media Core](./docs/social/README.md)
+Scale to **full social applications**:
+- 👤 **Profiles**: User metadata and verification
+- 👥 **Contacts**: Follow/follower relationships  
+- 💬 **Threads**: Nested conversations
+- ❤️ **Reactions**: Like, emoji, custom reactions
+- 📰 **Feeds**: Global and following timelines
 
-### 👥 [Social Media Core](./docs/social/README.md)
-Complete social networking primitives with reactive state management.
+---
 
-```typescript
-// Profile management
-await nostr.social.profiles.update({
-  name: 'Alice',
-  about: 'Nostr enthusiast',
-  picture: 'https://...'
-});
+## 🎯 Why Choose Nostr Unchained?
 
-// Follow/unfollow users
-await nostr.social.contacts.follow('npub1...');
+### 🚀 **For Users**
+- ✅ **Zero-Config**: Works automatically without setup
+- ✅ **User Control**: Choose when features activate  
+- ✅ **Privacy**: DM subscriptions only when explicitly used
+- ✅ **Performance**: No unnecessary network traffic
 
-// Create threaded discussions
-const thread = await nostr.social.threads.create({
-  content: 'What do you think about Nostr?',
-  mentions: ['npub1...', 'npub2...']
-});
+### 👩‍💻 **For Developers**
+- ✅ **Identical APIs**: Learn once, use everywhere
+- ✅ **Reactive**: Automatic UI updates via Svelte stores
+- ✅ **Predictable**: Same patterns for all data access
+- ✅ **Composable**: Build complex features from simple queries
 
-// React to content
-await nostr.social.reactions.react({
-  targetEventId: thread.eventId,
-  reactionType: '🔥'
-});
+### 📱 **For Applications**
+- ✅ **Scalable**: Cache-first architecture with live updates
+- ✅ **Reliable**: Automatic error handling and reconnection
+- ✅ **Secure**: End-to-end encryption with perfect forward secrecy
+- ✅ **Fast**: Instant cache access with background updates
 
-// Get personalized feeds
-const globalFeed = await nostr.social.feeds.getGlobalFeed();
-const followingFeed = await nostr.social.feeds.getFollowingFeed();
-```
+## ⭐ Key Features
 
-### 🏪 [Reactive Stores](./docs/stores/README.md)
-Svelte-compatible reactive state management for real-time applications.
+### 🏗️ **Universal Cache Architecture**
+- **4-Layer Design** - Clean separation: Cache → Query/Sub → APIs → DX
+- **Auto Gift Wrap Handling** - Kind 1059 → 14 transformation transparent
+- **Reactive Updates** - All stores update when cache changes
+- **Framework Agnostic** - Works with Svelte, React, Vue, vanilla JS
 
-```typescript
-import { createFeed, createQueryBuilder } from 'nostr-unchained';
+### 🎛️ **User Control & Lazy Loading**
+- **Signing Provider Control** - Users choose extension, local, or custom signers
+- **Lazy Gift Wrap Subscriptions** - DM features activate only when used
+- **Performance Optimized** - No unnecessary subscriptions or network traffic
+- **Privacy Focused** - Users control when DM activity becomes visible
 
-// Create reactive feed
-const myFeed = createFeed(
-  createQueryBuilder()
-    .kind(1)
-    .authors(['npub1...'])
-    .limit(20)
-);
-
-// Subscribe to updates
-myFeed.subscribe(events => {
-  console.log(`Feed updated with ${events.length} events`);
-});
-
-// Use in Svelte components
-export let myFeed;
-$: posts = $myFeed; // Reactive to feed updates
-```
-
-## 📖 Module Documentation
-
-Each module has comprehensive documentation with examples and API references:
-
-| Module | Description | Documentation |
-|--------|-------------|---------------|
-| **Events** | Zero-config publishing & fluent builders | [📝 Event Docs](./docs/events/README.md) |
-| **Query** | SQL-like queries & reactive feeds | [🔍 Query Docs](./docs/query/README.md) |
-| **DM** | Encrypted private messaging (NIP-17/44) | [💬 DM Docs](./docs/dm/README.md) |
-| **Social** | Profiles, contacts, threads, reactions | [👥 Social Docs](./docs/social/README.md) |
-| **Stores** | Reactive state management | [🏪 Store Docs](./docs/stores/README.md) |
-
-## 🔧 Advanced Configuration
-
-```typescript
-import { NostrUnchained, TemporarySigner } from 'nostr-unchained';
-
-const nostr = new NostrUnchained({
-  relays: [
-    'wss://relay.damus.io',
-    'wss://nos.lol',
-    'wss://relay.snort.social'
-  ],
-  debug: true,
-  retryAttempts: 3,
-  retryDelay: 1000
-});
-
-// Use temporary keys for testing
-const tempSigner = new TemporarySigner();
-await nostr.setSigningProvider(tempSigner);
-
-// Or use browser extension
-await nostr.useExtensionSigner(); // Uses window.nostr
-```
-
-## 🎯 Key Features
-
-### ✅ **Production Ready**
-- **76 Comprehensive Tests** (62 unit + 14 integration)
-- **Real Relay Testing** - No mocks, authentic Nostr protocol validation
-- **Multi-participant Scenarios** - Tested with Alice, Bob, Charlie interactions
-- **NIP Compliance** - Full support for NIP-01, NIP-02, NIP-10, NIP-17, NIP-25, NIP-44, NIP-59
-
-### ✅ **Developer Experience**
-- **Zero Configuration** - Works out of the box
-- **TypeScript First** - Complete type safety with intelligent inference
-- **Familiar APIs** - SQL-like queries, React/Svelte-compatible stores
-- **Rich Error Handling** - Detailed error messages with debugging context
-
-### ✅ **Protocol Support**
+### 🔐 **Protocol Support**
 - **NIP-01** - Basic protocol flow (events, signatures)
-- **NIP-02** - Contact Lists (follow/unfollow)
-- **NIP-10** - Text Note References (threaded conversations)
-- **NIP-17** - Private Direct Messages
-- **NIP-25** - Reactions (likes, dislikes, custom emoji)
-- **NIP-44** - Versioned Encryption
-- **NIP-59** - Gift Wrap Protocol
+- **NIP-17** - Private Direct Messages with gift wrap protocol
+- **NIP-44** - Versioned Encryption (ChaCha20-Poly1305)
+- **NIP-59** - Gift Wrap Protocol (automatic unwrapping)
+- **NIP-25** - Reactions (extensible for custom emoji)
 
-### ✅ **Real-time Everything**
-- **Reactive Feeds** - Auto-updating event streams
-- **Live Conversations** - Real-time message delivery
-- **Social Updates** - Instant reaction and thread notifications
-- **WebSocket Management** - Automatic reconnection and error recovery
+### 💻 **Developer Experience**
+- **TypeScript First** - Complete type safety with intelligent inference
+- **Svelte Stores** - Reactive data everywhere with `$store` syntax
+- **Identical APIs** - Same fluent interface for queries and subscriptions
+- **Rich Error Handling** - Detailed error messages with debugging context
 
 ## 🧪 Testing
 
-We maintain **0% mocks** in integration tests to ensure real-world reliability:
+We maintain high-quality standards with comprehensive testing:
 
 ```bash
 # Run all tests
@@ -275,29 +276,91 @@ npm run test:coverage
 npm run test:watch
 ```
 
-**Test Coverage:**
-- **62 Unit Tests** - Fast, isolated component testing
-- **14 Integration Tests** - Real relay communication on `ws://umbrel.local:4848`
-- **Multi-participant Scenarios** - Alice, Bob, Charlie creating threads and reactions
-- **Protocol Validation** - Every feature tested against authentic Nostr data
+**Test Philosophy:**
+- **Real Relay Testing** - No mocks, authentic Nostr protocol validation
+- **Universal Architecture** - All layers tested in integration
+- **User Control Scenarios** - Lazy loading and signing provider switching
+- **Multi-participant DMs** - End-to-end encryption testing
 
-## 📦 Package Exports
-
-Nostr Unchained provides tree-shakeable exports for optimal bundle size:
+## ⚙️ Configuration
 
 ```typescript
-// Main library
 import { NostrUnchained } from 'nostr-unchained';
 
-// Direct message module only
-import * as DM from 'nostr-unchained/dm';
+// Custom configuration
+const nostr = new NostrUnchained({
+  relays: [
+    'wss://relay.damus.io',
+    'wss://nos.lol',
+    'wss://relay.snort.social'
+  ],
+  debug: true,
+  retryAttempts: 3,
+  retryDelay: 1000
+});
 
-// Event builders only  
-import { FluentEventBuilder } from 'nostr-unchained/events';
-
-// Query engine only
-import { QueryBuilder } from 'nostr-unchained/query';
+// User chooses signing provider
+const result = await nostr.useExtensionSigner();
+if (!result.success) {
+  // Fallback to local key signer
+  await nostr.useLocalKeySigner();
+}
 ```
+
+> **Advanced Configuration:** See [Event Publishing](./docs/events/README.md) for all signing options and error handling patterns.
+
+## 🌐 Framework Integration
+
+### Svelte (Perfect Integration)
+
+```svelte
+<script>
+  import { NostrUnchained } from 'nostr-unchained';
+  
+  const nostr = new NostrUnchained();
+  await nostr.connect();
+  
+  // Reactive stores with $ syntax
+  const posts = nostr.query().kinds([1]).execute();
+  const dmChat = nostr.dm.with('alice-pubkey');
+</script>
+
+<!-- Automatically reactive -->
+{#each $posts as post}
+  <div>{post.content}</div>
+{/each}
+
+{#each $dmChat as message}
+  <div class:from-me={message.isFromMe}>
+    {message.content}
+  </div>
+{/each}
+```
+
+### React Hook
+
+```tsx
+import { useState, useEffect } from 'react';
+
+function useNostrStore(store) {
+  const [data, setData] = useState(store.current);
+  useEffect(() => store.subscribe(setData), [store]);
+  return data;
+}
+
+function App() {
+  const nostr = new NostrUnchained();
+  const posts = useNostrStore(nostr.query().kinds([1]).execute());
+  
+  return (
+    <div>
+      {posts.map(post => <div key={post.id}>{post.content}</div>)}
+    </div>
+  );
+}
+```
+
+> **Framework Integration:** See [Universal Store System](./docs/stores/README.md) for React, Vue, and vanilla JS examples.
 
 ## 🤝 Contributing
 
@@ -329,8 +392,7 @@ MIT License - see [LICENSE](./LICENSE) file for details.
 
 - **NPM Package**: [nostr-unchained](https://www.npmjs.com/package/nostr-unchained)
 - **GitHub Repository**: [bitsperity/nostr-unchained](https://github.com/bitsperity/nostr-unchained)
-- **Documentation**: [API Reference](./docs/)
-- **Examples**: [Example Applications](./examples/)
+- **Documentation**: [Complete Documentation](./docs/)
 
 ---
 
@@ -338,6 +400,10 @@ MIT License - see [LICENSE](./LICENSE) file for details.
 
 **Built with ❤️ for the Nostr ecosystem**
 
-[Getting Started](./docs/getting-started.md) • [API Reference](./docs/api/) • [Examples](./examples/) • [Contributing](./CONTRIBUTING.md)
+### 📖 **Complete Documentation Guide**
+
+[🔍 Query Engine](./docs/query/README.md) • [💬 Direct Messages](./docs/dm/README.md) • [🏪 Stores](./docs/stores/README.md) • [📝 Events](./docs/events/README.md) • [👥 Social](./docs/social/README.md)
+
+**Start with [Query & Subscription Engine](./docs/query/README.md) to understand the foundation!**
 
 </div>

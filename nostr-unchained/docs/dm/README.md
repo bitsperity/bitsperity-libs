@@ -2,10 +2,13 @@
 
 The DM module provides end-to-end encrypted private messaging using NIP-17 (Private Direct Messages) and NIP-44 (Versioned Encryption) with the Gift Wrap Protocol (NIP-59).
 
+Built on the **Universal Cache Architecture** for maximum performance and reliability.
+
 ## Table of Contents
 
 - [Quick Start](#quick-start)
-- [How It Works](#how-it-works)
+- [Universal Cache Architecture](#universal-cache-architecture)
+- [Lazy Loading & User Control](#lazy-loading--user-control)
 - [Sending Messages](#sending-messages)
 - [Conversations](#conversations)
 - [Message Rooms](#message-rooms)
@@ -19,435 +22,355 @@ import { NostrUnchained } from 'nostr-unchained';
 
 const nostr = new NostrUnchained();
 
-// Send an encrypted DM
-await nostr.dm.send({
-  recipient: 'npub1alice...',
-  content: 'Hello Alice! This message is end-to-end encrypted. 🔐'
-});
+// Connect to relays (no DM subscriptions started yet)
+await nostr.connect();
 
-// Start a conversation
-const conversation = await nostr.dm.conversation('npub1alice...');
-await conversation.send('How are you doing?');
+// Start DM conversation (triggers lazy gift wrap subscription)
+const chat = nostr.dm.with('663ee62c0feacd53a6dc6b326c24de7062141c9d095c1a0ff8529d23471f1b8b');
 
-// Listen for new messages
-conversation.messages.subscribe(messages => {
+// Send encrypted message
+await chat.send('Hello! This message is end-to-end encrypted. 🔐');
+
+// Listen for new messages (reactive store)
+chat.subscribe(messages => {
   console.log(`Conversation has ${messages.length} messages`);
   messages.forEach(msg => {
-    console.log(`${msg.direction}: ${msg.content}`);
+    console.log(`${msg.isFromMe ? 'Me' : 'Them'}: ${msg.content}`);
   });
 });
 ```
 
-## How It Works
+## Universal Cache Architecture
 
-Nostr Unchained implements the **3-layer encryption system** from NIP-59:
+The DM system is built on a sophisticated 4-layer architecture:
 
-### 1. **Rumor** (Unsigned Event)
-The actual message content - never published directly to relays.
+### Layer 1: Universal Event Cache
+- **Auto-unwraps gift wraps**: Kind 1059 → Kind 14 automatically
+- **Encrypted storage**: All events encrypted at rest
+- **Smart deduplication**: No duplicate messages
 
-```typescript
-const rumor = {
-  kind: 14,
-  content: "Hello Alice!",
-  tags: [['p', 'alice-pubkey']],
-  created_at: timestamp,
-  pubkey: 'sender-pubkey'
-  // No id or signature - it's unsigned
-};
-```
+### Layer 2: Query/Sub Engine
+- **Identical APIs**: `nostr.query()` and `nostr.sub()` have same interface
+- **Cache integration**: Queries hit cache first, subscriptions fill cache
+- **Reactive updates**: Cache changes trigger store updates
 
-### 2. **Seal** (Kind 13)
-The rumor encrypted with NIP-44 and signed by the real author.
+### Layer 3: Specialized APIs
+- **DM as query wrapper**: `dm.with()` creates reactive cache queries
+- **Room support**: Multi-participant encrypted groups
+- **Zero configuration**: Everything works automatically
 
-```typescript
-const seal = {
-  kind: 13,
-  content: "encrypted_rumor_base64...", // NIP-44 encrypted rumor
-  tags: [], // Always empty
-  pubkey: 'sender-pubkey',
-  created_at: timestamp,
-  id: '...',
-  sig: '...' // Signed by real author
-};
-```
-
-### 3. **Gift Wrap** (Kind 1059)
-The seal encrypted again and signed with an ephemeral key.
+### Layer 4: Zero-Config Developer API
+- **No technical details**: Users never see kind 1059, gift wraps, etc.
+- **Educative design**: APIs are self-explanatory
+- **Advanced access**: Power users can access lower layers
 
 ```typescript
-const giftWrap = {
-  kind: 1059,
-  content: "encrypted_seal_base64...", // NIP-44 encrypted seal
-  tags: [['p', 'recipient-pubkey', 'relay-hint']],
-  pubkey: 'ephemeral-pubkey', // Random key, used once
-  created_at: randomized_timestamp, // Up to 2 days in past
-  id: '...',
-  sig: '...' // Signed by ephemeral key
-};
+// Layer 4: Zero-Config DX
+const chat = nostr.dm.with(pubkey); // Simple & intuitive
+
+// Layer 3: Specialized DM API  
+const messages = chat.messages; // Reactive store
+
+// Layer 2: Query Engine (if needed)
+const dmEvents = nostr.query().kinds([14]).execute();
+
+// Layer 1: Universal Cache (if needed)
+const cache = nostr.getCache(); // Advanced usage
 ```
 
-This provides **perfect forward secrecy** and **metadata protection**.
+## Lazy Loading & User Control
+
+### Perfect User Control
+DM subscriptions start **only when you need them**:
+
+```typescript
+// Step 1: Connect (NO automatic DM subscriptions)
+await nostr.connect(); 
+// ✅ Only relay connections, no gift wrap subscriptions
+
+// Step 2: Use other features without DM overhead
+await nostr.publish('Hello Nostr!'); // ✅ Works without DMs
+const posts = nostr.query().kinds([1]).execute(); // ✅ Works without DMs
+
+// Step 3: First DM usage triggers lazy loading
+const chat = nostr.dm.with(pubkey); // 🎁 NOW gift wrap subscription starts
+```
+
+### Zero Technical Complexity
+Users never need to know about:
+- ❌ `kind: 1059` (gift wraps)
+- ❌ `kind: 14` (DM events)  
+- ❌ NIP-17, NIP-44, NIP-59 details
+- ❌ Gift wrap subscriptions
+- ❌ Cache transformations
+
+Everything happens automatically in the background.
+
+### Performance Benefits
+- **No wasted subscriptions**: Only active when DMs are used
+- **Automatic cleanup**: Subscriptions managed efficiently  
+- **Privacy protection**: DM visibility only when requested
 
 ## Sending Messages
 
 ### Simple Messages
 
 ```typescript
-// Basic encrypted message
-await nostr.dm.send({
-  recipient: 'npub1alice...',
-  content: 'Hey Alice! 👋'
-});
+// Get conversation (starts gift wrap subscription if needed)
+const chat = nostr.dm.with('pubkey-here');
 
-// Message with custom timestamp
-await nostr.dm.send({
-  recipient: 'npub1bob...',
-  content: 'This is important!',
-  timestamp: Date.now() // Custom timestamp
+// Send encrypted message
+await chat.send('Hello there! 👋');
+
+// Send with custom options
+await chat.send('Important message', {
+  subject: 'Meeting Reminder'
 });
 ```
 
-### Advanced Messages
+### Advanced Messaging
 
 ```typescript
-// Message with reply context
-await nostr.dm.send({
-  recipient: 'npub1alice...',
-  content: 'Re: your earlier message about Nostr...',
-  replyTo: 'previous-message-event-id'
+// Message with metadata
+await chat.send('Meeting at 3pm', {
+  subject: 'Daily Standup',
+  expiry: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
 });
 
-// Message with expiration
-await nostr.dm.send({
-  recipient: 'npub1bob...',
-  content: 'This message self-destructs in 1 hour',
-  expiration: Date.now() + (60 * 60 * 1000) // 1 hour from now
-});
-
-// Message with custom relay hints
-await nostr.dm.send({
-  recipient: 'npub1charlie...',
-  content: 'Meeting at 3pm',
-  relayHint: 'wss://relay.example.com'
-});
-```
-
-### Batch Sending
-
-```typescript
-// Send to multiple recipients
-const recipients = ['npub1alice...', 'npub1bob...', 'npub1charlie...'];
-
-const results = await Promise.all(
-  recipients.map(recipient => 
-    nostr.dm.send({
-      recipient,
-      content: 'Group message: Meeting tomorrow at 2pm!'
-    })
-  )
-);
-
-console.log(`Sent to ${results.filter(r => r.success).length}/${recipients.length} recipients`);
+// Check sending status
+const result = await chat.send('Are you there?');
+if (result.success) {
+  console.log('Message sent successfully');
+} else {
+  console.error('Send failed:', result.error);
+}
 ```
 
 ## Conversations
 
-Conversations provide a structured way to manage ongoing message exchanges:
+Conversations are **reactive cache queries** that update automatically:
 
 ### Creating Conversations
 
 ```typescript
-// Start conversation with Alice
-const conversation = await nostr.dm.conversation('npub1alice...');
+// Create conversation (lazy loads gift wrap subscription)
+const chat = nostr.dm.with('recipient-pubkey');
 
-// Send messages through the conversation
-await conversation.send('Hello Alice!');
-await conversation.send('How has your day been?');
-
-// Get conversation metadata
-console.log(`Conversation with: ${conversation.recipientPubkey}`);
-console.log(`Message count: ${conversation.messageCount}`);
-console.log(`Last activity: ${conversation.lastMessageAt}`);
-```
-
-### Message History
-
-```typescript
-// Get conversation history
-const messages = await conversation.getMessages({
-  limit: 50,
-  since: '1 week ago'
-});
-
-messages.forEach(message => {
-  console.log(`[${message.timestamp}] ${message.direction}: ${message.content}`);
-});
-
-// Paginate through older messages
-const olderMessages = await conversation.getMessages({
-  limit: 20,
-  until: messages[messages.length - 1].timestamp
-});
+// Conversation properties
+console.log('Chat partner:', chat.otherPubkey);
+console.log('My pubkey:', chat.myPubkey);
 ```
 
 ### Reactive Message Updates
 
 ```typescript
-// Subscribe to new messages in conversation
-const unsubscribe = conversation.messages.subscribe(messages => {
-  const newMessages = messages.filter(m => m.isNew);
+// Subscribe to conversation (Svelte store pattern)
+const unsubscribe = chat.subscribe(messages => {
+  console.log(`${messages.length} total messages`);
   
-  if (newMessages.length > 0) {
-    console.log(`${newMessages.length} new messages received`);
-    
-    newMessages.forEach(msg => {
-      if (msg.direction === 'incoming') {
-        console.log(`New message from ${msg.senderPubkey}: ${msg.content}`);
-        
-        // Mark as read
-        conversation.markAsRead(msg.eventId);
-      }
-    });
-  }
+  messages.forEach(message => {
+    console.log(`${message.isFromMe ? 'Me' : 'Them'}: ${message.content}`);
+    console.log(`Timestamp: ${new Date(message.timestamp)}`);
+    console.log(`Subject: ${message.subject || 'None'}`);
+  });
 });
 
-// Stop listening when done
+// Current messages (synchronous access)
+const currentMessages = chat.current;
+console.log(`Currently ${currentMessages.length} messages loaded`);
+
+// Stop listening
 unsubscribe();
 ```
 
-### Conversation Management
+### Message Properties
 
 ```typescript
-// Mark conversation as read
-await conversation.markAsRead();
-
-// Mark specific message as read
-await conversation.markAsRead('message-event-id');
-
-// Archive conversation
-await conversation.archive();
-
-// Delete conversation (local only)
-await conversation.delete();
-
-// Block user (stops receiving messages)
-await conversation.block();
+// Each message has these properties:
+interface DMMessage {
+  content: string;        // Decrypted message content
+  timestamp: number;      // Message timestamp
+  isFromMe: boolean;      // True if I sent it
+  subject?: string;       // Optional subject line
+  eventId: string;        // Unique event identifier
+  pubkey: string;         // Sender's public key
+}
 ```
 
 ## Message Rooms
 
-Rooms provide multi-participant encrypted group messaging:
-
-### Creating Rooms
+Multi-participant encrypted groups:
 
 ```typescript
-// Create a private room
-const room = await nostr.dm.room({
-  name: 'Project Planning',
-  participants: ['npub1alice...', 'npub1bob...', 'npub1charlie...'],
-  isPrivate: true
-});
+// Create room with multiple participants
+const room = nostr.dm.room(
+  ['alice-pubkey', 'bob-pubkey', 'charlie-pubkey'], 
+  { subject: 'Project Planning' }
+);
 
-// Send message to room
-await room.send('Welcome to our project planning room!');
+// Send to all participants
+await room.send('Welcome to our planning room!');
 
-// Add new participant
-await room.addParticipant('npub1dave...');
-```
-
-### Room Administration
-
-```typescript
-// Set room metadata
-await room.updateMetadata({
-  name: 'Updated Room Name',
-  description: 'Planning our next project phase',
-  picture: 'https://example.com/room-avatar.jpg'
-});
-
-// Manage participants
-await room.addParticipant('npub1eve...');
-await room.removeParticipant('npub1olduser...');
-
-// Set admin privileges
-await room.setAdmin('npub1alice...', true);
-
-// Room settings
-await room.updateSettings({
-  allowInvites: false,        // Only admins can invite
-  messageRetention: 30,       // Delete messages after 30 days
-  maxParticipants: 50
-});
-```
-
-### Room Messages
-
-```typescript
 // Listen for room messages
-room.messages.subscribe(messages => {
-  messages.forEach(msg => {
-    console.log(`[${msg.senderName}]: ${msg.content}`);
-  });
+room.subscribe(messages => {
+  console.log(`Room has ${messages.length} messages`);
 });
 
-// Send different message types
-await room.send('Regular message');
-await room.send('🎉 Celebration message with emoji!');
-await room.sendFile(fileBlob, 'document.pdf');
-await room.sendImage(imageBlob, 'screenshot.png');
+// Room management
+console.log('Participants:', room.participants);
+await room.addParticipant('new-member-pubkey');
+await room.removeParticipant('leaving-member-pubkey');
 ```
 
 ## Security Features
 
 ### Perfect Forward Secrecy
-
-Every message uses unique ephemeral keys that are discarded after use:
+Every message uses unique ephemeral keys:
 
 ```typescript
 // Each message gets a new ephemeral key pair
-const message1 = await nostr.dm.send({
-  recipient: 'npub1alice...',
-  content: 'Message 1'
-}); // Uses ephemeral key A
-
-const message2 = await nostr.dm.send({
-  recipient: 'npub1alice...',
-  content: 'Message 2'  
-}); // Uses ephemeral key B (different from A)
+await chat.send('Message 1'); // Uses ephemeral key A
+await chat.send('Message 2'); // Uses ephemeral key B
 
 // Even if key A is compromised, message 2 remains secure
 ```
 
+### Automatic Gift Wrap Protocol
+Messages are automatically wrapped in NIP-59 gift wraps:
+
+1. **Rumor** (unsigned event) - Your actual message
+2. **Seal** (kind 13) - Rumor encrypted with NIP-44
+3. **Gift Wrap** (kind 1059) - Seal encrypted again with ephemeral key
+
+```typescript
+// You write this:
+await chat.send('Hello Alice!');
+
+// Nostr Unchained automatically:
+// 1. Creates rumor with your message
+// 2. Encrypts rumor into seal (kind 13)
+// 3. Encrypts seal into gift wrap (kind 1059)
+// 4. Signs with ephemeral key
+// 5. Publishes gift wrap to relays
+// 6. Discards ephemeral key
+```
+
 ### Metadata Protection
-
-Gift wrap protocol hides message metadata:
+Gift wraps hide message metadata:
 
 ```typescript
-// Observer on relay sees:
-const observedEvent = {
+// Relay observers see:
+{
   kind: 1059,                    // Standard gift wrap
-  pubkey: 'random-ephemeral-key', // Not linked to real author
-  created_at: randomTimestamp,    // Randomized, not real time
-  tags: [['p', 'recipient']],     // Only recipient is visible
-  content: 'encrypted-data'       // No metadata leakage
-};
-
-// Real message metadata is hidden inside encryption
-```
-
-### Timestamp Randomization
-
-Prevents timing correlation attacks:
-
-```typescript
-// Messages are backdated randomly
-const actualTime = Date.now();
-const giftWrapTime = actualTime - Math.random() * (2 * 24 * 60 * 60 * 1000); // Up to 2 days ago
-
-console.log(`Real time: ${new Date(actualTime)}`);
-console.log(`Gift wrap time: ${new Date(giftWrapTime)}`); // Earlier, randomized
-```
-
-### Key Rotation
-
-Automatic key management for enhanced security:
-
-```typescript
-// Keys are automatically rotated
-const conversation = await nostr.dm.conversation('npub1alice...');
-
-// Send 10 messages - each uses different ephemeral keys
-for (let i = 0; i < 10; i++) {
-  await conversation.send(`Message ${i + 1}`);
+  pubkey: 'random-ephemeral-key', // Not your real key
+  created_at: randomTimestamp,    // Randomized timestamp
+  tags: [['p', 'recipient']],     // Only recipient visible
+  content: 'encrypted-data'       // No content leakage
 }
 
-// All 10 messages use different encryption keys
-console.log('All messages encrypted with unique keys');
+// Your real message metadata is encrypted inside
 ```
 
 ## API Reference
 
-### DM Module
+### Main DM Interface
 
 ```typescript
-// Main DM interface
-nostr.dm.send(options: DMSendOptions): Promise<DMResult>
-nostr.dm.conversation(pubkey: string): Promise<DMConversation>
-nostr.dm.room(options: RoomOptions): Promise<DMRoom>
-nostr.dm.getConversations(): Promise<DMConversation[]>
+// Start conversation (lazy loads gift wrap subscription)
+nostr.dm.with(pubkey: string): UniversalDMConversation
+
+// Create multi-participant room
+nostr.dm.room(participants: string[], options?: RoomOptions): UniversalDMRoom
+
+// Get all active conversations
+nostr.dm.conversations: UniversalDMConversation[]
 ```
 
-### DMSendOptions
+### UniversalDMConversation
 
 ```typescript
-interface DMSendOptions {
-  recipient: string;           // Recipient's npub or hex pubkey
-  content: string;            // Message content
-  timestamp?: number;         // Custom timestamp
-  replyTo?: string;          // Event ID being replied to
-  expiration?: number;       // Message expiration timestamp
-  relayHint?: string;        // Preferred relay for recipient
+class UniversalDMConversation {
+  // Properties
+  readonly myPubkey: string;
+  readonly otherPubkey: string;
+  
+  // Reactive store (Svelte store interface)
+  subscribe(callback: (messages: DMMessage[]) => void): () => void;
+  
+  // Current messages (synchronous)
+  get current(): DMMessage[];
+  
+  // Send message
+  send(content: string, options?: MessageOptions): Promise<SendResult>;
 }
 ```
 
-### DMConversation
+### UniversalDMRoom
 
 ```typescript
-class DMConversation {
+class UniversalDMRoom {
   // Properties
-  recipientPubkey: string;
-  messageCount: number;
-  lastMessageAt: Date;
-  unreadCount: number;
+  readonly participants: string[];
+  readonly myPubkey: string;
   
-  // Reactive stores
-  messages: Readable<DMMessage[]>;
+  // Reactive store
+  subscribe(callback: (messages: RoomMessage[]) => void): () => void;
+  get current(): RoomMessage[];
   
   // Methods
-  send(content: string): Promise<DMResult>;
-  getMessages(options?: MessageOptions): Promise<DMMessage[]>;
-  markAsRead(eventId?: string): Promise<void>;
-  archive(): Promise<void>;
-  delete(): Promise<void>;
-  block(): Promise<void>;
-}
-```
-
-### DMRoom
-
-```typescript
-class DMRoom {
-  // Properties
-  roomId: string;
-  name: string;
-  participants: string[];
-  isPrivate: boolean;
-  
-  // Reactive stores
-  messages: Readable<RoomMessage[]>;
-  
-  // Methods
-  send(content: string): Promise<DMResult>;
+  send(content: string): Promise<SendResult>;
   addParticipant(pubkey: string): Promise<void>;
   removeParticipant(pubkey: string): Promise<void>;
-  setAdmin(pubkey: string, isAdmin: boolean): Promise<void>;
-  updateMetadata(metadata: RoomMetadata): Promise<void>;
-  leave(): Promise<void>;
 }
 ```
 
-### Security Guarantees
+### Message Interfaces
 
-- ✅ **End-to-End Encryption** - Only sender and recipient can read messages
-- ✅ **Perfect Forward Secrecy** - Past messages safe even if keys compromised
-- ✅ **Metadata Protection** - Message timing and patterns hidden
-- ✅ **Deniable Authentication** - Can't prove who sent a message
-- ✅ **Replay Protection** - Each message has unique encryption
-- ✅ **Quantum Resistance** - Uses secure curve25519 + ChaCha20-Poly1305
+```typescript
+interface DMMessage {
+  content: string;
+  timestamp: number;
+  isFromMe: boolean;
+  subject?: string;
+  eventId: string;
+  pubkey: string;
+}
+
+interface MessageOptions {
+  subject?: string;
+  expiry?: number;
+}
+
+interface SendResult {
+  success: boolean;
+  error?: string;
+}
+```
+
+## Architecture Benefits
+
+### For Users
+- ✅ **Zero-Config**: Works automatically without setup
+- ✅ **User Control**: Gift wrap subscriptions only when needed
+- ✅ **Performance**: No unnecessary network traffic
+- ✅ **Privacy**: DM activity only when explicitly requested
+
+### For Developers  
+- ✅ **Reactive**: Automatic UI updates via Svelte stores
+- ✅ **Cached**: Instant access to message history
+- ✅ **Layered**: Clean separation of concerns
+- ✅ **Tested**: Built on proven Universal Cache infrastructure
+
+### Security Guarantees
+- ✅ **End-to-End Encryption** - Only sender and recipient can read
+- ✅ **Perfect Forward Secrecy** - Unique keys for every message
+- ✅ **Metadata Protection** - Message patterns hidden via gift wraps
+- ✅ **Automatic Key Management** - No manual key handling required
+- ✅ **Quantum Resistant** - Uses Curve25519 + ChaCha20-Poly1305
 
 ---
 
 **Next Steps:**
-- [Social Media](../social/README.md) - Profiles, contacts, threads, reactions  
-- [Query Engine](../query/README.md) - Find and subscribe to messages
-- [Event Publishing](../events/README.md) - Create custom encrypted events
+- [Query Engine](../query/README.md) - Universal Cache query system
+- [Stores](../stores/README.md) - Reactive data management  
+- [Social Media](../social/README.md) - Profiles, contacts, reactions

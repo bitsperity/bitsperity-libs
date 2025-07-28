@@ -1,15 +1,15 @@
-# 🔍 Query Engine Module
+# 🔍 Universal Query & Subscription Engine
 
-The Query module provides SQL-like syntax for searching the Nostr event graph with reactive feeds and real-time subscriptions.
+The Universal Query Engine provides **identical APIs** for cache queries and live subscriptions, built on the powerful Universal Cache Architecture.
 
 ## Table of Contents
 
 - [Quick Start](#quick-start)
-- [SQL-like Queries](#sql-like-queries)
-- [Reactive Feeds](#reactive-feeds)
-- [Real-time Subscriptions](#real-time-subscriptions)
-- [Query Building](#query-building)
-- [Performance & Caching](#performance--caching)
+- [Universal Cache Architecture](#universal-cache-architecture)
+- [Query API](#query-api)
+- [Subscription API](#subscription-api)
+- [Reactive Stores](#reactive-stores)
+- [Advanced Patterns](#advanced-patterns)
 - [API Reference](#api-reference)
 
 ## Quick Start
@@ -18,503 +18,428 @@ The Query module provides SQL-like syntax for searching the Nostr event graph wi
 import { NostrUnchained } from 'nostr-unchained';
 
 const nostr = new NostrUnchained();
+await nostr.connect();
 
-// Simple queries
-const recentPosts = await nostr.query()
-  .kind(1)
-  .since('1 hour ago')
-  .limit(20)
-  .fetch();
+// 🔍 QUERY: Immediate cache lookup
+const cachedPosts = nostr.query()
+  .kinds([1])
+  .authors(['alice-pubkey'])
+  .execute();
 
-// Reactive feeds that update in real-time
-const liveFeed = nostr.createFeed()
-  .kind(1)
-  .authors(['npub1alice...', 'npub1bob...'])
-  .limit(50)
-  .subscribe();
+console.log(`Found ${cachedPosts.current.length} cached posts`);
 
-liveFeed.subscribe(events => {
-  console.log(`Feed updated: ${events.length} events`);
+// 📡 SUBSCRIPTION: Live data from relays  
+const liveStore = nostr.sub()
+  .kinds([1])
+  .authors(['alice-pubkey'])
+  .execute();
+
+// Both return reactive Svelte stores!
+liveStore.subscribe(posts => {
+  console.log(`Live feed updated: ${posts.length} posts`);
 });
 ```
 
-## SQL-like Queries
+## Universal Cache Architecture
 
-The query engine uses familiar SQL-like syntax for filtering Nostr events:
+### The Elegant Design
 
-### Basic Filtering
+**Same API, different data sources:**
 
 ```typescript
-// Find text notes from the last day
-const posts = await nostr.query()
-  .kind(1)                    // WHERE kind = 1
-  .since('1 day ago')        // AND created_at > timestamp
-  .limit(100)                // LIMIT 100
-  .fetch();
+// IDENTICAL fluent APIs
+const queryBuilder = nostr.query()    // Cache lookup
+const subBuilder = nostr.sub()        // Live subscription
 
-// Multiple kinds (reactions and text notes)
-const socialEvents = await nostr.query()
-  .kinds([1, 7])             // WHERE kind IN (1, 7)
-  .since('2 hours ago')
-  .fetch();
-
-// Specific authors
-const alicePosts = await nostr.query()
-  .kind(1)
-  .authors(['npub1alice...', 'npub1bob...'])  // WHERE pubkey IN (...)
-  .fetch();
+// IDENTICAL method chains
+.kinds([1, 7])
+.authors(['alice-pubkey', 'bob-pubkey'])
+.tags('t', ['nostr', 'bitcoin'])
+.execute() // Both return UniversalNostrStore<NostrEvent[]>
 ```
 
-### Tag-based Queries
+### Data flow
 
-```typescript
-// Find all replies to a specific note
-const replies = await nostr.query()
-  .kind(1)
-  .tag('e', 'note1abc123...')  // WHERE tags contain ['e', 'note1abc123...']
-  .fetch();
-
-// Find posts with specific hashtags
-const nostrPosts = await nostr.query()
-  .kind(1)
-  .tag('t', 'nostr')          // WHERE tags contain ['t', 'nostr']
-  .since('1 week ago')
-  .fetch();
-
-// Multiple tag conditions
-const threadReplies = await nostr.query()
-  .kind(1)
-  .tag('e', 'note1root...')   // References the root note
-  .tag('p', 'npub1author...')  // Mentions the author
-  .fetch();
+```
+📡 Relays → 🔔 Subscriptions → 💾 Universal Cache → 🔍 Queries → 📱 UI
+              ↑                        ↓
+        Live updates             Instant access
 ```
 
-### Time-based Queries
+### Four Layers Working Together
+
+1. **Universal Cache**: Auto-unwraps gift wraps, deduplicates, encrypts
+2. **Query/Sub Engine**: Identical APIs with different data sources  
+3. **Specialized APIs**: DMs, Social, etc. built on query/sub
+4. **Zero-Config DX**: Everything works automatically
+
+## Query API
+
+### Immediate Cache Lookups
+
+Queries hit the **Universal Cache** for instant results:
 
 ```typescript
-// Natural language time expressions
-const recent = await nostr.query()
-  .kind(1)
-  .since('30 minutes ago')
-  .fetch();
+// Find cached direct messages
+const dms = nostr.query()
+  .kinds([14])                    // DM events
+  .tags('p', ['my-pubkey'])       // For me
+  .execute();
 
-// Specific time ranges
-const timeRange = await nostr.query()
-  .kind(1)
-  .since('2024-01-01')
-  .until('2024-01-31')
-  .fetch();
+console.log(`${dms.current.length} cached DMs`);
 
-// Unix timestamps
-const exactTime = await nostr.query()
-  .kind(1)
-  .since(Math.floor(Date.now() / 1000) - 3600) // 1 hour ago
-  .fetch();
+// Find cached posts with hashtags
+const nostrPosts = nostr.query()
+  .kinds([1])                     // Text notes
+  .tags('t', ['nostr'])           // #nostr hashtag
+  .execute();
+
+// Find cached profiles
+const profiles = nostr.query()
+  .kinds([0])                     // Profile events
+  .authors(['alice-pubkey', 'bob-pubkey'])
+  .execute();
 ```
 
-### Advanced Queries
+### Query Filters
 
 ```typescript
-// Complex profile query
-const profiles = await nostr.query()
-  .kind(0)                               // Profile events
-  .authors(['npub1...', 'npub2...'])     // Specific users
-  .since('1 day ago')                    // Recent updates only
-  .fetch();
+// Event kinds
+.kinds([1, 7])              // Text notes and reactions
+.kinds([0])                 // Profiles only
 
-// Contact list changes
-const follows = await nostr.query()
-  .kind(3)                               // Contact lists
-  .authors(['npub1alice...'])            // Alice's follows
-  .limit(1)                              // Most recent only
-  .fetch();
+// Authors (public keys)
+.authors(['pubkey1', 'pubkey2'])
 
-// Event references and mentions
-const mentions = await nostr.query()
-  .kind(1)
-  .tag('p', 'npub1mykey...')            // Posts mentioning me
-  .since('1 day ago')
-  .fetch();
+// Tags (any tag type)
+.tags('e', ['event-id'])    // References to events
+.tags('p', ['pubkey'])      // Mentions of pubkeys  
+.tags('t', ['nostr'])       // Hashtags
+
+// Combine filters
+const complexQuery = nostr.query()
+  .kinds([1])
+  .authors(['alice-pubkey'])
+  .tags('t', ['nostr', 'bitcoin'])
+  .execute();
 ```
 
-## Reactive Feeds
+### Reactive Query Results
 
-Reactive feeds provide real-time updates using Svelte-compatible stores:
-
-### Creating Feeds
+All queries return **reactive stores**:
 
 ```typescript
-import { createFeed, createQueryBuilder } from 'nostr-unchained';
+const posts = nostr.query().kinds([1]).execute();
 
-// Create a reactive feed
-const myFeed = createFeed(
-  createQueryBuilder()
-    .kind(1)
-    .authors(['npub1alice...', 'npub1bob...'])
-    .limit(50)
-);
-
-// Subscribe to updates
-const unsubscribe = myFeed.subscribe(events => {
-  console.log(`Feed contains ${events.length} events`);
-  events.forEach(event => {
-    console.log(`${event.pubkey}: ${event.content}`);
-  });
+// Subscribe to changes (Svelte store interface)
+const unsubscribe = posts.subscribe(events => {
+  console.log(`Query result updated: ${events.length} posts`);
 });
 
-// Stop subscription when done
+// Current data (synchronous access)
+console.log(`Current posts: ${posts.current.length}`);
+
+// Stop listening
 unsubscribe();
 ```
 
-### Feed Types
+## Subscription API
+
+### Live Updates from Relays
+
+Subscriptions fetch **live data** from relays and fill the cache:
 
 ```typescript
-// Global feed (all public posts)
-const globalFeed = createFeed(
-  createQueryBuilder()
-    .kind(1)
-    .since('1 hour ago')
-    .limit(100)
-);
+// Subscribe to new posts
+const livePosts = nostr.sub()
+  .kinds([1])
+  .execute();
 
-// Following feed (posts from people you follow)
-const followingFeed = createFeed(
-  createQueryBuilder()
-    .kind(1)
-    .authors(await getMyFollowingList())
-    .limit(50)
-);
+// Subscribe to reactions on my posts
+const reactions = nostr.sub()
+  .kinds([7])
+  .tags('e', ['my-post-id-1', 'my-post-id-2'])
+  .execute();
 
-// Hashtag feed
-const nostrFeed = createFeed(
-  createQueryBuilder()
-    .kind(1)
-    .tag('t', 'nostr')
-    .since('1 day ago')
-    .limit(25)
-);
-
-// Thread feed (all replies to a specific note)
-const threadFeed = createFeed(
-  createQueryBuilder()
-    .kind(1)
-    .tag('e', 'note1rootpost...')
-);
+// Subscribe to profile updates
+const profiles = nostr.sub()
+  .kinds([0])
+  .authors(['alice-pubkey', 'bob-pubkey'])
+  .execute();
 ```
 
-### Using Feeds in Svelte
+### Subscription Benefits
+
+- **Fill Cache**: New events automatically added to Universal Cache
+- **Reactive Updates**: All related queries update automatically
+- **Gift Wrap Handling**: Kind 1059 events auto-unwrapped to kind 14
+- **Deduplication**: No duplicate events in stores
+
+```typescript
+// Start subscription
+const liveData = nostr.sub().kinds([1]).execute();
+
+// Meanwhile, queries benefit from filled cache
+const cachedData = nostr.query().kinds([1]).execute();
+
+// Both stores update when new events arrive!
+liveData.subscribe(events => console.log('Live:', events.length));
+cachedData.subscribe(events => console.log('Cache:', events.length));
+```
+
+## Reactive Stores
+
+### Svelte Store Interface
+
+All results implement the Svelte store pattern:
+
+```typescript
+interface UniversalNostrStore<T> {
+  // Subscribe to changes
+  subscribe(callback: (value: T) => void): () => void;
+  
+  // Current value (synchronous)
+  current: T;
+}
+```
+
+### Using in Svelte Components
 
 ```svelte
 <script>
-  import { createFeed, createQueryBuilder } from 'nostr-unchained';
+  import { NostrUnchained } from 'nostr-unchained';
   
-  // Create reactive feed
-  const posts = createFeed(
-    createQueryBuilder()
-      .kind(1)
-      .since('1 hour ago')
-      .limit(20)
-  );
+  const nostr = new NostrUnchained();
+  await nostr.connect();
+  
+  // Reactive store
+  const posts = nostr.query().kinds([1]).execute();
 </script>
 
-<!-- Automatically reactive to feed updates -->
+<!-- Automatically reactive -->
 {#each $posts as post}
   <div class="post">
     <strong>{post.pubkey}</strong>
     <p>{post.content}</p>
-    <small>{new Date(post.created_at * 1000).toLocaleString()}</small>
   </div>
 {/each}
+
+<p>Total posts: {$posts.length}</p>
 ```
 
-## Real-time Subscriptions
+### Using in React
 
-### Basic Subscriptions
+```tsx
+import { useState, useEffect } from 'react';
 
-```typescript
-import { SubscriptionManager } from 'nostr-unchained';
-
-const subManager = new SubscriptionManager({
-  relays: ['wss://relay.damus.io', 'wss://nos.lol']
-});
-
-// Subscribe to new events
-const subscription = await subManager.subscribe([{
-  kinds: [1],
-  since: Math.floor(Date.now() / 1000)
-}], {
-  onEvent: (event) => {
-    console.log('New event:', event.content);
-  },
-  onEose: () => {
-    console.log('Subscription established');
-  }
-});
-
-// Close subscription
-await subManager.close(subscription);
-```
-
-### Multiple Filters
-
-```typescript
-// Subscribe to multiple event types simultaneously
-const multiSubscription = await subManager.subscribe([
-  { kinds: [1], authors: ['npub1alice...'] },  // Alice's posts
-  { kinds: [7], '#e': ['note1target...'] },    // Reactions to specific note
-  { kinds: [0], authors: ['npub1bob...'] }      // Bob's profile updates
-], {
-  onEvent: (event) => {
-    switch (event.kind) {
-      case 1:
-        console.log('New post:', event.content);
-        break;
-      case 7:
-        console.log('New reaction:', event.content);
-        break;
-      case 0:
-        console.log('Profile update:', JSON.parse(event.content));
-        break;
-    }
-  }
-});
-```
-
-### Advanced Subscription Management
-
-```typescript
-// Subscription with error handling
-const robustSubscription = await subManager.subscribe([{
-  kinds: [1],
-  limit: 50
-}], {
-  onEvent: (event) => {
-    console.log('Event received:', event.id);
-  },
-  onEose: () => {
-    console.log('End of stored events');
-  },
-  onError: (error) => {
-    console.error('Subscription error:', error);
-  },
-  onClose: () => {
-    console.log('Subscription closed');
-  }
-});
-```
-
-## Query Building
-
-### Fluent Query Builder
-
-```typescript
-const queryBuilder = nostr.query();
-
-// Method chaining
-const complexQuery = queryBuilder
-  .kind(1)                               // Text notes
-  .authors(['npub1...', 'npub2...'])     // From specific authors  
-  .tag('t', 'nostr')                     // With #nostr hashtag
-  .since('1 day ago')                    // From last 24 hours
-  .until('1 hour ago')                   // Up to 1 hour ago
-  .limit(100)                            // Max 100 events
-  .orderBy('created_at', 'desc');        // Newest first
-
-const results = await complexQuery.fetch();
-```
-
-### Programmatic Building
-
-```typescript
-import { createQueryBuilder } from 'nostr-unchained';
-
-function buildUserQuery(userPubkey: string, days: number = 7) {
-  return createQueryBuilder()
-    .kinds([0, 1, 3])                    // Profile, posts, contacts
-    .authors([userPubkey])
-    .since(`${days} days ago`)
-    .limit(1000);
-}
-
-function buildHashtagQuery(hashtag: string, hours: number = 24) {
-  return createQueryBuilder()
-    .kind(1)
-    .tag('t', hashtag)
-    .since(`${hours} hours ago`)
-    .limit(200);
-}
-
-// Use the builders
-const aliceData = await buildUserQuery('npub1alice...').fetch();
-const nostrPosts = await buildHashtagQuery('nostr', 48).fetch();
-```
-
-### Conditional Queries
-
-```typescript
-function buildConditionalQuery(options: {
-  includeReplies?: boolean;
-  userPubkey?: string;
-  hashtags?: string[];
-  timeRange?: string;
-}) {
-  let query = createQueryBuilder().kind(1);
+function PostsFeed() {
+  const [posts, setPosts] = useState([]);
   
-  if (!options.includeReplies) {
-    // Exclude replies (posts without 'e' tags)
-    query = query.tag('e', '', { negate: true });
-  }
-  
-  if (options.userPubkey) {
-    query = query.authors([options.userPubkey]);
-  }
-  
-  if (options.hashtags?.length) {
-    // Posts with any of these hashtags
-    options.hashtags.forEach(tag => {
-      query = query.tag('t', tag);
+  useEffect(() => {
+    const nostr = new NostrUnchained();
+    const postsStore = nostr.query().kinds([1]).execute();
+    
+    const unsubscribe = postsStore.subscribe(newPosts => {
+      setPosts(newPosts);
     });
-  }
+    
+    return unsubscribe;
+  }, []);
   
-  if (options.timeRange) {
-    query = query.since(options.timeRange);
-  }
-  
-  return query.limit(100);
+  return (
+    <div>
+      {posts.map(post => (
+        <div key={post.id}>{post.content}</div>
+      ))}
+    </div>
+  );
+}
+```
+
+## Advanced Patterns
+
+### Query + Subscription Combination
+
+Perfect pattern: **Query for history + Subscribe for updates**
+
+```typescript
+// 1. Get cached history instantly
+const historicalPosts = nostr.query()
+  .kinds([1])
+  .authors(['alice-pubkey'])
+  .execute();
+
+// 2. Subscribe for new posts
+const livePosts = nostr.sub()
+  .kinds([1])  
+  .authors(['alice-pubkey'])
+  .execute();
+
+// Both stores update when new events arrive
+historicalPosts.subscribe(posts => {
+  console.log(`History: ${posts.length} posts`);
+});
+
+livePosts.subscribe(posts => {
+  console.log(`Live: ${posts.length} posts`);
+});
+
+// They contain the same data (cache synchronization)
+```
+
+### Building DM Systems
+
+DMs are just **queries for kind 14 events**:
+
+```typescript
+// DM conversation = cache query
+const conversation = nostr.query()
+  .kinds([14])                          // DM events
+  .authors(['my-pubkey', 'alice-pubkey']) // Between us
+  .tags('p', ['my-pubkey', 'alice-pubkey']) // For us
+  .execute();
+
+// Gift wrap subscription (handled automatically by dm.with())
+const giftWrapSub = nostr.sub()
+  .kinds([1059])                        // Gift wraps
+  .tags('p', ['my-pubkey'])             // For me
+  .execute();
+
+// Cache automatically unwraps 1059 → 14
+// Conversation store updates automatically!
+```
+
+### Multiple Filter Patterns
+
+```typescript
+// OR conditions (multiple queries)
+const textNotes = nostr.query().kinds([1]).execute();
+const reactions = nostr.query().kinds([7]).execute();
+
+// AND conditions (single query)
+const nostrPosts = nostr.query()
+  .kinds([1])                     // Text notes
+  .tags('t', ['nostr'])           // AND #nostr
+  .authors(['alice-pubkey'])      // AND by Alice
+  .execute();
+
+// Complex combinations
+function createFeed(userPubkeys, hashtags) {
+  return nostr.query()
+    .kinds([1])
+    .authors(userPubkeys)         // Posts by these users
+    .tags('t', hashtags)          // With these hashtags
+    .execute();
 }
 
-// Examples
-const mainPosts = await buildConditionalQuery({
-  includeReplies: false,
-  timeRange: '1 day ago'
-}).fetch();
-
-const userNostrPosts = await buildConditionalQuery({
-  userPubkey: 'npub1alice...',
-  hashtags: ['nostr', 'bitcoin'],
-  timeRange: '1 week ago'
-}).fetch();
-```
-
-## Performance & Caching
-
-### Query Optimization
-
-```typescript
-// Efficient queries use specific filters
-const efficientQuery = nostr.query()
-  .kind(1)                     // Specific kind
-  .authors(['npub1alice...'])  // Limited authors
-  .since('1 hour ago')         // Recent time range
-  .limit(50);                  // Reasonable limit
-
-// Avoid overly broad queries
-const broadQuery = nostr.query()
-  .since('1 year ago')         // ❌ Too broad
-  .limit(10000);               // ❌ Too many results
-```
-
-### Caching Strategies
-
-```typescript
-// Feed-level caching
-const cachedFeed = createFeed(
-  createQueryBuilder()
-    .kind(1)
-    .authors(['npub1alice...'])
-    .limit(100),
-  {
-    cacheTime: 60000,          // Cache for 1 minute
-    staleTime: 30000,          // Consider stale after 30 seconds
-    refetchOnFocus: true       // Refetch when window gains focus
-  }
+const customFeed = createFeed(
+  ['alice-pubkey', 'bob-pubkey'],
+  ['nostr', 'bitcoin']
 );
-
-// Manual cache management
-const queryResult = await nostr.query()
-  .kind(1)
-  .tag('t', 'nostr')
-  .cache('nostr-posts', 300000) // Cache key and TTL
-  .fetch();
 ```
 
-### Pagination
+### Performance Optimization
 
 ```typescript
-// Cursor-based pagination
-async function paginatePosts(cursor?: string, limit: number = 20) {
-  const query = nostr.query()
-    .kind(1)
-    .limit(limit);
-    
-  if (cursor) {
-    query.until(parseInt(cursor)); // Use timestamp as cursor
-  }
-  
-  const events = await query.fetch();
-  const nextCursor = events.length > 0 
-    ? events[events.length - 1].created_at.toString()
-    : undefined;
-    
-  return { events, nextCursor };
-}
+// ✅ Good: Specific filters
+const efficientQuery = nostr.query()
+  .kinds([1])                     // Specific kind
+  .authors(['alice-pubkey'])      // Limited authors
+  .execute();
 
-// Usage
-let cursor: string | undefined;
-const allPosts: NostrEvent[] = [];
+// ❌ Avoid: Too broad
+const broadQuery = nostr.query()   
+  .execute(); // No filters = everything
 
-do {
-  const page = await paginatePosts(cursor, 50);
-  allPosts.push(...page.events);
-  cursor = page.nextCursor;
-} while (cursor && allPosts.length < 1000);
+// ✅ Good: Start subscription then query
+const liveFeed = nostr.sub().kinds([1]).execute();
+const cachedPosts = nostr.query().kinds([1]).execute();
+
+// ❌ Less efficient: Query without subscription
+const posts = nostr.query().kinds([1]).execute(); // Might be empty
 ```
 
 ## API Reference
 
-### QueryBuilder Methods
-
-| Method | Description | Example |
-|--------|-------------|---------|
-| `.kind(k)` | Filter by event kind | `.kind(1)` |
-| `.kinds(array)` | Multiple kinds | `.kinds([1, 7])` |
-| `.authors(array)` | Filter by authors | `.authors(['npub1...'])` |
-| `.tag(name, value)` | Filter by tag | `.tag('e', 'note1...')` |
-| `.since(time)` | Events after time | `.since('1 hour ago')` |
-| `.until(time)` | Events before time | `.until('2024-01-01')` |
-| `.limit(n)` | Limit results | `.limit(100)` |
-| `.fetch()` | Execute query | Returns `Promise<NostrEvent[]>` |
-
-### Feed Creation
+### Universal Query Builder
 
 ```typescript
-createFeed(queryBuilder: QueryBuilder, options?: FeedOptions): FeedStore
+class UniversalQueryBuilder {
+  // Event type filters
+  kinds(kinds: number[]): this;
+  
+  // Author filters  
+  authors(pubkeys: string[]): this;
+  
+  // Tag filters
+  tags(tagName: string, values: string[]): this;
+  
+  // Execute query (returns reactive store)
+  execute(): UniversalNostrStore<NostrEvent[]>;
+}
 ```
 
-**Options:**
-- `cacheTime` - How long to cache results (ms)
-- `staleTime` - When to consider data stale (ms)  
-- `refetchOnFocus` - Refetch when window gains focus
-- `refetchInterval` - Auto-refetch interval (ms)
-
-### Subscription Manager
+### Universal Subscription Builder
 
 ```typescript
-subscribe(
-  filters: Filter[], 
-  options: SubscriptionOptions
-): Promise<string>
+class UniversalSubBuilder {
+  // Event type filters
+  kinds(kinds: number[]): this;
+  
+  // Author filters
+  authors(pubkeys: string[]): this;
+  
+  // Tag filters  
+  tags(tagName: string, values: string[]): this;
+  
+  // Execute subscription (returns reactive store)
+  execute(): UniversalNostrStore<NostrEvent[]>;
+}
 ```
 
-**SubscriptionOptions:**
-- `onEvent(event)` - Handle new events
-- `onEose()` - End of stored events
-- `onError(error)` - Handle errors  
-- `onClose()` - Subscription closed
+### Universal Nostr Store
+
+```typescript
+interface UniversalNostrStore<T> {
+  // Svelte store interface
+  subscribe(callback: (value: T) => void): () => void;
+  
+  // Current value (synchronous access)
+  current: T;
+}
+```
+
+### Factory Methods
+
+```typescript
+// From NostrUnchained instance
+nostr.query(): UniversalQueryBuilder    // Cache queries
+nostr.sub(): UniversalSubBuilder        // Live subscriptions
+```
+
+## Architecture Benefits
+
+### For Users
+- ✅ **Identical APIs**: Learn once, use everywhere
+- ✅ **Instant Results**: Cache queries return immediately  
+- ✅ **Live Updates**: Subscriptions keep data fresh
+- ✅ **Automatic Sync**: Cache and subscriptions work together
+
+### For Developers
+- ✅ **Reactive**: Svelte store interface everywhere
+- ✅ **Composable**: Build complex systems from simple queries
+- ✅ **Predictable**: Same patterns for all data access
+- ✅ **Performant**: Cache-first with live updates
+
+### Security & Reliability
+- ✅ **Encrypted Cache**: All data encrypted at rest
+- ✅ **Auto Gift Wrap**: Kind 1059 → 14 transparent
+- ✅ **Deduplication**: No duplicate events
+- ✅ **Error Resilient**: Graceful failure handling
 
 ---
 
 **Next Steps:**
-- [Direct Messages](../dm/README.md) - Encrypted private messaging
-- [Social Media](../social/README.md) - Profiles, contacts, and reactions
-- [Reactive Stores](../stores/README.md) - Advanced state management
+- [Direct Messages](../dm/README.md) - Built on query/sub architecture
+- [Stores](../stores/README.md) - Reactive data management  
+- [Social Media](../social/README.md) - Social features using queries
