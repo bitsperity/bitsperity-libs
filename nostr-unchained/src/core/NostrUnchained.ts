@@ -7,11 +7,12 @@
 
 import { EventBuilder } from './EventBuilder.js';
 import { RelayManager } from '../relay/RelayManager.js';
-import { SigningProviderFactory, ExtensionSigner } from '../crypto/SigningProvider.js';
+import { SigningProviderFactory, ExtensionSigner, LocalKeySigner } from '../crypto/SigningProvider.js';
 import { ErrorHandler } from '../utils/errors.js';
 import { DEFAULT_RELAYS, DEFAULT_CONFIG } from '../utils/constants.js';
 import { EventsModule } from '../events/FluentEventBuilder.js';
 import { DMModule } from '../dm/api/DMModule.js';
+import { UniversalDMModule } from '../dm/api/UniversalDMModule.js';
 import { SocialModule } from '../social/api/SocialModule.js';
 import { SubscriptionManager } from '../subscription/SubscriptionManager.js';
 import { UniversalEventCache } from '../cache/UniversalEventCache.js';
@@ -34,12 +35,16 @@ export class NostrUnchained {
   private signingProvider?: SigningProvider;
   private signingMethod?: 'extension' | 'temporary';
   private config: Required<Omit<NostrUnchainedConfig, 'signingProvider'>> & { signingProvider?: SigningProvider };
+  private giftWrapSubscriptionActive: boolean = false;
   
   // Fluent Event Builder API
   public readonly events: EventsModule;
   
-  // Direct Message API
+  // Direct Message API (Legacy)
   public readonly dm: DMModule;
+  
+  // Universal DM API (Cache-based)
+  private universalDM?: UniversalDMModule;
   
   // Social Media API
   public readonly social: SocialModule;
@@ -77,7 +82,8 @@ export class NostrUnchained {
       subscriptionManager: this.subscriptionManager,
       relayManager: this.relayManager,
       signingProvider: undefined as any, // Will be set when initialized
-      debug: this.config.debug
+      debug: this.config.debug,
+      parent: this // Pass reference to this NostrUnchained instance
     });
 
     // Initialize Social module (will be fully initialized after signing provider is set)
@@ -152,8 +158,13 @@ export class NostrUnchained {
     try {
       const privateKey = await this.signingProvider.getPrivateKeyForEncryption();
       this.cache = new UniversalEventCache(privateKey, {});
+      
+      // Initialize Universal DM Module with cache-based architecture
+      const myPubkey = await this.signingProvider.getPublicKey();
+      this.universalDM = new UniversalDMModule(this, myPubkey);
+      
       if (this.config.debug) {
-        console.log('🎯 Universal Cache initialized with private key');
+        console.log('🎯 Universal Cache and Universal DM Module initialized');
       }
     } catch (error) {
       if (this.config.debug) {
@@ -173,12 +184,57 @@ export class NostrUnchained {
     try {
       await this.relayManager.connect();
       
+      // NOTE: Gift wrap subscription is now lazy-loaded on first DM usage
+      // This gives users proper control over when DM subscriptions start
+      
       if (this.config.debug) {
         const stats = this.relayManager.getStats();
         console.log('Relay connection stats:', stats);
       }
     } catch (error) {
       throw ErrorHandler.handleConnectionError('relays', error as Error);
+    }
+  }
+
+  /**
+   * Start universal gift wrap subscription (Lazy Loading)
+   * This is the critical piece that makes DMs work with the Universal Cache
+   * Only starts if not already active - gives users proper control
+   */
+  async startUniversalGiftWrapSubscription(): Promise<void> {
+    // Check if already active
+    if (this.giftWrapSubscriptionActive) {
+      if (this.config.debug) {
+        console.log('🎁 Gift wrap subscription already active - skipping');
+      }
+      return;
+    }
+
+    if (!this.signingProvider) {
+      if (this.config.debug) {
+        console.log('⚠️ Cannot start gift wrap subscription - no signing provider');
+      }
+      return;
+    }
+
+    try {
+      const myPubkey = await this.signingProvider.getPublicKey();
+      
+      // Subscribe to all gift wraps addressed to me
+      await this.sub()
+        .kinds([1059])         // Gift wraps
+        .tags('p', [myPubkey]) // For me
+        .execute();
+      
+      this.giftWrapSubscriptionActive = true;
+      
+      if (this.config.debug) {
+        console.log('🎁 Universal gift wrap subscription started (lazy) for:', myPubkey.substring(0, 16) + '...');
+      }
+    } catch (error) {
+      if (this.config.debug) {
+        console.log('⚠️ Failed to start gift wrap subscription:', error);
+      }
     }
   }
 
@@ -354,6 +410,152 @@ export class NostrUnchained {
   }
 
   /**
+   * Use browser extension for signing (User Control)
+   * Allows user to explicitly choose extension signing
+   */
+  async useExtensionSigner(): Promise<{ success: boolean; pubkey?: string; error?: string }> {
+    try {
+      if (!await this.hasExtension()) {
+        return { 
+          success: false, 
+          error: 'No browser extension available' 
+        };
+      }
+
+      const provider = new ExtensionSigner();
+      const pubkey = await provider.getPublicKey();
+      
+      // Update signing provider
+      this.signingProvider = provider;
+      this.signingMethod = 'extension';
+      
+      // Re-initialize modules with new signer
+      await this.reinitializeWithNewSigner();
+      
+      if (this.config.debug) {
+        console.log('🎯 User switched to Extension Signer:', pubkey.substring(0, 16) + '...');
+      }
+      
+      return { success: true, pubkey };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      };
+    }
+  }
+
+  /**
+   * Use local key signer for signing (User Control)
+   * Allows user to explicitly choose local key signing
+   */
+  async useLocalKeySigner(): Promise<{ success: boolean; pubkey?: string; error?: string }> {
+    try {
+      const provider = new LocalKeySigner();
+      const pubkey = await provider.getPublicKey();
+      
+      // Update signing provider
+      this.signingProvider = provider;
+      this.signingMethod = 'temporary';
+      
+      // Re-initialize modules with new signer
+      await this.reinitializeWithNewSigner();
+      
+      if (this.config.debug) {
+        console.log('🎯 User switched to Local Key Signer:', pubkey.substring(0, 16) + '...');
+      }
+      
+      return { success: true, pubkey };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      };
+    }
+  }
+
+  /**
+   * Use a custom signing provider (User Control)
+   * Allows user to provide their own SigningProvider implementation
+   */
+  async useCustomSigner(provider: SigningProvider): Promise<{ success: boolean; pubkey?: string; error?: string }> {
+    try {
+      const pubkey = await provider.getPublicKey();
+      
+      // Update signing provider
+      this.signingProvider = provider;
+      this.signingMethod = 'temporary'; // Custom signers are treated as 'temporary'
+      
+      // Re-initialize modules with new signer
+      await this.reinitializeWithNewSigner();
+      
+      if (this.config.debug) {
+        console.log('🎯 User switched to Custom Signer:', pubkey.substring(0, 16) + '...');
+      }
+      
+      return { success: true, pubkey };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      };
+    }
+  }
+
+  /**
+   * Get current signing method info
+   */
+  getSigningInfo(): { method?: 'extension' | 'temporary'; pubkey?: string; active: boolean } {
+    if (!this.signingProvider) {
+      return { active: false };
+    }
+    
+    return {
+      method: this.signingMethod,
+      active: true
+    };
+  }
+
+  /**
+   * Re-initialize all modules with the new signing provider
+   * Called when user switches signers at runtime
+   */
+  private async reinitializeWithNewSigner(): Promise<void> {
+    if (!this.signingProvider) {
+      throw new Error('No signing provider available for reinitialization');
+    }
+
+    // Update DM module with new signing provider
+    await this.dm.updateSigningProvider(this.signingProvider);
+
+    // Update Social module with new signing provider
+    await this.social.updateSigningProvider(this.signingProvider);
+
+    // Re-initialize Universal Cache with new private key for gift wrap decryption
+    try {
+      const privateKey = await this.signingProvider.getPrivateKeyForEncryption();
+      this.cache = new UniversalEventCache(privateKey, {});
+      
+      // Re-initialize Universal DM Module with new signing
+      const myPubkey = await this.signingProvider.getPublicKey();
+      this.universalDM = new UniversalDMModule(this, myPubkey);
+      
+      // Reset gift wrap subscription state (will be lazy-loaded again if needed)
+      this.giftWrapSubscriptionActive = false;
+      
+      if (this.config.debug) {
+        console.log('🔄 Successfully re-initialized all modules with new signer');
+      }
+    } catch (error) {
+      if (this.config.debug) {
+        console.log('⚠️ Could not get private key from new signer, using empty key (no gift wrap decryption)');
+      }
+      // Initialize with empty key as fallback
+      this.cache = new UniversalEventCache('', {});
+    }
+  }
+
+  /**
    * Get relay information (NIP-11)
    */
   async getRelayInfo(relayUrl: string): Promise<RelayInfo> {
@@ -453,6 +655,16 @@ export class NostrUnchained {
   }
 
   /**
+   * Get the public key of the current user
+   */
+  async getPublicKey(): Promise<string> {
+    if (!this.signingProvider) {
+      await this.initializeSigning();
+    }
+    return await this.signingProvider!.getPublicKey();
+  }
+
+  /**
    * Query API - Immediate cache lookup
    * Implements the elegant Universal Cache architecture from the session plan
    */
@@ -466,5 +678,43 @@ export class NostrUnchained {
    */
   sub(): UniversalSubBuilder {
     return new UniversalSubBuilder(this.cache, this.subscriptionManager);
+  }
+
+  /**
+   * Universal encrypted publishing
+   * Encrypts any event type and sends to recipients as gift wraps
+   */
+  async publishEncrypted<T extends Partial<NostrEvent>>(
+    event: T, 
+    recipients: string[]
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      if (!this.signingProvider) {
+        throw new Error('Signing provider not initialized');
+      }
+
+      const privateKey = await this.signingProvider.getPrivateKeyForEncryption();
+      
+      // Import GiftWrapProtocol for universal encryption
+      const { GiftWrapProtocol } = await import('../dm/protocol/GiftWrapProtocol.js');
+      
+      for (const recipient of recipients) {
+        const giftWrap = await GiftWrapProtocol.createGiftWrap(
+          event as NostrEvent,
+          recipient,
+          privateKey
+        );
+        
+        // Publish the gift wrap
+        await this.publishEvent(giftWrap);
+      }
+      
+      return { success: true };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      };
+    }
   }
 }

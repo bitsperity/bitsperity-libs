@@ -23,6 +23,7 @@ export interface DMModuleConfig {
   relayManager: RelayManager;
   signingProvider: SigningProvider;
   debug?: boolean;
+  parent?: any; // Reference to NostrUnchained instance
 }
 
 export interface ConversationSummary {
@@ -41,6 +42,7 @@ export class DMModule {
   private config: DMModuleConfig;
   private _senderPubkey: string | null = null;
   private _senderPrivateKey: string | null = null;
+  private parentNostr?: any; // Reference to NostrUnchained instance
   
   // Reactive stores
   private _conversationList = writable<ConversationSummary[]>([]);
@@ -49,6 +51,7 @@ export class DMModule {
 
   constructor(config: DMModuleConfig) {
     this.config = config;
+    this.parentNostr = config.parent;
     
     // Create derived stores
     this.conversations$ = this._conversationList;
@@ -64,6 +67,12 @@ export class DMModule {
    * This is the main entry point: nostr.dm.with('npub...')
    */
   async with(pubkey: string): Promise<DMConversation> {
+    // Check if we should use the Universal DM Module (cache-based architecture)
+    if (this.shouldUseUniversalDM()) {
+      return this.delegateToUniversalDM(pubkey);
+    }
+    
+    // Fallback to legacy implementation
     // Normalize pubkey (remove npub prefix if present)
     const normalizedPubkey = this.normalizePubkey(pubkey);
     
@@ -511,5 +520,38 @@ export class DMModule {
     // Create a consistent room ID based on sorted participants
     const sortedParticipants = [...participants, this._senderPubkey!].sort();
     return sortedParticipants.join(',');
+  }
+
+  /**
+   * Check if we should use the Universal DM Module (cache-based)
+   * This is a temporary bridge while we migrate to the new architecture
+   */
+  private shouldUseUniversalDM(): boolean {
+    // For now, always use Universal DM if available
+    // TODO: Make this configurable if needed
+    return Boolean(this.getUniversalDMInstance());
+  }
+
+  /**
+   * Get the Universal DM Module instance from the parent NostrUnchained
+   */
+  private getUniversalDMInstance(): any {
+    return this.parentNostr?.universalDM;
+  }
+
+  /**
+   * Delegate to Universal DM Module with lazy loading
+   */
+  private delegateToUniversalDM(pubkey: string): any {
+    const universalDM = this.getUniversalDMInstance();
+    if (!universalDM) {
+      throw new Error('Universal DM Module not available');
+    }
+    
+    if (this.config.debug) {
+      console.log('🎯 Delegating to Universal DM Module (cache-based) for:', pubkey.substring(0, 16) + '...');
+    }
+    
+    return universalDM.with(pubkey);
   }
 }
