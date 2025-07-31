@@ -38,9 +38,8 @@ export { FluentEventBuilder, EventsModule } from './events/FluentEventBuilder.js
 
 // Milestone 2 exports
 export { SubscriptionManager } from './subscription/SubscriptionManager.js';
-export { QueryBuilder, query, createQueryBuilder } from './query/QueryBuilder.js';
-export type { IQueryBuilder } from './query/QueryBuilder.js';
-export type { SubscriptionHandle } from './query/UniversalQueryBuilder.js';
+export { QueryBuilder, SubBuilder } from './query/QueryBuilder.js';
+export type { SubscriptionHandle } from './query/QueryBuilder.js';
 
 // Day 3 Store exports - Reactive NostrStore system
 export { 

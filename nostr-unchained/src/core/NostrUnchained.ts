@@ -16,7 +16,7 @@ import { UniversalDMModule } from '../dm/api/UniversalDMModule.js';
 import { SocialModule } from '../social/api/SocialModule.js';
 import { SubscriptionManager } from '../subscription/SubscriptionManager.js';
 import { UniversalEventCache, type CacheStatistics } from '../cache/UniversalEventCache.js';
-import { UniversalQueryBuilder, UniversalSubBuilder } from '../query/UniversalQueryBuilder.js';
+import { QueryBuilder, SubBuilder } from '../query/UniversalQueryBuilder.js';
 
 import type {
   NostrUnchainedConfig,
@@ -682,16 +682,16 @@ export class NostrUnchained {
    * Query API - Immediate cache lookup
    * Implements the elegant Universal Cache architecture from the session plan
    */
-  query(): UniversalQueryBuilder {
-    return new UniversalQueryBuilder(this.cache);
+  query(): QueryBuilder {
+    return new QueryBuilder(this.cache);
   }
 
   /**
    * Subscription API - Live data updates
    * Implements the elegant Universal Cache architecture from the session plan
    */
-  sub(): UniversalSubBuilder {
-    return new UniversalSubBuilder(this.cache, this.subscriptionManager);
+  sub(): SubBuilder {
+    return new SubBuilder(this.cache, this.subscriptionManager);
   }
 
   /**

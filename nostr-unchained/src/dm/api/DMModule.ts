@@ -193,7 +193,14 @@ export class DMModule {
    */
   async updateSigningProvider(signingProvider: SigningProvider): Promise<void> {
     this.config.signingProvider = signingProvider;
-    await this.initializeSender();
+    try {
+      await this.initializeSender();
+    } catch (error) {
+      // Gracefully handle initialization errors
+      if (this.config.debug) {
+        console.error('Failed to update signing provider:', error);
+      }
+    }
   }
 
   /**

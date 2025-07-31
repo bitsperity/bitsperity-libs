@@ -8,7 +8,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, beforeAll } from 'vitest';
 import { NostrUnchained } from '@/index';
-import { createQueryBuilder } from '@/query/QueryBuilder';
+import { QueryBuilder } from '@/query/QueryBuilder';
 import { SubscriptionManager } from '@/subscription/SubscriptionManager';
 import { RelayManager } from '@/relay/RelayManager';
 import { createFeed, setDefaultSubscriptionManager } from '@/store/NostrStore';
@@ -88,14 +88,20 @@ describe('Milestone 2 Phase 2: Core Multi-Relay Integration', () => {
     }, 20000);
 
     it('should demonstrate real query execution with QueryBuilder integration', async () => {
-      await relayManager.connect();
+      const nostr = new NostrUnchained({
+        relays: ['ws://umbrel.local:4848'],
+        debug: true,
+        timeout: 12000
+      });
 
-      const query = createQueryBuilder(subscriptionManager)
+      const store = nostr.query()
         .kinds([1])
         .since(Math.floor(Date.now() / 1000) - 3600) // Last hour
-        .limit(20);
+        .limit(20)
+        .execute();
 
-      const events = await query.execute({ timeout: 12000 });
+      // Get current cached events
+      const events = store.current;
 
       console.log(`✅ Query executed: ${events.length} events retrieved`);
 
@@ -115,57 +121,60 @@ describe('Milestone 2 Phase 2: Core Multi-Relay Integration', () => {
 
       // Query should succeed even if no events found
       expect(Array.isArray(events)).toBe(true);
+      
+      await nostr.disconnect();
     }, 25000);
 
     it('should handle real-time subscriptions with proper lifecycle', async () => {
-      await relayManager.connect();
-
-      const query = createQueryBuilder(subscriptionManager)
-        .kinds([1])
-        .since(Math.floor(Date.now() / 1000) - 1800) // Last 30 minutes
-        .limit(10);
+      const nostr = new NostrUnchained({
+        relays: ['ws://umbrel.local:4848'],
+        debug: true,
+        timeout: 15000
+      });
 
       let eventCount = 0;
       let eoseReceived = false;
 
-      const subscription = await query.subscribe({
-        onEvent: (event) => {
-          eventCount++;
-          console.log(`📥 Received event ${eventCount}: ${event.id.substring(0, 16)}...`);
-        },
-        onEose: (relay) => {
-          eoseReceived = true;
-          console.log(`✅ EOSE from ${relay}`);
-        },
-        timeout: 15000
-      });
+      const handle = await nostr.sub()
+        .kinds([1])
+        .since(Math.floor(Date.now() / 1000) - 1800) // Last 30 minutes
+        .limit(10)
+        .execute();
 
-      expect(subscription.success).toBe(true);
-      expect(subscription.subscription?.id).toBeDefined();
+      expect(handle.id).toBeDefined();
+      expect(handle.isActive()).toBe(true);
 
       // Wait for subscription activity
       await new Promise(resolve => setTimeout(resolve, 8000));
 
-      console.log(`✅ Subscription results: ${eventCount} events, EOSE: ${eoseReceived}`);
+      // Get events from the store
+      const events = handle.store.current;
+      console.log(`✅ Subscription results: ${events.length} events received`);
 
       // Clean up subscription
-      if (subscription.subscription?.id) {
-        await subscriptionManager.close(subscription.subscription.id);
-      }
+      await handle.stop();
+      expect(handle.isActive()).toBe(false);
+      
+      await nostr.disconnect();
     }, 25000);
   });
 
   describe('Real Performance Optimization (Day 6)', () => {
     it('should demonstrate efficient event processing performance', async () => {
-      await relayManager.connect();
+      const nostr = new NostrUnchained({
+        relays: ['ws://umbrel.local:4848'],
+        debug: true,
+        timeout: 10000
+      });
 
       const startTime = Date.now();
-      const query = createQueryBuilder(subscriptionManager)
+      const store = nostr.query()
         .kinds([1])
         .since(Math.floor(Date.now() / 1000) - 2400) // Last 40 minutes
-        .limit(50);
+        .limit(50)
+        .execute();
 
-      const events = await query.execute({ timeout: 10000 });
+      const events = store.current;
       const totalTime = Date.now() - startTime;
 
       console.log(`⚡ Performance: ${events.length} events in ${totalTime}ms`);
@@ -179,6 +188,8 @@ describe('Milestone 2 Phase 2: Core Multi-Relay Integration', () => {
         expect(avgTimePerEvent).toBeLessThan(1000); // <1s per event
         console.log(`⚡ Average time per event: ${avgTimePerEvent.toFixed(2)}ms`);
       }
+      
+      await nostr.disconnect();
     }, 20000);
 
     it('should demonstrate memory-efficient store operations', async () => {

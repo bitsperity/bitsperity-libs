@@ -1,5 +1,5 @@
 /**
- * UniversalQueryBuilder - Cache lookup with elegant fluent API
+ * QueryBuilder - Cache lookup with elegant fluent API
  * 
  * Implements the Query/Sub symmetry from the session architecture.
  * Query = immediate cache lookup, Sub = live subscription.
@@ -10,7 +10,7 @@ import { UniversalEventCache } from '../cache/UniversalEventCache.js';
 import { UniversalNostrStore } from '../store/UniversalNostrStore.js';
 import type { NostrEvent } from '../core/types.js';
 
-export class UniversalQueryBuilder extends FilterBuilder {
+export class QueryBuilder extends FilterBuilder {
   constructor(private cache: UniversalEventCache) {
     super();
   }
@@ -31,7 +31,7 @@ export interface SubscriptionHandle {
   isActive(): boolean;
 }
 
-export class UniversalSubBuilder extends FilterBuilder {
+export class SubBuilder extends FilterBuilder {
   private relayUrls: string[] = [];
   
   constructor(
