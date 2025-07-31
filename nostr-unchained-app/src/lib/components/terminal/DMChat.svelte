@@ -12,7 +12,7 @@
 	import type { NostrService } from '../../services/NostrService.js';
 	import type { AuthState } from '../../types/app.js';
 	
-	let { authState }: { authState: AuthState } = $props();
+	let { authState, nostr }: { authState: AuthState; nostr: any } = $props();
 	
 	// =============================================================================
 	// Chat State Management
@@ -33,14 +33,11 @@
 	// =============================================================================
 	
 	onMount(async () => {
-		// Start inbox subscription to receive DMs
-		try {
-			const nostrService = await getService<NostrService>('nostr');
-			await nostrService.startDMInboxSubscription();
-			logger.info('DM inbox subscription started');
-		} catch (error) {
-			logger.error('Failed to start DM inbox subscription', { error });
-		}
+		// 🎁 SHOWCASE: Lazy Loading DM System!
+		// Gift wrap subscription starts automatically when first DM is accessed
+		logger.info('🎯 DM module ready - lazy loading gift wrap subscriptions on demand!');
+		
+		// No need to manually start subscriptions - nostr-unchained handles this elegantly!
 		
 		await loadConversations();
 	});
@@ -78,16 +75,20 @@
 		activeConversation = partnerId;
 		
 		try {
-			const nostrService = await getService<NostrService>('nostr');
+			// 🎁 SHOWCASE: Lazy Loading Magic! 
+			// This is when gift wrap subscription starts!
+			console.log('🎁 Triggering lazy gift wrap subscription with dm.with()');
 			
-			// Get the DMConversation instance (this is reactive)
-			activeConversationInstance = await nostrService.getDMConversation(partnerId);
+			const conversation = nostr.dm.with(partnerId);
+			activeConversationInstance = conversation;
 			
-			// Subscribe to the conversation's messages store for reactive updates
-			if (activeConversationInstance && activeConversationInstance.messages) {
-				activeConversationInstance.messages.subscribe((conversationMessages: any[]) => {
+			// Subscribe to the reactive conversation store  
+			if (conversation && conversation.messages) {
+				conversation.messages.subscribe((conversationMessages: any[]) => {
+					console.log('💬 Reactive DM messages:', conversationMessages.length);
+					
 					// Convert DMMessage format to our UI format
-					messages = conversationMessages.map(msg => ({
+					messages = conversationMessages.map((msg: any) => ({
 						id: msg.id,
 						content: msg.content,
 						fromMe: msg.isFromMe,
@@ -104,12 +105,10 @@
 					}, 50);
 				});
 				
-				logger.info('Subscribed to reactive conversation messages', { partnerId });
+				logger.info('🚀 Lazy loading DM subscription active!', { partnerId });
 			}
 		} catch (error) {
 			logger.error('Failed to open conversation', { error });
-			// Fallback to old loading method
-			await loadMessages(partnerId);
 		}
 	}
 	

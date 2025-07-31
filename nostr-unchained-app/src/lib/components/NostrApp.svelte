@@ -33,8 +33,10 @@
 	// Get user info from NostrUnchained
 	$effect(() => {
 		if (nostr) {
-			// This demonstrates NostrUnchained's clean API
-			nostr.getPublicKey().then(pubkey => {
+			// Initialize signing first, then get public key
+			nostr.initializeSigning().then(() => {
+				return nostr.getPublicKey();
+			}).then(pubkey => {
 				userInfo.publicKey = pubkey;
 			}).catch(() => {
 				userInfo.publicKey = 'Unable to get public key';
@@ -104,9 +106,9 @@
 	<!-- Main Content - NostrUnchained powered -->
 	<main class="app-main">
 		{#if currentView === 'terminal'}
-			<NostrTerminal {authState} />
+			<NostrTerminal {authState} {nostr} onLogout={logout} onShowKeys={() => {}} />
 		{:else if currentView === 'messages'}
-			<DMChat {authState} />
+			<DMChat {authState} {nostr} />
 		{:else if currentView === 'publish'}
 			<div class="publish-view">
 				<h2>📝 Publish to Nostr</h2>

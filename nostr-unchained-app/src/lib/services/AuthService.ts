@@ -162,105 +162,38 @@ export class AuthService {
 			console.log('🔐 Starting extension login process...');
 			this.logger.info('Attempting extension login...');
 			
-			// First verify that we actually have a working extension
-			if (typeof window === 'undefined' || !window.nostr) {
-				console.log('❌ No window.nostr available');
+			// Use the new NostrService extension signer method
+			const nostrService = await getService<NostrService>('nostr');
+			const result = await nostrService.useExtensionSigner();
+
+			if (!result.success) {
+				console.log('❌ Extension signer failed:', result.error);
 				return {
 					success: false,
-					error: createAuthError('NO_EXTENSION', 'No Nostr extension found')
+					error: createAuthError('NO_EXTENSION', result.error?.message || 'Failed to use extension signer')
 				};
 			}
 
-			// Try to enable the extension first
-			if (window.nostr.enable) {
-				console.log('🔄 Enabling extension...', {
-					provider: window.nostr._provider || window.nostr.provider || 'unknown',
-					hasGetPublicKey: !!window.nostr.getPublicKey,
-					hasSignEvent: !!window.nostr.signEvent
-				});
-				try {
-					const enabled = await window.nostr.enable();
-					console.log('🔧 Enable result:', enabled, typeof enabled);
-					if (!enabled) {
-						console.log('❌ Extension enable returned false - user denied or extension locked');
-						// Try without enable for some extensions
-						if (window.nostr.getPublicKey) {
-							console.log('🔄 Trying direct getPublicKey without enable...');
-							try {
-								const pubkey = await window.nostr.getPublicKey();
-								if (pubkey) {
-									console.log('✅ Got pubkey without enable:', pubkey.substring(0, 16) + '...');
-									// Continue with the pubkey we got
-								} else {
-									return {
-										success: false,
-										error: createAuthError('EXTENSION_DENIED', 'Extension access denied by user')
-									};
-								}
-							} catch (directError) {
-								console.log('❌ Direct getPublicKey also failed:', directError);
-								return {
-									success: false,
-									error: createAuthError('EXTENSION_DENIED', 'Extension access denied by user')
-								};
-							}
-						} else {
-							return {
-								success: false,
-								error: createAuthError('EXTENSION_DENIED', 'Extension access denied by user')
-							};
-						}
-					} else {
-						console.log('✅ Extension enabled successfully');
-					}
-				} catch (enableError) {
-					console.log('❌ Extension enable failed:', enableError);
-					return {
-						success: false,
-						error: createAuthError('EXTENSION_DENIED', 'Extension access denied')
-					};
-				}
-			}
-
-			// Get public key directly from extension
-			if (!window.nostr.getPublicKey) {
-				console.log('❌ Extension missing getPublicKey method');
-				return {
-					success: false,
-					error: createAuthError('NO_EXTENSION', 'Extension missing required methods')
-				};
-			}
-
-			console.log('🔑 Getting public key from extension...');
-			const pubkey = await window.nostr.getPublicKey();
-			
-			if (!pubkey || typeof pubkey !== 'string' || pubkey.length !== 64) {
-				console.log('❌ Invalid public key from extension:', pubkey);
-				return {
-					success: false,
-					error: createAuthError('EXTENSION_DENIED', 'Invalid public key from extension')
-				};
-			}
-
-			console.log('✅ Got valid public key:', pubkey.substring(0, 16) + '...');
+			const publicKey = result.data;
+			console.log('✅ Extension signer successful:', publicKey.substring(0, 16) + '...');
 
 			// Create user profile
 			const profile: UserProfile = {
-				pubkey: pubkey,
+				pubkey: publicKey,
 				verified: false
 			};
 
 			// Update auth state
-			await this.setAuthenticatedState('extension', pubkey, profile);
+			await this.setAuthenticatedState('extension', publicKey, profile);
 
 			this.logger.info('Extension login successful', { 
-				pubkey: pubkey.substring(0, 16) + '...' 
+				pubkey: publicKey.substring(0, 16) + '...' 
 			});
 
 			return {
 				success: true,
 				user: profile,
-				publicKey: pubkey,
+				publicKey: publicKey,
 				method: 'extension'
 			};
 

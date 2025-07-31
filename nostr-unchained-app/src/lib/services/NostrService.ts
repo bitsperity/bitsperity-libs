@@ -6,7 +6,7 @@
  * Max 200 lines - Zero Monolith Policy
  */
 
-import { NostrUnchained, query, TemporarySigner } from 'nostr-unchained';
+import { NostrUnchained, TemporarySigner } from 'nostr-unchained';
 import type { ServiceResult } from '../types/app.js';
 import { createNostrError, errorProcessor } from '../utils/ErrorHandler.js';
 import { createContextLogger } from '../utils/Logger.js';
@@ -183,7 +183,7 @@ export class NostrService {
 
 	async getPublicKey(): Promise<ServiceResult<string>> {
 		try {
-			const publicKey = await this.nostr.getExtensionPubkey();
+			const publicKey = await this.nostr.getPublicKey();
 			
 			this.logger.info('Retrieved public key', { 
 				publicKey: publicKey.substring(0, 16) + '...' 
@@ -195,7 +195,7 @@ export class NostrService {
 			};
 
 		} catch (error) {
-			const appError = createNostrError('Failed to get public key from extension');
+			const appError = createNostrError('Failed to get public key');
 			this.logger.logError(appError);
 			
 			return {
@@ -220,15 +220,9 @@ export class NostrService {
 
 	async publishDM(recipientPubkey: string, content: string): Promise<any> {
 		try {
-			// Ensure we have initialized signing
-			await this.nostr.initializeSigning();
+			// The new API automatically handles signing initialization
 			
-			// Update DM module with signing provider if available
-			if (this.signingProvider) {
-				await this.nostr.dm.updateSigningProvider(this.signingProvider);
-			}
-			
-			// Get or create conversation with recipient (asynchronous)
+			// Get or create conversation with recipient - this triggers lazy loading
 			const conversation = await this.nostr.dm.with(recipientPubkey);
 			
 			// Send encrypted message
@@ -248,15 +242,8 @@ export class NostrService {
 
 	async getDMConversation(pubkey: string) {
 		try {
-			// Ensure signing is initialized
-			await this.nostr.initializeSigning();
-			
-			// Update DM module with signing provider
-			if (this.signingProvider) {
-				await this.nostr.dm.updateSigningProvider(this.signingProvider);
-			}
-			
 			// This returns the DMConversation instance with reactive stores
+			// Lazy loading is triggered automatically by dm.with()
 			const conversation = await this.nostr.dm.with(pubkey);
 			
 			this.logger.info('Retrieved DM conversation instance', { 
@@ -274,23 +261,10 @@ export class NostrService {
 	
 	async startDMInboxSubscription(): Promise<void> {
 		try {
-			// Initialize signing first
-			await this.nostr.initializeSigning();
+			// Start the universal gift wrap subscription (lazy loading)
+			await this.nostr.startUniversalGiftWrapSubscription();
 			
-			// Update DM module with signing provider
-			if (this.signingProvider) {
-				await this.nostr.dm.updateSigningProvider(this.signingProvider);
-			}
-			
-			// Start a subscription for incoming gift-wrapped DMs (NIP-17)
-			// This will listen for kind 1059 events directed at our pubkey
-			const ourPubkey = this.signingProvider ? 
-				await this.signingProvider.getPublicKey() : 
-				await this.nostr.getExtensionPubkey();
-			
-			// The DM module automatically handles inbox subscriptions when conversations are created
-			// For now, we'll rely on the per-conversation subscriptions
-			this.logger.info('DM inbox subscription prepared (handled per-conversation)');
+			this.logger.info('Universal gift wrap subscription active');
 		} catch (error) {
 			this.logger.error('Failed to start DM inbox subscription', { error });
 			throw error;
@@ -339,8 +313,19 @@ export class NostrService {
 	// =============================================================================
 
 	query() {
-		// Get subscription manager through clean public API
-		return query(this.nostr.getSubscriptionManager());
+		// Use the subscription manager for now until query/sub APIs are confirmed available
+		return this.nostr.getSubscriptionManager();
+	}
+
+	// =============================================================================
+	// Event Builder API
+	// =============================================================================
+
+	/**
+	 * Access the FluentEventBuilder API
+	 */
+	events() {
+		return this.nostr.events;
 	}
 
 
@@ -358,6 +343,79 @@ export class NostrService {
 
 	getConnectedRelays(): string[] {
 		return this.nostr.connectedRelays;
+	}
+
+	/**
+	 * Use browser extension for signing (User Control)
+	 */
+	async useExtensionSigner(): Promise<ServiceResult<string>> {
+		try {
+			const result = await this.nostr.useExtensionSigner();
+			
+			if (result.success) {
+				this.logger.info('Switched to extension signer', { 
+					pubkey: result.pubkey?.substring(0, 16) + '...' 
+				});
+				
+				return {
+					success: true,
+					data: result.pubkey || ''
+				};
+			} else {
+				return {
+					success: false,
+					error: errorProcessor.process(new Error(result.error))
+				};
+			}
+		} catch (error) {
+			const appError = createNostrError('Failed to use extension signer');
+			this.logger.logError(appError);
+			
+			return {
+				success: false,
+				error: errorProcessor.process(error)
+			};
+		}
+	}
+
+	/**
+	 * Use local key signer (User Control)
+	 */
+	async useLocalKeySigner(): Promise<ServiceResult<string>> {
+		try {
+			const result = await this.nostr.useLocalKeySigner();
+			
+			if (result.success) {
+				this.logger.info('Switched to local key signer', { 
+					pubkey: result.pubkey?.substring(0, 16) + '...' 
+				});
+				
+				return {
+					success: true,
+					data: result.pubkey || ''
+				};
+			} else {
+				return {
+					success: false,
+					error: errorProcessor.process(new Error(result.error))
+				};
+			}
+		} catch (error) {
+			const appError = createNostrError('Failed to use local key signer');
+			this.logger.logError(appError);
+			
+			return {
+				success: false,
+				error: errorProcessor.process(error)
+			};
+		}
+	}
+
+	/**
+	 * Get current signing method info
+	 */
+	getSigningInfo() {
+		return this.nostr.getSigningInfo();
 	}
 
 	/**
@@ -379,20 +437,18 @@ export class NostrService {
 			});
 			this.signingProvider = tempSigner;
 			
-			// Get the new unique public and private keys
+			// Get the new unique public key
 			const tempPublicKey = await tempSigner.getPublicKey();
-			const tempPrivateKey = await tempSigner.getPrivateKeyForEncryption();
+			// Note: Private key is handled internally by the signing provider
 			
-			// Clear any old temp data and store fresh keys
+			// Clear any old temp data and store fresh public key
 			sessionStorage.removeItem('temp_private_key');
 			sessionStorage.removeItem('temp_public_key');
-			sessionStorage.setItem('temp_private_key', tempPrivateKey);
 			sessionStorage.setItem('temp_public_key', tempPublicKey);
 			sessionStorage.setItem('temp_signer_active', 'true');
 			
 			this.logger.info('New temporary account created with unique keys', { 
-				publicKey: tempPublicKey.substring(0, 16) + '...',
-				privateKeyPrefix: tempPrivateKey.substring(0, 8) + '...'
+				publicKey: tempPublicKey.substring(0, 16) + '...'
 			} as any);
 			
 			return {

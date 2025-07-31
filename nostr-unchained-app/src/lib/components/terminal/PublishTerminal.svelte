@@ -1,223 +1,64 @@
 <!--
   Publish Terminal Component
   
-  Interactive demo for nostr-unchained publish functionality
-  Real publishing to ws://umbrel.local:4848 with live feedback
+  Showcases the elegant nostr-unchained publish API
+  Now with the powerful PublishCard component
 -->
 
 <script lang="ts">
-	import { getService } from '../../services/ServiceContainer.js';
-	import { createContextLogger } from '../../utils/Logger.js';
-	import Button from '../ui/Button.svelte';
-	import type { NostrService } from '../../services/NostrService.js';
-	import type { PublishResult } from 'nostr-unchained';
-
-	// =============================================================================
-	// Component State
-	// =============================================================================
-
-	let content = $state('Hello from Nostr Unchained! 🚀');
-	let isPublishing = $state(false);
-	let publishResult = $state<PublishResult | null>(null);
-	let error = $state<string | null>(null);
-	let publishHistory = $state<Array<{
-		content: string;
-		result: PublishResult;
-		timestamp: number;
-	}>>([]);
-
-	const logger = createContextLogger('PublishTerminal');
-
-	// =============================================================================
-	// Publishing Logic
-	// =============================================================================
-
-	async function publishNote(): Promise<void> {
-		if (!content.trim()) {
-			error = 'Content cannot be empty';
-			return;
-		}
-
-		isPublishing = true;
-		error = null;
-		publishResult = null;
-
-		try {
-			const nostrService = await getService<NostrService>('nostr');
-			logger.info('Publishing note...', { content: content.substring(0, 50) });
-
-			const result = await nostrService.publish(content);
-			
-			publishResult = result;
-			
-			if (result.success) {
-				// Add to history
-				publishHistory.unshift({
-					content,
-					result,
-					timestamp: Date.now()
-				});
-
-				// Keep only last 10 items
-				if (publishHistory.length > 10) {
-					publishHistory = publishHistory.slice(0, 10);
-				}
-
-				logger.info('Note published successfully', { 
-					eventId: result.eventId,
-					relays: result.relays?.length 
-				});
-				
-				// Clear content after successful publish
-				content = '';
-			} else {
-				error = result.error?.message || 'Failed to publish note';
-				logger.error('Publish failed', { error });
-			}
-
-		} catch (err) {
-			const errorMsg = err instanceof Error ? err.message : 'Unknown error';
-			error = errorMsg;
-			logger.error('Publish error', { error: err });
-		} finally {
-			isPublishing = false;
-		}
+	import PublishCard from './PublishCard.svelte';
+	
+	// Props
+	interface Props {
+		nostr?: any; // NostrUnchained instance
 	}
-
-	function clearHistory(): void {
-		publishHistory = [];
-		publishResult = null;
-		error = null;
-	}
-
-	// =============================================================================
-	// Helper Functions
-	// =============================================================================
-
-	function formatTimestamp(timestamp: number): string {
-		return new Date(timestamp).toLocaleTimeString();
-	}
-
-	function formatEventId(eventId?: string): string {
-		if (!eventId) return 'N/A';
-		return `${eventId.substring(0, 8)}...${eventId.substring(-8)}`;
-	}
+	
+	let { nostr }: Props = $props();
 </script>
 
-<!--
-  Template
-  
-  Interactive publishing interface with real-time feedback
--->
 <div class="publish-terminal">
 	<div class="terminal-header">
 		<h3>📝 Publishing Terminal</h3>
-		<p>Test <code>nostr.publish()</code> with real relay connection</p>
+		<p>Publish any Nostr event with the fluent <code>nostr-unchained</code> API</p>
 	</div>
 
-	<div class="publish-form">
-		<div class="content-input">
-			<label for="note-content">Note Content:</label>
-			<textarea 
-				id="note-content"
-				bind:value={content}
-				placeholder="What's on your mind? Test nostr-unchained publishing..."
-				rows="4"
-				disabled={isPublishing}
-			></textarea>
-		</div>
-
-		<div class="publish-actions">
-			<Button 
-				variant="primary" 
-				onclick={publishNote} 
-				disabled={isPublishing || !content.trim()}
-			>
-				{#if isPublishing}
-					🔄 Publishing...
-				{:else}
-					📤 Publish to Relay
-				{/if}
-			</Button>
-
-			{#if publishHistory.length > 0}
-				<Button variant="ghost" onclick={clearHistory}>
-					🗑️ Clear History
-				</Button>
-			{/if}
-		</div>
-	</div>
-
-	<!-- Live Result Display -->
-	{#if error}
-		<div class="result-panel error">
-			<h4>❌ Publish Failed</h4>
-			<pre>{error}</pre>
-		</div>
-	{/if}
-
-	{#if publishResult && publishResult.success}
-		<div class="result-panel success">
-			<h4>✅ Published Successfully</h4>
-			<div class="result-details">
-				<div class="detail-item">
-					<span class="label">Event ID:</span>
-					<code>{formatEventId(publishResult.eventId)}</code>
-				</div>
-				<div class="detail-item">
-					<span class="label">Relays:</span>
-					<span>{publishResult.relays?.length || 0} connected</span>
-				</div>
-				{#if publishResult.relays}
-					<div class="relay-status">
-						{#each publishResult.relays as relay}
-							<div class="relay-item">
-								<span class="relay-url">{relay.url}</span>
-								<span class="relay-result {relay.success ? 'success' : 'error'}">
-									{relay.success ? '✅' : '❌'}
-								</span>
-							</div>
-						{/each}
-					</div>
-				{/if}
-			</div>
-		</div>
-	{/if}
-
-	<!-- Publish History -->
-	{#if publishHistory.length > 0}
-		<div class="history-panel">
-			<h4>📚 Recent Publications</h4>
-			<div class="history-list">
-				{#each publishHistory as item}
-					<div class="history-item">
-						<div class="history-header">
-							<span class="timestamp">{formatTimestamp(item.timestamp)}</span>
-							<code class="event-id">{formatEventId(item.result.eventId)}</code>
-						</div>
-						<div class="history-content">
-							{item.content.substring(0, 100)}{item.content.length > 100 ? '...' : ''}
-						</div>
-						<div class="history-relays">
-							{item.result.relays?.length || 0} relays
-						</div>
-					</div>
-				{/each}
-			</div>
-		</div>
-	{/if}
-
-	<!-- Developer Info -->
-	<div class="dev-info">
-		<h4>🔧 Developer Info</h4>
-		<div class="code-example">
-			<pre><code>// nostr-unchained usage:
-const nostr = new NostrUnchained();
-const result = await nostr.publish("{content}");
-console.log(result.eventId, result.relays);</code></pre>
-		</div>
-	</div>
+	<PublishCard {nostr} />
 </div>
+
+<style>
+	.publish-terminal {
+		width: 100%;
+		max-width: none;
+		padding: 0;
+	}
+
+	.terminal-header {
+		margin-bottom: var(--spacing-lg);
+		text-align: center;
+	}
+
+	.terminal-header h3 {
+		margin: 0 0 var(--spacing-sm) 0;
+		color: var(--color-text);
+		font-size: var(--text-xl);
+		font-weight: 600;
+	}
+
+	.terminal-header p {
+		margin: 0;
+		color: var(--color-text-muted);
+		font-size: var(--text-base);
+	}
+
+	.terminal-header code {
+		background: var(--color-background);
+		padding: 2px 6px;
+		border-radius: var(--radius-sm);
+		font-family: var(--font-mono);
+		font-size: 0.9em;
+		color: var(--color-primary);
+	}
+</style>
 
 <style>
 	.publish-terminal {

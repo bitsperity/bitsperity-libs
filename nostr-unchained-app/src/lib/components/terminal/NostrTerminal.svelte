@@ -7,19 +7,18 @@
 
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { getService } from '../../services/ServiceContainer.js';
 	import { createContextLogger } from '../../utils/Logger.js';
 	import EventCard from './EventCard.svelte';
 	import QueryBuilder from './QueryBuilder.svelte';
 	import PublishCard from './PublishCard.svelte';
 	import DMChat from './DMChat.svelte';
-	import type { NostrService } from '../../services/NostrService.js';
 	import type { AuthState } from '../../types/app.js';
 
-	let { authState, onLogout, onShowKeys }: {
+	let { authState, onLogout, onShowKeys, nostr }: {
 		authState: AuthState;
 		onLogout: () => void;
 		onShowKeys: () => void;
+		nostr: any; // NostrUnchained instance
 	} = $props();
 
 	// =============================================================================
@@ -45,13 +44,25 @@
 
 	async function initializeTerminal() {
 		try {
-			const nostrService = await getService<NostrService>('nostr');
-			await nostrService.connect();
+			// Wait for connection to be established
+			let attempts = 0;
+			while (nostr.connectedRelays.length === 0 && attempts < 10) {
+				console.log('⏳ Waiting for relay connection... attempt', attempts + 1);
+				await new Promise(resolve => setTimeout(resolve, 500));
+				attempts++;
+			}
 			
-			const status = await nostrService.getConnectionStatus();
-			connectionStatus = status;
+			// Update connection status
+			connectionStatus = {
+				isConnected: nostr.connectedRelays.length > 0,
+				connectedRelays: nostr.connectedRelays,
+				failedRelays: []
+			};
 			
-			logger.info('Terminal initialized', { status });
+			logger.info('Terminal initialized with nostr-unchained', { 
+				connectedRelays: nostr.connectedRelays,
+				isConnected: connectionStatus.isConnected
+			});
 		} catch (error) {
 			logger.error('Failed to initialize terminal', { error });
 		}
@@ -59,21 +70,51 @@
 
 	async function loadInitialEvents() {
 		isLoading = true;
+		
+		// Wait for connection first
+		if (nostr.connectedRelays.length === 0) {
+			console.log('⏳ Waiting for relay connection...');
+			// Wait a bit for connection
+			await new Promise(resolve => setTimeout(resolve, 1000));
+		}
+		
 		try {
-			const nostrService = await getService<NostrService>('nostr');
+			// 🚀 SHOWCASE: Universal Cache Architecture - Identical APIs!
+			// Use nostr.query() for instant cache access
+			const cachedEvents = nostr.query().kinds([1]).limit(20).execute();
+			console.log('📊 Cache query result:', cachedEvents);
 			
-			// Load recent text notes by default
-			const recentEvents = await nostrService.query()
-				.kinds([1])
-				.limit(20)
-				.execute();
-
-			events = recentEvents || [];
-			logger.info('Loaded initial events', { count: events.length });
+			// Check cache first
+			if (cachedEvents && cachedEvents.current && cachedEvents.current.length > 0) {
+				events = cachedEvents.current.sort((a: any, b: any) => b.created_at - a.created_at);
+				console.log('⚡ Loaded from cache:', events.length);
+			}
+			
+			// Use nostr.sub() for live relay updates
+			console.log('📡 Starting live subscription...');
+			const liveStorePromise = nostr.sub().kinds([1]).limit(20).execute();
+			
+			// Handle the promise properly
+			const liveStore = await liveStorePromise;
+			console.log('📡 Live subscription store:', liveStore);
+			
+			// Subscribe to the reactive store (Svelte magic!)
+			if (liveStore && liveStore.subscribe) {
+				liveStore.subscribe((liveEvents: any[]) => {
+					console.log('🔥 Live events received:', liveEvents?.length || 0);
+					if (liveEvents && liveEvents.length > 0) {
+						events = liveEvents.sort((a: any, b: any) => b.created_at - a.created_at);
+					}
+					isLoading = false;
+				});
+			} else {
+				isLoading = false;
+			}
+			
+			logger.info('🎯 Using nostr-unchained Universal Cache Architecture!');
 		} catch (error) {
-			logger.error('Failed to load events', { error });
+			logger.error('Failed to load events with nostr-unchained', { error });
 			events = [];
-		} finally {
 			isLoading = false;
 		}
 	}
@@ -89,48 +130,55 @@
 		events = [];
 		
 		try {
-			const nostrService = await getService<NostrService>('nostr');
-			let queryBuilder = nostrService.query();
-
-			// Apply filters
-			for (const filter of currentQuery.filters) {
-				switch (filter.type) {
+			// 🎯 BUILD ELEGANT FLUENT QUERY
+			let queryBuilder = nostr.sub().limit(currentQuery.limit);
+			
+			// Apply filters with fluent API
+			for (const filterItem of currentQuery.filters) {
+				switch (filterItem.type) {
 					case 'kind':
-						queryBuilder = queryBuilder.kinds([filter.value]);
+						queryBuilder = queryBuilder.kinds([filterItem.value]);
 						break;
 					case 'author':
-						queryBuilder = queryBuilder.authors([filter.value]);
+						queryBuilder = queryBuilder.authors([filterItem.value]);
 						break;
 					case 'since':
-						queryBuilder = queryBuilder.since(filter.value);
-						break;
-					case 'limit':
-						queryBuilder = queryBuilder.limit(filter.value);
+						queryBuilder = queryBuilder.since(filterItem.value);
 						break;
 				}
 			}
-
-			queryBuilder = queryBuilder.limit(currentQuery.limit);
-			const results = await queryBuilder.execute();
 			
-			events = results || [];
-			logger.info('Query executed', { count: events.length, query: currentQuery });
+			// Execute and get reactive store
+			const queryStore = queryBuilder.execute();
+			console.log('🔍 Fluent query executed:', queryBuilder);
+			
+			// Subscribe to reactive store
+			queryStore.subscribe((queryEvents: any[]) => {
+				console.log('🎯 Query results:', queryEvents.length);
+				events = queryEvents.sort((a: any, b: any) => b.created_at - a.created_at);
+				isLoading = false;
+			});
+			
+			logger.info('✨ Fluent query with reactive stores!', { query: currentQuery });
 		} catch (error) {
 			logger.error('Query execution failed', { error });
 			events = [];
-		} finally {
 			isLoading = false;
 		}
 	}
 
 	async function handlePublish(content: string) {
 		try {
-			const nostrService = await getService<NostrService>('nostr');
-			const result = await nostrService.publish(content);
+			// 🚀 SHOWCASE: Zero-config publishing!
+			const result = await nostr.publish(content);
+			console.log('📝 Published with nostr-unchained:', result);
 			
 			if (result.success) {
-				// Refresh events to show new post
-				await loadInitialEvents();
+				logger.info('✨ Published successfully!', { 
+					eventId: result.eventId,
+					relayCount: result.relayResults.length 
+				});
+				// Events will automatically update via reactive stores!
 			}
 			
 			return result;
@@ -280,7 +328,7 @@
 			<DMChat {authState} />
 		{:else}
 			<!-- Publish Interface -->
-			<PublishCard onPublish={handlePublish} />
+			<PublishCard {nostr} />
 		{/if}
 	</div>
 </div>
