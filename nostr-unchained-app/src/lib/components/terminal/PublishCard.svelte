@@ -137,85 +137,111 @@
 </script>
 
 <div class="publish-card">
-	<!-- Mode Toggle -->
-	<div class="mode-tabs">
-		<button 
-			type="button"
-			class="tab"
-			class:active={mode === 'builder'}
-			onclick={() => mode = 'builder'}
-		>
-			📝 Builder
-		</button>
-		<button 
-			type="button"
-			class="tab"
-			class:active={mode === 'json'}
-			onclick={() => mode = 'json'}
-		>
-			📄 JSON
-		</button>
-	</div>
-
-	{#if mode === 'builder'}
-		<!-- Builder Mode -->
-		<div class="form">
-			<div class="field">
-				<label>Kind</label>
-				<input type="number" bind:value={kind} min="0" max="65535" />
-				<small>0-65535 (1=note, 0=profile, 7=reaction)</small>
-			</div>
-
-			<div class="field">
-				<label>Content</label>
-				<textarea bind:value={content} rows="4" placeholder="Event content..."></textarea>
-			</div>
-
-			<div class="field">
-				<label>Tags (JSON)</label>
-				<textarea 
-					bind:value={tagsJson} 
-					rows="3" 
-					class="mono"
-					placeholder='[["e", "event-id"], ["p", "pubkey"]]'
-				></textarea>
-				<small>Array of arrays: [["key", "value1", "value2"]]</small>
-			</div>
-
-			<div class="field">
-				<label>Timestamp (optional)</label>
-				<div class="timestamp-row">
-					<input type="number" bind:value={timestamp} placeholder="Unix timestamp" />
-					<button type="button" class="now-btn" onclick={setNow}>Now</button>
-				</div>
-			</div>
-		</div>
-	{:else}
-		<!-- JSON Mode -->
-		<div class="form">
-			<div class="field">
-				<label>Event JSON</label>
-				<textarea 
-					bind:value={jsonInput} 
-					rows="10"
-					class="mono"
-					placeholder="Paste event JSON..."
-				></textarea>
-			</div>
-			<button type="button" class="load-btn" onclick={loadFromJson}>
-				Load to Builder
+	<!-- Header -->
+	<div class="card-header">
+		<h2 class="card-title">Publish Event</h2>
+		<div class="mode-toggle">
+			<button 
+				type="button"
+				class="mode-btn"
+				class:active={mode === 'builder'}
+				onclick={() => mode = 'builder'}
+			>
+				Builder
+			</button>
+			<button 
+				type="button"
+				class="mode-btn"
+				class:active={mode === 'json'}
+				onclick={() => mode = 'json'}
+			>
+				JSON
 			</button>
 		</div>
-	{/if}
-
-	<!-- Preview -->
-	<div class="preview">
-		<h3>Preview</h3>
-		<pre class="preview-json">{JSON.stringify(eventObject, null, 2)}</pre>
 	</div>
 
-	<!-- Publish Button -->
-	<div class="actions">
+	<div class="card-content">
+		{#if mode === 'builder'}
+			<!-- Builder Mode -->
+			<div class="form-grid">
+				<div class="form-row">
+					<div class="field">
+						<label>Event Type</label>
+						<div class="input-group">
+							<input type="number" bind:value={kind} min="0" max="65535" class="kind-input" />
+							<span class="input-help">1=note, 0=profile, 7=reaction</span>
+						</div>
+					</div>
+				</div>
+
+				<div class="field">
+					<label>Content</label>
+					<textarea 
+						bind:value={content} 
+						rows="4" 
+						placeholder="What's happening?"
+						class="content-input"
+					></textarea>
+				</div>
+
+				<div class="field">
+					<label>Tags</label>
+					<textarea 
+						bind:value={tagsJson} 
+						rows="3" 
+						class="tags-input"
+						placeholder='[["e", "event-id"], ["p", "pubkey"]]'
+					></textarea>
+					<small class="field-help">JSON array format: [["key", "value1", "value2"]]</small>
+				</div>
+
+				<div class="field">
+					<label>Timestamp</label>
+					<div class="timestamp-group">
+						<input 
+							type="number" 
+							bind:value={timestamp} 
+							placeholder="Unix timestamp (optional)"
+							class="timestamp-input"
+						/>
+						<button type="button" class="timestamp-btn" onclick={setNow}>
+							Use Now
+						</button>
+					</div>
+				</div>
+			</div>
+		{:else}
+			<!-- JSON Mode -->
+			<div class="json-editor">
+				<div class="field">
+					<label>Event JSON</label>
+					<textarea 
+						bind:value={jsonInput} 
+						rows="12"
+						class="json-input"
+						placeholder="Paste or edit event JSON..."
+					></textarea>
+				</div>
+				<button type="button" class="load-json-btn" onclick={loadFromJson}>
+					↩️ Load to Builder
+				</button>
+			</div>
+		{/if}
+
+		<!-- Live Preview -->
+		{#if mode === 'builder'}
+			<div class="preview-section">
+				<div class="preview-header">
+					<h3>Live Preview</h3>
+					<span class="preview-badge">JSON</span>
+				</div>
+				<pre class="preview-content">{JSON.stringify(eventObject, null, 2)}</pre>
+			</div>
+		{/if}
+	</div>
+
+	<!-- Actions -->
+	<div class="card-actions">
 		<Button
 			type="button"
 			variant="primary"
@@ -223,208 +249,442 @@
 			disabled={isPublishing}
 			fullWidth
 		>
-			{isPublishing ? 'Publishing...' : `Publish Event (kind ${kind})`}
+			{isPublishing ? '⏳ Publishing...' : `🚀 Publish Event (kind ${kind})`}
 		</Button>
 	</div>
 
-	<!-- Result -->
+	<!-- Status Messages -->
 	{#if result?.success}
-		<div class="result success">
-			✅ Published! Event ID: <code>{result.eventId?.slice(0, 16)}...</code>
+		<div class="status-message success">
+			<div class="status-icon">✅</div>
+			<div class="status-text">
+				<strong>Published successfully!</strong>
+				<code class="event-id">{result.eventId?.slice(0, 16)}...</code>
+			</div>
 		</div>
 	{/if}
 
 	{#if error}
-		<div class="result error">
-			❌ {error}
+		<div class="status-message error">
+			<div class="status-icon">❌</div>
+			<div class="status-text">
+				<strong>Publishing failed</strong>
+				<span>{error}</span>
+			</div>
 		</div>
 	{/if}
 </div>
 
 <style>
+	/* ===== MAIN CARD ===== */
 	.publish-card {
 		background: var(--color-surface);
 		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		padding: var(--spacing-xl);
+		border-radius: var(--radius-xl);
+		padding: 0;
 		margin: 0 auto;
-		max-width: 700px;
+		max-width: 720px;
+		box-shadow: var(--shadow-lg);
+		overflow: hidden;
 	}
 
+	/* ===== HEADER ===== */
+	.card-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-lg);
+		border-bottom: 1px solid var(--color-border-light);
+		background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-background) 100%);
+	}
 
-	.mode-tabs {
+	.card-title {
+		font-size: var(--text-xl);
+		font-weight: 700;
+		color: var(--color-text);
+		margin: 0;
+		letter-spacing: -0.025em;
+	}
+
+	.mode-toggle {
 		display: flex;
 		background: var(--color-background);
-		border-radius: var(--radius-md);
-		padding: 4px;
-		margin-bottom: var(--spacing-lg);
-		gap: 4px;
+		border-radius: var(--radius-lg);
+		padding: 3px;
+		box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
 	}
 
-	.tab {
-		flex: 1;
+	.mode-btn {
 		padding: var(--spacing-sm) var(--spacing-md);
 		border: none;
 		background: transparent;
 		color: var(--color-text-muted);
-		border-radius: var(--radius-sm);
+		border-radius: calc(var(--radius-lg) - 3px);
 		cursor: pointer;
 		transition: all var(--transition-fast);
+		font-weight: 500;
+		font-size: var(--text-sm);
+		min-width: 70px;
 	}
 
-	.tab:hover {
+	.mode-btn:hover {
 		color: var(--color-text);
+		background: rgba(102, 126, 234, 0.05);
 	}
 
-	.tab.active {
-		background: var(--color-surface);
-		color: var(--color-text);
+	.mode-btn.active {
+		background: var(--color-primary);
+		color: white;
 		box-shadow: var(--shadow-sm);
+		transform: translateY(-1px);
 	}
 
-	.form {
+	/* ===== CONTENT ===== */
+	.card-content {
+		padding: var(--spacing-xl);
+	}
+
+	/* ===== BUILDER FORM ===== */
+	.form-grid {
 		display: flex;
 		flex-direction: column;
-		gap: var(--spacing-md);
-		margin-bottom: var(--spacing-lg);
+		gap: var(--spacing-lg);
+	}
+
+	.form-row {
+		display: flex;
+		gap: var(--spacing-lg);
 	}
 
 	.field {
 		display: flex;
 		flex-direction: column;
 		gap: var(--spacing-sm);
+		flex: 1;
 	}
 
 	.field label {
 		font-weight: 600;
 		color: var(--color-text);
 		font-size: var(--text-sm);
+		letter-spacing: 0.025em;
+		text-transform: uppercase;
+		margin-bottom: var(--spacing-xs);
 	}
 
-	.field input,
-	.field textarea {
+	/* ===== INPUT STYLES ===== */
+	.input-group {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-xs);
+	}
+
+	.kind-input {
+		width: 120px;
 		padding: var(--spacing-md);
-		border: 1px solid var(--color-border);
+		border: 2px solid var(--color-border);
+		border-radius: var(--radius-md);
+		background: var(--color-background);
+		color: var(--color-text);
+		font-family: var(--font-mono);
+		font-weight: 600;
+		font-size: var(--text-base);
+		transition: all var(--transition-fast);
+	}
+
+	.content-input,
+	.tags-input,
+	.timestamp-input,
+	.json-input {
+		padding: var(--spacing-md);
+		border: 2px solid var(--color-border);
 		border-radius: var(--radius-md);
 		background: var(--color-background);
 		color: var(--color-text);
 		font-family: inherit;
 		font-size: var(--text-base);
-		transition: border-color var(--transition-fast);
+		transition: all var(--transition-fast);
+		resize: vertical;
 	}
 
-	.field input:focus,
-	.field textarea:focus {
-		outline: none;
-		border-color: var(--color-primary);
-		box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
+	.content-input {
+		min-height: 100px;
+		line-height: 1.6;
 	}
 
-	.field small {
-		color: var(--color-text-muted);
-		font-size: var(--text-xs);
-	}
-
-	.mono {
+	.tags-input,
+	.json-input {
 		font-family: var(--font-mono);
 		font-size: var(--text-sm);
+		line-height: 1.5;
 	}
 
-	.timestamp-row {
+	.json-input {
+		min-height: 300px;
+	}
+
+	.kind-input:focus,
+	.content-input:focus,
+	.tags-input:focus,
+	.timestamp-input:focus,
+	.json-input:focus {
+		outline: none;
+		border-color: var(--color-primary);
+		box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+		transform: translateY(-1px);
+	}
+
+	.input-help {
+		font-size: var(--text-xs);
+		color: var(--color-text-muted);
+		font-family: var(--font-mono);
+		background: var(--color-background);
+		padding: var(--spacing-xs) var(--spacing-sm);
+		border-radius: var(--radius-sm);
+		border: 1px solid var(--color-border-light);
+	}
+
+	.field-help {
+		color: var(--color-text-light);
+		font-size: var(--text-xs);
+		margin-top: var(--spacing-xs);
+	}
+
+	/* ===== TIMESTAMP GROUP ===== */
+	.timestamp-group {
 		display: flex;
 		gap: var(--spacing-sm);
 	}
 
-	.now-btn {
-		padding: var(--spacing-md);
-		border: 1px solid var(--color-border);
+	.timestamp-input {
+		flex: 1;
+		font-family: var(--font-mono);
+	}
+
+	.timestamp-btn {
+		padding: var(--spacing-md) var(--spacing-lg);
+		border: 2px solid var(--color-primary);
 		border-radius: var(--radius-md);
-		background: var(--color-background);
-		color: var(--color-text);
+		background: transparent;
+		color: var(--color-primary);
 		cursor: pointer;
+		font-weight: 600;
 		font-size: var(--text-sm);
 		white-space: nowrap;
+		transition: all var(--transition-fast);
 	}
 
-	.now-btn:hover {
-		background: var(--color-surface);
+	.timestamp-btn:hover {
+		background: var(--color-primary);
+		color: white;
+		transform: translateY(-1px);
+		box-shadow: var(--shadow-md);
 	}
 
-	.load-btn {
-		padding: var(--spacing-sm) var(--spacing-md);
-		border: 1px solid var(--color-border);
+	/* ===== JSON EDITOR ===== */
+	.json-editor {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-lg);
+	}
+
+	.load-json-btn {
+		padding: var(--spacing-md) var(--spacing-lg);
+		border: 2px solid var(--color-accent);
 		border-radius: var(--radius-md);
-		background: var(--color-background);
-		color: var(--color-text);
+		background: transparent;
+		color: var(--color-accent);
 		cursor: pointer;
+		font-weight: 600;
+		font-size: var(--text-sm);
 		align-self: flex-start;
+		transition: all var(--transition-fast);
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-sm);
 	}
 
-	.load-btn:hover {
-		background: var(--color-surface);
+	.load-json-btn:hover {
+		background: var(--color-accent);
+		color: white;
+		transform: translateY(-1px);
+		box-shadow: var(--shadow-md);
 	}
 
-	.preview {
+	/* ===== PREVIEW SECTION ===== */
+	.preview-section {
+		margin-top: var(--spacing-xl);
 		background: var(--color-background);
 		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
-		padding: var(--spacing-md);
-		margin-bottom: var(--spacing-lg);
+		border-radius: var(--radius-lg);
+		overflow: hidden;
+		box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
 	}
 
-	.preview h3 {
-		margin: 0 0 var(--spacing-md) 0;
-		color: var(--color-text);
+	.preview-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: var(--spacing-md) var(--spacing-lg);
+		background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-background) 100%);
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.preview-header h3 {
+		margin: 0;
 		font-size: var(--text-base);
+		font-weight: 600;
+		color: var(--color-text);
 	}
 
-	.preview-json {
+	.preview-badge {
+		font-size: var(--text-xs);
+		font-weight: 600;
+		padding: var(--spacing-xs) var(--spacing-sm);
+		background: var(--color-primary);
+		color: white;
+		border-radius: var(--radius-sm);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+
+	.preview-content {
 		font-family: var(--font-mono);
 		font-size: var(--text-sm);
 		color: var(--color-text-muted);
 		margin: 0;
+		padding: var(--spacing-lg);
 		overflow-x: auto;
-		line-height: 1.5;
+		line-height: 1.6;
+		background: var(--color-background);
 	}
 
-	.actions {
-		margin-bottom: var(--spacing-lg);
+	/* ===== ACTIONS ===== */
+	.card-actions {
+		padding: 0 var(--spacing-xl) var(--spacing-xl);
 	}
 
-	.result {
-		padding: var(--spacing-md);
-		border-radius: var(--radius-md);
+	/* ===== STATUS MESSAGES ===== */
+	.status-message {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--spacing-md);
+		padding: var(--spacing-lg);
+		margin: var(--spacing-lg) var(--spacing-xl) 0;
+		border-radius: var(--radius-lg);
 		font-size: var(--text-sm);
-		margin-top: var(--spacing-md);
+		animation: slideIn 0.3s ease-out;
 	}
 
-	.result.success {
-		background: rgba(34, 197, 94, 0.1);
-		color: rgb(34, 197, 94);
+	@keyframes slideIn {
+		from {
+			opacity: 0;
+			transform: translateY(10px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	.status-message.success {
+		background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%);
 		border: 1px solid rgba(34, 197, 94, 0.2);
+		color: rgb(21, 128, 61);
 	}
 
-	.result.error {
-		background: rgba(239, 68, 68, 0.1);
-		color: rgb(239, 68, 68);
+	.status-message.error {
+		background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
 		border: 1px solid rgba(239, 68, 68, 0.2);
+		color: rgb(185, 28, 28);
 	}
 
-	.result code {
+	.status-icon {
+		flex-shrink: 0;
+		font-size: var(--text-lg);
+	}
+
+	.status-text {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-xs);
+	}
+
+	.status-text strong {
+		font-weight: 600;
+	}
+
+	.event-id {
 		font-family: var(--font-mono);
 		background: rgba(0, 0, 0, 0.1);
-		padding: 2px 4px;
-		border-radius: 3px;
+		padding: var(--spacing-xs) var(--spacing-sm);
+		border-radius: var(--radius-sm);
+		font-size: var(--text-xs);
+		border: 1px solid rgba(0, 0, 0, 0.1);
 	}
 
+	/* ===== RESPONSIVE DESIGN ===== */
 	@media (max-width: 768px) {
 		.publish-card {
 			margin: var(--spacing-md);
+			border-radius: var(--radius-lg);
+		}
+
+		.card-header {
+			flex-direction: column;
+			gap: var(--spacing-md);
+			align-items: stretch;
+		}
+
+		.card-title {
+			text-align: center;
+		}
+
+		.mode-toggle {
+			align-self: center;
+		}
+
+		.form-row {
+			flex-direction: column;
+		}
+
+		.timestamp-group {
+			flex-direction: column;
+		}
+
+		.card-content,
+		.card-actions {
 			padding: var(--spacing-lg);
 		}
 
-		.timestamp-row {
-			flex-direction: column;
+		.status-message {
+			margin: var(--spacing-lg) var(--spacing-lg) 0;
+		}
+	}
+
+	/* ===== ACCESSIBILITY ===== */
+	@media (prefers-reduced-motion: reduce) {
+		.mode-btn.active,
+		.timestamp-btn:hover,
+		.load-json-btn:hover,
+		.kind-input:focus,
+		.content-input:focus,
+		.tags-input:focus,
+		.timestamp-input:focus,
+		.json-input:focus {
+			transform: none;
+		}
+
+		.status-message {
+			animation: none;
+		}
+	}
+
+	@media (prefers-contrast: high) {
+		.publish-card,
+		.preview-section,
+		.status-message {
+			border-width: 2px;
 		}
 	}
 </style>

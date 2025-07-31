@@ -510,7 +510,7 @@
 	.conv-time {
 		font-size: 0.75rem;
 		color: #64748b;
-		font-family: 'SF Mono', monospace;
+		font-family: var(--font-mono);
 	}
 
 	.conv-preview {
@@ -585,7 +585,7 @@
 		font-size: 0.75rem;
 		opacity: 0.7;
 		margin-top: 0.25rem;
-		font-family: 'SF Mono', monospace;
+		font-family: var(--font-mono);
 	}
 
 	/* Message Input */

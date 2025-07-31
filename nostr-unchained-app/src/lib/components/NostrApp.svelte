@@ -8,6 +8,7 @@
 	import type { NostrUnchained } from 'nostr-unchained';
 	import NostrTerminal from './terminal/NostrTerminal.svelte';
 	import DMChat from './terminal/DMChat.svelte';
+	import PublishCard from './terminal/PublishCard.svelte';
 
 	// =============================================================================
 	// Props - Clean Dependency Injection
@@ -111,10 +112,7 @@
 			<DMChat {authState} {nostr} />
 		{:else if currentView === 'publish'}
 			<div class="publish-view">
-				<h2>📝 Publish to Nostr</h2>
-				<p>Publishing interface coming soon...</p>
-				<p>This will showcase NostrUnchained's fluent event builder:</p>
-				<code>await nostr.events.note("Hello Nostr!").publish();</code>
+				<PublishCard {nostr} />
 			</div>
 		{/if}
 	</main>
@@ -125,18 +123,18 @@
 		min-height: 100vh;
 		display: flex;
 		flex-direction: column;
-		background: #1a1a1a;
-		color: white;
+		background: var(--color-background);
+		color: var(--color-text);
 	}
 
 	.app-header {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 1rem 2rem;
-		background: rgba(0, 0, 0, 0.3);
+		padding: var(--spacing-lg) var(--spacing-xl);
+		background: var(--color-surface);
 		backdrop-filter: blur(10px);
-		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+		border-bottom: 1px solid var(--color-border);
 	}
 
 	.user-info {
@@ -163,7 +161,7 @@
 
 	.user-key {
 		font-weight: 600;
-		font-family: 'Courier New', monospace;
+		font-family: var(--font-mono);
 	}
 
 	.user-signer {
@@ -174,46 +172,49 @@
 
 	.app-nav {
 		display: flex;
-		gap: 0.5rem;
-		background: rgba(255, 255, 255, 0.1);
-		padding: 0.5rem;
-		border-radius: 1rem;
+		gap: var(--spacing-sm);
+		background: var(--color-background);
+		padding: var(--spacing-sm);
+		border-radius: var(--radius-xl);
+		border: 1px solid var(--color-border);
 	}
 
 	.nav-btn {
 		background: transparent;
 		border: none;
-		color: white;
-		padding: 0.75rem 1.5rem;
-		border-radius: 0.75rem;
+		color: var(--color-text-muted);
+		padding: var(--spacing-md) var(--spacing-lg);
+		border-radius: var(--radius-lg);
 		cursor: pointer;
-		transition: all 0.2s ease;
-		font-size: 0.9rem;
+		transition: all var(--transition-fast);
+		font-size: var(--text-sm);
 		font-weight: 500;
 	}
 
 	.nav-btn:hover {
-		background: rgba(255, 255, 255, 0.1);
+		background: var(--color-surface);
+		color: var(--color-text);
 	}
 
 	.nav-btn.active {
-		background: rgba(255, 255, 255, 0.2);
-		color: #fff;
+		background: var(--color-primary);
+		color: var(--color-primary-text);
 	}
 
 	.logout-btn {
-		background: rgba(255, 75, 75, 0.2);
-		border: 1px solid rgba(255, 75, 75, 0.3);
-		color: white;
-		padding: 0.5rem 1rem;
-		border-radius: 0.5rem;
+		background: transparent;
+		border: 1px solid var(--color-danger);
+		color: var(--color-danger);
+		padding: var(--spacing-sm) var(--spacing-md);
+		border-radius: var(--radius-md);
 		cursor: pointer;
-		transition: all 0.2s ease;
-		font-size: 0.9rem;
+		transition: all var(--transition-fast);
+		font-size: var(--text-sm);
 	}
 
 	.logout-btn:hover {
-		background: rgba(255, 75, 75, 0.3);
+		background: var(--color-danger);
+		color: var(--color-danger-text);
 	}
 
 	.app-main {
@@ -222,25 +223,12 @@
 	}
 
 	.publish-view {
-		padding: 2rem;
-		text-align: center;
-	}
-
-	.publish-view h2 {
-		margin-bottom: 1rem;
-	}
-
-	.publish-view p {
-		margin-bottom: 1rem;
-		opacity: 0.8;
-	}
-
-	.publish-view code {
-		background: rgba(255, 255, 255, 0.1);
-		padding: 0.5rem 1rem;
-		border-radius: 0.5rem;
-		font-family: 'Courier New', monospace;
-		display: inline-block;
+		padding: var(--spacing-xl);
+		display: flex;
+		justify-content: center;
+		align-items: flex-start;
+		min-height: 100%;
+		background: transparent; /* Let the global background show through */
 	}
 
 	@media (max-width: 768px) {

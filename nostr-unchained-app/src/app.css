@@ -5,13 +5,13 @@
  */
 
 :root {
-	/* Colors */
+	/* Colors - Modern Dark Theme as Default */
 	--color-primary: #667eea;
 	--color-primary-hover: #5a67d8;
 	--color-primary-text: white;
 	
-	--color-secondary: #f7fafc;
-	--color-secondary-text: #2d3748;
+	--color-secondary: #2d3748;
+	--color-secondary-text: #f7fafc;
 	
 	--color-accent: #ed8936;
 	--color-accent-hover: #dd6b20;
@@ -20,14 +20,14 @@
 	--color-danger-hover: #c53030;
 	--color-danger-text: white;
 	
-	--color-text: #2d3748;
-	--color-text-muted: #4a5568;
-	--color-text-light: #a0aec0;
+	--color-text: #f7fafc;
+	--color-text-muted: #a0aec0;
+	--color-text-light: #4a5568;
 	
-	--color-background: #ffffff;
-	--color-surface: #f7fafc;
-	--color-border: #e2e8f0;
-	--color-border-light: #edf2f7;
+	--color-background: #1a202c;
+	--color-surface: #2d3748;
+	--color-border: #4a5568;
+	--color-border-light: #2d3748;
 	
 	/* Shadows */
 	--shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -73,22 +73,7 @@
 	--transition-slow: 350ms ease-in-out;
 }
 
-/* Dark mode variables */
-@media (prefers-color-scheme: dark) {
-	:root {
-		--color-text: #f7fafc;
-		--color-text-muted: #a0aec0;
-		--color-text-light: #4a5568;
-		
-		--color-background: #1a202c;
-		--color-surface: #2d3748;
-		--color-border: #4a5568;
-		--color-border-light: #2d3748;
-		
-		--color-secondary: #2d3748;
-		--color-secondary-text: #f7fafc;
-	}
-}
+/* Unified dark theme - no more mode switching chaos */
 
 /* Reset and base styles */
 *,

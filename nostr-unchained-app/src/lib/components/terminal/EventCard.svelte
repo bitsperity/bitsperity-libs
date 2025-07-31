@@ -430,7 +430,7 @@
 	.event-time {
 		font-size: 0.75rem;
 		color: #64748b;
-		font-family: 'SF Mono', monospace;
+		font-family: var(--font-mono);
 	}
 
 	.author-info {
@@ -439,7 +439,7 @@
 
 	.author-key {
 		font-size: 0.75rem;
-		font-family: 'SF Mono', monospace;
+		font-family: var(--font-mono);
 		color: #94a3b8;
 		background: rgba(255, 255, 255, 0.05);
 		padding: 0.25rem 0.5rem;
@@ -600,7 +600,7 @@
 
 	.event-id {
 		font-size: 0.75rem;
-		font-family: 'SF Mono', monospace;
+		font-family: var(--font-mono);
 		color: #64748b;
 		background: none;
 		border: none;

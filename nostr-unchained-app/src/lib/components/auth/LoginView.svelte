@@ -820,7 +820,7 @@
 		border: 2px solid #e2e8f0;
 		border-radius: 8px;
 		font-size: 0.875rem;
-		font-family: 'SF Mono', monospace;
+		font-family: var(--font-mono);
 		background: #f7fafc;
 		resize: vertical;
 		transition: border-color 0.2s ease;

@@ -97,7 +97,7 @@
 <style>
 	.app {
 		min-height: 100vh;
-		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		background: var(--color-background);
 	}
 
 	.signer-selection {
@@ -106,52 +106,55 @@
 		justify-content: center;
 		align-items: center;
 		min-height: 100vh;
-		padding: 2rem;
+		padding: var(--spacing-xl);
 		text-align: center;
-		color: white;
+		color: var(--color-text);
 	}
 
 	.signer-selection h1 {
-		font-size: 3rem;
-		margin-bottom: 1rem;
-		text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+		font-size: var(--text-3xl);
+		margin-bottom: var(--spacing-md);
+		text-shadow: var(--shadow-md);
+		color: var(--color-text);
 	}
 
 	.signer-selection p {
-		font-size: 1.2rem;
-		margin-bottom: 3rem;
-		opacity: 0.9;
+		font-size: var(--text-lg);
+		margin-bottom: var(--spacing-2xl);
+		color: var(--color-text-muted);
 	}
 
 	.signer-options {
 		display: flex;
-		gap: 2rem;
+		gap: var(--spacing-xl);
 		flex-wrap: wrap;
 		justify-content: center;
 	}
 
 	.signer-btn {
-		background: rgba(255, 255, 255, 0.15);
-		border: 2px solid rgba(255, 255, 255, 0.3);
-		border-radius: 1rem;
-		padding: 2rem;
-		color: white;
+		background: var(--color-surface);
+		border: 2px solid var(--color-border);
+		border-radius: var(--radius-xl);
+		padding: var(--spacing-xl);
+		color: var(--color-text);
 		cursor: pointer;
-		transition: all 0.3s ease;
+		transition: all var(--transition-normal);
 		backdrop-filter: blur(10px);
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 0.5rem;
+		gap: var(--spacing-sm);
 		min-width: 200px;
-		font-size: 1.1rem;
+		font-size: var(--text-lg);
 		font-weight: 600;
 	}
 
 	.signer-btn:hover:not(:disabled) {
-		background: rgba(255, 255, 255, 0.25);
-		border-color: rgba(255, 255, 255, 0.5);
+		background: var(--color-primary);
+		border-color: var(--color-primary);
+		color: var(--color-primary-text);
 		transform: translateY(-2px);
+		box-shadow: var(--shadow-lg);
 	}
 
 	.signer-btn:disabled {
@@ -160,27 +163,28 @@
 	}
 
 	.signer-btn span {
-		font-size: 0.9rem;
-		opacity: 0.8;
+		font-size: var(--text-sm);
+		color: var(--color-text-muted);
 		font-weight: normal;
 	}
 
 	.loading, .error {
-		margin-top: 2rem;
-		padding: 1rem 2rem;
-		border-radius: 0.5rem;
+		margin-top: var(--spacing-xl);
+		padding: var(--spacing-md) var(--spacing-xl);
+		border-radius: var(--radius-md);
 		font-weight: 500;
 	}
 
 	.loading {
-		background: rgba(255, 255, 255, 0.15);
-		color: white;
+		background: var(--color-surface);
+		color: var(--color-text);
+		border: 1px solid var(--color-border);
 	}
 
 	.error {
-		background: rgba(255, 75, 75, 0.2);
-		border: 1px solid rgba(255, 75, 75, 0.5);
-		color: #ffcccc;
+		background: var(--color-surface);
+		border: 1px solid var(--color-danger);
+		color: var(--color-danger);
 	}
 </style>
 

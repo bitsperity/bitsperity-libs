@@ -751,7 +751,7 @@
 		border: 1px solid #e2e8f0;
 		border-radius: 6px;
 		font-size: 0.875rem;
-		font-family: monospace;
+		font-family: var(--font-mono);
 	}
 
 	.form-group textarea {
@@ -788,7 +788,7 @@
 
 	.key-display code {
 		flex: 1;
-		font-family: monospace;
+		font-family: var(--font-mono);
 		font-size: 0.75rem;
 		word-break: break-all;
 	}
