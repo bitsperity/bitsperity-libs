@@ -40,6 +40,7 @@ export { FluentEventBuilder, EventsModule } from './events/FluentEventBuilder.js
 export { SubscriptionManager } from './subscription/SubscriptionManager.js';
 export { QueryBuilder, query, createQueryBuilder } from './query/QueryBuilder.js';
 export type { IQueryBuilder } from './query/QueryBuilder.js';
+export type { SubscriptionHandle } from './query/UniversalQueryBuilder.js';
 
 // Day 3 Store exports - Reactive NostrStore system
 export { 

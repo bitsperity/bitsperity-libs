@@ -15,7 +15,7 @@ import { DMModule } from '../dm/api/DMModule.js';
 import { UniversalDMModule } from '../dm/api/UniversalDMModule.js';
 import { SocialModule } from '../social/api/SocialModule.js';
 import { SubscriptionManager } from '../subscription/SubscriptionManager.js';
-import { UniversalEventCache } from '../cache/UniversalEventCache.js';
+import { UniversalEventCache, type CacheStatistics } from '../cache/UniversalEventCache.js';
 import { UniversalQueryBuilder, UniversalSubBuilder } from '../query/UniversalQueryBuilder.js';
 
 import type {
@@ -645,6 +645,20 @@ export class NostrUnchained {
    */
   getStats() {
     return this.relayManager.getStats();
+  }
+
+  /**
+   * Get comprehensive cache statistics for live monitoring
+   * Perfect for DevExplorer real-time dashboards
+   */
+  getCacheStats(): CacheStatistics {
+    const stats = this.cache.getStatistics();
+    // Replace cache listeners count with actual WebSocket subscriptions
+    const activeSubscriptions = this.subscriptionManager.getActiveSubscriptions();
+    return {
+      ...stats,
+      subscribersCount: activeSubscriptions.length
+    };
   }
 
   /**

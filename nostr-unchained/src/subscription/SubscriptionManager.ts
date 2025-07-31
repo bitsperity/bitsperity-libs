@@ -303,6 +303,9 @@ export class SubscriptionManager {
     if (subscription.onClose) {
       subscription.onClose(reason);
     }
+    
+    // Remove subscription from map after closing
+    this.subscriptions.delete(subscriptionId);
   }
 
   /**
@@ -314,6 +317,20 @@ export class SubscriptionManager {
     await Promise.all(
       activeSubscriptions.map(sub => this.close(sub.id, 'closeAll'))
     );
+  }
+
+  /**
+   * Unsubscribe (alias for close) - DevExplorer API compatibility
+   */
+  async unsubscribe(subscriptionId: string): Promise<void> {
+    await this.close(subscriptionId, 'unsubscribe');
+  }
+
+  /**
+   * Unsubscribe all (alias for closeAll) - DevExplorer API compatibility
+   */
+  async unsubscribeAll(): Promise<void> {
+    await this.closeAll();
   }
 
   /**

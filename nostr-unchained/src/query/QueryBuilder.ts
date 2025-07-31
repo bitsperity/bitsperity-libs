@@ -347,6 +347,7 @@ export class QueryBuilder<T extends NostrEvent = NostrEvent> implements IQueryBu
     const filters = this.toFilter();
     const events: T[] = [];
     let isComplete = false;
+    let subscriptionId: string | undefined;
 
     const executeOptions: SubscriptionOptions = {
       ...options,
@@ -356,10 +357,14 @@ export class QueryBuilder<T extends NostrEvent = NostrEvent> implements IQueryBu
           options.onEvent(event);
         }
       },
-      onEose: (relay: string) => {
+      onEose: async (relay: string) => {
         isComplete = true;
         if (options.onEose) {
           options.onEose(relay);
+        }
+        // Close the subscription immediately on EOSE
+        if (subscriptionId) {
+          await this.subscriptionManager!.close(subscriptionId);
         }
       },
       autoClose: true // Auto-close for execute
@@ -371,12 +376,19 @@ export class QueryBuilder<T extends NostrEvent = NostrEvent> implements IQueryBu
       throw new Error(result.error?.message || 'Query execution failed');
     }
 
+    subscriptionId = result.subscription.id;
+
     // Wait for EOSE or timeout
     const timeout = options.timeout || 10000; // Default 10s timeout
     const startTime = Date.now();
     
     while (!isComplete && (Date.now() - startTime) < timeout) {
       await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    // Ensure subscription is closed even on timeout
+    if (subscriptionId && !isComplete) {
+      await this.subscriptionManager.close(subscriptionId);
     }
 
     return events;

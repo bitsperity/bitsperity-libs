@@ -36,10 +36,17 @@
 	let until = $state('');
 	
 	// Explicit subscription/query state
-	let liveSubscription = $state<any>(null);
+	let liveSubscription = $state<import('nostr-unchained').SubscriptionHandle | null>(null);
 	let isSubscribing = $state(false);
 	let cacheQuery = $state<any>(null);
 	let isQueryingCache = $state(false);
+	
+	// Cache statistics & subscription monitoring
+	let cacheStats = $state<any>(null);
+	let activeSubscriptions = $state<any[]>([]);
+	let showCacheStats = $state(false);
+	let showSubsManager = $state(false);
+	let statsInterval: NodeJS.Timeout | null = null;
 	
 	const logger = createContextLogger('DevExplorer');
 	
@@ -94,11 +101,15 @@
 				subBuilder = subBuilder.tags(actualTagType, selectedTags);
 			}
 			
-			// Execute subscription
+			// Execute subscription - returns a handle with excellent DX
 			liveSubscription = await subBuilder.execute();
 			
 			logger.info('🔴 Live subscription started - filling cache', { 
-				filters: { kinds: selectedKinds, authors: selectedAuthors, tags: selectedTags }
+				filters: { kinds: selectedKinds, authors: selectedAuthors, tags: selectedTags },
+				subscriptionId: liveSubscription?.id,
+				liveSubscriptionType: typeof liveSubscription,
+				hasStore: !!liveSubscription?.store,
+				hasStop: typeof liveSubscription?.stop === 'function'
 			});
 			
 		} catch (error) {
@@ -167,14 +178,111 @@
 		}
 	}
 	
-	function stopLiveSubscription() {
+	// =============================================================================
+	// CACHE & SUBSCRIPTION MONITORING
+	// =============================================================================
+
+	function updateCacheStats() {
+		if (!nostr) return;
+		
+		try {
+			cacheStats = nostr.getCacheStats();
+			
+			// Get active subscriptions from SubscriptionManager
+			const subManager = nostr.getSubscriptionManager();
+			if (subManager && typeof subManager.getActiveSubscriptions === 'function') {
+				activeSubscriptions = subManager.getActiveSubscriptions();
+			} else {
+				// Fallback: try to access internal state
+				activeSubscriptions = [];
+			}
+		} catch (error) {
+			logger.error('Failed to get cache stats', { error });
+			cacheStats = null;
+		}
+	}
+
+	function startStatsMonitoring() {
+		if (statsInterval) return;
+		
+		updateCacheStats();
+		statsInterval = setInterval(updateCacheStats, 1000); // Update every second
+		
+		logger.info('Started real-time cache monitoring');
+	}
+
+	function stopStatsMonitoring() {
+		if (statsInterval) {
+			clearInterval(statsInterval);
+			statsInterval = null;
+			logger.info('Stopped cache monitoring');
+		}
+	}
+
+	function toggleCacheStats() {
+		showCacheStats = !showCacheStats;
+		if (showCacheStats) {
+			startStatsMonitoring();
+		} else {
+			stopStatsMonitoring();
+		}
+	}
+
+	function toggleSubsManager() {
+		showSubsManager = !showSubsManager;
+		if (showSubsManager) {
+			startStatsMonitoring(); // Also need stats for subscription info
+		} else if (!showCacheStats) {
+			stopStatsMonitoring();
+		}
+	}
+
+	async function stopSubscription(subId: string) {
+		try {
+			const subManager = nostr.getSubscriptionManager();
+			if (subManager && typeof subManager.unsubscribe === 'function') {
+				await subManager.unsubscribe(subId);
+				logger.info('Stopped subscription', { subId });
+				
+				// If this was our live subscription, clear it
+				if (liveSubscription && liveSubscription.id === subId) {
+					liveSubscription = null;
+				}
+				
+				updateCacheStats(); // Refresh the list
+			}
+		} catch (error) {
+			logger.error('Failed to stop subscription', { subId, error });
+		}
+	}
+
+	async function stopAllSubscriptions() {
+		try {
+			const subManager = nostr.getSubscriptionManager();
+			if (subManager && typeof subManager.unsubscribeAll === 'function') {
+				await subManager.unsubscribeAll();
+				logger.info('Stopped all subscriptions');
+				liveSubscription = null; // Clear our local subscription
+				updateCacheStats();
+			}
+		} catch (error) {
+			logger.error('Failed to stop all subscriptions', { error });
+		}
+	}
+	
+	async function stopLiveSubscription() {
 		if (liveSubscription) {
-			// Stop the subscription if nostr-unchained supports it
-			if (typeof liveSubscription.stop === 'function') {
-				liveSubscription.stop();
+			try {
+				// Use the handle's stop method - excellent DX!
+				await liveSubscription.stop();
+				logger.info('Live subscription stopped', { id: liveSubscription.id });
+			} catch (error) {
+				logger.error('Failed to stop live subscription', { error });
 			}
 			liveSubscription = null;
-			logger.info('Live subscription stopped');
+			
+			// Force immediate stats update
+			updateCacheStats();
 		}
 	}
 	
@@ -257,6 +365,11 @@
 			initialKinds: selectedKinds,
 			cacheState: 'empty - ready for subscription'
 		});
+		
+		// Cleanup on unmount
+		return () => {
+			stopStatsMonitoring();
+		};
 	});
 </script>
 
@@ -331,12 +444,31 @@
 			{#if liveSubscription}
 				<button 
 					class="control-btn stop-btn" 
-					onclick={stopLiveSubscription}
+					onclick={() => stopLiveSubscription()}
 					title="Stop live subscription"
 				>
 					⏹️ Stop
 				</button>
 			{/if}
+			
+			<!-- Monitoring Controls -->
+			<button 
+				class="control-btn stats-btn" 
+				onclick={toggleCacheStats}
+				class:active={showCacheStats}
+				title="Toggle cache statistics"
+			>
+				📊 Cache Stats
+			</button>
+			
+			<button 
+				class="control-btn subs-btn" 
+				onclick={toggleSubsManager}
+				class:active={showSubsManager}
+				title="Manage active subscriptions"
+			>
+				🔧 Manage Subs
+			</button>
 		</div>
 	</div>
 
@@ -473,6 +605,129 @@
 			</div>
 		</div>
 	</div>
+
+	<!-- CACHE STATISTICS PANEL -->
+	{#if showCacheStats && cacheStats}
+		<div class="stats-panel">
+			<h3 class="stats-title">📊 Live Cache Statistics</h3>
+			
+			<div class="stats-grid">
+				<!-- Basic Metrics -->
+				<div class="stat-card">
+					<div class="stat-label">Total Events</div>
+					<div class="stat-value">{cacheStats.totalEvents.toLocaleString()}</div>
+				</div>
+				
+				<div class="stat-card">
+					<div class="stat-label">Memory Usage</div>
+					<div class="stat-value">{cacheStats.memoryUsageMB.toFixed(2)} MB</div>
+				</div>
+				
+				<div class="stat-card">
+					<div class="stat-label">Active Subscriptions</div>
+					<div class="stat-value">{cacheStats.subscribersCount}</div>
+				</div>
+				
+				<!-- Index Metrics -->
+				<div class="stat-card">
+					<div class="stat-label">Kind Index</div>
+					<div class="stat-value">{cacheStats.kindIndexSize} kinds</div>
+				</div>
+				
+				<div class="stat-card">
+					<div class="stat-label">Author Index</div>
+					<div class="stat-value">{cacheStats.authorIndexSize} authors</div>
+				</div>
+				
+				<div class="stat-card">
+					<div class="stat-label">Tag Index</div>
+					<div class="stat-value">{cacheStats.tagIndexSize} tag types</div>
+				</div>
+				
+				<!-- Performance Metrics -->
+				<div class="stat-card">
+					<div class="stat-label">Query Count</div>
+					<div class="stat-value">{cacheStats.queryCount}</div>
+				</div>
+				
+				<div class="stat-card">
+					<div class="stat-label">Avg Query Time</div>
+					<div class="stat-value">{cacheStats.avgQueryTime.toFixed(2)}ms</div>
+				</div>
+				
+				<div class="stat-card">
+					<div class="stat-label">Evicted Events</div>
+					<div class="stat-value">{cacheStats.evictedCount}</div>
+				</div>
+				
+				<!-- Configuration -->
+				<div class="stat-card span-2">
+					<div class="stat-label">Configuration</div>
+					<div class="stat-value-small">
+						Max: {cacheStats.maxEvents.toLocaleString()} events, {cacheStats.maxMemoryMB}MB<br>
+						Policy: {cacheStats.evictionPolicy.toUpperCase()}<br>
+						Age: {Math.floor(cacheStats.cacheAge / 1000)}s
+					</div>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+	<!-- SUBSCRIPTION MANAGEMENT PANEL -->
+	{#if showSubsManager}
+		<div class="subs-panel">
+			<div class="subs-header">
+				<h3 class="subs-title">🔧 Active Subscriptions</h3>
+				<div class="subs-actions">
+					<button class="danger-btn" onclick={stopAllSubscriptions}>
+						🛑 Stop All
+					</button>
+				</div>
+			</div>
+			
+			{#if activeSubscriptions.length === 0}
+				<div class="no-subs">
+					<div class="no-subs-icon">📡</div>
+					<p>No active subscriptions</p>
+				</div>
+			{:else}
+				<div class="subs-list">
+					{#each activeSubscriptions as sub, index}
+						<div class="sub-card">
+							<div class="sub-info">
+								<div class="sub-id">#{sub.id || index}</div>
+								<div class="sub-details">
+									{#if sub.filters}
+										<div class="sub-filters">
+											{#if sub.filters.kinds}
+												<span class="filter-tag">kinds: {JSON.stringify(sub.filters.kinds)}</span>
+											{/if}
+											{#if sub.filters.authors}
+												<span class="filter-tag">authors: {sub.filters.authors.length}</span>
+											{/if}
+											{#if sub.filters['#t']}
+												<span class="filter-tag">tags: {sub.filters['#t'].length}</span>
+											{/if}
+										</div>
+									{/if}
+									<div class="sub-stats">
+										Events: {sub.eventCount || 0} | Age: {Math.floor((Date.now() - (sub.createdAt || Date.now())) / 1000)}s
+									</div>
+								</div>
+							</div>
+							<button 
+								class="sub-stop-btn" 
+								onclick={() => stopSubscription(sub.id || index)}
+								title="Stop this subscription"
+							>
+								❌
+							</button>
+						</div>
+					{/each}
+				</div>
+			{/if}
+		</div>
+	{/if}
 
 	<!-- RESULTS: Events or JSON -->
 	<div class="results-section">
@@ -619,6 +874,38 @@
 	.cache-btn:not(:disabled):hover {
 		background: rgba(99, 102, 241, 0.1);
 		border-color: rgb(99, 102, 241);
+	}
+
+	.stats-btn:not(:disabled) {
+		border-color: rgb(245, 158, 11);
+		color: rgb(245, 158, 11);
+	}
+
+	.stats-btn:not(:disabled):hover {
+		background: rgba(245, 158, 11, 0.1);
+		border-color: rgb(245, 158, 11);
+	}
+
+	.stats-btn.active {
+		background: rgba(245, 158, 11, 0.2);
+		color: rgb(245, 158, 11);
+		border-color: rgb(245, 158, 11);
+	}
+
+	.subs-btn:not(:disabled) {
+		border-color: rgb(168, 85, 247);
+		color: rgb(168, 85, 247);
+	}
+
+	.subs-btn:not(:disabled):hover {
+		background: rgba(168, 85, 247, 0.1);
+		border-color: rgb(168, 85, 247);
+	}
+
+	.subs-btn.active {
+		background: rgba(168, 85, 247, 0.2);
+		color: rgb(168, 85, 247);
+		border-color: rgb(168, 85, 247);
 	}
 
 	.live-btn {
@@ -1006,6 +1293,189 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--spacing-lg);
+	}
+
+	/* ===== CACHE STATISTICS PANEL ===== */
+	.stats-panel {
+		background: var(--color-surface);
+		border: 1px solid rgba(245, 158, 11, 0.3);
+		border-radius: var(--radius-lg);
+		padding: var(--spacing-lg);
+		margin: var(--spacing-lg);
+		margin-bottom: 0;
+	}
+
+	.stats-title {
+		margin: 0 0 var(--spacing-lg) 0;
+		font-size: var(--text-lg);
+		color: rgb(245, 158, 11);
+		font-weight: 600;
+	}
+
+	.stats-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+		gap: var(--spacing-md);
+	}
+
+	.stat-card {
+		background: var(--color-background);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
+		padding: var(--spacing-md);
+		text-align: center;
+	}
+
+	.stat-card.span-2 {
+		grid-column: span 2;
+		text-align: left;
+	}
+
+	.stat-label {
+		font-size: var(--text-sm);
+		color: var(--color-text-muted);
+		margin-bottom: var(--spacing-xs);
+		font-weight: 500;
+	}
+
+	.stat-value {
+		font-size: var(--text-xl);
+		font-weight: 700;
+		color: var(--color-text);
+		font-family: var(--font-mono);
+	}
+
+	.stat-value-small {
+		font-size: var(--text-sm);
+		color: var(--color-text);
+		font-family: var(--font-mono);
+		line-height: 1.4;
+	}
+
+	/* ===== SUBSCRIPTION MANAGEMENT PANEL ===== */
+	.subs-panel {
+		background: var(--color-surface);
+		border: 1px solid rgba(168, 85, 247, 0.3);
+		border-radius: var(--radius-lg);
+		padding: var(--spacing-lg);
+		margin: var(--spacing-lg);
+		margin-bottom: 0;
+	}
+
+	.subs-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: var(--spacing-lg);
+	}
+
+	.subs-title {
+		margin: 0;
+		font-size: var(--text-lg);
+		color: rgb(168, 85, 247);
+		font-weight: 600;
+	}
+
+	.subs-actions {
+		display: flex;
+		gap: var(--spacing-sm);
+	}
+
+	.danger-btn {
+		padding: var(--spacing-sm) var(--spacing-md);
+		border: 1px solid rgb(239, 68, 68);
+		border-radius: var(--radius-md);
+		background: rgba(239, 68, 68, 0.1);
+		color: rgb(239, 68, 68);
+		cursor: pointer;
+		font-weight: 600;
+		font-size: var(--text-sm);
+		transition: all var(--transition-fast);
+	}
+
+	.danger-btn:hover {
+		background: rgba(239, 68, 68, 0.2);
+		transform: translateY(-1px);
+	}
+
+	.no-subs {
+		text-align: center;
+		padding: var(--spacing-2xl);
+		color: var(--color-text-muted);
+	}
+
+	.no-subs-icon {
+		font-size: 3rem;
+		margin-bottom: var(--spacing-md);
+		opacity: 0.5;
+	}
+
+	.subs-list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-md);
+	}
+
+	.sub-card {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		background: var(--color-background);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
+		padding: var(--spacing-md);
+	}
+
+	.sub-info {
+		flex: 1;
+	}
+
+	.sub-id {
+		font-family: var(--font-mono);
+		font-weight: 600;
+		color: var(--color-primary);
+		margin-bottom: var(--spacing-xs);
+	}
+
+	.sub-details {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-xs);
+	}
+
+	.sub-filters {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--spacing-xs);
+	}
+
+	.sub-filters .filter-tag {
+		background: rgba(168, 85, 247, 0.1);
+		color: rgb(168, 85, 247);
+		border: 1px solid rgba(168, 85, 247, 0.3);
+	}
+
+	.sub-stats {
+		font-size: var(--text-xs);
+		color: var(--color-text-muted);
+		font-family: var(--font-mono);
+	}
+
+	.sub-stop-btn {
+		background: none;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-sm);
+		padding: var(--spacing-sm);
+		color: var(--color-text-muted);
+		cursor: pointer;
+		transition: all var(--transition-fast);
+		font-size: var(--text-sm);
+	}
+
+	.sub-stop-btn:hover {
+		border-color: rgb(239, 68, 68);
+		color: rgb(239, 68, 68);
+		background: rgba(239, 68, 68, 0.1);
 	}
 
 	/* ===== RESPONSIVE ===== */

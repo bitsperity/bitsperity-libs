@@ -20,6 +20,35 @@ export interface CacheConfig {
   evictionPolicy?: 'lru' | 'fifo'; // Default: 'lru'
 }
 
+export interface CacheStatistics {
+  // Basic metrics
+  totalEvents: number;
+  memoryUsageMB: number;
+  subscribersCount: number;
+  
+  // Index metrics
+  kindIndexSize: number;
+  authorIndexSize: number;
+  tagIndexSize: number;
+  
+  // Performance metrics
+  queryCount: number;
+  hitRate: number;
+  avgQueryTime: number;
+  
+  // Eviction metrics
+  evictedCount: number;
+  evictionPolicy: 'lru' | 'fifo';
+  
+  // Configuration
+  maxEvents: number;
+  maxMemoryMB: number;
+  
+  // Real-time metrics
+  lastUpdated: number;
+  cacheAge: number; // Time since cache was created
+}
+
 export class UniversalEventCache {
   private events = new Map<string, NostrEvent>(); // ALL events (decrypted)
   private eventsByKind = new Map<number, Set<string>>(); // Fast lookup by kind
@@ -32,6 +61,14 @@ export class UniversalEventCache {
   // LRU tracking
   private accessOrder: string[] = [];
   private lastAccess = new Map<string, number>();
+  
+  // Statistics tracking
+  private stats = {
+    queryCount: 0,
+    totalQueryTime: 0,
+    evictedCount: 0,
+    createdAt: Date.now()
+  };
   
   constructor(privateKey: string, config: CacheConfig = {}) {
     this.privateKey = privateKey;
@@ -68,9 +105,17 @@ export class UniversalEventCache {
   }
   
   query(filter: Filter): NostrEvent[] {
+    const startTime = performance.now();
+    
     // Update access tracking for LRU
     const results = this.getMatchingEvents(filter);
     results.forEach(event => this.updateAccessTracking(event.id));
+    
+    // Update statistics
+    const queryTime = performance.now() - startTime;
+    this.stats.queryCount++;
+    this.stats.totalQueryTime += queryTime;
+    
     return results;
   }
   
@@ -90,6 +135,43 @@ export class UniversalEventCache {
   
   get size(): number {
     return this.events.size;
+  }
+  
+  /**
+   * Get comprehensive cache statistics
+   */
+  getStatistics(): CacheStatistics {
+    const now = Date.now();
+    const totalQueries = this.stats.queryCount;
+    
+    return {
+      // Basic metrics
+      totalEvents: this.events.size,
+      memoryUsageMB: this.estimateMemoryUsage(),
+      subscribersCount: this.subscribers.size,
+      
+      // Index metrics
+      kindIndexSize: this.eventsByKind.size,
+      authorIndexSize: this.eventsByAuthor.size,
+      tagIndexSize: this.eventsByTag.size,
+      
+      // Performance metrics
+      queryCount: totalQueries,
+      hitRate: totalQueries > 0 ? (this.events.size / totalQueries) * 100 : 0,
+      avgQueryTime: totalQueries > 0 ? this.stats.totalQueryTime / totalQueries : 0,
+      
+      // Eviction metrics
+      evictedCount: this.stats.evictedCount,
+      evictionPolicy: this.config.evictionPolicy,
+      
+      // Configuration
+      maxEvents: this.config.maxEvents,
+      maxMemoryMB: this.config.maxMemoryMB,
+      
+      // Real-time metrics
+      lastUpdated: now,
+      cacheAge: now - this.stats.createdAt
+    };
   }
   
   private async unwrapGiftWrap(giftWrap: NostrEvent): Promise<NostrEvent | null> {
@@ -270,6 +352,9 @@ export class UniversalEventCache {
   private removeEvent(eventId: string): void {
     const event = this.events.get(eventId);
     if (!event) return;
+    
+    // Update statistics
+    this.stats.evictedCount++;
     
     // Remove from main store
     this.events.delete(eventId);

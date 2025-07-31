@@ -4,6 +4,9 @@
  * These types are driven by test requirements and NIP compliance.
  */
 
+// Re-export cache statistics for developer convenience
+export type { CacheStatistics } from '../cache/UniversalEventCache.js';
+
 // NIP-01: Basic Event Structure
 export interface NostrEvent {
   id: string;           // 32-byte hex string (SHA256 hash)

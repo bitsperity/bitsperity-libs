@@ -21,6 +21,16 @@ export class UniversalQueryBuilder extends FilterBuilder {
   }
 }
 
+/**
+ * Subscription handle for managing live subscriptions
+ */
+export interface SubscriptionHandle {
+  id: string;
+  store: UniversalNostrStore<NostrEvent[]>;
+  stop(): Promise<void>;
+  isActive(): boolean;
+}
+
 export class UniversalSubBuilder extends FilterBuilder {
   private relayUrls: string[] = [];
   
@@ -41,35 +51,39 @@ export class UniversalSubBuilder extends FilterBuilder {
     return this;
   }
   
-  async execute(): Promise<UniversalNostrStore<NostrEvent[]>> {
-    // Start subscription if needed
-    const filterSig = this.getFilterSignature();
-    
-    if (!this.hasActiveSubscription(filterSig)) {
-      await this.startSubscription();
-    }
-    
-    // Return store that updates from cache
-    return new UniversalNostrStore(this.cache, this.filter);
-  }
-  
-  private getFilterSignature(): string {
-    return JSON.stringify(this.filter);
-  }
-  
-  private hasActiveSubscription(filterSig: string): boolean {
-    // TODO: Implement subscription deduplication
-    return false;
-  }
-  
-  private async startSubscription(): Promise<void> {
+  /**
+   * Execute the subscription and return a handle for lifecycle control
+   * This provides excellent DX for managing subscriptions
+   */
+  async execute(): Promise<SubscriptionHandle> {
     const options = this.relayUrls.length > 0 ? { relays: this.relayUrls } : {};
     
-    await this.subscriptionManager.subscribe([this.filter], {
+    // Start the subscription
+    const result = await this.subscriptionManager.subscribe([this.filter], {
       ...options,
       onEvent: (event: NostrEvent) => {
         this.cache.addEvent(event); // All events go to cache
       }
     });
+    
+    if (!result.success || !result.subscription) {
+      throw new Error(result.error?.message || 'Subscription failed');
+    }
+    
+    const subscription = result.subscription;
+    const store = new UniversalNostrStore(this.cache, this.filter);
+    
+    // Return a handle with excellent DX
+    return {
+      id: subscription.id,
+      store,
+      stop: async () => {
+        await this.subscriptionManager.close(subscription.id);
+      },
+      isActive: () => {
+        const activeSubs = this.subscriptionManager.getActiveSubscriptions();
+        return activeSubs.some((sub: any) => sub.id === subscription.id);
+      }
+    };
   }
 }
