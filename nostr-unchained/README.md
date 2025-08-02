@@ -22,6 +22,13 @@ Learn the core architecture with **identical APIs** for cache queries and live s
 ### 💬 **Then:** [Direct Messages](./docs/dm/README.md)
 See how DMs work as elegant **query wrappers** with lazy gift wrap subscriptions and end-to-end encryption.
 
+### 👤 **Essential:** [Profile Management](./docs/profile/README.md)
+Master **reactive profile and follow list management** with intelligent caching:
+- ⚡ **Cache-First Loading**: <10ms response times for cached profiles
+- 🛠️ **Fluent Builders**: Intuitive profile creation and updates
+- 🔍 **Advanced Discovery**: Search by name, NIP-05, metadata with relevance scoring
+- 📦 **Batch Operations**: Efficient bulk profile fetching and follow management
+
 ### 🏪 **Next:** [Universal Store System](./docs/stores/README.md) 
 Understand how **reactive Svelte stores** provide automatic UI updates across all data access.
 
@@ -63,10 +70,16 @@ const livePosts = nostr.sub().kinds([1]).execute();
 const chat = nostr.dm.with('recipient-pubkey');
 await chat.send('Encrypted message!');
 
+// 👤 Profile Management (cache-first with <10ms response)
+const profile = nostr.profile.get('npub1...');
+await nostr.profile.edit().name('Alice').about('Nostr dev').publish();
+await nostr.profile.follows.add('npub1...').petname('Bob').publish();
+
 // 🏪 All return reactive Svelte stores
 cachedPosts.subscribe(posts => console.log('Cache:', posts.length));
 livePosts.subscribe(posts => console.log('Live:', posts.length));
 chat.subscribe(messages => console.log('DMs:', messages.length));
+profile.subscribe(state => console.log('Profile:', state.profile?.metadata?.name));
 ```
 
 ## 🚀 Quick Start
@@ -113,6 +126,28 @@ liveData.subscribe(events => console.log(`Live: ${events.length}`));
 const chat = nostr.dm.with('recipient-pubkey');
 await chat.send('Hello! 🔐');
 chat.subscribe(messages => console.log(`${messages.length} messages`));
+
+// 👤 Profile & Follow Management
+const profile = nostr.profile.get('npub1...'); // <10ms from cache
+profile.subscribe(state => console.log('Profile:', state.profile?.metadata?.name));
+
+await nostr.profile.edit()
+  .name('Alice Cooper')
+  .about('Bitcoin & Nostr enthusiast')
+  .nip05('alice@domain.com')
+  .publish();
+
+await nostr.profile.follows.add('npub1...')
+  .petname('Bob')
+  .relay('wss://relay.example.com')
+  .publish();
+
+// 🔍 Discover profiles
+const results = await nostr.profile.discover()
+  .byName('bitcoin')
+  .verified()
+  .limit(10)
+  .execute();
 ```
 
 > **Next Step:** Read the [Query & Subscription Guide](./docs/query/README.md) to understand the core architecture.
@@ -189,19 +224,27 @@ See the architecture in action with **elegant DM implementation**:
 - 🎁 **Lazy Loading**: Gift wrap subscriptions start when needed
 - 🔐 **End-to-End Encryption**: NIP-17/NIP-44 transparency
 
-#### 3️⃣ **State Management:** [Universal Store System](./docs/stores/README.md)
+#### 3️⃣ **Profiles:** [Profile Management](./docs/profile/README.md)
+Master **social identity** with cache-optimized profile operations:
+- 👤 **Reactive Profiles**: `nostr.profile.get()` with <10ms cache hits
+- 🛠️ **Fluent Builders**: Intuitive profile creation and updates
+- 🔍 **Advanced Discovery**: Search profiles by name, NIP-05, metadata
+- 📦 **Batch Operations**: Efficient bulk profile and follow management
+- ⚡ **Optimistic Updates**: Instant UI feedback with async relay confirmation
+
+#### 4️⃣ **State Management:** [Universal Store System](./docs/stores/README.md)
 Master **reactive data flow** across your entire app:
 - 🏪 **Svelte Stores**: Compatible with all frameworks 
 - 🔄 **Automatic Updates**: Cache changes update all stores
 - ⚡ **Current Access**: Synchronous data when needed
 
-#### 4️⃣ **Publishing:** [Event Publishing](./docs/events/README.md)
+#### 5️⃣ **Publishing:** [Event Publishing](./docs/events/README.md)
 Build rich **content creation** with user control:
 - 📝 **Zero-Config**: `nostr.publish()` just works
 - 🎛️ **User Control**: Choose extension, local, or custom signers
 - 🔧 **Fluent Builder**: Complex events made simple
 
-#### 5️⃣ **Social Features:** [Social Media Core](./docs/social/README.md)
+#### 6️⃣ **Social Features:** [Social Media Core](./docs/social/README.md)
 Scale to **full social applications**:
 - 👤 **Profiles**: User metadata and verification
 - 👥 **Contacts**: Follow/follower relationships  
