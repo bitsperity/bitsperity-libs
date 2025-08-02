@@ -9,6 +9,9 @@
 
 import type { NostrUnchained } from 'nostr-unchained';
 import type { ProfileViewProps } from '../../types/profile.js';
+import ProfileHeader from './ProfileHeader.svelte';
+import ProfileInfo from './ProfileInfo.svelte';
+import ProfileActions from './ProfileActions.svelte';
 
 // =============================================================================
 // Props
@@ -213,117 +216,46 @@ const shortPubkey = $derived(
 			<p>Fetching profile data from relays...</p>
 		</div>
 	{:else if viewMode === 'display'}
-		<!-- Profile Display Mode -->
+		<!-- Profile Display Mode - Using Modular Components -->
 		<div class="profile-container">
-			<!-- Profile Header -->
-			<header class="profile-header">
-				<div class="profile-banner">
-					{#if profile?.metadata?.banner}
-						<img src={profile.metadata.banner} alt="Profile banner" class="banner-image" />
-					{:else}
-						<div class="banner-placeholder"></div>
-					{/if}
-				</div>
-				
-				<div class="profile-header-content">
-					<div class="profile-avatar">
-						{#if profile?.metadata?.picture}
-							<img src={profile.metadata.picture} alt="Profile avatar" class="avatar-image" />
-						{:else}
-							<div class="avatar-placeholder">
-								{displayName && typeof displayName === 'string' ? displayName.charAt(0).toUpperCase() : '?'}
-							</div>
-						{/if}
-					</div>
-					
-					<div class="profile-info">
-						<h1 class="profile-name">{displayName}</h1>
-						{#if profile?.metadata?.nip05}
-							<div class="nip05-badge" class:verified={verified}>
-								{verified ? '✅' : '❌'} {profile.metadata.nip05}
-							</div>
-						{/if}
-						<div class="profile-pubkey" title={profilePubkey}>
-							{shortPubkey}
-							<button 
-								class="copy-btn" 
-								onclick={() => navigator.clipboard?.writeText(profilePubkey)}
-								title="Copy pubkey"
-							>
-								📋
-							</button>
-						</div>
-					</div>
-					
-					{#if showActions}
-						<div class="profile-actions">
-							{#if isOwnProfile}
-								<button class="edit-btn" onclick={handleEditClick}>
-									✏️ Edit Profile
-								</button>
-							{:else}
-								<button class="follow-btn">
-									👥 Follow
-								</button>
-							{/if}
-						</div>
-					{/if}
-				</div>
-			</header>
+			<!-- Profile Banner -->
+			<div class="profile-banner">
+				{#if profile?.metadata?.banner}
+					<img src={profile.metadata.banner} alt="Profile banner" class="banner-image" />
+				{:else}
+					<div class="banner-placeholder"></div>
+				{/if}
+			</div>
 			
-			<!-- Profile Content -->
-			<main class="profile-main">
-				{#if profile?.metadata?.about}
-					<section class="profile-about">
-						<h3>About</h3>
-						<p>{profile.metadata.about}</p>
-					</section>
-				{/if}
-				
-				{#if profile?.metadata?.website || profile?.metadata?.lud16}
-					<section class="profile-links">
-						<h3>Links</h3>
-						<div class="links-list">
-							{#if profile?.metadata?.website}
-								<a href={profile.metadata.website} target="_blank" rel="noopener noreferrer" class="profile-link">
-									🌐 {profile.metadata.website}
-								</a>
-							{/if}
-							{#if profile?.metadata?.lud16}
-								<div class="profile-link">
-									⚡ {profile.metadata.lud16}
-									<button 
-										class="copy-btn" 
-										onclick={() => navigator.clipboard?.writeText(profile.metadata.lud16)}
-										title="Copy Lightning address"
-									>
-										📋
-									</button>
-								</div>
-							{/if}
-						</div>
-					</section>
-				{/if}
-				
-				<!-- Placeholder sections for future phases -->
-				<section class="profile-stats">
-					<h3>Stats</h3>
-					<div class="stats-grid">
-						<div class="stat-item">
-							<span class="stat-value">0</span>
-							<span class="stat-label">Following</span>
-						</div>
-						<div class="stat-item">
-							<span class="stat-value">0</span>
-							<span class="stat-label">Followers</span>
-						</div>
-						<div class="stat-item">
-							<span class="stat-value">0</span>
-							<span class="stat-label">Notes</span>
-						</div>
-					</div>
-				</section>
-			</main>
+			<!-- Modular Profile Header -->
+			<ProfileHeader 
+				{profile}
+				{verified}
+				{compact}
+				className="main-profile-header"
+			/>
+			
+			<!-- Modular Profile Actions -->
+			{#if showActions}
+				<ProfileActions 
+					{profile}
+					{nostr}
+					{authState}
+					pubkey={profilePubkey}
+					onEditClick={handleEditClick}
+					onCreateClick={handleCreateClick}
+					className="main-profile-actions"
+				/>
+			{/if}
+			
+			<!-- Modular Profile Info -->
+			<ProfileInfo 
+				{profile}
+				{nostr}
+				myPubkey={authState.publicKey}
+				{compact}
+				className="main-profile-info"
+			/>
 		</div>
 	{:else if viewMode === 'edit' || viewMode === 'create'}
 		<!-- Profile Creation/Edit Form -->
@@ -505,11 +437,9 @@ const shortPubkey = $derived(
 .profile-container {
 	max-width: 800px;
 	margin: 0 auto;
-}
-
-.profile-header {
-	position: relative;
-	margin-bottom: var(--spacing-xl);
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-lg);
 }
 
 .profile-banner {
@@ -518,6 +448,8 @@ const shortPubkey = $derived(
 	border-radius: var(--radius-lg);
 	overflow: hidden;
 	position: relative;
+	margin-bottom: -60px; /* Moderate overlap */
+	z-index: 0;
 }
 
 .banner-image {
@@ -532,181 +464,24 @@ const shortPubkey = $derived(
 	background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
 }
 
-.profile-header-content {
-	display: flex;
-	align-items: flex-end;
-	gap: var(--spacing-lg);
-	padding: 0 var(--spacing-lg);
-	margin-top: -50px;
-	position: relative;
+/* Modular Component Styling */
+.main-profile-header {
 	z-index: 1;
+	position: relative;
+	background: var(--color-background);
+	border-radius: var(--radius-lg);
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+	margin: 0 var(--spacing-lg);
+	padding-top: var(--spacing-md); /* Moderate padding for avatar overlap */
 }
 
-.profile-avatar {
-	flex-shrink: 0;
-}
-
-.avatar-image {
-	width: 100px;
-	height: 100px;
-	border-radius: 50%;
-	border: 4px solid var(--color-background);
-	object-fit: cover;
-}
-
-.avatar-placeholder {
-	width: 100px;
-	height: 100px;
-	border-radius: 50%;
-	border: 4px solid var(--color-background);
-	background: var(--color-surface);
-	display: flex;
-	align-items: center;
+.main-profile-actions {
+	margin: 0 var(--spacing-lg);
 	justify-content: center;
-	font-size: 2rem;
-	font-weight: bold;
-	color: var(--color-text);
 }
 
-.profile-info {
-	flex: 1;
-	padding-top: var(--spacing-lg);
-}
-
-.profile-name {
-	font-size: var(--text-2xl);
-	font-weight: bold;
-	margin: 0 0 var(--spacing-xs) 0;
-}
-
-.nip05-badge {
-	background: var(--color-danger);
-	color: var(--color-danger-text);
-	padding: var(--spacing-xs) var(--spacing-sm);
-	border-radius: var(--radius-sm);
-	font-size: var(--text-xs);
-	font-weight: 500;
-	display: inline-block;
-	margin-bottom: var(--spacing-xs);
-	border: 1px solid var(--color-danger);
-}
-
-.nip05-badge.verified {
-	background: var(--color-success);
-	color: var(--color-success-text);
-	border-color: var(--color-success);
-}
-
-.profile-pubkey {
-	font-family: var(--font-mono);
-	font-size: var(--text-sm);
-	color: var(--color-text-muted);
-	display: flex;
-	align-items: center;
-	gap: var(--spacing-xs);
-}
-
-.copy-btn {
-	background: transparent;
-	border: none;
-	color: var(--color-text-muted);
-	cursor: pointer;
-	padding: 2px;
-	border-radius: var(--radius-sm);
-	transition: all var(--transition-fast);
-}
-
-.copy-btn:hover {
-	background: var(--color-surface);
-	color: var(--color-text);
-}
-
-.profile-actions {
-	padding-top: var(--spacing-lg);
-}
-
-.edit-btn,
-.follow-btn {
-	background: var(--color-primary);
-	color: var(--color-primary-text);
-	border: none;
-	padding: var(--spacing-sm) var(--spacing-lg);
-	border-radius: var(--radius-md);
-	font-weight: 500;
-	cursor: pointer;
-	transition: all var(--transition-fast);
-}
-
-.edit-btn:hover,
-.follow-btn:hover {
-	background: var(--color-primary-hover);
-}
-
-.profile-main {
-	padding: 0 var(--spacing-lg) var(--spacing-xl);
-	display: flex;
-	flex-direction: column;
-	gap: var(--spacing-xl);
-}
-
-.profile-about h3,
-.profile-links h3,
-.profile-stats h3 {
-	margin: 0 0 var(--spacing-md) 0;
-	font-size: var(--text-lg);
-	font-weight: 600;
-}
-
-.profile-about p {
-	margin: 0;
-	line-height: var(--leading-relaxed);
-	color: var(--color-text-muted);
-}
-
-.links-list {
-	display: flex;
-	flex-direction: column;
-	gap: var(--spacing-sm);
-}
-
-.profile-link {
-	display: flex;
-	align-items: center;
-	gap: var(--spacing-sm);
-	color: var(--color-primary);
-	text-decoration: none;
-	transition: color var(--transition-fast);
-}
-
-.profile-link:hover {
-	color: var(--color-primary-hover);
-}
-
-.stats-grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-	gap: var(--spacing-lg);
-}
-
-.stat-item {
-	text-align: center;
-	padding: var(--spacing-md);
-	background: var(--color-surface);
-	border-radius: var(--radius-md);
-}
-
-.stat-value {
-	display: block;
-	font-size: var(--text-xl);
-	font-weight: bold;
-	color: var(--color-text);
-}
-
-.stat-label {
-	display: block;
-	font-size: var(--text-sm);
-	color: var(--color-text-muted);
-	margin-top: var(--spacing-xs);
+.main-profile-info {
+	margin: 0 var(--spacing-lg);
 }
 
 .profile-editor-placeholder {
@@ -886,24 +661,122 @@ const shortPubkey = $derived(
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
-	.profile-header-content {
-		flex-direction: column;
-		align-items: center;
-		text-align: center;
+	.profile-container {
 		gap: var(--spacing-md);
-		margin-top: -40px;
 	}
 	
-	.profile-info {
-		padding-top: 0;
+	.profile-banner {
+		height: 150px;
+		margin-bottom: -40px;
 	}
 	
-	.profile-main {
-		padding: 0 var(--spacing-md) var(--spacing-xl);
+	.main-profile-header {
+		margin: 0 var(--spacing-md);
+		padding-top: var(--spacing-sm);
 	}
 	
-	.stats-grid {
-		grid-template-columns: repeat(3, 1fr);
+	.main-profile-actions {
+		margin: 0 var(--spacing-md);
+	}
+	
+	.main-profile-info {
+		margin: 0 var(--spacing-md);
+	}
+	
+	.profile-form-container {
+		padding: var(--spacing-lg) var(--spacing-md);
+	}
+	
+	.form-actions {
+		flex-direction: column;
+		align-items: stretch;
+	}
+	
+	.form-actions .cancel-btn,
+	.form-actions .save-btn {
+		width: 100%;
+		justify-content: center;
+	}
+}
+
+@media (max-width: 480px) {
+	.profile-banner {
+		height: 120px;
+		margin-bottom: -30px;
+	}
+	
+	.main-profile-header {
+		margin: 0 var(--spacing-sm);
+	}
+	
+	.main-profile-actions {
+		margin: 0 var(--spacing-sm);
+	}
+	
+	.main-profile-info {
+		margin: 0 var(--spacing-sm);
+	}
+	
+	.profile-form-container {
+		padding: var(--spacing-md) var(--spacing-sm);
+	}
+	
+	.form-header h2 {
+		font-size: var(--text-xl);
+	}
+	
+	.form-input,
+	.form-textarea {
+		font-size: 16px; /* Prevent zoom on iOS */
+	}
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+	.profile-banner {
+		border: 2px solid var(--color-border);
+	}
+	
+	.main-profile-header {
+		border: 2px solid var(--color-border);
+	}
+	
+	.form-input,
+	.form-textarea {
+		border-width: 2px;
+	}
+	
+	.form-input:focus,
+	.form-textarea:focus {
+		border-width: 3px;
+	}
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+	.loading-spinner {
+		animation: none;
+	}
+	
+	.profile-banner,
+	.main-profile-header,
+	.form-input,
+	.form-textarea,
+	.cancel-btn,
+	.save-btn {
+		transition: none;
+	}
+}
+
+/* Dark Mode Adjustments */
+@media (prefers-color-scheme: dark) {
+	.main-profile-header {
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+	}
+	
+	.form-input:focus,
+	.form-textarea:focus {
+		box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.3);
 	}
 }
 </style>
