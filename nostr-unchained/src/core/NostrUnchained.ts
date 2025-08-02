@@ -75,42 +75,53 @@ export class NostrUnchained {
     // Initialize subscription manager
     this.subscriptionManager = new SubscriptionManager(this.relayManager);
 
-    // Initialize Universal Cache (will be fully initialized when signing provider is set)
-    this.cache = new UniversalEventCache('', {}); // Temporary empty key
-
     // Initialize events module
     this.events = new EventsModule(this);
 
-    // Initialize DM module (will be fully initialized after signing provider is set)
-    this.dm = new DMModule({
-      subscriptionManager: this.subscriptionManager,
-      relayManager: this.relayManager,
-      signingProvider: undefined as any, // Will be set when initialized
-      debug: this.config.debug,
-      parent: this // Pass reference to this NostrUnchained instance
-    });
-
-    // Initialize Social module (will be fully initialized after signing provider is set)
-    this.social = new SocialModule({
-      subscriptionManager: this.subscriptionManager,
-      relayManager: this.relayManager,
-      signingProvider: undefined as any, // Will be set when initialized
-      eventBuilder: new EventBuilder(), // Create separate EventBuilder instance
-      debug: this.config.debug
-    });
-
-    // Set signing provider immediately if provided
-    if (this.config.signingProvider) {
-      this.signingProvider = this.config.signingProvider;
-      this.signingMethod = 'temporary';
+    // PERFECT DX: If signing provider is provided, initialize EVERYTHING immediately
+    if (config.signingProvider) {
+      this.signingProvider = config.signingProvider;
+      this.signingMethod = config.signingProvider.constructor.name.includes('Extension') ? 'extension' : 'temporary';
+      
+      // Initialize cache synchronously first with empty key
+      this.cache = new UniversalEventCache('', {});
+      
+      // Then try to initialize with private key asynchronously
+      this._initializeCache().catch(err => {
+        if (this.config.debug) {
+          console.log('⚠️ Cache initialization with private key failed:', err);
+        }
+      });
+      
       if (this.config.debug) {
-        console.log('🎯 NostrUnchained initialized with PROVIDED signing provider (should be TemporarySigner)');
+        console.log('🎯 NostrUnchained initialized with PROVIDED signing provider - Everything ready!');
       }
     } else {
+      // Initialize with empty cache if no signing provider yet
+      this.cache = new UniversalEventCache('', {});
+      
       if (this.config.debug) {
         console.log('🚨 NostrUnchained initialized WITHOUT signing provider - will auto-detect later');
       }
     }
+
+    // Initialize DM module - works with or without signing provider
+    this.dm = new DMModule({
+      subscriptionManager: this.subscriptionManager,
+      relayManager: this.relayManager,
+      signingProvider: this.signingProvider,
+      debug: this.config.debug,
+      parent: this
+    });
+
+    // Initialize Social module - works with or without signing provider  
+    this.social = new SocialModule({
+      subscriptionManager: this.subscriptionManager,
+      relayManager: this.relayManager,
+      signingProvider: this.signingProvider,
+      eventBuilder: new EventBuilder(),
+      debug: this.config.debug
+    });
 
     if (this.config.debug) {
       console.log('NostrUnchained initialized with relays:', this.config.relays);
@@ -118,69 +129,11 @@ export class NostrUnchained {
   }
 
   /**
-   * Get enhanced profile module (Phase 8: with cache support)
+   * Initialize cache with signing provider's private key
    */
-  get profile(): ProfileModule {
-    if (!this._profile) {
-      this._profile = new ProfileModule({
-        relayManager: this.relayManager,
-        subscriptionManager: this.subscriptionManager,
-        signingProvider: this.signingProvider,
-        eventBuilder: new EventBuilder(),
-        cache: this.cache, // Phase 8: Pass cache for optimization
-        debug: this.config.debug
-      });
-    }
-    return this._profile;
-  }
-
-  /**
-   * Get configured relay URLs
-   */
-  get relays(): string[] {
-    return this.relayManager.relayUrls;
-  }
-
-  /**
-   * Get currently connected relay URLs
-   */
-  get connectedRelays(): string[] {
-    return this.relayManager.connectedRelays;
-  }
-
-  /**
-   * Initialize signing provider
-   */
-  async initializeSigning(): Promise<void> {
-    if (this.signingProvider) {
-      // Already initialized (either from constructor or previous call)
-      if (this.config.debug) {
-        console.log(`🚫 Signing already initialized with method: ${this.signingMethod} - KEEPING IT!`);
-      }
-      return; // IMPORTANT: Don't override existing signing provider!
-    } else {
-      // Auto-detect the best available signing provider
-      const { provider, method } = await SigningProviderFactory.createBestAvailable();
-      this.signingProvider = provider;
-      this.signingMethod = method;
-      
-      if (this.config.debug) {
-        console.log(`🔍 Auto-detected signing with method: ${this.signingMethod} (this should NOT happen for temp accounts!)`);
-      }
-    }
-
-    // Update DM module with signing provider
-    await this.dm.updateSigningProvider(this.signingProvider);
-
-    // Update Social module with signing provider
-    await this.social.updateSigningProvider(this.signingProvider);
+  private async _initializeCache(): Promise<void> {
+    if (!this.signingProvider) return;
     
-    // Update Profile module with signing provider if initialized
-    if (this._profile) {
-      await this._profile.updateSigningProvider(this.signingProvider);
-    }
-
-    // Initialize Universal Cache with private key for gift wrap decryption
     try {
       const privateKey = await this.signingProvider.getPrivateKeyForEncryption();
       this.cache = new UniversalEventCache(privateKey, {});
@@ -193,9 +146,84 @@ export class NostrUnchained {
         console.log('🎯 Universal Cache and Universal DM Module initialized');
       }
     } catch (error) {
+      // Fallback to empty cache if private key not available
+      this.cache = new UniversalEventCache('', {});
+      
       if (this.config.debug) {
         console.log('⚠️ Could not get private key for cache, using empty key (no gift wrap decryption)');
       }
+    }
+  }
+
+  /**
+   * Get enhanced profile module (PERFECT DX - always works!)
+   */
+  get profile(): ProfileModule {
+    if (!this._profile) {
+      this._profile = new ProfileModule({
+        relayManager: this.relayManager,
+        subscriptionManager: this.subscriptionManager,
+        signingProvider: this.signingProvider,
+        eventBuilder: new EventBuilder(),
+        cache: this.cache,
+        debug: this.config.debug
+      });
+    }
+    return this._profile;
+  }
+
+  /**
+   * Get configured relay URLs
+   */
+  get relays(): string[] {
+    return this.config.relays;
+  }
+
+  /**
+   * Get connected relays
+   */
+  get connectedRelays(): string[] {
+    return this.relayManager.connectedRelays;
+  }
+
+  /**
+   * Initialize signing provider
+   * PERFECT DX: Only needed if signingProvider wasn't provided in constructor
+   * If it was provided, this does nothing (idempotent)
+   */
+  async initializeSigning(provider?: SigningProvider): Promise<void> {
+    // PERFECT DX: If we already have a signing provider, just return
+    if (this.signingProvider && !provider) {
+      if (this.config.debug) {
+        console.log('🚫 Signing already initialized - skipping (Perfect DX!)');
+      }
+      return;
+    }
+
+    // Use provided provider or auto-detect
+    if (provider) {
+      this.signingProvider = provider;
+      this.signingMethod = provider.constructor.name.includes('Extension') ? 'extension' : 'temporary';
+    } else if (this.config.signingProvider) {
+      this.signingProvider = this.config.signingProvider;
+      this.signingMethod = this.config.signingProvider.constructor.name.includes('Extension') ? 'extension' : 'temporary';
+    } else {
+      // Auto-detect the best available signing provider
+      const { provider: detectedProvider, method } = await SigningProviderFactory.createBestAvailable();
+      this.signingProvider = detectedProvider;
+      this.signingMethod = method;
+    }
+
+    // Initialize cache with new signing provider
+    await this._initializeCache();
+
+    // Update all modules with signing provider
+    await this.dm.updateSigningProvider(this.signingProvider);
+    await this.social.updateSigningProvider(this.signingProvider);
+    
+    // Update profile module if it exists
+    if (this._profile) {
+      await this._profile.updateSigningProvider(this.signingProvider);
     }
 
     if (this.config.debug) {
@@ -247,20 +275,36 @@ export class NostrUnchained {
       const myPubkey = await this.signingProvider.getPublicKey();
       
       // Subscribe to all gift wraps addressed to me
-      await this.sub()
-        .kinds([1059])         // Gift wraps
-        .tags('p', [myPubkey]) // For me
-        .execute();
-      
+      // This will populate the Universal Cache with decrypted messages
+      const subscription = await this.subscriptionManager.subscribe({
+        filters: [{
+          kinds: [1059], // Gift wrap events
+          '#p': [myPubkey],
+          limit: 100 // Get recent messages
+        }],
+        relays: this.config.relays,
+        onEvent: async (event: NostrEvent) => {
+          // The Universal Cache will automatically handle decryption
+          // when events are added through normal caching mechanisms
+          if (this.config.debug) {
+            console.log(`🎁 Received gift wrap event: ${event.id.substring(0, 8)}...`);
+          }
+        },
+        onEose: () => {
+          if (this.config.debug) {
+            console.log('🎁 Gift wrap initial sync completed');
+          }
+        }
+      });
+
       this.giftWrapSubscriptionActive = true;
       
       if (this.config.debug) {
-        console.log('🎁 Universal gift wrap subscription started (lazy) for:', myPubkey.substring(0, 16) + '...');
+        console.log('🎁 Universal gift wrap subscription started successfully');
       }
     } catch (error) {
-      if (this.config.debug) {
-        console.log('⚠️ Failed to start gift wrap subscription:', error);
-      }
+      console.error('Failed to start gift wrap subscription:', error);
+      throw error;
     }
   }
 
@@ -272,494 +316,88 @@ export class NostrUnchained {
   }
 
   /**
-   * Publish a simple text note
+   * Publish an event
    */
-  async publish(content: string): Promise<PublishResult> {
-    const startTime = Date.now();
-    let debugInfo: DebugInfo = {};
-
-    try {
-      // Initialize signing if needed
-      await this.initializeSigning();
-      debugInfo.signingMethod = this.signingMethod;
-
-      // Get public key
-      const pubkey = await this.signingProvider!.getPublicKey();
-
-      // Create unsigned event
-      const unsignedEvent = await EventBuilder.createEvent(content, pubkey);
-
-      // Add event ID
-      const eventWithId = EventBuilder.addEventId(unsignedEvent);
-
-      // Sign event
-      const signature = await this.signingProvider!.signEvent(unsignedEvent);
-
-      // Create complete event
-      const event: NostrEvent = {
-        ...eventWithId,
-        sig: signature
-      };
-
-      // Connect to relays if not already connected
-      if (this.connectedRelays.length === 0) {
-        const connectStart = Date.now();
-        await this.connect();
-        debugInfo.connectionAttempts = Date.now() - connectStart;
-      }
-
-      // Publish to all relays
-      const relayResults = await this.relayManager.publishToAll(event);
-
-      // Calculate latencies for debug
-      if (this.config.debug) {
-        debugInfo.relayLatencies = {};
-        relayResults.forEach(result => {
-          if (result.latency) {
-            debugInfo.relayLatencies![result.relay] = result.latency;
-          }
-        });
-      }
-
-      // Analyze results
-      const analysis = ErrorHandler.analyzeRelayResults(relayResults);
-      debugInfo.totalTime = Date.now() - startTime;
-
-      const result: PublishResult = {
-        success: analysis.success,
-        eventId: event.id,
-        event,
-        relayResults,
-        timestamp: Date.now(),
-        error: analysis.error,
-        debug: this.config.debug ? debugInfo : undefined
-      };
-
-      if (this.config.debug) {
-        console.log('Publish result:', result);
-      }
-
-      return result;
-
-    } catch (error) {
-      debugInfo.totalTime = Date.now() - startTime;
-
-      // Handle different types of errors
-      let nostrError;
-      if (error instanceof Error) {
-        if (error.message.includes('Content')) {
-          nostrError = ErrorHandler.handleContentError(content);
-        } else if (error.message.includes('sign') || error.message.includes('extension')) {
-          nostrError = ErrorHandler.handleSigningError(error);
-        } else {
-          nostrError = ErrorHandler.handleConnectionError('relay', error);
-        }
-      } else {
-        nostrError = ErrorHandler.createError('network', 'Unknown error occurred', {
-          retryable: true
-        });
-      }
-
-      return {
-        success: false,
-        relayResults: [],
-        timestamp: Date.now(),
-        error: nostrError,
-        debug: this.config.debug ? debugInfo : undefined
-      };
-    }
-  }
-
-  /**
-   * Create an event (for testing/advanced usage)
-   */
-  async createEvent(eventData: {
-    kind?: number;
-    content: string;
-    tags?: string[][];
-    created_at?: number;
-  }): Promise<NostrEvent> {
-    await this.initializeSigning();
-    const pubkey = await this.signingProvider!.getPublicKey();
-
-    const unsignedEvent = await EventBuilder.createEvent(
-      eventData.content,
-      pubkey,
-      {
-        kind: eventData.kind,
-        tags: eventData.tags,
-        created_at: eventData.created_at
-      }
-    );
-
-    const eventWithId = EventBuilder.addEventId(unsignedEvent);
-    const signature = await this.signingProvider!.signEvent(unsignedEvent);
-
-    return {
-      ...eventWithId,
-      sig: signature
-    };
-  }
-
-  /**
-   * Calculate event ID (utility method for testing)
-   */
-  calculateEventId(event: UnsignedEvent): string {
-    return EventBuilder.calculateEventId(event);
-  }
-
-  /**
-   * Verify event signature (utility method)
-   */
-  async verifyEvent(event: NostrEvent): Promise<boolean> {
-    // For now, just verify the ID matches the calculated hash
-    return EventBuilder.verifyEventId(event);
-  }
-
-  /**
-   * Check if browser extension is available
-   */
-  async hasExtension(): Promise<boolean> {
-    return await ExtensionSigner.isAvailable();
-  }
-
-  /**
-   * Get public key from extension
-   */
-  async getExtensionPubkey(): Promise<string> {
-    if (!await this.hasExtension()) {
-      throw new Error('No browser extension available');
-    }
-
-    const signer = new ExtensionSigner();
-    return await signer.getPublicKey();
-  }
-
-  /**
-   * Use browser extension for signing (User Control)
-   * Allows user to explicitly choose extension signing
-   */
-  async useExtensionSigner(): Promise<{ success: boolean; pubkey?: string; error?: string }> {
-    try {
-      if (!await this.hasExtension()) {
-        return { 
-          success: false, 
-          error: 'No browser extension available' 
-        };
-      }
-
-      const provider = new ExtensionSigner();
-      const pubkey = await provider.getPublicKey();
-      
-      // Update signing provider
-      this.signingProvider = provider;
-      this.signingMethod = 'extension';
-      
-      // Re-initialize modules with new signer
-      await this.reinitializeWithNewSigner();
-      
-      if (this.config.debug) {
-        console.log('🎯 User switched to Extension Signer:', pubkey.substring(0, 16) + '...');
-      }
-      
-      return { success: true, pubkey };
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      };
-    }
-  }
-
-  /**
-   * Use local key signer for signing (User Control)
-   * Allows user to explicitly choose local key signing
-   */
-  async useLocalKeySigner(): Promise<{ success: boolean; pubkey?: string; error?: string }> {
-    try {
-      const provider = new LocalKeySigner();
-      const pubkey = await provider.getPublicKey();
-      
-      // Update signing provider
-      this.signingProvider = provider;
-      this.signingMethod = 'temporary';
-      
-      // Re-initialize modules with new signer
-      await this.reinitializeWithNewSigner();
-      
-      if (this.config.debug) {
-        console.log('🎯 User switched to Local Key Signer:', pubkey.substring(0, 16) + '...');
-      }
-      
-      return { success: true, pubkey };
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      };
-    }
-  }
-
-  /**
-   * Use a custom signing provider (User Control)
-   * Allows user to provide their own SigningProvider implementation
-   */
-  async useCustomSigner(provider: SigningProvider): Promise<{ success: boolean; pubkey?: string; error?: string }> {
-    try {
-      const pubkey = await provider.getPublicKey();
-      
-      // Update signing provider
-      this.signingProvider = provider;
-      this.signingMethod = 'temporary'; // Custom signers are treated as 'temporary'
-      
-      // Re-initialize modules with new signer
-      await this.reinitializeWithNewSigner();
-      
-      if (this.config.debug) {
-        console.log('🎯 User switched to Custom Signer:', pubkey.substring(0, 16) + '...');
-      }
-      
-      return { success: true, pubkey };
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      };
-    }
-  }
-
-  /**
-   * Get current signing method info
-   */
-  getSigningInfo(): { method?: 'extension' | 'temporary'; pubkey?: string; active: boolean } {
+  async publish(event: UnsignedEvent): Promise<PublishResult> {
     if (!this.signingProvider) {
-      return { active: false };
+      throw new Error('No signing provider available. Call initializeSigning() first.');
     }
+
+    const eventBuilder = new EventBuilder(this.signingProvider);
+    const signedEvent = await eventBuilder.buildAndSign(event);
     
-    return {
-      method: this.signingMethod,
-      active: true
-    };
+    return this.relayManager.publish(signedEvent);
   }
 
   /**
-   * Re-initialize all modules with the new signing provider
-   * Called when user switches signers at runtime
+   * Get public key
    */
-  private async reinitializeWithNewSigner(): Promise<void> {
+  async getPublicKey(): Promise<string> {
     if (!this.signingProvider) {
-      throw new Error('No signing provider available for reinitialization');
+      throw new Error('No signing provider available. Call initializeSigning() first.');
     }
-
-    // Update DM module with new signing provider
-    await this.dm.updateSigningProvider(this.signingProvider);
-
-    // Update Social module with new signing provider
-    await this.social.updateSigningProvider(this.signingProvider);
-    
-    // Update Profile module with new signing provider if initialized
-    if (this._profile) {
-      await this._profile.updateSigningProvider(this.signingProvider);
-    }
-
-    // Re-initialize Universal Cache with new private key for gift wrap decryption
-    try {
-      const privateKey = await this.signingProvider.getPrivateKeyForEncryption();
-      this.cache = new UniversalEventCache(privateKey, {});
-      
-      // Re-initialize Universal DM Module with new signing
-      const myPubkey = await this.signingProvider.getPublicKey();
-      this.universalDM = new UniversalDMModule(this, myPubkey);
-      
-      // Reset gift wrap subscription state (will be lazy-loaded again if needed)
-      this.giftWrapSubscriptionActive = false;
-      
-      if (this.config.debug) {
-        console.log('🔄 Successfully re-initialized all modules with new signer');
-      }
-    } catch (error) {
-      if (this.config.debug) {
-        console.log('⚠️ Could not get private key from new signer, using empty key (no gift wrap decryption)');
-      }
-      // Initialize with empty key as fallback
-      this.cache = new UniversalEventCache('', {});
-    }
+    return this.signingProvider.getPublicKey();
   }
 
   /**
-   * Get relay information (NIP-11)
+   * Get relay statistics
    */
-  async getRelayInfo(relayUrl: string): Promise<RelayInfo> {
-    return await this.relayManager.getRelayInfo(relayUrl);
-  }
-
-  /**
-   * Test relay connectivity
-   */
-  async testRelay(relayUrl: string): Promise<{ success: boolean; error?: string }> {
-    return await this.relayManager.testRelay(relayUrl);
-  }
-
-  /**
-   * Publish a pre-built and signed event
-   */
-  async publishEvent(event: NostrEvent): Promise<PublishResult> {
-    const startTime = Date.now();
-    let debugInfo: DebugInfo = {};
-
-    try {
-      // Connect to relays if not already connected
-      if (this.connectedRelays.length === 0) {
-        const connectStart = Date.now();
-        await this.connect();
-        debugInfo.connectionAttempts = Date.now() - connectStart;
-      }
-
-      // Publish to all relays
-      const relayResults = await this.relayManager.publishToAll(event);
-
-      // Calculate latencies for debug
-      if (this.config.debug) {
-        debugInfo.relayLatencies = {};
-        relayResults.forEach(result => {
-          if (result.latency) {
-            debugInfo.relayLatencies![result.relay] = result.latency;
-          }
-        });
-      }
-
-      // Analyze results
-      const analysis = ErrorHandler.analyzeRelayResults(relayResults);
-      debugInfo.totalTime = Date.now() - startTime;
-
-      const result: PublishResult = {
-        success: analysis.success,
-        eventId: event.id,
-        event,
-        relayResults,
-        timestamp: Date.now(),
-        error: analysis.error,
-        debug: this.config.debug ? debugInfo : undefined
-      };
-
-      if (this.config.debug) {
-        console.log('PublishEvent result:', result);
-      }
-
-      return result;
-
-    } catch (error) {
-      debugInfo.totalTime = Date.now() - startTime;
-
-      // Handle different types of errors
-      let nostrError;
-      if (error instanceof Error) {
-        nostrError = ErrorHandler.handleConnectionError('relay', error);
-      } else {
-        nostrError = ErrorHandler.createError('network', 'Unknown error occurred', {
-          retryable: true
-        });
-      }
-
-      return {
-        success: false,
-        relayResults: [],
-        timestamp: Date.now(),
-        error: nostrError,
-        debug: this.config.debug ? debugInfo : undefined
-      };
-    }
-  }
-
-  /**
-   * Get connection statistics
-   */
-  getStats() {
+  getRelayStats(): Record<string, any> {
     return this.relayManager.getStats();
   }
 
   /**
-   * Get comprehensive cache statistics for live monitoring
-   * Perfect for DevExplorer real-time dashboards
+   * Create a query builder for complex queries
    */
-  getCacheStats(): CacheStatistics {
-    const stats = this.cache.getStatistics();
-    // Replace cache listeners count with actual WebSocket subscriptions
-    const activeSubscriptions = this.subscriptionManager.getActiveSubscriptions();
-    return {
-      ...stats,
-      subscribersCount: activeSubscriptions.length
-    };
+  query(): QueryBuilder {
+    return new QueryBuilder(this.subscriptionManager);
   }
 
   /**
-   * Get the subscription manager for advanced query operations
+   * Create a subscription builder
+   */
+  sub(): SubBuilder {
+    return new SubBuilder(this.subscriptionManager);
+  }
+
+  /**
+   * Get the Universal Event Cache for advanced usage
+   */
+  getCache(): UniversalEventCache {
+    return this.cache;
+  }
+
+  /**
+   * Get cache statistics
+   */
+  getCacheStatistics(): CacheStatistics {
+    return this.cache.getStatistics();
+  }
+
+  /**
+   * Get the subscription manager for advanced usage
    */
   getSubscriptionManager(): SubscriptionManager {
     return this.subscriptionManager;
   }
 
   /**
-   * Get the public key of the current user
+   * Get Universal DM Module (lazy-loaded)
    */
-  async getPublicKey(): Promise<string> {
-    if (!this.signingProvider) {
-      await this.initializeSigning();
-    }
-    return await this.signingProvider!.getPublicKey();
+  getDM(): UniversalDMModule | undefined {
+    return this.universalDM;
   }
 
   /**
-   * Query API - Immediate cache lookup
-   * Implements the elegant Universal Cache architecture from the session plan
+   * Get debug info
    */
-  query(): QueryBuilder {
-    return new QueryBuilder(this.cache);
-  }
-
-  /**
-   * Subscription API - Live data updates
-   * Implements the elegant Universal Cache architecture from the session plan
-   */
-  sub(): SubBuilder {
-    return new SubBuilder(this.cache, this.subscriptionManager);
-  }
-
-  /**
-   * Universal encrypted publishing
-   * Encrypts any event type and sends to recipients as gift wraps
-   */
-  async publishEncrypted<T extends Partial<NostrEvent>>(
-    event: T, 
-    recipients: string[]
-  ): Promise<{ success: boolean; error?: string }> {
-    try {
-      if (!this.signingProvider) {
-        throw new Error('Signing provider not initialized');
-      }
-
-      const privateKey = await this.signingProvider.getPrivateKeyForEncryption();
-      
-      // Import GiftWrapProtocol for universal encryption
-      const { GiftWrapProtocol } = await import('../dm/protocol/GiftWrapProtocol.js');
-      
-      for (const recipient of recipients) {
-        const giftWrap = await GiftWrapProtocol.createGiftWrap(
-          event as NostrEvent,
-          recipient,
-          privateKey
-        );
-        
-        // Publish the gift wrap
-        await this.publishEvent(giftWrap);
-      }
-      
-      return { success: true };
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      };
-    }
+  getDebugInfo(): DebugInfo {
+    return {
+      signingMethod: this.signingMethod || 'none',
+      connectedRelays: this.connectedRelays.length,
+      cacheSize: this.cache.getStatistics().totalEvents,
+      subscriptions: 0, // TODO: Get from subscription manager
+      giftWrapActive: this.giftWrapSubscriptionActive
+    };
   }
 }

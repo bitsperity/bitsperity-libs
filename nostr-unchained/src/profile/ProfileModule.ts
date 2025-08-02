@@ -61,6 +61,13 @@ export class ProfileModule {
       debug: this.config.debug
     });
 
+    // CRITICAL FIX: Start loading profile data immediately
+    store.refresh().catch(err => {
+      if (this.config.debug) {
+        console.error('Failed to start profile loading:', err);
+      }
+    });
+
     this.profileStores.set(pubkey, store);
     return store;
   }

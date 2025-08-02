@@ -101,6 +101,11 @@ export interface NavigationState {
 	readonly params: Record<string, string>;
 }
 
+export interface ProfileRouteParams {
+	readonly pubkey?: string;
+	readonly mode?: 'view' | 'edit' | 'create';
+}
+
 // =============================================================================
 // Performance Types
 // =============================================================================

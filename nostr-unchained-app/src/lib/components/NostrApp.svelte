@@ -9,6 +9,7 @@
 	import NostrTerminal from './terminal/NostrTerminal.svelte';
 	import DMChat from './terminal/DMChat.svelte';
 	import PublishCard from './terminal/PublishCard.svelte';
+	import ProfileView from './profile/ProfileView.svelte';
 
 	// =============================================================================
 	// Props - Clean Dependency Injection
@@ -25,19 +26,16 @@
 	// App State - Reactive and Clean
 	// =============================================================================
 	
-	let currentView = $state<'terminal' | 'messages' | 'publish'>('terminal');
+	let currentView = $state<'terminal' | 'messages' | 'publish' | 'profile'>('terminal');
 	let userInfo = $state<{ publicKey: string; signerType: string }>({
 		publicKey: '',
 		signerType: signer || 'unknown'
 	});
 
-	// Get user info from NostrUnchained
+	// Get user info from NostrUnchained (signing already initialized in landing page)
 	$effect(() => {
 		if (nostr) {
-			// Initialize signing first, then get public key
-			nostr.initializeSigning().then(() => {
-				return nostr.getPublicKey();
-			}).then(pubkey => {
+			nostr.getPublicKey().then(pubkey => {
 				userInfo.publicKey = pubkey;
 			}).catch(() => {
 				userInfo.publicKey = 'Unable to get public key';
@@ -97,6 +95,13 @@
 			>
 				📝 Publish
 			</button>
+			<button 
+				class="nav-btn"
+				class:active={currentView === 'profile'}
+				onclick={() => currentView = 'profile'}
+			>
+				👤 Profile
+			</button>
 		</nav>
 
 		<button class="logout-btn" onclick={logout}>
@@ -114,6 +119,8 @@
 			<div class="publish-view">
 				<PublishCard {nostr} />
 			</div>
+		{:else if currentView === 'profile'}
+			<ProfileView {nostr} {authState} />
 		{/if}
 	</main>
 </div>

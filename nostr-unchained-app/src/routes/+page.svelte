@@ -33,14 +33,14 @@
 				signer = new TemporarySigner();
 			}
 
-			// Clean, professional initialization
+			// PERFECT DX: Just create NostrUnchained and connect!
 			nostr = new NostrUnchained({
 				signingProvider: signer,
 				relays: ['ws://umbrel.local:4848'],
 				debug: true
 			});
-
-			// Connect to relays
+			
+			// Connect to relays - that's it!
 			await nostr.connect();
 			
 			signerChoice = signerType;
