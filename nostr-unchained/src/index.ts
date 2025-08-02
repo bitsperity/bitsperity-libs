@@ -63,6 +63,9 @@ export type {
 // Direct Message Module (NIP-44 & NIP-59)
 export * as DM from './dm/index.js';
 
+// Profile Module (Enhanced Profile Management)
+export * as Profile from './profile/index.js';
+
 // Constants
 export { DEFAULT_RELAYS, EVENT_KINDS } from './utils/constants.js';
 

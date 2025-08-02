@@ -17,6 +17,7 @@ import { SocialModule } from '../social/api/SocialModule.js';
 import { SubscriptionManager } from '../subscription/SubscriptionManager.js';
 import { UniversalEventCache, type CacheStatistics } from '../cache/UniversalEventCache.js';
 import { QueryBuilder, SubBuilder } from '../query/UniversalQueryBuilder.js';
+import { ProfileModule } from '../profile/ProfileModule.js';
 
 import type {
   NostrUnchainedConfig,
@@ -48,6 +49,9 @@ export class NostrUnchained {
   
   // Social Media API
   public readonly social: SocialModule;
+  
+  // Profile API (Enhanced)
+  private _profile?: ProfileModule;
 
   constructor(config: NostrUnchainedConfig = {}) {
     // Version info for debugging - ALWAYS show
@@ -114,6 +118,23 @@ export class NostrUnchained {
   }
 
   /**
+   * Get enhanced profile module (Phase 8: with cache support)
+   */
+  get profile(): ProfileModule {
+    if (!this._profile) {
+      this._profile = new ProfileModule({
+        relayManager: this.relayManager,
+        subscriptionManager: this.subscriptionManager,
+        signingProvider: this.signingProvider,
+        eventBuilder: new EventBuilder(),
+        cache: this.cache, // Phase 8: Pass cache for optimization
+        debug: this.config.debug
+      });
+    }
+    return this._profile;
+  }
+
+  /**
    * Get configured relay URLs
    */
   get relays(): string[] {
@@ -153,6 +174,11 @@ export class NostrUnchained {
 
     // Update Social module with signing provider
     await this.social.updateSigningProvider(this.signingProvider);
+    
+    // Update Profile module with signing provider if initialized
+    if (this._profile) {
+      await this._profile.updateSigningProvider(this.signingProvider);
+    }
 
     // Initialize Universal Cache with private key for gift wrap decryption
     try {
@@ -530,6 +556,11 @@ export class NostrUnchained {
 
     // Update Social module with new signing provider
     await this.social.updateSigningProvider(this.signingProvider);
+    
+    // Update Profile module with new signing provider if initialized
+    if (this._profile) {
+      await this._profile.updateSigningProvider(this.signingProvider);
+    }
 
     // Re-initialize Universal Cache with new private key for gift wrap decryption
     try {

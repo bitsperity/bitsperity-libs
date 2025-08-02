@@ -10,7 +10,7 @@
  * - nostr.social.feeds - Social content feeds
  */
 
-import { ProfileManager } from '../profiles/ProfileManager.js';
+// ProfileManager removed - now handled by enhanced ProfileModule
 import { ContactManager } from '../contacts/ContactManager.js';
 import { ThreadManager } from '../threads/ThreadManager.js';
 import { ReactionManager } from '../reactions/ReactionManager.js';
@@ -30,14 +30,13 @@ export interface SocialModuleConfig {
 
 export class SocialModule {
   private config: SocialModuleConfig;
-  private _profileManager: ProfileManager;
   private _contactManager?: ContactManager;
   private _threadManager?: ThreadManager;
   private _reactionManager?: ReactionManager;
   private _feedManager?: FeedManager;
 
   // Public API interfaces
-  public readonly profiles: ProfileManager;
+  // profiles: handled by enhanced ProfileModule in core
   public readonly contacts: ContactManager;
   public readonly threads: ThreadManager;
   public readonly reactions: ReactionManager;
@@ -46,17 +45,7 @@ export class SocialModule {
   constructor(config: SocialModuleConfig) {
     this.config = config;
 
-    // Initialize core managers
-    this._profileManager = new ProfileManager({
-      subscriptionManager: config.subscriptionManager,
-      relayManager: config.relayManager,
-      signingProvider: config.signingProvider,
-      eventBuilder: config.eventBuilder,
-      debug: config.debug
-    });
-
-    // Set up public API
-    this.profiles = this._profileManager;
+    // Note: ProfileManager removed - now handled by enhanced ProfileModule
     
     // Initialize other managers lazily for better performance
     this.contacts = this.getContactManager();
@@ -75,8 +64,7 @@ export class SocialModule {
   async updateSigningProvider(signingProvider: SigningProvider): Promise<void> {
     this.config.signingProvider = signingProvider;
     
-    // Update all managers
-    await this._profileManager.updateSigningProvider(signingProvider);
+    // Update all managers (ProfileManager removed)
     
     if (this._contactManager) {
       await this._contactManager.updateSigningProvider(signingProvider);
@@ -113,7 +101,7 @@ export class SocialModule {
    */
   async close(): Promise<void> {
     await Promise.all([
-      this._profileManager.close(),
+      // this._profileManager.close(), // Removed
       this._contactManager?.close(),
       this._threadManager?.close(),
       this._reactionManager?.close(),
@@ -134,7 +122,7 @@ export class SocialModule {
         relayManager: this.config.relayManager,
         signingProvider: this.config.signingProvider,
         eventBuilder: this.config.eventBuilder,
-        profileManager: this._profileManager,
+        // profileManager: removed,
         debug: this.config.debug
       });
     }
@@ -148,7 +136,7 @@ export class SocialModule {
         relayManager: this.config.relayManager,
         signingProvider: this.config.signingProvider,
         eventBuilder: this.config.eventBuilder,
-        profileManager: this._profileManager,
+        // profileManager: removed,
         debug: this.config.debug
       });
     }
@@ -174,7 +162,7 @@ export class SocialModule {
         subscriptionManager: this.config.subscriptionManager,
         relayManager: this.config.relayManager,
         signingProvider: this.config.signingProvider,
-        profileManager: this._profileManager,
+        // profileManager: removed,
         contactManager: this.getContactManager(),
         reactionManager: this.getReactionManager(),
         debug: this.config.debug
