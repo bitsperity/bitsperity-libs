@@ -9,6 +9,8 @@
 	import { onMount } from 'svelte';
 	import { createContextLogger } from '../../utils/Logger.js';
 	import EventCard from './EventCard.svelte';
+	import KeyDisplay from '../ui/KeyDisplay.svelte';
+	import { npubToHex, isValidHexKey } from 'nostr-unchained';
 	
 	let { nostr }: { nostr: any } = $props();
 	
@@ -117,7 +119,12 @@
 				subscriptionId: liveSubscription?.id,
 				liveSubscriptionType: typeof liveSubscription,
 				hasStore: !!liveSubscription?.store,
-				hasStop: typeof liveSubscription?.stop === 'function'
+				hasStop: typeof liveSubscription?.stop === 'function',
+				filtersApplied: {
+					kinds: selectedKinds.length > 0 ? selectedKinds : 'none',
+					authors: selectedAuthors.length > 0 ? selectedAuthors : 'none',
+					tags: selectedTags.length > 0 ? selectedTags : 'none'
+				}
 			});
 			
 		} catch (error) {
@@ -330,8 +337,29 @@
 	}
 	
 	function addAuthor() {
-		if (authorInput.trim() && !selectedAuthors.includes(authorInput.trim())) {
-			selectedAuthors = [...selectedAuthors, authorInput.trim()];
+		if (!authorInput.trim()) return;
+		
+		let authorKey = authorInput.trim();
+		
+		// Convert npub to hex if needed
+		if (authorKey.startsWith('npub')) {
+			try {
+				authorKey = npubToHex(authorKey);
+			} catch (error) {
+				logger.error('Failed to convert npub to hex', { npub: authorKey, error });
+				return;
+			}
+		}
+		
+		// Validate the resulting hex key
+		if (!isValidHexKey(authorKey)) {
+			logger.error('Invalid author key format', { authorKey });
+			return;
+		}
+		
+		// Check if already added
+		if (!selectedAuthors.includes(authorKey)) {
+			selectedAuthors = [...selectedAuthors, authorKey];
 			authorInput = '';
 		}
 	}
@@ -523,7 +551,7 @@
 				<input
 					type="text"
 					bind:value={authorInput}
-					placeholder="Enter pubkey..."
+					placeholder="Enter pubkey (hex or npub)..."
 					class="filter-input"
 					onkeydown={(e) => e.key === 'Enter' && addAuthor()}
 				/>
@@ -533,7 +561,12 @@
 				<div class="selected-filters">
 					{#each selectedAuthors as author}
 						<span class="filter-tag">
-							👤 {author.slice(0, 8)}...
+							<KeyDisplay 
+								hexKey={author} 
+								variant="compact" 
+								copyable={false}
+								className="filter-author"
+							/>
 							<button class="remove-tag" onclick={() => removeAuthor(author)}>×</button>
 						</span>
 					{/each}

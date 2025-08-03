@@ -9,6 +9,7 @@
 	import { onMount } from 'svelte';
 	import { getService } from '../../services/ServiceContainer.js';
 	import { createContextLogger } from '../../utils/Logger.js';
+	import KeyDisplay from '../ui/KeyDisplay.svelte';
 	import type { NostrService } from '../../services/NostrService.js';
 	import type { AuthState } from '../../types/app.js';
 	

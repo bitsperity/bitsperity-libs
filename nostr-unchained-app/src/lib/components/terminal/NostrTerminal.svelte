@@ -9,6 +9,7 @@
 	import { onMount } from 'svelte';
 	import { createContextLogger } from '../../utils/Logger.js';
 	import DevExplorer from './DevExplorer.svelte';
+	import KeyDisplay from '../ui/KeyDisplay.svelte';
 	import type { AuthState } from '../../types/app.js';
 
 	let { authState, onLogout, onShowKeys, nostr }: {
@@ -69,9 +70,16 @@
 		
 		<div class="status-right">
 			<div class="user-info">
-				<span class="user-key">
-					{authState.publicKey ? authState.publicKey.substring(0, 8) + '...' : 'Loading...'}
-				</span>
+				{#if authState.publicKey}
+					<KeyDisplay 
+						hexKey={authState.publicKey} 
+						variant="compact" 
+						copyable={true}
+						className="terminal-user-key"
+					/>
+				{:else}
+					<span class="user-key">Loading...</span>
+				{/if}
 				<span class="signer-type">{authState.signerType}</span>
 			</div>
 			

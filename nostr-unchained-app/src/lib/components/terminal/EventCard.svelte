@@ -7,6 +7,7 @@
 
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
+	import KeyDisplay from '../ui/KeyDisplay.svelte';
 	
 	let { event }: { event: any } = $props();
 	
@@ -222,16 +223,12 @@
 			<span class="event-time">{formatTimestamp(event.created_at)}</span>
 		</div>
 		<div class="author-info">
-			<button 
-				class="author-key clickable"
-				onclick={() => copyToClipboard(event.pubkey, 'pubkey')}
-				title="Click to copy full pubkey"
-			>
-				{formatPubkey(event.pubkey)}
-				{#if copySuccess && copyMessage.includes('pubkey')}
-					<span class="copy-indicator">✓</span>
-				{/if}
-			</button>
+			<KeyDisplay 
+				hexKey={event.pubkey} 
+				variant="short" 
+				copyable={true}
+				className="event-author"
+			/>
 		</div>
 	</div>
 

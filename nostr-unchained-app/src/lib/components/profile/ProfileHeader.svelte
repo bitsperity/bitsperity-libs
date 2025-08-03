@@ -10,6 +10,7 @@
 import type { UserProfile } from '../../types/profile.js';
 import { copyToClipboard } from '../../utils/clipboard.js';
 import { formatPubkey } from '../../utils/nostr.js';
+import KeyDisplay from '../ui/KeyDisplay.svelte';
 
 // =============================================================================
 // Props & Types
@@ -100,19 +101,16 @@ async function handleCopyPubkey() {
 		{/if}
 		
 		<!-- Pubkey with Copy -->
-		<div class="pubkey-section">
-			<span class="pubkey-text" title={profile?.pubkey}>{shortPubkey}</span>
-			{#if showCopy && profile?.pubkey}
-				<button 
-					class="copy-btn" 
-					onclick={handleCopyPubkey}
-					title="Copy public key"
-					aria-label="Copy public key to clipboard"
-				>
-					📋
-				</button>
-			{/if}
-		</div>
+		{#if profile?.pubkey}
+			<div class="pubkey-section">
+				<KeyDisplay 
+					hexKey={profile.pubkey} 
+					variant={compact ? "compact" : "short"} 
+					copyable={showCopy}
+					className="profile-key-display"
+				/>
+			</div>
+		{/if}
 	</div>
 </div>
 
@@ -220,46 +218,7 @@ async function handleCopyPubkey() {
 .pubkey-section {
 	display: flex;
 	align-items: center;
-	gap: var(--spacing-xs);
 	min-width: 0;
-}
-
-.pubkey-text {
-	font-family: var(--font-mono);
-	font-size: var(--text-sm);
-	color: var(--color-text-muted);
-	word-break: break-all;
-	flex: 1;
-	min-width: 0;
-}
-
-.compact .pubkey-text {
-	font-size: var(--text-xs);
-}
-
-.copy-btn {
-	background: transparent;
-	border: none;
-	color: var(--color-text-muted);
-	cursor: pointer;
-	padding: var(--spacing-xs);
-	border-radius: var(--radius-sm);
-	transition: all var(--transition-fast);
-	flex-shrink: 0;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	font-size: var(--text-sm);
-}
-
-.copy-btn:hover {
-	background: var(--color-surface);
-	color: var(--color-text);
-	transform: scale(1.1);
-}
-
-.copy-btn:active {
-	transform: scale(0.95);
 }
 
 /* Mobile Responsive */
@@ -278,10 +237,6 @@ async function handleCopyPubkey() {
 	
 	.display-name {
 		font-size: var(--text-lg);
-	}
-	
-	.pubkey-text {
-		font-size: var(--text-xs);
 	}
 }
 

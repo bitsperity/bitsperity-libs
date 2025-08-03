@@ -10,6 +10,7 @@
 	import { getService } from '../../services/ServiceContainer.js';
 	import { createContextLogger } from '../../utils/Logger.js';
 	import Button from '../ui/Button.svelte';
+	import KeyDisplay from '../ui/KeyDisplay.svelte';
 	import type { NostrService } from '../../services/NostrService.js';
 
 	// =============================================================================
@@ -120,7 +121,7 @@
 				recentEvents = events.map(event => ({
 					kind: event.kind,
 					content: event.content.substring(0, 100),
-					pubkey: event.pubkey.substring(0, 16) + '...',
+					pubkey: event.pubkey, // Keep full pubkey for KeyDisplay
 					created_at: event.created_at,
 					id: event.id.substring(0, 8) + '...'
 				}));
@@ -274,7 +275,7 @@
 						</div>
 						<div class="event-meta">
 							<span class="event-id">ID: {event.id}</span>
-							<span class="event-pubkey">By: {event.pubkey}</span>
+							<span class="event-pubkey">By: <KeyDisplay hexKey={event.pubkey} variant="compact" copyable={true} /></span>
 						</div>
 					</div>
 				{/each}
