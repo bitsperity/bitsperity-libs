@@ -19,7 +19,8 @@ export interface FollowListStoreConfig {
 export class FollowListStore implements Readable<FollowListState> {
   private config: FollowListStoreConfig;
   private store: Writable<FollowListState>;
-  private subscriptionId?: string;
+  private sharedSubscriptionListenerId?: string;
+  private activeRefreshListenerId?: string;
   
   // Derived stores for easy access
   public readonly follows: Readable<Follow[]>;
@@ -81,7 +82,11 @@ export class FollowListStore implements Readable<FollowListState> {
       let followListFound = false;
       let follows: Follow[] = [];
 
-      const subscriptionResult = await this.config.subscriptionManager.subscribe([filter], {
+      // Use shared subscription for deduplication
+      const sharedSubscription = await this.config.subscriptionManager.getOrCreateSubscription([filter]);
+      
+      // Add temporary listener for refresh
+      this.activeRefreshListenerId = sharedSubscription.addListener({
         onEvent: async (event: NostrEvent) => {
           if (event.kind === 3 && event.pubkey === this.config.pubkey && !followListFound) {
             followListFound = true;
@@ -123,10 +128,16 @@ export class FollowListStore implements Readable<FollowListState> {
         }
       });
 
-      // Close subscription after 3 seconds if no response
-      setTimeout(async () => {
-        if (subscriptionResult.success && subscriptionResult.subscription) {
-          await this.config.subscriptionManager.close(subscriptionResult.subscription.id);
+      // Remove temporary listener after 3 seconds
+      setTimeout(() => {
+        if (this.activeRefreshListenerId) {
+          const shouldCleanup = sharedSubscription.removeListener(this.activeRefreshListenerId);
+          this.activeRefreshListenerId = undefined;
+          
+          // Clean up shared subscription if no more listeners
+          if (shouldCleanup) {
+            this.config.subscriptionManager.cleanupSharedSubscriptions();
+          }
         }
         if (!followListFound) {
           this.store.set({
@@ -151,7 +162,7 @@ export class FollowListStore implements Readable<FollowListState> {
    * Subscribe to real-time follow list updates
    */
   async startSubscription(): Promise<void> {
-    if (this.subscriptionId) return; // Already subscribed
+    if (this.sharedSubscriptionListenerId) return; // Already subscribed
     
     const filter: Filter = {
       kinds: [3],
@@ -160,7 +171,10 @@ export class FollowListStore implements Readable<FollowListState> {
     };
 
     try {
-      const result = await this.config.subscriptionManager.subscribe([filter], {
+      const sharedSubscription = await this.config.subscriptionManager.getOrCreateSubscription([filter]);
+      
+      // Add permanent listener for real-time updates
+      this.sharedSubscriptionListenerId = sharedSubscription.addListener({
         onEvent: (event: NostrEvent) => {
           if (event.kind === 3 && event.pubkey === this.config.pubkey) {
             this.handleFollowListUpdate(event);
@@ -170,13 +184,10 @@ export class FollowListStore implements Readable<FollowListState> {
           this.store.update(state => ({ ...state, error }));
         }
       });
-
-      if (result.success && result.subscription) {
-        this.subscriptionId = result.subscription.id;
         
-        if (this.config.debug) {
-          console.log(`FollowListStore: Subscribed to follow list updates for ${this.config.pubkey}`);
-        }
+      if (this.config.debug) {
+        const stats = sharedSubscription.getStats();
+        console.log(`FollowListStore: Subscribed to follow list updates for ${this.config.pubkey} (${stats.listenerCount} listeners on shared subscription)`);
       }
     } catch (error) {
       this.store.update(state => ({ 
@@ -190,12 +201,41 @@ export class FollowListStore implements Readable<FollowListState> {
    * Unsubscribe from follow list updates
    */
   async unsubscribe(): Promise<void> {
-    if (this.subscriptionId) {
-      await this.config.subscriptionManager.close(this.subscriptionId);
-      this.subscriptionId = undefined;
+    if (this.sharedSubscriptionListenerId) {
+      const filter: Filter = {
+        kinds: [3],
+        authors: [this.config.pubkey],
+        limit: 1
+      };
+      
+      const sharedSubscription = await this.config.subscriptionManager.getOrCreateSubscription([filter]);
+      const shouldCleanup = sharedSubscription.removeListener(this.sharedSubscriptionListenerId);
+      this.sharedSubscriptionListenerId = undefined;
+      
+      // Clean up shared subscription if no more listeners
+      if (shouldCleanup) {
+        await this.config.subscriptionManager.cleanupSharedSubscriptions();
+      }
       
       if (this.config.debug) {
         console.log(`FollowListStore: Unsubscribed from follow list updates for ${this.config.pubkey}`);
+      }
+    }
+    
+    // Also clean up any active refresh listener
+    if (this.activeRefreshListenerId) {
+      const filter: Filter = {
+        kinds: [3],
+        authors: [this.config.pubkey],
+        limit: 1
+      };
+      
+      const sharedSubscription = await this.config.subscriptionManager.getOrCreateSubscription([filter]);
+      const shouldCleanup = sharedSubscription.removeListener(this.activeRefreshListenerId);
+      this.activeRefreshListenerId = undefined;
+      
+      if (shouldCleanup) {
+        await this.config.subscriptionManager.cleanupSharedSubscriptions();
       }
     }
   }

@@ -37,6 +37,7 @@ export class NostrUnchained {
   private signingMethod?: 'extension' | 'temporary';
   private config: Required<Omit<NostrUnchainedConfig, 'signingProvider'>> & { signingProvider?: SigningProvider };
   private giftWrapSubscriptionActive: boolean = false;
+  private cachedMyPubkey: string | null = null;
   
   // Fluent Event Builder API
   public readonly events: EventsModule;
@@ -166,7 +167,9 @@ export class NostrUnchained {
         signingProvider: this.signingProvider,
         eventBuilder: new EventBuilder(),
         cache: this.cache,
-        debug: this.config.debug
+        debug: this.config.debug,
+        // NEW: Pass NostrUnchained instance for clean architecture
+        nostr: this
       });
     }
     return this._profile;
@@ -213,6 +216,9 @@ export class NostrUnchained {
       this.signingProvider = detectedProvider;
       this.signingMethod = method;
     }
+
+    // Clear cached pubkey when signing provider changes
+    this.cachedMyPubkey = null;
 
     // Initialize cache with new signing provider
     await this._initializeCache();
@@ -406,7 +412,33 @@ export class NostrUnchained {
     if (!this.signingProvider) {
       throw new Error('No signing provider available. Call initializeSigning() first.');
     }
-    return this.signingProvider.getPublicKey();
+    
+    // Cache the pubkey for perfect DX
+    if (!this.cachedMyPubkey) {
+      this.cachedMyPubkey = await this.signingProvider.getPublicKey();
+    }
+    
+    return this.cachedMyPubkey;
+  }
+
+  /**
+   * PERFECT DX: Get my pubkey synchronously (cached)
+   * Returns null if not available yet - perfect for reactive UI
+   */
+  get me(): string | null {
+    return this.cachedMyPubkey;
+  }
+
+  /**
+   * PERFECT DX: Get my pubkey as Promise (always works)
+   * Caches result for instant sync access via .me
+   */
+  async getMe(): Promise<string | null> {
+    try {
+      return await this.getPublicKey();
+    } catch {
+      return null;
+    }
   }
 
   /**

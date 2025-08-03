@@ -31,77 +31,57 @@ const {
 // State Management
 // =============================================================================
 
-let profilePubkey = $derived(pubkey || authState.publicKey || '');
-let isOwnProfile = $derived(profilePubkey === authState.publicKey);
+// =============================================================================
+// PERFECT DX: State-of-the-art Svelte + NostrUnchained Integration
+// =============================================================================
+
+// PERFECT DX: Clean pubkey access via NostrUnchained
+let profilePubkey = $derived(pubkey || nostr.me || '');
+let isOwnProfile = $derived(profilePubkey === nostr.me);
 let viewMode = $state<'display' | 'edit' | 'create'>('display');
+
+// PERFECT DX: Direct reactive store access - no manual subscribe needed!
+let profileStore = $derived(profilePubkey && nostr ? nostr.profile.get(profilePubkey) : null);
+
+// GENIUS: Svelte's $ syntax for reactive store values - CLEAN!
+let profileData = $derived(profileStore ? $profileStore : null);
+
+// PERFECT DX: Clean data extraction with format detection
+let profile = $derived(
+	profileData && typeof profileData === 'object' && 'profile' in profileData
+		? profileData.profile // OLD: ProfileStore format
+		: profileData // NEW: UniversalNostrStore format (direct UserProfile | null)
+);
+
+let isLoading = $derived(
+	profileData && typeof profileData === 'object' && 'loading' in profileData
+		? profileData.loading // OLD: ProfileStore has loading state
+		: false // NEW: UniversalNostrStore is always loaded (cache-first)
+);
+
+let error = $derived(
+	profileData && typeof profileData === 'object' && 'error' in profileData && profileData.error
+		? profileData.error.message
+		: null
+);
+
+let verified = $derived(
+	profileData && typeof profileData === 'object' && 'verified' in profileData
+		? profileData.verified
+		: false // TODO: Implement NIP-05 verification in clean architecture
+);
+
 let hasProfileData = $derived(profile && (profile.metadata?.name || profile.metadata?.about || profile.metadata?.picture));
 
-// Debug
-console.log('ProfileView setup:', { 
-	pubkey, 
-	authStatePubkey: authState?.publicKey,
-	profilePubkey,
-	isOwnProfile 
-});
-
-// Real NostrUnchained Profile Integration
-let profile = $state(null);
-let isLoading = $state(true);
-let error = $state(null);
-let verified = $state(false);
-
-// Load profile from NostrUnchained
+// Auto-switch to create mode for own empty profiles (ONLY for old ProfileStore behavior)
 $effect(() => {
-	console.log('ProfileView effect:', { 
-		profilePubkey, 
-		hasNostr: !!nostr, 
-		hasProfile: !!nostr?.profile,
-		profileModule: nostr?.profile
-	});
+	// IMPORTANT: Only auto-switch if we're using old ProfileStore format (has loading state)
+	// New clean architecture (UniversalNostrStore) starts with null but loads immediately from cache
+	const isUsingOldProfileStore = profileData && typeof profileData === 'object' && 'loading' in profileData;
 	
-	if (profilePubkey && nostr) {
-		// Try to access profile module - this should trigger its creation
-		const profileModule = nostr.profile;
-		console.log('Profile module accessed:', profileModule);
-		
-		if (profileModule) {
-			isLoading = true;
-			error = null;
-			
-			try {
-				// Get profile store from NostrUnchained
-				const profileStore = profileModule.get(profilePubkey);
-				console.log('Got profile store:', profileStore);
-				
-				// Subscribe to profile changes
-				const unsubscribe = profileStore.subscribe((state) => {
-					console.log('Profile state update:', state);
-					profile = state.profile;
-					isLoading = state.loading;
-					error = state.error ? state.error.message : null;
-					verified = state.verified;
-					
-					// Auto-switch to create mode if own profile and no data found
-					if (!state.loading && isOwnProfile && !state.profile && viewMode === 'display') {
-						console.log('Auto-switching to create mode');
-						viewMode = 'create';
-					}
-				});
-				
-				return () => {
-					unsubscribe();
-				};
-			} catch (err) {
-				console.error('Failed to get profile store:', err);
-				error = 'Failed to load profile';
-				isLoading = false;
-			}
-		} else {
-			// Profile module not available yet
-			console.warn('Profile module not ready yet');
-			isLoading = true;
-			error = null;
-		}
+	if (isUsingOldProfileStore && !isLoading && isOwnProfile && !profile && viewMode === 'display') {
+		console.log('Auto-switching to create mode (old ProfileStore behavior)');
+		viewMode = 'create';
 	}
 });
 
@@ -252,7 +232,7 @@ const shortPubkey = $derived(
 			<ProfileInfo 
 				{profile}
 				{nostr}
-				myPubkey={authState.publicKey}
+				myPubkey={nostr.me}
 				{compact}
 				className="main-profile-info"
 			/>

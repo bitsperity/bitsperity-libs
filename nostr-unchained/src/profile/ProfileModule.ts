@@ -17,7 +17,12 @@ import { ProfileBuilder } from './ProfileBuilder.js';
 import { ProfileBatchBuilder } from './ProfileBatchBuilder.js';
 import { ProfileDiscoveryBuilder } from './ProfileDiscoveryBuilder.js';
 import { FollowsModule } from './FollowsModule.js';
-// ProfileManager removed - using direct relay queries
+// Clean architecture imports
+import type { NostrUnchained } from '../core/NostrUnchained.js';
+import type { UserProfile } from './types.js';
+import type { NostrEvent } from '../core/types.js';
+import type { UniversalNostrStore } from '../store/UniversalNostrStore.js';
+// Legacy imports
 import type { RelayManager } from '../relay/RelayManager.js';
 import type { SubscriptionManager } from '../subscription/SubscriptionManager.js';
 import type { SigningProvider } from '../crypto/SigningProvider.js';
@@ -32,6 +37,8 @@ export interface ProfileModuleConfig {
   eventBuilder: EventBuilder;
   cache?: UniversalEventCache; // Phase 8: Optional cache for optimization
   debug?: boolean;
+  // New: NostrUnchained instance for clean base layer access
+  nostr?: NostrUnchained;
 }
 
 export class ProfileModule {
@@ -46,8 +53,44 @@ export class ProfileModule {
   /**
    * Get a reactive profile store for any pubkey
    * This is the main entry point for profile subscriptions
+   * 
+   * NEW: Uses clean base layer architecture when NostrUnchained instance is available
+   * LEGACY: Falls back to ProfileStore for backward compatibility
    */
-  get(pubkey: string): ProfileStore {
+  get(pubkey: string): ProfileStore | UniversalNostrStore<UserProfile | null> {
+    // NEW: Use clean base layer architecture if available
+    if (this.config.nostr) {
+      return this.getClean(pubkey);
+    }
+
+    // LEGACY: Backward compatibility with ProfileStore
+    return this.getLegacy(pubkey);
+  }
+
+  /**
+   * NEW: Clean base layer implementation
+   */
+  private getClean(pubkey: string): UniversalNostrStore<UserProfile | null> {
+    if (!this.config.nostr) {
+      throw new Error('NostrUnchained instance required for clean architecture');
+    }
+
+    // Start subscription for live updates
+    this.startProfileSubscription(pubkey);
+    
+    // Return reactive store based on cache
+    return this.config.nostr.query()
+      .kinds([0])
+      .authors([pubkey])
+      .limit(1)
+      .execute()
+      .map(events => this.parseProfileEvents(events, pubkey));
+  }
+
+  /**
+   * LEGACY: Original ProfileStore implementation
+   */
+  private getLegacy(pubkey: string): ProfileStore {
     // Return existing store if available
     if (this.profileStores.has(pubkey)) {
       return this.profileStores.get(pubkey)!;
@@ -70,6 +113,55 @@ export class ProfileModule {
 
     this.profileStores.set(pubkey, store);
     return store;
+  }
+
+  /**
+   * Start subscription for profile updates (Clean architecture)
+   */
+  private async startProfileSubscription(pubkey: string): Promise<void> {
+    if (!this.config.nostr) return;
+    
+    try {
+      await this.config.nostr.sub()
+        .kinds([0])
+        .authors([pubkey])
+        .limit(1)
+        .execute();
+    } catch (error) {
+      if (this.config.debug) {
+        console.warn(`Failed to start profile subscription for ${pubkey}:`, error);
+      }
+    }
+  }
+
+  /**
+   * Parse NostrEvent[] to UserProfile | null (Clean architecture)
+   */
+  private parseProfileEvents(events: NostrEvent[], pubkey: string): UserProfile | null {
+    if (events.length === 0) {
+      return null;
+    }
+
+    const event = events[0];
+    if (event.kind !== 0 || event.pubkey !== pubkey) {
+      return null;
+    }
+
+    try {
+      const metadata = JSON.parse(event.content);
+      return {
+        pubkey: event.pubkey,
+        metadata,
+        lastUpdated: event.created_at,
+        eventId: event.id,
+        isOwn: false // Will be determined by caller if needed
+      };
+    } catch (error) {
+      if (this.config.debug) {
+        console.warn(`Failed to parse profile event for ${pubkey}:`, error);
+      }
+      return null;
+    }
   }
 
   /**

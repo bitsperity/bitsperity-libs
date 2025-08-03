@@ -31,8 +31,8 @@ export interface ProfileStoreConfig {
 export class ProfileStore implements Readable<ProfileState> {
   private config: ProfileStoreConfig;
   private store: Writable<ProfileState>;
-  private subscriptionId?: string;
-  private subscriptionResult?: any;
+  private sharedSubscriptionListenerId?: string;
+  private activeRefreshListenerId?: string;
   private cacheInterface?: ProfileCacheInterface; // Phase 8: Cache interface
   
   // Derived stores for easy access
@@ -122,11 +122,14 @@ export class ProfileStore implements Readable<ProfileState> {
         limit: 1
       };
 
-      // Use subscription manager to fetch profile
+      // Use shared subscription to fetch profile
       let profileFound = false;
       let profile: UserProfile | null = null;
 
-      const subscriptionResult = await this.config.subscriptionManager.subscribe([filter], {
+      const sharedSubscription = await this.config.subscriptionManager.getOrCreateSubscription([filter]);
+      
+      // Add temporary listener for refresh
+      this.activeRefreshListenerId = sharedSubscription.addListener({
         onEvent: async (event: NostrEvent) => {
           if (event.kind === 0 && event.pubkey === this.config.pubkey && !profileFound) {
             profileFound = true;
@@ -163,10 +166,16 @@ export class ProfileStore implements Readable<ProfileState> {
         }
       });
 
-      // Close subscription after 3 seconds if no response
-      setTimeout(async () => {
-        if (subscriptionResult.success && subscriptionResult.subscription) {
-          await this.config.subscriptionManager.close(subscriptionResult.subscription.id);
+      // Remove temporary listener after 3 seconds
+      setTimeout(() => {
+        if (this.activeRefreshListenerId) {
+          const shouldCleanup = sharedSubscription.removeListener(this.activeRefreshListenerId);
+          this.activeRefreshListenerId = undefined;
+          
+          // Clean up shared subscription if no more listeners
+          if (shouldCleanup) {
+            this.config.subscriptionManager.cleanupSharedSubscriptions();
+          }
         }
         if (!profileFound) {
           this.store.set({
@@ -192,7 +201,7 @@ export class ProfileStore implements Readable<ProfileState> {
    * Subscribe to real-time profile updates
    */
   async startSubscription(): Promise<void> {
-    if (this.subscriptionId) return; // Already subscribed
+    if (this.sharedSubscriptionListenerId) return; // Already subscribed
     
     const filter: Filter = {
       kinds: [0],
@@ -201,7 +210,10 @@ export class ProfileStore implements Readable<ProfileState> {
     };
 
     try {
-      const result = await this.config.subscriptionManager.subscribe([filter], {
+      const sharedSubscription = await this.config.subscriptionManager.getOrCreateSubscription([filter]);
+      
+      // Add permanent listener for real-time updates
+      this.sharedSubscriptionListenerId = sharedSubscription.addListener({
         onEvent: (event: NostrEvent) => {
           if (event.kind === 0 && event.pubkey === this.config.pubkey) {
             this.handleProfileUpdate(event);
@@ -211,14 +223,10 @@ export class ProfileStore implements Readable<ProfileState> {
           this.store.update(state => ({ ...state, error }));
         }
       });
-
-      if (result.success && result.subscription) {
-        this.subscriptionId = result.subscription.id;
-        this.subscriptionResult = result;
         
-        if (this.config.debug) {
-          console.log(`ProfileStore: Subscribed to profile updates for ${this.config.pubkey}`);
-        }
+      if (this.config.debug) {
+        const stats = sharedSubscription.getStats();
+        console.log(`ProfileStore: Subscribed to profile updates for ${this.config.pubkey} (${stats.listenerCount} listeners on shared subscription)`);
       }
     } catch (error) {
       this.store.update(state => ({ 
@@ -232,13 +240,41 @@ export class ProfileStore implements Readable<ProfileState> {
    * Unsubscribe from profile updates
    */
   async unsubscribe(): Promise<void> {
-    if (this.subscriptionId) {
-      await this.config.subscriptionManager.close(this.subscriptionId);
-      this.subscriptionId = undefined;
-      this.subscriptionResult = undefined;
+    if (this.sharedSubscriptionListenerId) {
+      const filter: Filter = {
+        kinds: [0],
+        authors: [this.config.pubkey],
+        limit: 1
+      };
+      
+      const sharedSubscription = await this.config.subscriptionManager.getOrCreateSubscription([filter]);
+      const shouldCleanup = sharedSubscription.removeListener(this.sharedSubscriptionListenerId);
+      this.sharedSubscriptionListenerId = undefined;
+      
+      // Clean up shared subscription if no more listeners
+      if (shouldCleanup) {
+        await this.config.subscriptionManager.cleanupSharedSubscriptions();
+      }
       
       if (this.config.debug) {
         console.log(`ProfileStore: Unsubscribed from profile updates for ${this.config.pubkey}`);
+      }
+    }
+    
+    // Also clean up any active refresh listener
+    if (this.activeRefreshListenerId) {
+      const filter: Filter = {
+        kinds: [0],
+        authors: [this.config.pubkey],
+        limit: 1
+      };
+      
+      const sharedSubscription = await this.config.subscriptionManager.getOrCreateSubscription([filter]);
+      const shouldCleanup = sharedSubscription.removeListener(this.activeRefreshListenerId);
+      this.activeRefreshListenerId = undefined;
+      
+      if (shouldCleanup) {
+        await this.config.subscriptionManager.cleanupSharedSubscriptions();
       }
     }
   }

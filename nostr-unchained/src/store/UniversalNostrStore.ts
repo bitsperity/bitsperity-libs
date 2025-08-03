@@ -56,6 +56,15 @@ export class UniversalNostrStore<T = NostrEvent[]> implements Readable<T> {
     return this._data;
   }
   
+  /**
+   * Transform the store data with a mapping function
+   * Returns a new store with transformed data
+   */
+  map<U>(transform: (data: T) => U): UniversalNostrStore<U> {
+    const mappedStore = new MappedUniversalNostrStore<T, U>(this, transform);
+    return mappedStore as any; // Type assertion for interface compatibility
+  }
+  
   private updateData(): void {
     this._data = this.cache.query(this.filter) as T;
     this.notifySubscribers();
@@ -69,5 +78,52 @@ export class UniversalNostrStore<T = NostrEvent[]> implements Readable<T> {
     // Quick check - if cache would include it in query results, we should update
     const matched = this.cache.query({ ...filter, ids: [event.id] });
     return matched.length > 0;
+  }
+}
+
+/**
+ * Mapped store that transforms data from a source store
+ */
+class MappedUniversalNostrStore<TSource, TTarget> implements Readable<TTarget> {
+  private _data: TTarget;
+  private subscribers = new Set<Subscriber<TTarget>>();
+  private sourceUnsubscriber?: Unsubscriber;
+  
+  constructor(
+    private sourceStore: UniversalNostrStore<TSource>,
+    private transform: (data: TSource) => TTarget
+  ) {
+    // Get initial transformed data
+    this._data = this.transform(this.sourceStore.current);
+    
+    // Subscribe to source store changes
+    this.sourceUnsubscriber = this.sourceStore.subscribe((sourceData) => {
+      const newData = this.transform(sourceData);
+      if (this._data !== newData) { // Simple reference equality check
+        this._data = newData;
+        this.notifySubscribers();
+      }
+    });
+  }
+  
+  // Svelte store interface
+  subscribe(run: Subscriber<TTarget>, invalidate?: () => void): Unsubscriber {
+    run(this._data); // Call immediately with current data
+    this.subscribers.add(run);
+    
+    return () => {
+      this.subscribers.delete(run);
+      if (this.subscribers.size === 0 && this.sourceUnsubscriber) {
+        this.sourceUnsubscriber();
+      }
+    };
+  }
+  
+  get current(): TTarget {
+    return this._data;
+  }
+  
+  private notifySubscribers(): void {
+    this.subscribers.forEach(callback => callback(this._data));
   }
 }

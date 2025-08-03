@@ -24,6 +24,7 @@ import type {
   NostrError
 } from '../core/types.js';
 import { RelayManager } from '../relay/RelayManager.js';
+import { SharedSubscription, type SubscriptionListener } from './SharedSubscription.js';
 
 interface SubscriptionStats {
   relayStates: Record<string, 'active' | 'disconnected' | 'error'>;
@@ -41,6 +42,7 @@ interface InternalSubscription extends Subscription {
 export class SubscriptionManager {
   private subscriptions = new Map<string, InternalSubscription>();
   private eventCallbacks = new Map<string, (event: NostrEvent) => void>();
+  private sharedSubscriptions = new Map<string, SharedSubscription>();
   private debug: boolean;
 
   constructor(public relayManager: RelayManager) {
@@ -49,6 +51,181 @@ export class SubscriptionManager {
     
     // Set up relay message handling
     this.setupRelayMessageHandling();
+  }
+
+  /**
+   * Get or create a shared subscription with smart deduplication
+   * This is the new preferred method for subscription management
+   */
+  async getOrCreateSubscription(
+    filters: Filter[], 
+    relays?: string[]
+  ): Promise<SharedSubscription> {
+    const targetRelays = relays || this.relayManager.connectedRelays.length > 0 
+      ? this.relayManager.connectedRelays 
+      : this.relayManager.relayUrls;
+    
+    const key = this.generateFilterHash(filters, targetRelays);
+    
+    // Check if shared subscription already exists
+    if (this.sharedSubscriptions.has(key)) {
+      const shared = this.sharedSubscriptions.get(key)!;
+      if (this.debug) {
+        const stats = shared.getStats();
+        const filterSummary = this.summarizeFilters(filters);
+        console.log(`SubscriptionManager: Reusing shared subscription ${key} (${stats.listenerCount} listeners) - Filters: ${filterSummary}`);
+      }
+      return shared;
+    }
+    
+    // Create new shared subscription
+    const shared = new SharedSubscription(key, filters, targetRelays, { debug: this.debug });
+    
+    // Create the actual subscription with callbacks that broadcast to all listeners
+    const result = await this.subscribe(filters, {
+      relays: targetRelays,
+      onEvent: (event) => shared.broadcast(event),
+      onEose: (relay) => shared.notifyEose(relay),
+      onClose: (reason) => shared.notifyClose(reason),
+      onError: (error) => shared.notifyError(error)
+    });
+    
+    shared.setSubscriptionResult(result);
+    
+    if (result.success) {
+      this.sharedSubscriptions.set(key, shared);
+      if (this.debug) {
+        const filterSummary = this.summarizeFilters(filters);
+        console.log(`SubscriptionManager: Created new shared subscription ${key} - Filters: ${filterSummary}`);
+      }
+    }
+    
+    return shared;
+  }
+
+  /**
+   * Create a human-readable summary of filters for debugging
+   */
+  private summarizeFilters(filters: Filter[]): string {
+    return filters.map(filter => {
+      const parts: string[] = [];
+      
+      if (filter.kinds) {
+        parts.push(`kinds:[${filter.kinds.join(',')}]`);
+      }
+      if (filter.authors) {
+        const authorsDisplay = filter.authors.length > 1 
+          ? `${filter.authors.length} authors` 
+          : `author:${filter.authors[0].substring(0, 8)}...`;
+        parts.push(authorsDisplay);
+      }
+      if (filter.ids) {
+        const idsDisplay = filter.ids.length > 1 
+          ? `${filter.ids.length} ids` 
+          : `id:${filter.ids[0].substring(0, 8)}...`;
+        parts.push(idsDisplay);
+      }
+      if (filter['#p']) {
+        parts.push(`#p:${filter['#p'].length} mentions`);
+      }
+      if (filter['#e']) {
+        parts.push(`#e:${filter['#e'].length} events`);
+      }
+      if (filter['#t']) {
+        parts.push(`#t:${filter['#t'].join(',')}`);
+      }
+      if (filter.since) {
+        parts.push(`since:${new Date(filter.since * 1000).toISOString().substring(11, 19)}`);
+      }
+      if (filter.until) {
+        parts.push(`until:${new Date(filter.until * 1000).toISOString().substring(11, 19)}`);
+      }
+      if (filter.limit) {
+        parts.push(`limit:${filter.limit}`);
+      }
+      
+      return `{${parts.join(', ')}}`;
+    }).join(' + ');
+  }
+
+  /**
+   * Generate a hash key for filter deduplication
+   */
+  private generateFilterHash(filters: Filter[], relays: string[]): string {
+    const filterStr = JSON.stringify(filters.map(f => {
+      // Sort object keys for consistent hashing
+      const sorted: any = {};
+      Object.keys(f).sort().forEach(key => {
+        sorted[key] = (f as any)[key];
+      });
+      return sorted;
+    }));
+    
+    const relayStr = relays.slice().sort().join(',');
+    const combined = `${filterStr}:${relayStr}`;
+    
+    // Simple hash function for browser compatibility
+    let hash = 0;
+    for (let i = 0; i < combined.length; i++) {
+      const char = combined.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    
+    // Convert to hex string
+    return Math.abs(hash).toString(16).padStart(16, '0').substring(0, 16);
+  }
+
+  /**
+   * Clean up shared subscriptions with no listeners
+   */
+  async cleanupSharedSubscriptions(): Promise<void> {
+    const toRemove: string[] = [];
+    
+    for (const [key, shared] of this.sharedSubscriptions.entries()) {
+      if (!shared.hasListeners()) {
+        toRemove.push(key);
+        const subscriptionId = shared.getSubscriptionId();
+        if (subscriptionId) {
+          await this.close(subscriptionId, 'No more listeners');
+        }
+      }
+    }
+    
+    for (const key of toRemove) {
+      this.sharedSubscriptions.delete(key);
+      if (this.debug) {
+        console.log(`SubscriptionManager: Removed orphaned shared subscription ${key}`);
+      }
+    }
+  }
+
+  /**
+   * Get subscription analytics
+   */
+  getSubscriptionAnalytics(): {
+    totalSubscriptions: number;
+    sharedSubscriptions: number;
+    totalListeners: number;
+    duplicatesAvoided: number;
+  } {
+    let totalListeners = 0;
+    let duplicatesAvoided = 0;
+    
+    for (const shared of this.sharedSubscriptions.values()) {
+      const stats = shared.getStats();
+      totalListeners += stats.listenerCount;
+      if (stats.listenerCount > 1) {
+        duplicatesAvoided += stats.listenerCount - 1;
+      }
+    }
+    
+    return {
+      totalSubscriptions: this.subscriptions.size,
+      sharedSubscriptions: this.sharedSubscriptions.size,
+      totalListeners,
+      duplicatesAvoided
+    };
   }
 
   /**
@@ -113,7 +290,8 @@ export class SubscriptionManager {
 
       // Debug logging
       if (this.debug) {
-        console.log(`Creating subscription ${subscriptionId} with ${filters.length} filters`);
+        const filterSummary = this.summarizeFilters(filters);
+        console.log(`Creating subscription ${subscriptionId} with ${filters.length} filters: ${filterSummary}`);
       }
 
       // Try to send REQ to relays with retry logic
