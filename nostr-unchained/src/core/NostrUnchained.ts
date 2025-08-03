@@ -316,6 +316,47 @@ export class NostrUnchained {
   }
 
   /**
+   * Publish event to specific relays
+   */
+  async publishToRelays(event: UnsignedEvent, relayUrls: string[]): Promise<PublishResult> {
+    if (!this.signingProvider) {
+      throw new Error('No signing provider available. Call initializeSigning() first.');
+    }
+    // Validate the event
+    const validation = EventBuilder.validateEvent(event);
+    if (!validation.valid) {
+      throw new Error(`Invalid event: ${validation.errors.join(', ')}`);
+    }
+    // Calculate event ID
+    const id = EventBuilder.calculateEventId(event);
+    
+    // Sign the event
+    const signedEvent: NostrEvent = {
+      ...event,
+      id,
+      sig: await this.signingProvider.signEvent({ ...event, id })
+    };
+    
+    // Publish to specific relays
+    const relayResults = await this.relayManager.publishToRelays(signedEvent, relayUrls);
+    
+    // Return standard PublishResult format
+    const success = relayResults.some(r => r.success);
+    return {
+      success,
+      eventId: success ? signedEvent.id : undefined,
+      event: success ? signedEvent : undefined,
+      relayResults,
+      timestamp: Date.now(),
+      error: success ? undefined : {
+        message: 'Failed to publish to any relay',
+        code: 'PUBLISH_FAILED',
+        retryable: true
+      }
+    };
+  }
+
+  /**
    * Publish an event
    */
   async publish(event: UnsignedEvent): Promise<PublishResult> {

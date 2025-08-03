@@ -22,6 +22,7 @@ export class FluentEventBuilder {
   private nostrInstance: any; // NostrUnchained instance for publishing
   private signed: boolean = false;
   private signedEvent: NostrEvent | undefined;
+  private targetRelays?: string[]; // Optional relay selection
 
   constructor(nostrInstance: any) {
     this.nostrInstance = nostrInstance;
@@ -52,6 +53,22 @@ export class FluentEventBuilder {
   tag(key: string, value: string, ...additionalValues: string[]): FluentEventBuilder {
     const tagArray = [key, value, ...additionalValues];
     this.eventData.tags.push(tagArray);
+    return this;
+  }
+
+  /**
+   * Add multiple tags at once
+   */
+  tags(tagArray: string[][]): FluentEventBuilder {
+    this.eventData.tags.push(...tagArray);
+    return this;
+  }
+
+  /**
+   * Add a hashtag
+   */
+  hashtag(tag: string): FluentEventBuilder {
+    this.eventData.tags.push(['t', tag]);
     return this;
   }
 
@@ -92,6 +109,22 @@ export class FluentEventBuilder {
    */
   timestamp(unixTimestamp: number): FluentEventBuilder {
     this.eventData.created_at = unixTimestamp;
+    return this;
+  }
+
+  /**
+   * Specify which relays to publish to (overrides default relays)
+   */
+  toRelays(...relayUrls: string[]): FluentEventBuilder {
+    this.targetRelays = relayUrls;
+    return this;
+  }
+
+  /**
+   * Specify which relays to publish to via array
+   */
+  toRelayList(relayUrls: string[]): FluentEventBuilder {
+    this.targetRelays = relayUrls;
     return this;
   }
 
@@ -161,7 +194,9 @@ export class FluentEventBuilder {
 
     // If we have a pre-signed event, publish it directly
     if (this.signed && this.signedEvent) {
-      const relayResults = await this.nostrInstance.relayManager.publishToAll(this.signedEvent);
+      const relayResults = this.targetRelays
+        ? await this.nostrInstance.relayManager.publishToRelays(this.signedEvent, this.targetRelays)
+        : await this.nostrInstance.relayManager.publishToAll(this.signedEvent);
       const success = relayResults.some(r => r.success);
       return {
         success,
@@ -185,14 +220,18 @@ export class FluentEventBuilder {
 
     const pubkey = await signingProvider.getPublicKey();
 
-    // Use the NostrUnchained publish method for all events
-    return await this.nostrInstance.publish({
+    // Use the NostrUnchained publish method (with optional relay selection)
+    const eventData = {
       pubkey,
       kind: this.eventData.kind || 1,
       content: this.eventData.content,
       tags: this.eventData.tags,
       created_at: this.eventData.created_at || Math.floor(Date.now() / 1000)
-    });
+    };
+
+    return this.targetRelays
+      ? await this.nostrInstance.publishToRelays(eventData, this.targetRelays)
+      : await this.nostrInstance.publish(eventData);
   }
 
   /**
@@ -233,6 +272,20 @@ export class EventsModule {
   }
 
   /**
+   * Direct fluent API - start with kind
+   */
+  kind(kindNumber: number): FluentEventBuilder {
+    return new FluentEventBuilder(this.nostrInstance).kind(kindNumber);
+  }
+
+  /**
+   * Direct fluent API - start with content  
+   */
+  content(text: string): FluentEventBuilder {
+    return new FluentEventBuilder(this.nostrInstance).content(text);
+  }
+
+  /**
    * Quick create text note
    */
   note(content: string): FluentEventBuilder {
@@ -267,5 +320,12 @@ export class EventsModule {
       .kind(7)
       .content(reaction)
       .tag('e', eventId);
+  }
+
+  /**
+   * Direct publish from JSON data (bypasses fluent building)
+   */
+  async publish(eventData: any): Promise<any> {
+    return await this.nostrInstance.publish(eventData);
   }
 }

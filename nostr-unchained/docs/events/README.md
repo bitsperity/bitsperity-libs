@@ -22,13 +22,27 @@ const nostr = new NostrUnchained();
 // Simple text note
 await nostr.publish("Hello, Nostr! 🌟");
 
-// Fluent builder for complex events
+// NEW: Super-fluent API - start directly with kind or content
 await nostr.events
   .kind(1)
   .content("Check out this amazing project!")
-  .tag('t', 'nostr')
-  .tag('t', 'decentralized')
+  .hashtag('nostr')
+  .hashtag('decentralized')
   .publish();
+
+// Or start with content
+await nostr.events
+  .content("Building something cool!")
+  .kind(1)
+  .tags([["t", "nostr"], ["t", "development"]])
+  .publish();
+
+// Direct JSON publishing
+await nostr.events.publish({
+  kind: 1,
+  content: "Hello from JSON!",
+  tags: [["t", "json"]]
+});
 ```
 
 ## Zero-Config Publishing
@@ -63,24 +77,55 @@ result.results.forEach(relay => {
 
 ## Fluent Event Builder
 
-For more control over your events, use the fluent builder API:
+The new super-fluent API makes event creation incredibly clean and discoverable:
 
 ### Basic Text Notes
 
 ```typescript
-// Simple note with tags
+// NEW: Start with kind or content - both work!
 await nostr.events
   .kind(1)
   .content("Building something cool with #nostr")
-  .tag('t', 'nostr')
-  .tag('t', 'development')
+  .hashtag('nostr')
+  .hashtag('development')
   .publish();
 
-// Note with mentions
+// Or start with content first
+await nostr.events
+  .content("Thanks for the help @alice!")
+  .kind(1)
+  .tag('p', 'npub1alice...', 'wss://relay.example.com', 'alice')
+  .publish();
+
+// NEW: Bulk tags for efficiency
 await nostr.events
   .kind(1)
-  .content("Thanks for the help @alice!")
-  .tag('p', 'npub1alice...', 'wss://relay.example.com', 'alice')
+  .content("Multiple tags example")
+  .tags([
+    ["t", "nostr"],
+    ["t", "development"],
+    ["p", "npub1alice..."],
+    ["e", "note1event..."]
+  ])
+  .publish();
+
+// NEW: Convenience methods
+await nostr.events
+  .note("Hello world!")           // kind(1).content() shorthand
+  .hashtag("nostr")              // tag("t", "nostr") shorthand
+  .publish();
+
+// NEW: Relay selection - publish to specific relays
+await nostr.events
+  .kind(1)
+  .content("This goes to specific relays only")
+  .toRelays("wss://nos.lol", "wss://relay.damus.io")
+  .publish();
+
+// Or use array format
+await nostr.events
+  .note("Targeted publishing")
+  .toRelayList(["wss://relay1.com", "wss://relay2.com"])
   .publish();
 ```
 
@@ -328,15 +373,27 @@ publish(content: string, kind?: number): Promise<PublishResult>
 
 ### NostrUnchained.events
 
-The fluent event builder accessible via `nostr.events`:
+The super-fluent event builder accessible via `nostr.events`:
 
 ```typescript
+// Direct fluent API - start with any method!
 nostr.events
-  .kind(number)           // Set event kind
-  .content(string)        // Set event content
-  .tag(name, ...values)   // Add a tag
-  .createdAt(timestamp)   // Set custom timestamp
-  .publish()              // Build, sign, and publish
+  .kind(number)              // Set event kind
+  .content(string)           // Set event content  
+  .tag(name, ...values)      // Add single tag
+  .tags(array)               // Add multiple tags
+  .hashtag(tag)              // Add hashtag convenience
+  .timestamp(unix)           // Set custom timestamp
+  .toRelays(...urls)         // Target specific relays
+  .toRelayList(array)        // Target relays via array
+  .publish()                 // Build, sign, and publish
+
+// Direct JSON publishing
+nostr.events.publish(eventObject)
+
+// Convenience methods
+nostr.events.note(content)   // Quick text note
+nostr.events.reaction(eventId, emoji)  // Quick reaction
 ```
 
 ### FluentEventBuilder Methods
@@ -345,10 +402,16 @@ nostr.events
 |--------|-------------|---------|
 | `.kind(k)` | Set event kind | `.kind(1)` |
 | `.content(c)` | Set content | `.content("Hello!")` |
-| `.tag(name, ...values)` | Add tag | `.tag('p', 'npub1...')` |
-| `.createdAt(ts)` | Custom timestamp | `.createdAt(Date.now())` |
+| `.tag(name, ...values)` | Add single tag | `.tag('p', 'npub1...')` |
+| `.tags(tagArray)` | **NEW:** Add multiple tags | `.tags([["t","nostr"],["p","npub1..."]])` |
+| `.hashtag(tag)` | **NEW:** Add hashtag | `.hashtag("nostr")` |
+| `.timestamp(unix)` | Custom timestamp | `.timestamp(Date.now())` |
+| `.toRelays(...urls)` | **NEW:** Target specific relays | `.toRelays("wss://nos.lol")` |
+| `.toRelayList(array)` | **NEW:** Target relays via array | `.toRelayList(["wss://relay1.com"])` |
 | `.build()` | Build unsigned event | Returns `UnsignedEvent` |
 | `.publish()` | Build, sign & publish | Returns `Promise<PublishResult>` |
+| `.note(content)` | **NEW:** Quick text note | `.note("Hello!")` equivalent to `.kind(1).content("Hello!")` |
+| `.reaction(eventId, emoji)` | **NEW:** Quick reaction | `.reaction("note1...", "🔥")` |
 
 ### Common Tag Types
 

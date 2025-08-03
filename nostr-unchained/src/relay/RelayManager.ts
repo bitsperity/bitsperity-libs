@@ -175,6 +175,38 @@ export class RelayManager {
   }
 
   /**
+   * Publish event to specific relays
+   */
+  async publishToRelays(event: NostrEvent, relayUrls: string[]): Promise<RelayResult[]> {
+    const results: RelayResult[] = [];
+    const publishPromises = relayUrls.map(async (url) => {
+      const startTime = Date.now();
+      
+      try {
+        const success = await this.publishToRelay(url, event);
+        const latency = Date.now() - startTime;
+        
+        results.push({
+          relay: url,
+          success,
+          latency
+        });
+      } catch (error) {
+        const latency = Date.now() - startTime;
+        results.push({
+          relay: url,
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          latency
+        });
+      }
+    });
+
+    await Promise.allSettled(publishPromises);
+    return results;
+  }
+
+  /**
    * Publish event to all connected relays
    */
   async publishToAll(event: NostrEvent): Promise<RelayResult[]> {
