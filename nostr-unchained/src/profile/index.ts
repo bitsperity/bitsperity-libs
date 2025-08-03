@@ -12,8 +12,7 @@ export { FollowsModule } from './FollowsModule.js';
 // FollowListStore removed - using clean architecture with base layer
 export { FollowBuilder } from './FollowBuilder.js';
 export { FollowBatchBuilder } from './FollowBatchBuilder.js';
-// Cache optimization exports
-export { ProfileCacheInterface, type ProfileCacheStats } from './ProfileCacheInterface.js';
+// ProfileCacheInterface removed - architecture violation (single cache principle)
 export type { 
   ProfileMetadata, 
   UserProfile, 

@@ -1,18 +1,17 @@
 /**
  * ProfileBatchBuilder - Efficient Multiple Profile Operations
  * 
- * Provides batch operations for fetching multiple profiles with a single
- * relay subscription, improving performance for bulk operations.
+ * CLEAN ARCHITECTURE: Uses base layer for all operations
+ * Provides batch operations for fetching multiple profiles with optimal caching.
  */
 
-import { writable, derived, type Readable, type Writable } from '../store/NostrStore.js';
-import type { SubscriptionManager } from '../subscription/SubscriptionManager.js';
-import type { UserProfile, BatchProfileResult, BatchProfileState } from './types.js';
-import type { NostrEvent, Filter } from '../core/types.js';
+import type { UserProfile, BatchProfileResult } from './types.js';
+import type { NostrUnchained } from '../core/NostrUnchained.js';
 
 export interface ProfileBatchBuilderConfig {
-  subscriptionManager: SubscriptionManager;
   debug?: boolean;
+  // CLEAN ARCHITECTURE: Use base layer instead of direct SubscriptionManager
+  nostr: NostrUnchained;
 }
 
 export class ProfileBatchBuilder {
@@ -32,7 +31,7 @@ export class ProfileBatchBuilder {
   }
 
   /**
-   * Execute batch profile fetch
+   * Execute batch profile fetch using CLEAN ARCHITECTURE
    */
   async execute(): Promise<BatchProfileResult> {
     if (this.pubkeys.length === 0) {
@@ -46,148 +45,111 @@ export class ProfileBatchBuilder {
     }
 
     if (this.config.debug) {
-      console.log(`ProfileBatchBuilder: Fetching ${this.pubkeys.length} profiles`);
+      console.log(`ProfileBatchBuilder: Fetching ${this.pubkeys.length} profiles using base layer`);
     }
 
     try {
-      // Single filter for all profiles (efficient!)
-      const filter: Filter = {
-        kinds: [0],
-        authors: this.pubkeys,
-        limit: this.pubkeys.length
-      };
+      // CLEAN ARCHITECTURE: Use base layer for batch profile fetching
+      const profileStore = this.config.nostr.query()
+        .kinds([0])
+        .authors(this.pubkeys)
+        .limit(this.pubkeys.length)
+        .execute();
 
+      // Try cache first (instant!)
+      const cachedProfiles = profileStore.current;
       const profiles = new Map<string, UserProfile | null>();
       const errors = new Map<string, string>();
-      let foundCount = 0;
 
       // Initialize all profiles as null (not found)
       this.pubkeys.forEach(pubkey => {
         profiles.set(pubkey, null);
       });
 
-      return new Promise((resolve) => {
-        let subscriptionComplete = false;
-        
-        const timeoutId = setTimeout(() => {
-          if (!subscriptionComplete) {
-            subscriptionComplete = true;
-            resolve({
-              profiles,
-              success: true,
-              errors,
-              totalRequested: this.pubkeys.length,
-              totalFound: foundCount
-            });
+      // Parse cached profiles
+      let foundCount = 0;
+      cachedProfiles.forEach(event => {
+        if (event.kind === 0 && this.pubkeys.includes(event.pubkey)) {
+          try {
+            const metadata = JSON.parse(event.content);
+            const profile: UserProfile = {
+              pubkey: event.pubkey,
+              metadata,
+              lastUpdated: event.created_at,
+              eventId: event.id,
+              isOwn: false
+            };
+            profiles.set(event.pubkey, profile);
+            foundCount++;
+          } catch (error) {
+            errors.set(event.pubkey, 'Failed to parse profile metadata');
           }
-        }, 5000); // 5 second timeout for batch
-
-        const executeBatch = async () => {
-          const sharedSub = await this.config.subscriptionManager.getOrCreateSubscription([filter]);
-          const listenerId = sharedSub.addListener({
-            onEvent: (event: NostrEvent) => {
-              if (event.kind === 0 && this.pubkeys.includes(event.pubkey)) {
-                try {
-                  const metadata = JSON.parse(event.content);
-                  const profile: UserProfile = {
-                    pubkey: event.pubkey,
-                    metadata,
-                    lastUpdated: event.created_at,
-                    eventId: event.id,
-                    isOwn: false // Batch operations are typically for other users
-                  };
-                  profiles.set(event.pubkey, profile);
-                  foundCount++;
-
-                  if (this.config.debug) {
-                    console.log(`ProfileBatchBuilder: Found profile for ${event.pubkey.substring(0, 16)}...`);
-                  }
-                } catch (error) {
-                  errors.set(event.pubkey, 'Failed to parse profile data');
-                  if (this.config.debug) {
-                    console.error(`ProfileBatchBuilder: Parse error for ${event.pubkey}:`, error);
-                  }
-                }
-              }
-            },
-            onEose: () => {
-              if (!subscriptionComplete) {
-                subscriptionComplete = true;
-                clearTimeout(timeoutId);
-                sharedSub.removeListener(listenerId);
-                
-                if (this.config.debug) {
-                  console.log(`ProfileBatchBuilder: Batch complete - found ${foundCount}/${this.pubkeys.length} profiles`);
-                }
-                
-                resolve({
-                  profiles,
-                  success: true,
-                  errors,
-                  totalRequested: this.pubkeys.length,
-                  totalFound: foundCount
-                });
-              }
-            },
-            onError: (error: Error) => {
-              if (!subscriptionComplete) {
-                subscriptionComplete = true;
-                clearTimeout(timeoutId);
-                sharedSub.removeListener(listenerId);
-                
-                // Mark all as failed
-                this.pubkeys.forEach(pubkey => {
-                  errors.set(pubkey, error.message);
-                });
-                
-                resolve({
-                  profiles,
-                  success: false,
-                  errors,
-                  totalRequested: this.pubkeys.length,
-                  totalFound: foundCount
-                });
-              }
-            }
-          });
-        };
-        
-        executeBatch().catch(error => {
-          if (!subscriptionComplete) {
-            subscriptionComplete = true;
-            clearTimeout(timeoutId);
-            
-            if (this.config.debug) {
-              console.error('ProfileBatchBuilder: Failed to start batch:', error);
-            }
-            
-            // Mark all as failed
-            this.pubkeys.forEach(pubkey => {
-              errors.set(pubkey, error instanceof Error ? error.message : 'Unknown error');
-            });
-            
-            resolve({
-              profiles,
-              success: false,
-              errors,
-              totalRequested: this.pubkeys.length,
-              totalFound: foundCount
-            });
-          }
-        });
+        }
       });
+
+      if (this.config.debug) {
+        console.log(`ProfileBatchBuilder: Found ${foundCount}/${this.pubkeys.length} profiles in cache`);
+      }
+
+      // If we found all profiles in cache, return immediately
+      if (foundCount === this.pubkeys.length) {
+        return {
+          profiles,
+          success: true,
+          errors,
+          totalRequested: this.pubkeys.length,
+          totalFound: foundCount
+        };
+      }
+
+      // Start subscription for missing profiles
+      await this.config.nostr.sub()
+        .kinds([0])
+        .authors(this.pubkeys)
+        .limit(this.pubkeys.length)
+        .execute();
+
+      // Wait a bit for subscription to populate cache
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Check cache again for newly fetched profiles
+      const updatedProfiles = profileStore.current;
+      updatedProfiles.forEach(event => {
+        if (event.kind === 0 && this.pubkeys.includes(event.pubkey) && !profiles.get(event.pubkey)) {
+          try {
+            const metadata = JSON.parse(event.content);
+            const profile: UserProfile = {
+              pubkey: event.pubkey,
+              metadata,
+              lastUpdated: event.created_at,
+              eventId: event.id,
+              isOwn: false
+            };
+            profiles.set(event.pubkey, profile);
+            foundCount++;
+          } catch (error) {
+            errors.set(event.pubkey, 'Failed to parse profile metadata');
+          }
+        }
+      });
+
+      if (this.config.debug) {
+        console.log(`ProfileBatchBuilder: Final result - found ${foundCount}/${this.pubkeys.length} profiles`);
+      }
+
+      return {
+        profiles,
+        success: true,
+        errors,
+        totalRequested: this.pubkeys.length,
+        totalFound: foundCount
+      };
 
     } catch (error) {
-      // Mark all as failed
-      const errors = new Map<string, string>();
-      this.pubkeys.forEach(pubkey => {
-        errors.set(pubkey, error instanceof Error ? error.message : 'Unknown error');
-      });
-
       return {
         profiles: new Map(),
         success: false,
-        errors,
+        errors: new Map([['batch', error instanceof Error ? error.message : 'Unknown error']]),
         totalRequested: this.pubkeys.length,
         totalFound: 0
       };
@@ -195,203 +157,59 @@ export class ProfileBatchBuilder {
   }
 
   /**
-   * Create a reactive store for batch profile operations
+   * Execute and return a reactive store for continuous updates
    */
-  asStore(): Readable<BatchProfileState> {
-    if (this.pubkeys.length === 0) {
-      // Return empty store
-      return writable({
-        profiles: new Map(),
-        loading: false,
-        loadingStates: new Map(),
-        errors: new Map(),
-        lastUpdated: new Date()
-      });
-    }
-
-    const store = writable<BatchProfileState>({
-      profiles: new Map(),
-      loading: true,
-      loadingStates: new Map(),
-      errors: new Map(),
-      lastUpdated: null
-    });
-
-    // Initialize loading states
-    const initialLoadingStates = new Map<string, boolean>();
-    this.pubkeys.forEach(pubkey => {
-      initialLoadingStates.set(pubkey, true);
-    });
-    
-    store.update(state => ({
-      ...state,
-      loadingStates: initialLoadingStates
-    }));
-
-    // Execute batch fetch and update store
-    this.executeBatchForStore(store);
-
-    return store;
-  }
-
-  // Private helper methods
-
-  private async executeBatchForStore(store: Writable<BatchProfileState>): Promise<void> {
-    if (this.config.debug) {
-      console.log(`ProfileBatchBuilder: Creating reactive store for ${this.pubkeys.length} profiles`);
-    }
-
-    try {
-      const filter: Filter = {
-        kinds: [0],
-        authors: this.pubkeys,
-        limit: this.pubkeys.length
-      };
-
-      const profiles = new Map<string, UserProfile | null>();
-      const loadingStates = new Map<string, boolean>();
-      const errors = new Map<string, Error>();
-
-      // Initialize all profiles as null and loading
-      this.pubkeys.forEach(pubkey => {
-        profiles.set(pubkey, null);
-        loadingStates.set(pubkey, true);
-      });
-
-      // Set initial state
-      store.set({
-        profiles,
-        loading: true,
-        loadingStates,
-        errors,
-        lastUpdated: null
-      });
-
-      let subscriptionComplete = false;
-      
-      const timeoutId = setTimeout(() => {
-        if (!subscriptionComplete) {
-          subscriptionComplete = true;
-          
-          // Mark all still-loading profiles as no longer loading
-          this.pubkeys.forEach(pubkey => {
-            loadingStates.set(pubkey, false);
-          });
-          
-          store.update(state => ({
-            ...state,
-            loading: false,
-            loadingStates,
-            lastUpdated: new Date()
-          }));
-        }
-      }, 5000);
-
-      const sharedSub = await this.config.subscriptionManager.getOrCreateSubscription([filter]);
-      const listenerId = sharedSub.addListener({
-        onEvent: (event: NostrEvent) => {
+  executeReactive() {
+    // CLEAN ARCHITECTURE: Return the base layer store directly
+    return this.config.nostr.query()
+      .kinds([0])
+      .authors(this.pubkeys)
+      .execute()
+      .map(events => {
+        // Transform events to UserProfile map
+        const profiles = new Map<string, UserProfile | null>();
+        
+        // Initialize all as null
+        this.pubkeys.forEach(pubkey => profiles.set(pubkey, null));
+        
+        // Fill found profiles
+        events.forEach(event => {
           if (event.kind === 0 && this.pubkeys.includes(event.pubkey)) {
             try {
               const metadata = JSON.parse(event.content);
-              const profile: UserProfile = {
+              profiles.set(event.pubkey, {
                 pubkey: event.pubkey,
                 metadata,
                 lastUpdated: event.created_at,
                 eventId: event.id,
                 isOwn: false
-              };
-              
-              profiles.set(event.pubkey, profile);
-              loadingStates.set(event.pubkey, false);
-              
-              store.update(state => ({
-                ...state,
-                profiles: new Map(profiles),
-                loadingStates: new Map(loadingStates)
-              }));
-
-              if (this.config.debug) {
-                console.log(`ProfileBatchBuilder Store: Updated profile for ${event.pubkey.substring(0, 16)}...`);
-              }
+              });
             } catch (error) {
-              errors.set(event.pubkey, error instanceof Error ? error : new Error('Parse error'));
-              loadingStates.set(event.pubkey, false);
-              
-              store.update(state => ({
-                ...state,
-                loadingStates: new Map(loadingStates),
-                errors: new Map(errors)
-              }));
+              // Skip invalid profiles
             }
           }
-        },
-        onEose: () => {
-          if (!subscriptionComplete) {
-            subscriptionComplete = true;
-            clearTimeout(timeoutId);
-            
-            // Mark all still-loading profiles as complete
-            this.pubkeys.forEach(pubkey => {
-              loadingStates.set(pubkey, false);
-            });
-            
-            store.update(state => ({
-              ...state,
-              loading: false,
-              loadingStates: new Map(loadingStates),
-              lastUpdated: new Date()
-            }));
+        });
+        
+        return profiles;
+      });
+  }
 
-            if (this.config.debug) {
-              const foundCount = Array.from(profiles.values()).filter(p => p !== null).length;
-              console.log(`ProfileBatchBuilder Store: Batch complete - ${foundCount}/${this.pubkeys.length} profiles`);
-            }
-          }
-        },
-        onError: (error: Error) => {
-          if (!subscriptionComplete) {
-            subscriptionComplete = true;
-            clearTimeout(timeoutId);
-            
-            // Mark all as failed
-            this.pubkeys.forEach(pubkey => {
-              errors.set(pubkey, error);
-              loadingStates.set(pubkey, false);
-            });
-            
-            store.update(state => ({
-              ...state,
-              loading: false,
-              loadingStates: new Map(loadingStates),
-              errors: new Map(errors),
-              lastUpdated: new Date()
-            }));
-          }
+  /**
+   * Watch for profile updates with reactive store
+   */
+  watch() {
+    // Start subscription for live updates
+    this.config.nostr.sub()
+      .kinds([0])
+      .authors(this.pubkeys)
+      .execute()
+      .catch(error => {
+        if (this.config.debug) {
+          console.warn('ProfileBatchBuilder: Failed to start watch subscription:', error);
         }
       });
 
-      // Close subscription after timeout to avoid memory leaks
-      setTimeout(() => {
-        sharedSub.removeListener(listenerId);
-      }, 10000);
-
-    } catch (error) {
-      // Handle subscription creation error
-      const loadingStates = new Map<string, boolean>();
-      const errors = new Map<string, Error>();
-      
-      this.pubkeys.forEach(pubkey => {
-        loadingStates.set(pubkey, false);
-        errors.set(pubkey, error instanceof Error ? error : new Error('Subscription error'));
-      });
-      
-      store.update(state => ({
-        ...state,
-        loading: false,
-        loadingStates,
-        errors,
-        lastUpdated: new Date()
-      }));
-    }
+    // Return reactive store
+    return this.executeReactive();
   }
 }

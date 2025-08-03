@@ -159,8 +159,8 @@ export class ProfileModule {
    */
   batch(): ProfileBatchBuilder {
     return new ProfileBatchBuilder({
-      subscriptionManager: this.config.subscriptionManager,
-      debug: this.config.debug
+      debug: this.config.debug,
+      nostr: this.config.nostr
     });
   }
 
