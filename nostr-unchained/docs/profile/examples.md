@@ -227,7 +227,7 @@ class FollowingFeed {
   
   private renderFeedItem(pubkey: string, profile: UserProfile): string {
     return `
-      <div class="feed-item" data-pubkey="${pubkey}">
+      <div class="feed-item" data-npub="${hexToNpub(pubkey)}">
         <img src="${profile.metadata.picture || '/default-avatar.png'}" 
              class="feed-avatar" />
         <div class="feed-content">
@@ -354,7 +354,7 @@ class ProfileDirectory {
   
   async viewProfile(pubkey: string) {
     // Navigate to profile page or open modal
-    console.log('👤 Viewing profile:', pubkey);
+    console.log('👤 Viewing profile:', hexToNpub(pubkey));
   }
   
   async followUser(pubkey: string) {
@@ -423,7 +423,7 @@ class FollowManager {
   
   private renderFollowItem(follow: Follow, profile?: UserProfile): string {
     return `
-      <div class="follow-item" data-pubkey="${follow.pubkey}">
+      <div class="follow-item" data-npub="${hexToNpub(follow.pubkey)}">
         <div class="follow-profile">
           <img src="${profile?.metadata?.picture || '/default-avatar.png'}" 
                class="follow-avatar" />

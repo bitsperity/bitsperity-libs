@@ -69,5 +69,51 @@ export * as Profile from './profile/index.js';
 // Constants
 export { DEFAULT_RELAYS, EVENT_KINDS } from './utils/constants.js';
 
+// NIP-19 Encoding Utilities
+export {
+  // Basic conversion functions
+  hexToNpub,
+  hexToNsec,
+  hexToNote,
+  npubToHex,
+  nsecToHex,
+  noteToHex,
+  // Extended entities
+  createNprofile,
+  createNevent,
+  createNaddr,
+  // Low-level encoding functions
+  npubEncode,
+  nsecEncode,
+  noteEncode,
+  nprofileEncode,
+  neventEncode,
+  naddrEncode,
+  // Universal decoder
+  decode,
+  // Validation helpers
+  isValidHexKey,
+  isValidNpub,
+  isValidNsec,
+  isValidNote,
+  // Types
+  type NPub,
+  type NSec,
+  type Note,
+  type NProfile,
+  type NEvent,
+  type NAddr,
+  type ProfilePointer,
+  type EventPointer,
+  type AddressPointer,
+  type DecodedResult,
+  type DecodedNpub,
+  type DecodedNsec,
+  type DecodedNote,
+  type DecodedNprofile,
+  type DecodedNevent,
+  type DecodedNaddr
+} from './utils/encoding-utils.js';
+
 // Version (will be updated by build process)
 export const VERSION = '0.1.0';

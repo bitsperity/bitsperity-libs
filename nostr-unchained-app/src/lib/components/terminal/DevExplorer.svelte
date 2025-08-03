@@ -104,6 +104,14 @@
 			// Execute subscription - returns a handle with excellent DX
 			liveSubscription = await subBuilder.execute();
 			
+			// Subscribe to the store to get live updates
+			if (liveSubscription && liveSubscription.store) {
+				liveSubscription.store.subscribe(liveEvents => {
+					// Live events will be shown when querying the cache
+					logger.info('🔴 Live events received', { count: liveEvents?.length || 0 });
+				});
+			}
+			
 			logger.info('🔴 Live subscription started - filling cache', { 
 				filters: { kinds: selectedKinds, authors: selectedAuthors, tags: selectedTags },
 				subscriptionId: liveSubscription?.id,
@@ -151,18 +159,17 @@
 				queryBuilder = queryBuilder.tags(actualTagType, selectedTags);
 			}
 			
-			// Execute cache query
-			cacheQuery = await queryBuilder.execute();
+			// Execute cache query - returns UniversalNostrStore
+			cacheQuery = queryBuilder.execute();
 			
-			// Get immediate results from cache
-			events = cacheQuery.current || [];
-			eventCount = events.length;
-			queryTime = performance.now() - startTime;
-			
-			// Subscribe to cache updates (when sub() fills cache)
-			cacheQuery.subscribe(newEvents => {
-				events = newEvents.sort((a, b) => b.created_at - a.created_at);
+			// Get immediate results from cache - UniversalNostrStore is a store
+			// Subscribe to the store to get the current value and updates
+			const unsubscribe = cacheQuery.subscribe(cachedEvents => {
+				events = (cachedEvents || []).sort((a, b) => b.created_at - a.created_at);
 				eventCount = events.length;
+				if (queryTime === null) {
+					queryTime = performance.now() - startTime;
+				}
 			});
 			
 			logger.info('💾 Cache query executed', { 
@@ -186,7 +193,8 @@
 		if (!nostr) return;
 		
 		try {
-			cacheStats = nostr.getCacheStats();
+			// Get cache statistics
+			cacheStats = nostr.getCacheStatistics ? nostr.getCacheStatistics() : nostr.getCacheStats?.();
 			
 			// Get active subscriptions from SubscriptionManager
 			const subManager = nostr.getSubscriptionManager();

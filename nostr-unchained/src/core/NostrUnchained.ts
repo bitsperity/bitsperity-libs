@@ -350,14 +350,14 @@ export class NostrUnchained {
    * Create a query builder for complex queries
    */
   query(): QueryBuilder {
-    return new QueryBuilder(this.subscriptionManager);
+    return new QueryBuilder(this.cache);
   }
 
   /**
    * Create a subscription builder
    */
   sub(): SubBuilder {
-    return new SubBuilder(this.subscriptionManager);
+    return new SubBuilder(this.cache, this.subscriptionManager);
   }
 
   /**

@@ -10,6 +10,7 @@
 	import DMChat from './terminal/DMChat.svelte';
 	import PublishCard from './terminal/PublishCard.svelte';
 	import ProfileView from './profile/ProfileView.svelte';
+	import KeyDisplay from './ui/KeyDisplay.svelte';
 
 	// =============================================================================
 	// Props - Clean Dependency Injection
@@ -67,7 +68,16 @@
 			</div>
 			<div class="user-details">
 				<div class="user-key">
-					{userInfo.publicKey ? userInfo.publicKey.substring(0, 8) + '...' : 'Loading...'}
+					{#if userInfo.publicKey}
+						<KeyDisplay 
+							hexKey={userInfo.publicKey} 
+							variant="compact" 
+							copyable={true}
+							className="header-key"
+						/>
+					{:else}
+						<span class="loading-key">Loading...</span>
+					{/if}
 				</div>
 				<div class="user-signer">{userInfo.signerType} signer</div>
 			</div>
@@ -169,6 +179,24 @@
 	.user-key {
 		font-weight: 600;
 		font-family: var(--font-mono);
+	}
+
+	/* Styling for KeyDisplay in header */
+	.user-key :global(.header-key) {
+		font-size: 0.85rem;
+		padding: 4px 8px;
+		background: rgba(255, 255, 255, 0.1) !important;
+		border: 1px solid rgba(255, 255, 255, 0.2) !important;
+	}
+
+	.user-key :global(.header-key:hover) {
+		background: rgba(255, 255, 255, 0.15) !important;
+		transform: none; /* Remove the lift effect in header */
+	}
+
+	.loading-key {
+		color: var(--color-text-muted);
+		font-style: italic;
 	}
 
 	.user-signer {
