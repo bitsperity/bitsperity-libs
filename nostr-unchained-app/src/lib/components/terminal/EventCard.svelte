@@ -8,8 +8,9 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 	import KeyDisplay from '../ui/KeyDisplay.svelte';
+	import ProfileAvatar from '../ui/ProfileAvatar.svelte';
 	
-	let { event }: { event: any } = $props();
+	let { event, nostr }: { event: any; nostr?: any } = $props();
 	
 	const dispatch = createEventDispatcher();
 
@@ -223,9 +224,19 @@
 			<span class="event-time">{formatTimestamp(event.created_at)}</span>
 		</div>
 		<div class="author-info">
+			<ProfileAvatar 
+				pubkey={event.pubkey}
+				{nostr}
+				size="sm"
+				clickable={true}
+				on:profileClick={(e) => {
+					console.log('🎯 Profile click in EventCard', e.detail);
+					dispatch('profileClick', e.detail);
+				}}
+			/>
 			<KeyDisplay 
 				hexKey={event.pubkey} 
-				variant="short" 
+				variant="compact" 
 				copyable={true}
 				className="event-author"
 			/>
@@ -431,7 +442,10 @@
 	}
 
 	.author-info {
-		text-align: right;
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-xs);
+		justify-content: flex-end;
 	}
 
 	.author-key {

@@ -7,12 +7,17 @@
 
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { createEventDispatcher } from 'svelte';
 	import { createContextLogger } from '../../utils/Logger.js';
 	import EventCard from './EventCard.svelte';
 	import KeyDisplay from '../ui/KeyDisplay.svelte';
 	import { npubToHex, isValidHexKey } from 'nostr-unchained';
 	
 	let { nostr }: { nostr: any } = $props();
+	
+	const dispatch = createEventDispatcher<{
+		profileNavigate: { pubkey: string };
+	}>();
 	
 	// =============================================================================
 	// STATE: Clean and Simple
@@ -378,6 +383,12 @@
 	
 	function removeTag(tag: string) {
 		selectedTags = selectedTags.filter(t => t !== tag);
+	}
+	
+	function handleProfileClick(detail: { pubkey: string }) {
+		console.log('🎯 Profile click in DevExplorer', { pubkey: detail.pubkey });
+		logger.info('Profile click', { pubkey: detail.pubkey });
+		dispatch('profileNavigate', { pubkey: detail.pubkey });
 	}
 	
 	function clearFilters() {
@@ -792,7 +803,11 @@
 			<!-- Event Cards -->
 			<div class="events-grid">
 				{#each events as event (event.id)}
-					<EventCard {event} />
+					<EventCard 
+						{event} 
+						{nostr}
+						on:profileClick={(e) => handleProfileClick(e.detail)}
+					/>
 				{/each}
 			</div>
 		{/if}

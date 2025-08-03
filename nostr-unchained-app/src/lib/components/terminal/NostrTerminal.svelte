@@ -8,6 +8,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { createContextLogger } from '../../utils/Logger.js';
+	import { createEventDispatcher } from 'svelte';
 	import DevExplorer from './DevExplorer.svelte';
 	import KeyDisplay from '../ui/KeyDisplay.svelte';
 	import type { AuthState } from '../../types/app.js';
@@ -18,6 +19,10 @@
 		onShowKeys: () => void;
 		nostr: any; // NostrUnchained instance
 	} = $props();
+	
+	const dispatch = createEventDispatcher<{
+		profileNavigate: { pubkey: string };
+	}>();
 
 	// =============================================================================
 	// Simple Connection Status
@@ -91,7 +96,10 @@
 
 	<!-- Developer Explorer (handles everything) -->
 	<div class="explorer-container">
-		<DevExplorer {nostr} />
+		<DevExplorer 
+			{nostr} 
+			on:profileNavigate={(e) => dispatch('profileNavigate', e.detail)}
+		/>
 	</div>
 </div>
 

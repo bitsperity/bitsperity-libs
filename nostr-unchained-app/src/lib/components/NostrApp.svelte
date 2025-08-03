@@ -28,6 +28,7 @@
 	// =============================================================================
 	
 	let currentView = $state<'terminal' | 'messages' | 'publish' | 'profile'>('terminal');
+	let currentProfilePubkey = $state<string | null>(null); // For viewing other profiles
 	let userInfo = $state<{ publicKey: string; signerType: string }>({
 		publicKey: '',
 		signerType: signer || 'unknown'
@@ -56,6 +57,17 @@
 	function logout() {
 		// Clean logout - just reload the page
 		window.location.reload();
+	}
+
+	function navigateToProfile(pubkey: string | null = null) {
+		console.log('🎯 Navigate to profile in NostrApp', { pubkey, currentView });
+		currentProfilePubkey = pubkey; // null = own profile, string = other profile
+		currentView = 'profile';
+	}
+
+	function navigateToOwnProfile() {
+		currentProfilePubkey = null; // Reset to own profile
+		currentView = 'profile';
 	}
 </script>
 
@@ -108,7 +120,7 @@
 			<button 
 				class="nav-btn"
 				class:active={currentView === 'profile'}
-				onclick={() => currentView = 'profile'}
+				onclick={navigateToOwnProfile}
 			>
 				👤 Profile
 			</button>
@@ -122,7 +134,13 @@
 	<!-- Main Content - NostrUnchained powered -->
 	<main class="app-main">
 		{#if currentView === 'terminal'}
-			<NostrTerminal {authState} {nostr} onLogout={logout} onShowKeys={() => {}} />
+			<NostrTerminal 
+				{authState} 
+				{nostr} 
+				onLogout={logout} 
+				onShowKeys={() => {}}
+				on:profileNavigate={(e) => navigateToProfile(e.detail.pubkey)}
+			/>
 		{:else if currentView === 'messages'}
 			<DMChat {authState} {nostr} />
 		{:else if currentView === 'publish'}
@@ -130,7 +148,11 @@
 				<PublishCard {nostr} />
 			</div>
 		{:else if currentView === 'profile'}
-			<ProfileView {nostr} {authState} />
+			<ProfileView 
+				{nostr} 
+				{authState} 
+				pubkey={currentProfilePubkey}
+			/>
 		{/if}
 	</main>
 </div>
