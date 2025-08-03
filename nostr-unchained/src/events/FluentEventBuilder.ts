@@ -21,7 +21,7 @@ export class FluentEventBuilder {
   
   private nostrInstance: any; // NostrUnchained instance for publishing
   private signed: boolean = false;
-  private signedEvent?: NostrEvent;
+  private signedEvent: NostrEvent | undefined;
 
   constructor(nostrInstance: any) {
     this.nostrInstance = nostrInstance;
@@ -103,13 +103,35 @@ export class FluentEventBuilder {
       throw new Error('Content is required before signing');
     }
 
-    // Use the NostrUnchained instance to create and sign the event
-    const signedEvent = await this.nostrInstance.createEvent({
-      kind: this.eventData.kind,
+    // Use EventBuilder directly to create and sign the event
+    const signingProvider = this.nostrInstance.signingProvider;
+    if (!signingProvider) {
+      throw new Error('No signing provider available. Call initializeSigning() first.');
+    }
+
+    const unsignedEvent = {
+      pubkey: await signingProvider.getPublicKey(),
+      kind: this.eventData.kind || 1,
       content: this.eventData.content,
       tags: this.eventData.tags,
-      created_at: this.eventData.created_at
-    });
+      created_at: this.eventData.created_at || Math.floor(Date.now() / 1000)
+    };
+
+    // Validate the event
+    const validation = EventBuilder.validateEvent(unsignedEvent);
+    if (!validation.valid) {
+      throw new Error(`Invalid event: ${validation.errors.join(', ')}`);
+    }
+
+    // Calculate event ID
+    const id = EventBuilder.calculateEventId(unsignedEvent);
+    
+    // Sign the event
+    const signedEvent: NostrEvent = {
+      ...unsignedEvent,
+      id,
+      sig: await signingProvider.signEvent({ ...unsignedEvent, id })
+    };
 
     this.signedEvent = signedEvent;
     this.signed = true;
@@ -139,23 +161,38 @@ export class FluentEventBuilder {
 
     // If we have a pre-signed event, publish it directly
     if (this.signed && this.signedEvent) {
-      return await this.nostrInstance.publishEvent(this.signedEvent);
+      const relayResults = await this.nostrInstance.relayManager.publishToAll(this.signedEvent);
+      const success = relayResults.some(r => r.success);
+      return {
+        success,
+        eventId: success ? this.signedEvent.id : undefined,
+        event: success ? this.signedEvent : undefined,
+        relayResults,
+        timestamp: Date.now(),
+        error: success ? undefined : {
+          message: 'Failed to publish to any relay',
+          code: 'PUBLISH_FAILED',
+          retryable: true
+        }
+      };
     }
 
-    // For simple text notes with no custom settings, use the existing publish method
-    if (this.eventData.kind === 1 && this.eventData.tags.length === 0 && !this.eventData.created_at) {
-      return await this.nostrInstance.publish(this.eventData.content);
+    // Get the signing provider and pubkey
+    const signingProvider = this.nostrInstance.signingProvider;
+    if (!signingProvider) {
+      throw new Error('No signing provider available. Call initializeSigning() first.');
     }
 
-    // For complex events, create and publish
-    const signedEvent = await this.nostrInstance.createEvent({
-      kind: this.eventData.kind,
+    const pubkey = await signingProvider.getPublicKey();
+
+    // Use the NostrUnchained publish method for all events
+    return await this.nostrInstance.publish({
+      pubkey,
+      kind: this.eventData.kind || 1,
       content: this.eventData.content,
       tags: this.eventData.tags,
-      created_at: this.eventData.created_at
+      created_at: this.eventData.created_at || Math.floor(Date.now() / 1000)
     });
-
-    return await this.nostrInstance.publishEvent(signedEvent);
   }
 
   /**
