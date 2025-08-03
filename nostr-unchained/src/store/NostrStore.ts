@@ -398,8 +398,8 @@ export class FeedStoreImpl implements FeedStore {
 
   // Lifecycle methods
   async close(): Promise<void> {
-    if (this.subscription?.subscription?.id) {
-      await this.subscriptionManager.close(this.subscription.subscription.id);
+    if (this.subscription?.subscription?.cleanup) {
+      this.subscription.subscription.cleanup();
     }
     this._status.set('closed');
   }
@@ -543,10 +543,26 @@ export class FeedStoreImpl implements FeedStore {
         }
       };
 
-      this.subscription = await this.subscriptionManager.subscribe(
-        this.filters,
-        subscriptionOptions
-      );
+      // Use smart deduplication to prevent subscription overload
+      const sharedSub = await this.subscriptionManager.getOrCreateSubscription(this.filters);
+      const listenerId = sharedSub.addListener({
+        onEvent: subscriptionOptions.onEvent,
+        onEose: subscriptionOptions.onEose,
+        onClose: subscriptionOptions.onClose,
+        onError: subscriptionOptions.onError
+      });
+      
+      // Create subscription result compatible with existing code
+      this.subscription = {
+        success: true,
+        subscription: {
+          id: sharedSub.key,
+          // Add cleanup method
+          cleanup: () => sharedSub.removeListener(listenerId)
+        },
+        relayResults: [],
+        error: undefined
+      };
 
       if (!this.subscription.success) {
         this._error.set(this.subscription.error || { 

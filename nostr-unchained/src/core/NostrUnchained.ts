@@ -16,7 +16,7 @@ import { UniversalDMModule } from '../dm/api/UniversalDMModule.js';
 import { SocialModule } from '../social/api/SocialModule.js';
 import { SubscriptionManager } from '../subscription/SubscriptionManager.js';
 import { UniversalEventCache, type CacheStatistics } from '../cache/UniversalEventCache.js';
-import { QueryBuilder, SubBuilder } from '../query/UniversalQueryBuilder.js';
+import { QueryBuilder, SubBuilder } from '../query/QueryBuilder.js';
 import { ProfileModule } from '../profile/ProfileModule.js';
 
 import type {
@@ -282,13 +282,13 @@ export class NostrUnchained {
       
       // Subscribe to all gift wraps addressed to me
       // This will populate the Universal Cache with decrypted messages
-      const subscription = await this.subscriptionManager.subscribe({
-        filters: [{
-          kinds: [1059], // Gift wrap events
-          '#p': [myPubkey],
-          limit: 100 // Get recent messages
-        }],
-        relays: this.config.relays,
+      const sharedSub = await this.subscriptionManager.getOrCreateSubscription([{
+        kinds: [1059], // Gift wrap events
+        '#p': [myPubkey],
+        limit: 100 // Get recent messages
+      }], this.config.relays);
+      
+      const listenerId = sharedSub.addListener({
         onEvent: async (event: NostrEvent) => {
           // The Universal Cache will automatically handle decryption
           // when events are added through normal caching mechanisms
@@ -466,6 +466,13 @@ export class NostrUnchained {
    * Get the Universal Event Cache for advanced usage
    */
   getCache(): UniversalEventCache {
+    return this.cache;
+  }
+
+  /**
+   * Get the universal event cache instance
+   */
+  get eventCache(): UniversalEventCache {
     return this.cache;
   }
 

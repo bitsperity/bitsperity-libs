@@ -46,8 +46,9 @@ let profileStore = $derived(profilePubkey && nostr ? nostr.profile.get(profilePu
 // PERFECT DX: Direct reactive store access - Pure UniversalNostrStore
 let profile = $derived(profileStore ? $profileStore : null);
 
-// CLEAN ARCHITECTURE: No loading state needed (cache-first is instant)
-let isLoading = $derived(false);
+
+// Loading state - true until we have profile data or confirmed null
+let isLoading = $derived(!profileStore || (profileStore && $profileStore === undefined));
 
 // CLEAN ARCHITECTURE: No error state needed (base layer handles errors gracefully)
 let error = $derived<string | null>(null);
@@ -177,7 +178,7 @@ const shortPubkey = $derived(
 			<!-- Profile Banner -->
 			<div class="profile-banner">
 				{#if profile?.metadata?.banner}
-					<img src={profile.metadata.banner} alt="Profile banner" class="banner-image" />
+					<img src={profile.metadata.banner} alt="" class="banner-image" />
 				{:else}
 					<div class="banner-placeholder"></div>
 				{/if}

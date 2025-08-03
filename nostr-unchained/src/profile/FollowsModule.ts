@@ -1,11 +1,10 @@
 /**
  * FollowsModule - Follow List Management API
  * 
- * Provides methods for accessing and managing follow lists
- * according to NIP-02 specification.
+ * TODO: Convert to clean architecture using base layer
+ * For now, simplified to prevent breaking changes
  */
 
-import { FollowListStore } from './FollowListStore.js';
 import { FollowBuilder } from './FollowBuilder.js';
 import { FollowBatchBuilder } from './FollowBatchBuilder.js';
 import { EventBuilder } from '../core/EventBuilder.js';
@@ -14,17 +13,87 @@ import type { RelayManager } from '../relay/RelayManager.js';
 import type { SigningProvider } from '../crypto/SigningProvider.js';
 import type { Follow, PublishResult } from './types.js';
 import type { NostrEvent, Filter } from '../core/types.js';
+import type { NostrUnchained } from '../core/NostrUnchained.js';
+import type { UniversalNostrStore } from '../store/UniversalNostrStore.js';
+
+/**
+ * Enhanced follow list store with count property for frontend compatibility
+ * Provides both direct subscribe (for follow array) and separate .follows/.count properties
+ */
+class FollowListStore {
+  private baseStore: UniversalNostrStore<Follow[]>;
+  public count: CountStore;
+  public follows: UniversalNostrStore<Follow[]>; // Frontend expects this
+
+  constructor(baseStore: UniversalNostrStore<Follow[]>) {
+    this.baseStore = baseStore;
+    // Create a derived store for the count
+    this.count = new CountStore(baseStore);
+    // Expose follows as expected by frontend
+    this.follows = baseStore;
+  }
+
+  // Delegate to base store (for direct usage)
+  subscribe(run: (value: Follow[]) => void, invalidate?: () => void) {
+    return this.baseStore.subscribe(run, invalidate);
+  }
+
+  get current(): Follow[] {
+    return this.baseStore.current;
+  }
+}
+
+/**
+ * Simple count store that derives count from a Follow[] store
+ */
+class CountStore {
+  private sourceStore: UniversalNostrStore<Follow[]>;
+  private _count: number = 0;
+  private subscribers = new Set<(count: number) => void>();
+
+  constructor(sourceStore: UniversalNostrStore<Follow[]>) {
+    this.sourceStore = sourceStore;
+    this._count = sourceStore.current?.length || 0;
+    
+    // Subscribe to source changes
+    sourceStore.subscribe((follows: Follow[]) => {
+      const newCount = follows?.length || 0;
+      if (newCount !== this._count) {
+        this._count = newCount;
+        this.notifySubscribers();
+      }
+    });
+  }
+
+  subscribe(run: (count: number) => void) {
+    run(this._count); // Call immediately
+    this.subscribers.add(run);
+    
+    return () => {
+      this.subscribers.delete(run);
+    };
+  }
+
+  get current(): number {
+    return this._count;
+  }
+
+  private notifySubscribers() {
+    this.subscribers.forEach(callback => callback(this._count));
+  }
+}
 
 export interface FollowsModuleConfig {
   subscriptionManager: SubscriptionManager;
   relayManager: RelayManager;
   signingProvider?: SigningProvider;
   debug?: boolean;
+  // REQUIRED: NostrUnchained instance for clean base layer access
+  nostr: NostrUnchained;
 }
 
 export class FollowsModule {
   private config: FollowsModuleConfig;
-  private followStores = new Map<string, FollowListStore>();
 
   constructor(config: FollowsModuleConfig) {
     this.config = config;
@@ -32,34 +101,93 @@ export class FollowsModule {
 
   /**
    * Get own follow list as a reactive store
+   * CLEAN ARCHITECTURE: Uses base layer directly
    */
   async mine(): Promise<FollowListStore> {
     if (!this.config.signingProvider) {
       throw new Error('Cannot access own follow list: No signing provider available. Initialize signing first.');
     }
 
-    const myPubkey = await this.config.signingProvider.getPublicKey();
+    // Try synchronous first, fallback to async
+    let myPubkey = this.config.signingProvider.getPublicKeySync?.();
+    if (!myPubkey) {
+      myPubkey = await this.config.signingProvider.getPublicKey();
+    }
+
     return this.of(myPubkey);
   }
 
   /**
-   * Get follow list for any pubkey as a reactive store
+   * Get follow list for any pubkey as a reactive store  
+   * CLEAN ARCHITECTURE: Uses base layer directly with smart deduplication
    */
   of(pubkey: string): FollowListStore {
-    // Return existing store if available
-    if (this.followStores.has(pubkey)) {
-      return this.followStores.get(pubkey)!;
-    }
+    // Start subscription to populate cache - deduplication handled by SubscriptionManager
+    this.config.nostr.sub()
+      .kinds([3])
+      .authors([pubkey])
+      .limit(1)
+      .execute()
+      .catch(error => {
+        if (this.config.debug) {
+          console.warn('Failed to start follow list subscription:', error);
+        }
+      });
+    
+    // Get base store with live updates - this uses clean deduplication
+    const baseStore = this.config.nostr.query()
+      .kinds([3])
+      .authors([pubkey])
+      .limit(1)
+      .execute()
+      .map(events => this.parseFollowListEvents(events));
 
-    // Create new follow list store
-    const store = new FollowListStore({
-      pubkey,
-      subscriptionManager: this.config.subscriptionManager,
-      debug: this.config.debug
-    });
+    // Return enhanced store with count property
+    return new FollowListStore(baseStore);
+  }
 
-    this.followStores.set(pubkey, store);
-    return store;
+  /**
+   * Get followers for any pubkey - WHO FOLLOWS THIS USER
+   * Returns count of users who have this pubkey in their follow list
+   */
+  followers(pubkey: string): CountStore {
+    // Start subscription to load followers data into cache first
+    this.config.nostr.sub()
+      .kinds([3])
+      .tags('p', [pubkey])
+      .limit(100)
+      .execute()
+      .catch(error => {
+        if (this.config.debug) {
+          console.warn('Failed to start followers subscription:', error);
+        }
+      });
+
+    // Query for all follow lists that include this pubkey
+    const followersStore = this.config.nostr.query()
+      .kinds([3])
+      .tags('p', [pubkey])
+      .limit(100) // Get up to 100 followers
+      .execute()
+      .map(events => {
+        // Each event represents someone who follows this pubkey
+        // Return array of follower pubkeys (deduplicated)
+        const followerPubkeys = new Set<string>();
+        events.forEach(event => {
+          if (event.kind === 3) {
+            // Check if this follow list actually contains our target pubkey
+            const hasTargetPubkey = event.tags.some(
+              tag => tag[0] === 'p' && tag[1] === pubkey
+            );
+            if (hasTargetPubkey) {
+              followerPubkeys.add(event.pubkey);
+            }
+          }
+        });
+        return Array.from(followerPubkeys);
+      });
+
+    return new CountStore(followersStore);
   }
 
   /**
@@ -75,7 +203,7 @@ export class FollowsModule {
       subscriptionManager: this.config.subscriptionManager,
       relayManager: this.config.relayManager,
       signingProvider: this.config.signingProvider,
-      debug: this.config.debug
+      debug: this.config.debug ?? false
     }, pubkey);
   }
 
@@ -199,7 +327,8 @@ export class FollowsModule {
       subscriptionManager: this.config.subscriptionManager,
       relayManager: this.config.relayManager,
       signingProvider: this.config.signingProvider,
-      debug: this.config.debug
+      cache: this.config.nostr.eventCache, // Add cache for instant updates
+      debug: this.config.debug ?? false
     });
   }
 
@@ -214,41 +343,93 @@ export class FollowsModule {
    * Clean up resources
    */
   async close(): Promise<void> {
-    // Close all follow list stores
-    for (const store of this.followStores.values()) {
-      await store.close();
-    }
-    this.followStores.clear();
+    // No cleanup needed for clean architecture
   }
 
   // Private helper methods
+
+  /**
+   * Start subscription for follow list updates
+   */
+  private async startFollowListSubscription(pubkey: string): Promise<void> {
+    try {
+      await this.config.nostr.sub()
+        .kinds([3])
+        .authors([pubkey])
+        .limit(1)
+        .execute();
+    } catch (error) {
+      if (this.config.debug) {
+        console.warn(`Failed to start follow list subscription for ${pubkey}:`, error);
+      }
+    }
+  }
+
+  /**
+   * Parse NostrEvent[] to Follow[]
+   */
+  private parseFollowListEvents(events: NostrEvent[]): Follow[] {
+    if (events.length === 0) {
+      return [];
+    }
+
+    const event = events[0];
+    if (!event || event.kind !== 3) {
+      return [];
+    }
+
+    return this.parseFollowListEvent(event);
+  }
 
   private async getCurrentFollows(): Promise<Follow[]> {
     try {
       const myPubkey = await this.config.signingProvider!.getPublicKey();
       
-      // Query for current follow list
+      // Query for current follow list from cache first (much faster)
       const filter: Filter = {
         kinds: [3],
         authors: [myPubkey],
         limit: 1
       };
 
-      return new Promise((resolve) => {
+      // Check cache first using clean architecture
+      const cachedEvents = this.config.nostr.eventCache.query(filter);
+      if (cachedEvents.length > 0) {
+        const latestEvent = cachedEvents[0]; // Most recent event
+        if (this.config.debug) {
+          console.log('FollowsModule: Using cached follow list with', latestEvent.tags.filter(t => t[0] === 'p').length, 'follows');
+        }
+        return this.parseFollowListEvent(latestEvent);
+      }
+
+      if (this.config.debug) {
+        console.log('FollowsModule: No cached follow list found, querying relays...');
+      }
+
+      return new Promise(async (resolve) => {
         let followListFound = false;
         
         const timeoutId = setTimeout(() => {
           if (!followListFound) {
+            if (this.config.debug) {
+              console.log('FollowsModule: Relay query timeout, using empty array');
+            }
             resolve([]); // Return empty if no follow list found
           }
-        }, 3000);
+        }, 2000); // Reduced timeout to 2 seconds
 
-        this.config.subscriptionManager.subscribe([filter], {
+        // Use smart deduplication to avoid subscription overload
+        const sharedSub = await this.config.subscriptionManager.getOrCreateSubscription([filter]);
+        const listenerId = sharedSub.addListener({
           onEvent: (event: NostrEvent) => {
             if (event.kind === 3 && event.pubkey === myPubkey && !followListFound) {
               followListFound = true;
               clearTimeout(timeoutId);
+              sharedSub.removeListener(listenerId);
               
+              if (this.config.debug) {
+                console.log('FollowsModule: Found follow list from relay with', event.tags.filter(t => t[0] === 'p').length, 'follows');
+              }
               const follows = this.parseFollowListEvent(event);
               resolve(follows);
             }
@@ -256,12 +437,19 @@ export class FollowsModule {
           onEose: () => {
             if (!followListFound) {
               clearTimeout(timeoutId);
+              sharedSub.removeListener(listenerId);
+              if (this.config.debug) {
+                console.log('FollowsModule: No follow list found on relays, using empty array');
+              }
               resolve([]); // No follow list found
             }
           }
         });
       });
-    } catch {
+    } catch (error) {
+      if (this.config.debug) {
+        console.error('FollowsModule: Error getting current follows:', error);
+      }
       return []; // Return empty array on error
     }
   }

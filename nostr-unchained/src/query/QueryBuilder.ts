@@ -54,35 +54,32 @@ export class SubBuilder extends FilterBuilder {
   /**
    * Execute the subscription and return a handle for lifecycle control
    * This provides excellent DX for managing subscriptions
+   * USES SMART DEDUPLICATION to prevent subscription overload
    */
   async execute(): Promise<SubscriptionHandle> {
-    const options = this.relayUrls.length > 0 ? { relays: this.relayUrls } : {};
+    const targetRelays = this.relayUrls.length > 0 ? this.relayUrls : undefined;
     
-    // Start the subscription
-    const result = await this.subscriptionManager.subscribe([this.filter], {
-      ...options,
+    // Use smart deduplication through getOrCreateSubscription
+    const sharedSub = await this.subscriptionManager.getOrCreateSubscription([this.filter], targetRelays);
+    
+    // Add listener to shared subscription that feeds cache
+    const listenerId = sharedSub.addListener({
       onEvent: (event: NostrEvent) => {
         this.cache.addEvent(event); // All events go to cache
       }
     });
     
-    if (!result.success || !result.subscription) {
-      throw new Error(result.error?.message || 'Subscription failed');
-    }
-    
-    const subscription = result.subscription;
     const store = new UniversalNostrStore(this.cache, this.filter);
     
     // Return a handle with excellent DX
     return {
-      id: subscription.id,
+      id: sharedSub.key,
       store,
       stop: async () => {
-        await this.subscriptionManager.close(subscription.id);
+        sharedSub.removeListener(listenerId);
       },
       isActive: () => {
-        const activeSubs = this.subscriptionManager.getActiveSubscriptions();
-        return activeSubs.some((sub: any) => sub.id === subscription.id);
+        return sharedSub.isActive();
       }
     };
   }

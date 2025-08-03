@@ -217,7 +217,8 @@ export class ReactionManager {
         since: Math.floor(Date.now() / 1000) // Only new reactions
       };
 
-      const subscriptionId = await this.config.subscriptionManager.subscribe([filter], {
+      const sharedSub = await this.config.subscriptionManager.getOrCreateSubscription([filter]);
+      const listenerId = sharedSub.addListener({
         onEvent: (event: NostrEvent) => {
           if (event.kind === 7) {
             const reaction = this.parseReactionEvent(event as ReactionEvent);
@@ -228,7 +229,7 @@ export class ReactionManager {
         }
       });
 
-      this.activeSubscriptions.set(eventId, subscriptionId);
+      this.activeSubscriptions.set(eventId, { sharedSub, listenerId });
       
       if (this.config.debug) {
         console.log(`Started watching reactions for event: ${eventId}`);
@@ -319,29 +320,41 @@ export class ReactionManager {
         }
       }, options.timeout || 5000);
 
-      this.config.subscriptionManager.subscribe(filters, {
-        onEvent: (event: NostrEvent) => {
-          if (event.kind === 7 && !seenEventIds.has(event.id)) {
-            seenEventIds.add(event.id);
-            const reaction = this.parseReactionEvent(event as ReactionEvent);
-            if (reaction && reaction.targetEventId === eventId) {
-              reactions.push(reaction);
+      const executeQuery = async () => {
+        const sharedSub = await this.config.subscriptionManager.getOrCreateSubscription(filters);
+        const listenerId = sharedSub.addListener({
+          onEvent: (event: NostrEvent) => {
+            if (event.kind === 7 && !seenEventIds.has(event.id)) {
+              seenEventIds.add(event.id);
+              const reaction = this.parseReactionEvent(event as ReactionEvent);
+              if (reaction && reaction.targetEventId === eventId) {
+                reactions.push(reaction);
+              }
+            }
+          },
+          onEose: () => {
+            if (!resolved) {
+              resolved = true;
+              clearTimeout(timeout);
+              sharedSub.removeListener(listenerId);
+              
+              if (reactions.length > 0) {
+                const result = this.buildReactionCache(eventId, reactions);
+                this.cacheReactions(eventId, result);
+                resolve(result);
+              } else {
+                resolve(null);
+              }
             }
           }
-        },
-        onEose: () => {
-          if (!resolved) {
-            resolved = true;
-            clearTimeout(timeout);
-            
-            if (reactions.length > 0) {
-              const result = this.buildReactionCache(eventId, reactions);
-              this.cacheReactions(eventId, result);
-              resolve(result);
-            } else {
-              resolve(null);
-            }
-          }
+        });
+      };
+      
+      executeQuery().catch(() => {
+        if (!resolved) {
+          resolved = true;
+          clearTimeout(timeout);
+          resolve(null);
         }
       });
     });

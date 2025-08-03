@@ -1,19 +1,18 @@
 /**
- * Profile Module Exports - Phase 1, 2, 3, 4, 5, 6 & 8
+ * Profile Module Exports - Clean Architecture
  * 
- * Re-exports all profile functionality including Phase 8 cache optimization
+ * Clean architecture exports - no legacy stores
  */
 
 export { ProfileModule } from './ProfileModule.js';
-export { ProfileStore, type ProfileState } from './ProfileStore.js';
 export { ProfileBuilder } from './ProfileBuilder.js';
 export { ProfileBatchBuilder } from './ProfileBatchBuilder.js';
 export { ProfileDiscoveryBuilder } from './ProfileDiscoveryBuilder.js';
 export { FollowsModule } from './FollowsModule.js';
-export { FollowListStore } from './FollowListStore.js';
+// FollowListStore removed - using clean architecture with base layer
 export { FollowBuilder } from './FollowBuilder.js';
 export { FollowBatchBuilder } from './FollowBatchBuilder.js';
-// Phase 8: Cache optimization exports
+// Cache optimization exports
 export { ProfileCacheInterface, type ProfileCacheStats } from './ProfileCacheInterface.js';
 export type { 
   ProfileMetadata, 

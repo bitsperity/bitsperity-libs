@@ -1,27 +1,27 @@
-var Ot = Object.defineProperty;
-var Ut = (n, e, t) => e in n ? Ot(n, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : n[e] = t;
-var u = (n, e, t) => Ut(n, typeof e != "symbol" ? e + "" : e, t);
+var xt = Object.defineProperty;
+var Ot = (n, e, t) => e in n ? xt(n, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : n[e] = t;
+var d = (n, e, t) => Ot(n, typeof e != "symbol" ? e + "" : e, t);
 import * as ne from "@noble/secp256k1";
-import { getSharedSecret as $t } from "@noble/secp256k1";
+import { getSharedSecret as Ut } from "@noble/secp256k1";
 const ue = typeof globalThis == "object" && "crypto" in globalThis ? globalThis.crypto : void 0;
 /*! noble-hashes - MIT License (c) 2022 Paul Miller (paulmillr.com) */
-function Bt(n) {
+function $t(n) {
   return n instanceof Uint8Array || ArrayBuffer.isView(n) && n.constructor.name === "Uint8Array";
 }
-function Ke(n) {
+function $e(n) {
   if (!Number.isSafeInteger(n) || n < 0)
     throw new Error("positive integer expected, got " + n);
 }
 function de(n, ...e) {
-  if (!Bt(n))
+  if (!$t(n))
     throw new Error("Uint8Array expected");
   if (e.length > 0 && !e.includes(n.length))
     throw new Error("Uint8Array expected of length " + e + ", got length=" + n.length);
 }
-function je(n) {
+function He(n) {
   if (typeof n != "function" || typeof n.create != "function")
     throw new Error("Hash should be wrapped by utils.createHasher");
-  Ke(n.outputLen), Ke(n.blockLen);
+  $e(n.outputLen), $e(n.blockLen);
 }
 function Te(n, e = !0) {
   if (n.destroyed)
@@ -29,7 +29,7 @@ function Te(n, e = !0) {
   if (e && n.finished)
     throw new Error("Hash#digest() has already been called");
 }
-function Kt(n, e) {
+function Bt(n, e) {
   de(n);
   const t = e.outputLen;
   if (n.length < t)
@@ -39,23 +39,23 @@ function ye(...n) {
   for (let e = 0; e < n.length; e++)
     n[e].fill(0);
 }
-function xe(n) {
+function De(n) {
   return new DataView(n.buffer, n.byteOffset, n.byteLength);
 }
 function Z(n, e) {
   return n << 32 - e | n >>> e;
 }
-const dt = /* @ts-ignore */ typeof Uint8Array.from([]).toHex == "function" && typeof Uint8Array.fromHex == "function", Vt = /* @__PURE__ */ Array.from({ length: 256 }, (n, e) => e.toString(16).padStart(2, "0"));
+const ut = /* @ts-ignore */ typeof Uint8Array.from([]).toHex == "function" && typeof Uint8Array.fromHex == "function", Kt = /* @__PURE__ */ Array.from({ length: 256 }, (n, e) => e.toString(16).padStart(2, "0"));
 function Q(n) {
-  if (de(n), dt)
+  if (de(n), ut)
     return n.toHex();
   let e = "";
   for (let t = 0; t < n.length; t++)
-    e += Vt[n[t]];
+    e += Kt[n[t]];
   return e;
 }
 const J = { _0: 48, _9: 57, A: 65, F: 70, a: 97, f: 102 };
-function et(n) {
+function Je(n) {
   if (n >= J._0 && n <= J._9)
     return n - J._0;
   if (n >= J.A && n <= J.F)
@@ -66,14 +66,14 @@ function et(n) {
 function ae(n) {
   if (typeof n != "string")
     throw new Error("hex string expected, got " + typeof n);
-  if (dt)
+  if (ut)
     return Uint8Array.fromHex(n);
   const e = n.length, t = e / 2;
   if (e % 2)
     throw new Error("hex string expected, got unpadded hex of length " + e);
   const s = new Uint8Array(t);
   for (let i = 0, r = 0; i < t; i++, r += 2) {
-    const o = et(n.charCodeAt(r)), a = et(n.charCodeAt(r + 1));
+    const o = Je(n.charCodeAt(r)), a = Je(n.charCodeAt(r + 1));
     if (o === void 0 || a === void 0) {
       const c = n[r] + n[r + 1];
       throw new Error('hex string expected, got non-hex character "' + c + '" at index ' + r);
@@ -82,15 +82,15 @@ function ae(n) {
   }
   return s;
 }
-function Wt(n) {
+function Vt(n) {
   if (typeof n != "string")
     throw new Error("string expected");
   return new Uint8Array(new TextEncoder().encode(n));
 }
 function be(n) {
-  return typeof n == "string" && (n = Wt(n)), de(n), n;
+  return typeof n == "string" && (n = Vt(n)), de(n), n;
 }
-function zt(...n) {
+function Wt(...n) {
   let e = 0;
   for (let s = 0; s < n.length; s++) {
     const i = n[s];
@@ -103,9 +103,9 @@ function zt(...n) {
   }
   return t;
 }
-class gt {
+class ht {
 }
-function Ht(n) {
+function zt(n) {
   const e = (s) => n().update(be(s)).digest(), t = n();
   return e.outputLen = t.outputLen, e.blockLen = t.blockLen, e.create = () => n(), e;
 }
@@ -116,21 +116,21 @@ function he(n = 32) {
     return Uint8Array.from(ue.randomBytes(n));
   throw new Error("crypto.getRandomValues must be defined");
 }
-function Gt(n, e, t, s) {
+function Ht(n, e, t, s) {
   if (typeof n.setBigUint64 == "function")
     return n.setBigUint64(e, t, s);
   const i = BigInt(32), r = BigInt(4294967295), o = Number(t >> i & r), a = Number(t & r), c = s ? 4 : 0, l = s ? 0 : 4;
   n.setUint32(e + c, o, s), n.setUint32(e + l, a, s);
 }
-function jt(n, e, t) {
+function Gt(n, e, t) {
   return n & e ^ ~n & t;
 }
-function Yt(n, e, t) {
+function jt(n, e, t) {
   return n & e ^ n & t ^ e & t;
 }
-class Qt extends gt {
+class Yt extends ht {
   constructor(e, t, s, i) {
-    super(), this.finished = !1, this.length = 0, this.pos = 0, this.destroyed = !1, this.blockLen = e, this.outputLen = t, this.padOffset = s, this.isLE = i, this.buffer = new Uint8Array(e), this.view = xe(this.buffer);
+    super(), this.finished = !1, this.length = 0, this.pos = 0, this.destroyed = !1, this.blockLen = e, this.outputLen = t, this.padOffset = s, this.isLE = i, this.buffer = new Uint8Array(e), this.view = De(this.buffer);
   }
   update(e) {
     Te(this), e = be(e), de(e);
@@ -138,7 +138,7 @@ class Qt extends gt {
     for (let o = 0; o < r; ) {
       const a = Math.min(i - this.pos, r - o);
       if (a === i) {
-        const c = xe(e);
+        const c = De(e);
         for (; i <= r - o; o += i)
           this.process(c, o);
         continue;
@@ -148,21 +148,21 @@ class Qt extends gt {
     return this.length += e.length, this.roundClean(), this;
   }
   digestInto(e) {
-    Te(this), Kt(e, this), this.finished = !0;
+    Te(this), Bt(e, this), this.finished = !0;
     const { buffer: t, view: s, blockLen: i, isLE: r } = this;
     let { pos: o } = this;
     t[o++] = 128, ye(this.buffer.subarray(o)), this.padOffset > i - o && (this.process(s, 0), o = 0);
-    for (let d = o; d < i; d++)
-      t[d] = 0;
-    Gt(s, i - 8, BigInt(this.length * 8), r), this.process(s, 0);
-    const a = xe(e), c = this.outputLen;
+    for (let h = o; h < i; h++)
+      t[h] = 0;
+    Ht(s, i - 8, BigInt(this.length * 8), r), this.process(s, 0);
+    const a = De(e), c = this.outputLen;
     if (c % 4)
       throw new Error("_sha2: outputLen should be aligned to 32bit");
-    const l = c / 4, h = this.get();
-    if (l > h.length)
+    const l = c / 4, u = this.get();
+    if (l > u.length)
       throw new Error("_sha2: outputLen bigger than state");
-    for (let d = 0; d < l; d++)
-      a.setUint32(4 * d, h[d], r);
+    for (let h = 0; h < l; h++)
+      a.setUint32(4 * h, u[h], r);
   }
   digest() {
     const { buffer: e, outputLen: t } = this;
@@ -188,7 +188,7 @@ const ee = /* @__PURE__ */ Uint32Array.from([
   2600822924,
   528734635,
   1541459225
-]), Xt = /* @__PURE__ */ Uint32Array.from([
+]), Qt = /* @__PURE__ */ Uint32Array.from([
   1116352408,
   1899447441,
   3049323471,
@@ -254,7 +254,7 @@ const ee = /* @__PURE__ */ Uint32Array.from([
   3204031479,
   3329325298
 ]), te = /* @__PURE__ */ new Uint32Array(64);
-class Zt extends Qt {
+class Xt extends Yt {
   constructor(e = 32) {
     super(64, e, 8, !1), this.A = ee[0] | 0, this.B = ee[1] | 0, this.C = ee[2] | 0, this.D = ee[3] | 0, this.E = ee[4] | 0, this.F = ee[5] | 0, this.G = ee[6] | 0, this.H = ee[7] | 0;
   }
@@ -267,18 +267,18 @@ class Zt extends Qt {
     this.A = e | 0, this.B = t | 0, this.C = s | 0, this.D = i | 0, this.E = r | 0, this.F = o | 0, this.G = a | 0, this.H = c | 0;
   }
   process(e, t) {
-    for (let d = 0; d < 16; d++, t += 4)
-      te[d] = e.getUint32(t, !1);
-    for (let d = 16; d < 64; d++) {
-      const g = te[d - 15], p = te[d - 2], f = Z(g, 7) ^ Z(g, 18) ^ g >>> 3, y = Z(p, 17) ^ Z(p, 19) ^ p >>> 10;
-      te[d] = y + te[d - 7] + f + te[d - 16] | 0;
+    for (let h = 0; h < 16; h++, t += 4)
+      te[h] = e.getUint32(t, !1);
+    for (let h = 16; h < 64; h++) {
+      const g = te[h - 15], p = te[h - 2], f = Z(g, 7) ^ Z(g, 18) ^ g >>> 3, y = Z(p, 17) ^ Z(p, 19) ^ p >>> 10;
+      te[h] = y + te[h - 7] + f + te[h - 16] | 0;
     }
-    let { A: s, B: i, C: r, D: o, E: a, F: c, G: l, H: h } = this;
-    for (let d = 0; d < 64; d++) {
-      const g = Z(a, 6) ^ Z(a, 11) ^ Z(a, 25), p = h + g + jt(a, c, l) + Xt[d] + te[d] | 0, y = (Z(s, 2) ^ Z(s, 13) ^ Z(s, 22)) + Yt(s, i, r) | 0;
-      h = l, l = c, c = a, a = o + p | 0, o = r, r = i, i = s, s = p + y | 0;
+    let { A: s, B: i, C: r, D: o, E: a, F: c, G: l, H: u } = this;
+    for (let h = 0; h < 64; h++) {
+      const g = Z(a, 6) ^ Z(a, 11) ^ Z(a, 25), p = u + g + Gt(a, c, l) + Qt[h] + te[h] | 0, y = (Z(s, 2) ^ Z(s, 13) ^ Z(s, 22)) + jt(s, i, r) | 0;
+      u = l, l = c, c = a, a = o + p | 0, o = r, r = i, i = s, s = p + y | 0;
     }
-    s = s + this.A | 0, i = i + this.B | 0, r = r + this.C | 0, o = o + this.D | 0, a = a + this.E | 0, c = c + this.F | 0, l = l + this.G | 0, h = h + this.H | 0, this.set(s, i, r, o, a, c, l, h);
+    s = s + this.A | 0, i = i + this.B | 0, r = r + this.C | 0, o = o + this.D | 0, a = a + this.E | 0, c = c + this.F | 0, l = l + this.G | 0, u = u + this.H | 0, this.set(s, i, r, o, a, c, l, u);
   }
   roundClean() {
     ye(te);
@@ -287,7 +287,7 @@ class Zt extends Qt {
     this.set(0, 0, 0, 0, 0, 0, 0, 0), ye(this.buffer);
   }
 }
-const Jt = /* @__PURE__ */ Ht(() => new Zt()), oe = Jt, qt = [
+const Zt = /* @__PURE__ */ zt(() => new Xt()), oe = Zt, Jt = [
   "ws://umbrel.local:4848",
   // Local testing relay (highest priority)
   "wss://relay.damus.io"
@@ -304,7 +304,7 @@ const Jt = /* @__PURE__ */ Ht(() => new Zt()), oe = Jt, qt = [
   // Reasonable content limit
   CONNECTION_TIMEOUT: 1e4
   // 10 seconds for initial connection
-}, tt = {
+}, qe = {
   METADATA: 0,
   TEXT_NOTE: 1,
   RECOMMEND_SERVER: 2,
@@ -334,7 +334,7 @@ const Jt = /* @__PURE__ */ Ht(() => new Zt()), oe = Jt, qt = [
   WEBSOCKET_URL: /^wss?:\/\/.+/
   // WebSocket URLs
 };
-class I {
+class P {
   /**
    * Create a text note event (kind 1)
    */
@@ -342,7 +342,7 @@ class I {
     return {
       pubkey: t,
       created_at: Math.floor(Date.now() / 1e3),
-      kind: tt.TEXT_NOTE,
+      kind: qe.TEXT_NOTE,
       tags: [],
       content: e
     };
@@ -369,7 +369,7 @@ class I {
    * Add event ID to unsigned event
    */
   static addEventId(e) {
-    const t = I.calculateEventId(e);
+    const t = P.calculateEventId(e);
     return { ...e, id: t };
   }
   /**
@@ -404,7 +404,7 @@ class I {
    * Verify event ID matches calculated hash
    */
   static verifyEventId(e) {
-    return I.calculateEventId({
+    return P.calculateEventId({
       pubkey: e.pubkey,
       created_at: e.created_at,
       kind: e.kind,
@@ -416,22 +416,22 @@ class I {
    * Create a complete event with validation
    */
   static async createEvent(e, t, s = {}) {
-    const i = I.validateContent(e);
+    const i = P.validateContent(e);
     if (!i.valid)
       throw new Error(`Invalid content: ${i.errors.join(", ")}`);
     const r = {
       pubkey: t,
       created_at: s.created_at ?? Math.floor(Date.now() / 1e3),
-      kind: s.kind ?? tt.TEXT_NOTE,
+      kind: s.kind ?? qe.TEXT_NOTE,
       tags: s.tags ?? [],
       content: e
-    }, o = I.validateEvent(r);
+    }, o = P.validateEvent(r);
     if (!o.valid)
       throw new Error(`Invalid event: ${o.errors.join(", ")}`);
     return r;
   }
 }
-async function es() {
+async function qt() {
   if (typeof WebSocket < "u")
     return WebSocket;
   try {
@@ -440,12 +440,12 @@ async function es() {
     throw new Error("WebSocket not available. In Node.js, install: npm install ws");
   }
 }
-class ts {
+class es {
   constructor(e, t = {}) {
-    u(this, "connections", /* @__PURE__ */ new Map());
-    u(this, "debug");
-    u(this, "messageHandler");
-    u(this, "pendingPublishes", /* @__PURE__ */ new Map());
+    d(this, "connections", /* @__PURE__ */ new Map());
+    d(this, "debug");
+    d(this, "messageHandler");
+    d(this, "pendingPublishes", /* @__PURE__ */ new Map());
     this.debug = t.debug ?? !1, e.forEach((s) => {
       this.connections.set(s, {
         url: s,
@@ -484,7 +484,7 @@ class ts {
       throw new Error(`Relay ${e} not configured`);
     return t.state === "connected" ? !0 : (t.state = "connecting", new Promise(async (s, i) => {
       try {
-        const r = await es(), o = new r(e), a = setTimeout(() => {
+        const r = await qt(), o = new r(e), a = setTimeout(() => {
           o.close(), t.state = "error", t.error = "Connection timeout", i(new Error(`Connection to ${e} timed out`));
         }, se.CONNECTION_TIMEOUT);
         o.onopen = () => {
@@ -564,10 +564,10 @@ class ts {
       }, se.PUBLISH_TIMEOUT), l = t.id;
       this.pendingPublishes.set(l, { resolve: i, reject: r, timeout: c });
       try {
-        const h = JSON.stringify(a);
-        o.send(h), this.debug && (console.log(`📤 Publishing event ${t.id} to ${e}`), console.log("📤 Message:", h), console.log("📤 Added to pending:", l));
-      } catch (h) {
-        clearTimeout(c), this.pendingPublishes.delete(l), r(h);
+        const u = JSON.stringify(a);
+        o.send(u), this.debug && (console.log(`📤 Publishing event ${t.id} to ${e}`), console.log("📤 Message:", u), console.log("📤 Added to pending:", l));
+      } catch (u) {
+        clearTimeout(c), this.pendingPublishes.delete(l), r(u);
       }
     });
   }
@@ -685,15 +685,22 @@ class ts {
     }), e;
   }
 }
-class st {
+class et {
+  constructor() {
+    d(this, "cachedPublicKey");
+  }
   async getPublicKey() {
     if (!window.nostr)
       throw new Error(L.NO_EXTENSION);
     try {
-      return await window.nostr.getPublicKey();
+      const e = await window.nostr.getPublicKey();
+      return this.cachedPublicKey = e, e;
     } catch (e) {
       throw new Error(`Extension signing failed: ${e instanceof Error ? e.message : "Unknown error"}`);
     }
+  }
+  getPublicKeySync() {
+    return this.cachedPublicKey || null;
   }
   async signEvent(e) {
     if (!window.nostr)
@@ -708,18 +715,21 @@ class st {
     return typeof window < "u" && typeof window.nostr < "u" && typeof window.nostr.getPublicKey == "function" && typeof window.nostr.signEvent == "function";
   }
 }
-class Ye {
+class Ge {
   constructor() {
-    u(this, "privateKey");
-    u(this, "publicKey");
+    d(this, "privateKey");
+    d(this, "publicKey");
     const e = he(32);
     this.privateKey = Q(e), this.publicKey = Q(ne.schnorr.getPublicKey(this.privateKey));
   }
   async getPublicKey() {
     return this.publicKey;
   }
+  getPublicKeySync() {
+    return this.publicKey;
+  }
   async signEvent(e) {
-    const t = I.calculateEventId(e), s = await ne.schnorr.sign(t, this.privateKey);
+    const t = P.calculateEventId(e), s = await ne.schnorr.sign(t, this.privateKey);
     return Q(s);
   }
   /**
@@ -730,15 +740,15 @@ class Ye {
     return this.privateKey;
   }
 }
-class ei extends Ye {
+class ei extends Ge {
 }
-class ti extends Ye {
+class ti extends Ge {
 }
-class ss {
+class ts {
   static async createBestAvailable() {
-    if (await st.isAvailable())
+    if (await et.isAvailable())
       try {
-        const e = new st();
+        const e = new et();
         return await e.getPublicKey(), {
           provider: e,
           method: "extension"
@@ -747,7 +757,7 @@ class ss {
         console.warn("Extension detected but failed to initialize:", e);
       }
     return {
-      provider: new Ye(),
+      provider: new Ge(),
       method: "temporary"
     };
   }
@@ -884,15 +894,15 @@ This error is retryable - you can try again.`), s;
     return Math.min(t * Math.pow(2, e), 3e4);
   }
 }
-class Oe {
+class Fe {
   // Optional relay selection
   constructor(e) {
-    u(this, "eventData");
-    u(this, "nostrInstance");
+    d(this, "eventData");
+    d(this, "nostrInstance");
     // NostrUnchained instance for publishing
-    u(this, "signed", !1);
-    u(this, "signedEvent");
-    u(this, "targetRelays");
+    d(this, "signed", !1);
+    d(this, "signedEvent");
+    d(this, "targetRelays");
     this.nostrInstance = e, this.eventData = {
       tags: []
     };
@@ -979,10 +989,10 @@ class Oe {
       content: this.eventData.content,
       tags: this.eventData.tags,
       created_at: this.eventData.created_at || Math.floor(Date.now() / 1e3)
-    }, s = I.validateEvent(t);
+    }, s = P.validateEvent(t);
     if (!s.valid)
       throw new Error(`Invalid event: ${s.errors.join(", ")}`);
-    const i = I.calculateEventId(t), r = {
+    const i = P.calculateEventId(t), r = {
       ...t,
       id: i,
       sig: await e.signEvent({ ...t, id: i })
@@ -1041,28 +1051,28 @@ class Oe {
     return this.eventData = { tags: [] }, this.signed = !1, this.signedEvent = void 0, this;
   }
 }
-class is {
+class ss {
   constructor(e) {
-    u(this, "nostrInstance");
+    d(this, "nostrInstance");
     this.nostrInstance = e;
   }
   /**
    * Create a new fluent event builder
    */
   create() {
-    return new Oe(this.nostrInstance);
+    return new Fe(this.nostrInstance);
   }
   /**
    * Direct fluent API - start with kind
    */
   kind(e) {
-    return new Oe(this.nostrInstance).kind(e);
+    return new Fe(this.nostrInstance).kind(e);
   }
   /**
    * Direct fluent API - start with content  
    */
   content(e) {
-    return new Oe(this.nostrInstance).content(e);
+    return new Fe(this.nostrInstance).content(e);
   }
   /**
    * Quick create text note
@@ -1095,7 +1105,7 @@ class is {
     return await this.nostrInstance.publish(e);
   }
 }
-function P(n) {
+function _(n) {
   const e = /* @__PURE__ */ new Set();
   let t = n;
   return {
@@ -1110,14 +1120,14 @@ function P(n) {
     }
   };
 }
-function w(n, e) {
+function M(n, e) {
   const t = Array.isArray(n) ? n : [n], s = /* @__PURE__ */ new Set();
   let i, r = !1;
   const o = [], a = () => {
     if (t.length === 1) {
       const c = t[0].subscribe((l) => {
-        const h = e(l);
-        (!r || h !== i) && (i = h, r && s.forEach((d) => d(i)));
+        const u = e(l);
+        (!r || u !== i) && (i = u, r && s.forEach((h) => h(i)));
       });
       o.length === 0 && o.push(c);
     }
@@ -1130,18 +1140,18 @@ function w(n, e) {
     }
   };
 }
-function ft(n) {
+function dt(n) {
   return {
     subscribe: n.subscribe.bind(n),
-    derive: (e) => w(n, e)
+    derive: (e) => M(n, e)
   };
 }
 class we {
   constructor(e, t, s) {
-    u(this, "_events");
-    u(this, "_readIds", /* @__PURE__ */ new Set());
-    u(this, "parent");
-    this.parent = e, this._events = w(e.events, (i) => {
+    d(this, "_events");
+    d(this, "_readIds", /* @__PURE__ */ new Set());
+    d(this, "parent");
+    this.parent = e, this._events = M(e.events, (i) => {
       let r = i;
       return t && (r = r.filter(t)), s && (r = [...r].sort(s)), r;
     });
@@ -1164,16 +1174,16 @@ class we {
     return this.parent.loading;
   }
   get count() {
-    return w(this._events, (e) => e.length);
+    return M(this._events, (e) => e.length);
   }
   get latest() {
-    return w(this._events, (e) => e[0] || null);
+    return M(this._events, (e) => e[0] || null);
   }
   get hasMore() {
     return this.parent.hasMore;
   }
   get isEmpty() {
-    return w(this._events, (e) => e.length === 0);
+    return M(this._events, (e) => e.length === 0);
   }
   // Lifecycle methods (delegate to parent)
   async close() {
@@ -1192,7 +1202,7 @@ class we {
     return this.parent.updateOptions(e);
   }
   derive(e) {
-    return ft(w(this._events, e));
+    return dt(M(this._events, e));
   }
   async retry() {
     return this.parent.retry();
@@ -1237,22 +1247,22 @@ class we {
     return { read: s, unread: r, total: i };
   }
 }
-class Qe {
+class je {
   constructor(e, t, s = {}, i = {}) {
-    u(this, "_events", P([]));
-    u(this, "_status", P("connecting"));
-    u(this, "_error", P(null));
-    u(this, "_loading", P(!1));
-    u(this, "_count", P(0));
-    u(this, "_readIds", /* @__PURE__ */ new Set());
-    u(this, "subscription");
-    u(this, "subscriptionManager");
-    u(this, "filters");
-    u(this, "options");
-    u(this, "maxEvents");
-    u(this, "isLive");
-    u(this, "eventPredicate");
-    u(this, "eventComparator");
+    d(this, "_events", _([]));
+    d(this, "_status", _("connecting"));
+    d(this, "_error", _(null));
+    d(this, "_loading", _(!1));
+    d(this, "_count", _(0));
+    d(this, "_readIds", /* @__PURE__ */ new Set());
+    d(this, "subscription");
+    d(this, "subscriptionManager");
+    d(this, "filters");
+    d(this, "options");
+    d(this, "maxEvents");
+    d(this, "isLive");
+    d(this, "eventPredicate");
+    d(this, "eventComparator");
     this.subscriptionManager = e, this.filters = t, this.options = s, this.maxEvents = i.maxEvents, this.isLive = i.live || !1, this.eventPredicate = i.predicate, this.eventComparator = i.comparator, this.initializeSubscription();
   }
   // Readable interface
@@ -1276,18 +1286,18 @@ class Qe {
     return this._count;
   }
   get latest() {
-    return w(this._events, (e) => e[0] || null);
+    return M(this._events, (e) => e[0] || null);
   }
   get hasMore() {
-    return w(this._events, () => !0);
+    return M(this._events, () => !0);
   }
   get isEmpty() {
-    return w(this._events, (e) => e.length === 0);
+    return M(this._events, (e) => e.length === 0);
   }
   // Lifecycle methods
   async close() {
     var e, t;
-    (t = (e = this.subscription) == null ? void 0 : e.subscription) != null && t.id && await this.subscriptionManager.close(this.subscription.subscription.id), this._status.set("closed");
+    (t = (e = this.subscription) == null ? void 0 : e.subscription) != null && t.cleanup && this.subscription.subscription.cleanup(), this._status.set("closed");
   }
   async refresh() {
     this.reset(), await this.initializeSubscription();
@@ -1302,7 +1312,7 @@ class Qe {
     this.options = { ...this.options, ...e }, await this.refresh();
   }
   derive(e) {
-    return ft(w(this._events, e));
+    return dt(M(this._events, e));
   }
   async retry() {
     this._status.set("reconnecting"), this._error.set(null), await this.initializeSubscription();
@@ -1366,20 +1376,31 @@ class Qe {
     try {
       const e = {
         ...this.options,
-        onEvent: (t) => {
-          this.handleEvent(t);
+        onEvent: (i) => {
+          this.handleEvent(i);
         },
-        onEose: (t) => {
+        onEose: (i) => {
           this._status.set("active"), this._loading.set(!1);
         },
-        onClose: (t) => {
+        onClose: (i) => {
           this._status.set("closed");
         }
-      };
-      this.subscription = await this.subscriptionManager.subscribe(
-        this.filters,
-        e
-      ), this.subscription.success ? this._error.set(null) : (this._error.set(this.subscription.error || {
+      }, t = await this.subscriptionManager.getOrCreateSubscription(this.filters), s = t.addListener({
+        onEvent: e.onEvent,
+        onEose: e.onEose,
+        onClose: e.onClose,
+        onError: e.onError
+      });
+      this.subscription = {
+        success: !0,
+        subscription: {
+          id: t.key,
+          // Add cleanup method
+          cleanup: () => t.removeListener(s)
+        },
+        relayResults: [],
+        error: void 0
+      }, this.subscription.success ? this._error.set(null) : (this._error.set(this.subscription.error || {
         message: "Subscription failed",
         retryable: !0
       }), this._status.set("error"), this._loading.set(!1));
@@ -1399,11 +1420,11 @@ class Qe {
     }), this._count.update((t) => t + 1));
   }
 }
-class rs {
+class is {
   constructor(e) {
-    u(this, "filter", {});
-    u(this, "options", {});
-    u(this, "config", {});
+    d(this, "filter", {});
+    d(this, "options", {});
+    d(this, "config", {});
     this.subscriptionManager = e;
   }
   kinds(e) {
@@ -1429,7 +1450,7 @@ class rs {
   }
   build() {
     const e = [this.filter];
-    return new Qe(
+    return new je(
       this.subscriptionManager,
       e,
       this.options,
@@ -1444,22 +1465,22 @@ function si(n) {
 function ii() {
   if (!ce)
     throw new Error("Default SubscriptionManager not set. Call setDefaultSubscriptionManager first.");
-  return new rs(ce);
+  return new is(ce);
 }
 function ri(n) {
   if (!ce)
     throw new Error("Default SubscriptionManager not set. Call setDefaultSubscriptionManager first.");
   const e = n.toFilter();
-  return new Qe(ce, e);
+  return new je(ce, e);
 }
 function ni(n) {
   if (!ce)
     throw new Error("Default SubscriptionManager not set. Call setDefaultSubscriptionManager first.");
-  return new Qe(ce, [n]);
+  return new je(ce, [n]);
 }
-class pt extends gt {
+class gt extends ht {
   constructor(e, t) {
-    super(), this.finished = !1, this.destroyed = !1, je(e);
+    super(), this.finished = !1, this.destroyed = !1, He(e);
     const s = be(t);
     if (this.iHash = e.create(), typeof this.iHash.update != "function")
       throw new Error("Expected instance of class which extends utils.Hash");
@@ -1495,39 +1516,39 @@ class pt extends gt {
     this.destroyed = !0, this.oHash.destroy(), this.iHash.destroy();
   }
 }
-const me = (n, e, t) => new pt(n, e).update(t).digest();
-me.create = (n, e) => new pt(n, e);
-function ns(n, e, t) {
-  return je(n), t === void 0 && (t = new Uint8Array(n.outputLen)), me(n, be(t), be(e));
+const me = (n, e, t) => new gt(n, e).update(t).digest();
+me.create = (n, e) => new gt(n, e);
+function rs(n, e, t) {
+  return He(n), t === void 0 && (t = new Uint8Array(n.outputLen)), me(n, be(t), be(e));
 }
-const Ue = /* @__PURE__ */ Uint8Array.from([0]), it = /* @__PURE__ */ Uint8Array.of();
-function os(n, e, t, s = 32) {
-  je(n), Ke(s);
+const xe = /* @__PURE__ */ Uint8Array.from([0]), tt = /* @__PURE__ */ Uint8Array.of();
+function ns(n, e, t, s = 32) {
+  He(n), $e(s);
   const i = n.outputLen;
   if (s > 255 * i)
     throw new Error("Length should be <= 255*HashLen");
   const r = Math.ceil(s / i);
-  t === void 0 && (t = it);
+  t === void 0 && (t = tt);
   const o = new Uint8Array(r * i), a = me.create(n, e), c = a._cloneInto(), l = new Uint8Array(a.outputLen);
-  for (let h = 0; h < r; h++)
-    Ue[0] = h + 1, c.update(h === 0 ? it : l).update(t).update(Ue).digestInto(l), o.set(l, i * h), a._cloneInto(c);
-  return a.destroy(), c.destroy(), ye(l, Ue), o.slice(0, s);
+  for (let u = 0; u < r; u++)
+    xe[0] = u + 1, c.update(u === 0 ? tt : l).update(t).update(xe).digestInto(l), o.set(l, i * u), a._cloneInto(c);
+  return a.destroy(), c.destroy(), ye(l, xe), o.slice(0, s);
 }
-const rt = (n, e, t, s, i) => os(n, ns(n, e, t), s, i);
+const st = (n, e, t, s, i) => ns(n, rs(n, e, t), s, i);
 /*! noble-ciphers - MIT License (c) 2023 Paul Miller (paulmillr.com) */
-function as(n) {
+function os(n) {
   return n instanceof Uint8Array || ArrayBuffer.isView(n) && n.constructor.name === "Uint8Array";
 }
-function nt(n) {
+function it(n) {
   if (typeof n != "boolean")
     throw new Error(`boolean expected, not ${n}`);
 }
-function $e(n) {
+function Oe(n) {
   if (!Number.isSafeInteger(n) || n < 0)
     throw new Error("positive integer expected, got " + n);
 }
 function Ee(n, ...e) {
-  if (!as(n))
+  if (!os(n))
     throw new Error("Uint8Array expected");
   if (e.length > 0 && !e.includes(n.length))
     throw new Error("Uint8Array expected of length " + e + ", got length=" + n.length);
@@ -1535,95 +1556,95 @@ function Ee(n, ...e) {
 function ie(n) {
   return new Uint32Array(n.buffer, n.byteOffset, Math.floor(n.byteLength / 4));
 }
-function cs(...n) {
+function as(...n) {
   for (let e = 0; e < n.length; e++)
     n[e].fill(0);
 }
-function ls(n, e) {
+function cs(n, e) {
   if (e == null || typeof e != "object")
     throw new Error("options must be defined");
   return Object.assign(n, e);
 }
-function ot(n) {
+function rt(n) {
   return Uint8Array.from(n);
 }
-const yt = (n) => Uint8Array.from(n.split("").map((e) => e.charCodeAt(0))), us = yt("expand 16-byte k"), hs = yt("expand 32-byte k"), ds = ie(us), gs = ie(hs);
-function E(n, e) {
+const ft = (n) => Uint8Array.from(n.split("").map((e) => e.charCodeAt(0))), ls = ft("expand 16-byte k"), us = ft("expand 32-byte k"), hs = ie(ls), ds = ie(us);
+function v(n, e) {
   return n << e | n >>> 32 - e;
 }
-function Ve(n) {
+function Be(n) {
   return n.byteOffset % 4 === 0;
 }
-const Me = 64, fs = 16, bt = 2 ** 32 - 1, at = new Uint32Array();
-function ps(n, e, t, s, i, r, o, a) {
-  const c = i.length, l = new Uint8Array(Me), h = ie(l), d = Ve(i) && Ve(r), g = d ? ie(i) : at, p = d ? ie(r) : at;
+const Me = 64, gs = 16, pt = 2 ** 32 - 1, nt = new Uint32Array();
+function fs(n, e, t, s, i, r, o, a) {
+  const c = i.length, l = new Uint8Array(Me), u = ie(l), h = Be(i) && Be(r), g = h ? ie(i) : nt, p = h ? ie(r) : nt;
   for (let f = 0; f < c; o++) {
-    if (n(e, t, s, h, o, a), o >= bt)
+    if (n(e, t, s, u, o, a), o >= pt)
       throw new Error("arx: counter overflow");
     const y = Math.min(Me, c - f);
-    if (d && y === Me) {
+    if (h && y === Me) {
       const S = f / 4;
       if (f % 4 !== 0)
         throw new Error("arx: invalid block position");
-      for (let v = 0, M; v < fs; v++)
-        M = S + v, p[M] = g[M] ^ h[v];
+      for (let m = 0, E; m < gs; m++)
+        E = S + m, p[E] = g[E] ^ u[m];
       f += Me;
       continue;
     }
-    for (let S = 0, v; S < y; S++)
-      v = f + S, r[v] = i[v] ^ l[S];
+    for (let S = 0, m; S < y; S++)
+      m = f + S, r[m] = i[m] ^ l[S];
     f += y;
   }
 }
-function ys(n, e) {
-  const { allowShortKeys: t, extendNonceFn: s, counterLength: i, counterRight: r, rounds: o } = ls({ allowShortKeys: !1, counterLength: 8, counterRight: !1, rounds: 20 }, e);
+function ps(n, e) {
+  const { allowShortKeys: t, extendNonceFn: s, counterLength: i, counterRight: r, rounds: o } = cs({ allowShortKeys: !1, counterLength: 8, counterRight: !1, rounds: 20 }, e);
   if (typeof n != "function")
     throw new Error("core must be a function");
-  return $e(i), $e(o), nt(r), nt(t), (a, c, l, h, d = 0) => {
+  return Oe(i), Oe(o), it(r), it(t), (a, c, l, u, h = 0) => {
     Ee(a), Ee(c), Ee(l);
     const g = l.length;
-    if (h === void 0 && (h = new Uint8Array(g)), Ee(h), $e(d), d < 0 || d >= bt)
+    if (u === void 0 && (u = new Uint8Array(g)), Ee(u), Oe(h), h < 0 || h >= pt)
       throw new Error("arx: counter overflow");
-    if (h.length < g)
-      throw new Error(`arx: output (${h.length}) is shorter than data (${g})`);
+    if (u.length < g)
+      throw new Error(`arx: output (${u.length}) is shorter than data (${g})`);
     const p = [];
     let f = a.length, y, S;
     if (f === 32)
-      p.push(y = ot(a)), S = gs;
+      p.push(y = rt(a)), S = ds;
     else if (f === 16 && t)
-      y = new Uint8Array(32), y.set(a), y.set(a, 16), S = ds, p.push(y);
+      y = new Uint8Array(32), y.set(a), y.set(a, 16), S = hs, p.push(y);
     else
       throw new Error(`arx: invalid 32-byte key, got length=${f}`);
-    Ve(c) || p.push(c = ot(c));
-    const v = ie(y);
+    Be(c) || p.push(c = rt(c));
+    const m = ie(y);
     if (s) {
       if (c.length !== 24)
         throw new Error("arx: extended nonce must be 24 bytes");
-      s(S, v, ie(c.subarray(0, 16)), v), c = c.subarray(16);
+      s(S, m, ie(c.subarray(0, 16)), m), c = c.subarray(16);
     }
-    const M = 16 - i;
-    if (M !== c.length)
-      throw new Error(`arx: nonce must be ${M} or 16 bytes`);
-    if (M !== 12) {
+    const E = 16 - i;
+    if (E !== c.length)
+      throw new Error(`arx: nonce must be ${E} or 16 bytes`);
+    if (E !== 12) {
       const q = new Uint8Array(12);
       q.set(c, r ? 0 : 12 - c.length), c = q, p.push(c);
     }
-    const _ = ie(c);
-    return ps(n, S, v, _, l, h, d, o), cs(...p), h;
+    const k = ie(c);
+    return fs(n, S, m, k, l, u, h, o), as(...p), u;
   };
 }
-function bs(n, e, t, s, i, r = 20) {
-  let o = n[0], a = n[1], c = n[2], l = n[3], h = e[0], d = e[1], g = e[2], p = e[3], f = e[4], y = e[5], S = e[6], v = e[7], M = i, _ = t[0], q = t[1], le = t[2], A = o, D = a, F = c, x = l, O = h, U = d, $ = g, B = p, K = f, V = y, W = S, z = v, H = M, G = _, j = q, Y = le;
-  for (let qe = 0; qe < r; qe += 2)
-    A = A + O | 0, H = E(H ^ A, 16), K = K + H | 0, O = E(O ^ K, 12), A = A + O | 0, H = E(H ^ A, 8), K = K + H | 0, O = E(O ^ K, 7), D = D + U | 0, G = E(G ^ D, 16), V = V + G | 0, U = E(U ^ V, 12), D = D + U | 0, G = E(G ^ D, 8), V = V + G | 0, U = E(U ^ V, 7), F = F + $ | 0, j = E(j ^ F, 16), W = W + j | 0, $ = E($ ^ W, 12), F = F + $ | 0, j = E(j ^ F, 8), W = W + j | 0, $ = E($ ^ W, 7), x = x + B | 0, Y = E(Y ^ x, 16), z = z + Y | 0, B = E(B ^ z, 12), x = x + B | 0, Y = E(Y ^ x, 8), z = z + Y | 0, B = E(B ^ z, 7), A = A + U | 0, Y = E(Y ^ A, 16), W = W + Y | 0, U = E(U ^ W, 12), A = A + U | 0, Y = E(Y ^ A, 8), W = W + Y | 0, U = E(U ^ W, 7), D = D + $ | 0, H = E(H ^ D, 16), z = z + H | 0, $ = E($ ^ z, 12), D = D + $ | 0, H = E(H ^ D, 8), z = z + H | 0, $ = E($ ^ z, 7), F = F + B | 0, G = E(G ^ F, 16), K = K + G | 0, B = E(B ^ K, 12), F = F + B | 0, G = E(G ^ F, 8), K = K + G | 0, B = E(B ^ K, 7), x = x + O | 0, j = E(j ^ x, 16), V = V + j | 0, O = E(O ^ V, 12), x = x + O | 0, j = E(j ^ x, 8), V = V + j | 0, O = E(O ^ V, 7);
+function ys(n, e, t, s, i, r = 20) {
+  let o = n[0], a = n[1], c = n[2], l = n[3], u = e[0], h = e[1], g = e[2], p = e[3], f = e[4], y = e[5], S = e[6], m = e[7], E = i, k = t[0], q = t[1], le = t[2], A = o, D = a, F = c, x = l, O = u, U = h, $ = g, B = p, K = f, V = y, W = S, z = m, H = E, G = k, j = q, Y = le;
+  for (let Ze = 0; Ze < r; Ze += 2)
+    A = A + O | 0, H = v(H ^ A, 16), K = K + H | 0, O = v(O ^ K, 12), A = A + O | 0, H = v(H ^ A, 8), K = K + H | 0, O = v(O ^ K, 7), D = D + U | 0, G = v(G ^ D, 16), V = V + G | 0, U = v(U ^ V, 12), D = D + U | 0, G = v(G ^ D, 8), V = V + G | 0, U = v(U ^ V, 7), F = F + $ | 0, j = v(j ^ F, 16), W = W + j | 0, $ = v($ ^ W, 12), F = F + $ | 0, j = v(j ^ F, 8), W = W + j | 0, $ = v($ ^ W, 7), x = x + B | 0, Y = v(Y ^ x, 16), z = z + Y | 0, B = v(B ^ z, 12), x = x + B | 0, Y = v(Y ^ x, 8), z = z + Y | 0, B = v(B ^ z, 7), A = A + U | 0, Y = v(Y ^ A, 16), W = W + Y | 0, U = v(U ^ W, 12), A = A + U | 0, Y = v(Y ^ A, 8), W = W + Y | 0, U = v(U ^ W, 7), D = D + $ | 0, H = v(H ^ D, 16), z = z + H | 0, $ = v($ ^ z, 12), D = D + $ | 0, H = v(H ^ D, 8), z = z + H | 0, $ = v($ ^ z, 7), F = F + B | 0, G = v(G ^ F, 16), K = K + G | 0, B = v(B ^ K, 12), F = F + B | 0, G = v(G ^ F, 8), K = K + G | 0, B = v(B ^ K, 7), x = x + O | 0, j = v(j ^ x, 16), V = V + j | 0, O = v(O ^ V, 12), x = x + O | 0, j = v(j ^ x, 8), V = V + j | 0, O = v(O ^ V, 7);
   let T = 0;
-  s[T++] = o + A | 0, s[T++] = a + D | 0, s[T++] = c + F | 0, s[T++] = l + x | 0, s[T++] = h + O | 0, s[T++] = d + U | 0, s[T++] = g + $ | 0, s[T++] = p + B | 0, s[T++] = f + K | 0, s[T++] = y + V | 0, s[T++] = S + W | 0, s[T++] = v + z | 0, s[T++] = M + H | 0, s[T++] = _ + G | 0, s[T++] = q + j | 0, s[T++] = le + Y | 0;
+  s[T++] = o + A | 0, s[T++] = a + D | 0, s[T++] = c + F | 0, s[T++] = l + x | 0, s[T++] = u + O | 0, s[T++] = h + U | 0, s[T++] = g + $ | 0, s[T++] = p + B | 0, s[T++] = f + K | 0, s[T++] = y + V | 0, s[T++] = S + W | 0, s[T++] = m + z | 0, s[T++] = E + H | 0, s[T++] = k + G | 0, s[T++] = q + j | 0, s[T++] = le + Y | 0;
 }
-const ct = /* @__PURE__ */ ys(bs, {
+const ot = /* @__PURE__ */ ps(ys, {
   counterRight: !1,
   counterLength: 4,
   allowShortKeys: !1
-}), ws = {
+}), bs = {
   saltInfo: "nip44-v2"
 };
 class C extends Error {
@@ -1632,7 +1653,7 @@ class C extends Error {
   }
 }
 var N = /* @__PURE__ */ ((n) => (n.INVALID_KEY = "INVALID_KEY", n.INVALID_NONCE = "INVALID_NONCE", n.INVALID_PAYLOAD = "INVALID_PAYLOAD", n.ENCRYPTION_FAILED = "ENCRYPTION_FAILED", n.DECRYPTION_FAILED = "DECRYPTION_FAILED", n.MAC_VERIFICATION_FAILED = "MAC_VERIFICATION_FAILED", n.INVALID_PLAINTEXT_LENGTH = "INVALID_PLAINTEXT_LENGTH", n.PADDING_ERROR = "PADDING_ERROR", n))(N || {});
-class k {
+class I {
   /**
    * Derive conversation key using secp256k1 ECDH + HKDF
    */
@@ -1652,8 +1673,8 @@ class k {
           "Invalid public key format",
           N.INVALID_KEY
         );
-      const o = $t(s, i, !0).slice(1);
-      return rt(oe, o, this.SALT, new Uint8Array(0), 32);
+      const o = Ut(s, i, !0).slice(1);
+      return st(oe, o, this.SALT, new Uint8Array(0), 32);
     } catch (s) {
       throw s instanceof C ? s : new C(
         `Key derivation failed: ${s.message}`,
@@ -1677,7 +1698,7 @@ class k {
           "Invalid nonce length",
           N.INVALID_NONCE
         );
-      const s = rt(oe, e, new Uint8Array(0), t, 76);
+      const s = st(oe, e, new Uint8Array(0), t, 76);
       return {
         chachaKey: s.slice(0, 32),
         // bytes 0-31
@@ -1752,18 +1773,18 @@ class k {
           "Plaintext cannot be null or undefined",
           N.INVALID_PLAINTEXT_LENGTH
         );
-      const i = new TextEncoder().encode(e), r = s || this.generateNonce(), o = this.deriveMessageKeys(t, r), a = this.applyPadding(i), c = ct(
+      const i = new TextEncoder().encode(e), r = s || this.generateNonce(), o = this.deriveMessageKeys(t, r), a = this.applyPadding(i), c = ot(
         o.chachaKey,
         o.chachaNonce,
         a
       ), l = new Uint8Array(r.length + c.length);
       l.set(r, 0), l.set(c, r.length);
-      const h = me(oe, o.hmacKey, l), d = new Uint8Array(
+      const u = me(oe, o.hmacKey, l), h = new Uint8Array(
         this.VERSION_SIZE + r.length + c.length + this.MAC_SIZE
       );
       let g = 0;
-      return d[g] = this.VERSION, g += this.VERSION_SIZE, d.set(r, g), g += r.length, d.set(c, g), g += c.length, d.set(h, g), {
-        payload: btoa(String.fromCharCode(...d)),
+      return h[g] = this.VERSION, g += this.VERSION_SIZE, h.set(r, g), g += r.length, h.set(c, g), g += c.length, h.set(u, g), {
+        payload: btoa(String.fromCharCode(...h)),
         nonce: r
       };
     } catch (i) {
@@ -1780,8 +1801,8 @@ class k {
   static decrypt(e, t) {
     try {
       const s = atob(e), i = new Uint8Array(s.length);
-      for (let M = 0; M < s.length; M++)
-        i[M] = s.charCodeAt(M);
+      for (let E = 0; E < s.length; E++)
+        i[E] = s.charCodeAt(E);
       const r = this.VERSION_SIZE + this.NONCE_SIZE + this.MAC_SIZE;
       if (i.length < r)
         throw new C(
@@ -1797,20 +1818,20 @@ class k {
         );
       const c = i.slice(o, o + this.NONCE_SIZE);
       o += this.NONCE_SIZE;
-      const l = i.slice(o, -this.MAC_SIZE), h = i.slice(-this.MAC_SIZE), d = this.deriveMessageKeys(t, c), g = new Uint8Array(c.length + l.length);
+      const l = i.slice(o, -this.MAC_SIZE), u = i.slice(-this.MAC_SIZE), h = this.deriveMessageKeys(t, c), g = new Uint8Array(c.length + l.length);
       g.set(c, 0), g.set(l, c.length);
-      const p = me(oe, d.hmacKey, g);
+      const p = me(oe, h.hmacKey, g);
       let f = !0;
-      for (let M = 0; M < this.MAC_SIZE; M++)
-        h[M] !== p[M] && (f = !1);
+      for (let E = 0; E < this.MAC_SIZE; E++)
+        u[E] !== p[E] && (f = !1);
       if (!f)
         return {
           plaintext: "",
           isValid: !1
         };
-      const y = ct(
-        d.chachaKey,
-        d.chachaNonce,
+      const y = ot(
+        h.chachaKey,
+        h.chachaNonce,
         l
       ), S = this.removePadding(y);
       return {
@@ -1845,17 +1866,17 @@ class k {
     }
   }
 }
-u(k, "VERSION", 2), u(k, "SALT", new TextEncoder().encode(ws.saltInfo)), u(k, "NONCE_SIZE", 32), u(k, "CHACHA_KEY_SIZE", 32), u(k, "CHACHA_NONCE_SIZE", 12), u(k, "HMAC_KEY_SIZE", 32), u(k, "MAC_SIZE", 32), u(k, "VERSION_SIZE", 1);
-const ms = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+d(I, "VERSION", 2), d(I, "SALT", new TextEncoder().encode(bs.saltInfo)), d(I, "NONCE_SIZE", 32), d(I, "CHACHA_KEY_SIZE", 32), d(I, "CHACHA_NONCE_SIZE", 12), d(I, "HMAC_KEY_SIZE", 32), d(I, "MAC_SIZE", 32), d(I, "VERSION_SIZE", 1);
+const ws = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  NIP44Crypto: k
+  NIP44Crypto: I
 }, Symbol.toStringTag, { value: "Module" }));
 class b extends Error {
   constructor(e, t, s) {
     super(e), this.code = t, this.details = s, this.name = "NIP59Error";
   }
 }
-var m = /* @__PURE__ */ ((n) => (n.INVALID_RUMOR = "INVALID_RUMOR", n.SEAL_CREATION_FAILED = "SEAL_CREATION_FAILED", n.GIFT_WRAP_CREATION_FAILED = "GIFT_WRAP_CREATION_FAILED", n.EPHEMERAL_KEY_GENERATION_FAILED = "EPHEMERAL_KEY_GENERATION_FAILED", n.TIMESTAMP_RANDOMIZATION_FAILED = "TIMESTAMP_RANDOMIZATION_FAILED", n.DECRYPTION_FAILED = "DECRYPTION_FAILED", n.INVALID_GIFT_WRAP = "INVALID_GIFT_WRAP", n.INVALID_SEAL = "INVALID_SEAL", n.NO_RECIPIENTS = "NO_RECIPIENTS", n.INVALID_RECIPIENT = "INVALID_RECIPIENT", n.INVALID_PRIVATE_KEY = "INVALID_PRIVATE_KEY", n))(m || {});
+var w = /* @__PURE__ */ ((n) => (n.INVALID_RUMOR = "INVALID_RUMOR", n.SEAL_CREATION_FAILED = "SEAL_CREATION_FAILED", n.GIFT_WRAP_CREATION_FAILED = "GIFT_WRAP_CREATION_FAILED", n.EPHEMERAL_KEY_GENERATION_FAILED = "EPHEMERAL_KEY_GENERATION_FAILED", n.TIMESTAMP_RANDOMIZATION_FAILED = "TIMESTAMP_RANDOMIZATION_FAILED", n.DECRYPTION_FAILED = "DECRYPTION_FAILED", n.INVALID_GIFT_WRAP = "INVALID_GIFT_WRAP", n.INVALID_SEAL = "INVALID_SEAL", n.NO_RECIPIENTS = "NO_RECIPIENTS", n.INVALID_RECIPIENT = "INVALID_RECIPIENT", n.INVALID_PRIVATE_KEY = "INVALID_PRIVATE_KEY", n))(w || {});
 const X = {
   SEAL_KIND: 13,
   GIFT_WRAP_KIND: 1059,
@@ -1872,17 +1893,17 @@ class pe {
   static async createSeal(e, t, s) {
     try {
       this.validateRumor(e), this.validatePrivateKey(t), this.validatePublicKey(s);
-      const i = JSON.stringify(e), r = k.deriveConversationKey(
+      const i = JSON.stringify(e), r = I.deriveConversationKey(
         t,
         s
-      ), o = k.encrypt(i, r), a = this.getPublicKeyFromPrivate(t), c = {
+      ), o = I.encrypt(i, r), a = this.getPublicKeyFromPrivate(t), c = {
         pubkey: a,
         created_at: Math.floor(Date.now() / 1e3),
         kind: X.SEAL_KIND,
         tags: [],
         // Always empty for seals
         content: o.payload
-      }, l = this.calculateEventId(c), h = await this.signEvent(c, l, t);
+      }, l = this.calculateEventId(c), u = await this.signEvent(c, l, t);
       return {
         id: l,
         pubkey: a,
@@ -1890,12 +1911,12 @@ class pe {
         kind: X.SEAL_KIND,
         tags: [],
         content: o.payload,
-        sig: h
+        sig: u
       };
     } catch (i) {
       throw i instanceof b ? i : new b(
         `Seal creation failed: ${i.message}`,
-        m.SEAL_CREATION_FAILED,
+        w.SEAL_CREATION_FAILED,
         i
       );
     }
@@ -1909,10 +1930,10 @@ class pe {
         return { rumor: null, isValid: !1 };
       if (e.tags.length !== 0)
         return { rumor: null, isValid: !1 };
-      const s = k.deriveConversationKey(
+      const s = I.deriveConversationKey(
         t,
         e.pubkey
-      ), i = k.decrypt(e.content, s);
+      ), i = I.decrypt(e.content, s);
       if (!i.isValid)
         return { rumor: null, isValid: !1 };
       const r = JSON.parse(i.plaintext);
@@ -1928,32 +1949,32 @@ class pe {
     if (!e || typeof e != "object")
       throw new b(
         "Rumor must be a valid object",
-        m.INVALID_RUMOR
+        w.INVALID_RUMOR
       );
     if (typeof e.pubkey != "string" || !/^[0-9a-f]{64}$/i.test(e.pubkey))
       throw new b(
         "Rumor must have valid pubkey",
-        m.INVALID_RUMOR
+        w.INVALID_RUMOR
       );
     if (typeof e.created_at != "number" || e.created_at <= 0)
       throw new b(
         "Rumor must have valid created_at timestamp",
-        m.INVALID_RUMOR
+        w.INVALID_RUMOR
       );
     if (typeof e.kind != "number" || e.kind < 0 || e.kind > 65535)
       throw new b(
         "Rumor must have valid kind",
-        m.INVALID_RUMOR
+        w.INVALID_RUMOR
       );
     if (!Array.isArray(e.tags))
       throw new b(
         "Rumor must have valid tags array",
-        m.INVALID_RUMOR
+        w.INVALID_RUMOR
       );
     if (typeof e.content != "string")
       throw new b(
         "Rumor must have valid content string",
-        m.INVALID_RUMOR
+        w.INVALID_RUMOR
       );
   }
   /**
@@ -1969,7 +1990,7 @@ class pe {
     if (typeof e != "string" || !/^[0-9a-f]{64}$/i.test(e))
       throw new b(
         "Invalid private key format",
-        m.SEAL_CREATION_FAILED
+        w.SEAL_CREATION_FAILED
       );
   }
   /**
@@ -1979,7 +2000,7 @@ class pe {
     if (typeof e != "string" || !/^[0-9a-f]{64}$/i.test(e))
       throw new b(
         "Invalid public key format",
-        m.SEAL_CREATION_FAILED
+        w.SEAL_CREATION_FAILED
       );
   }
   /**
@@ -2013,7 +2034,7 @@ class pe {
         }
       }), new b(
         "Failed to derive public key from private key",
-        m.SEAL_CREATION_FAILED,
+        w.SEAL_CREATION_FAILED,
         t
       );
     }
@@ -2043,17 +2064,17 @@ class pe {
     } catch (i) {
       throw new b(
         "Failed to sign seal event",
-        m.SEAL_CREATION_FAILED,
+        w.SEAL_CREATION_FAILED,
         i
       );
     }
   }
 }
-const vs = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const ms = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   SealCreator: pe
 }, Symbol.toStringTag, { value: "Module" }));
-class ke {
+class _e {
   /**
    * Generate a new ephemeral key pair for gift wrap creation
    * Each key pair is cryptographically random and should never be reused
@@ -2068,7 +2089,7 @@ class ke {
     } catch (e) {
       throw new b(
         `Ephemeral key generation failed: ${e.message}`,
-        m.EPHEMERAL_KEY_GENERATION_FAILED,
+        w.EPHEMERAL_KEY_GENERATION_FAILED,
         e
       );
     }
@@ -2081,7 +2102,7 @@ class ke {
     if (e <= 0)
       throw new b(
         "Key pair count must be greater than 0",
-        m.EPHEMERAL_KEY_GENERATION_FAILED
+        w.EPHEMERAL_KEY_GENERATION_FAILED
       );
     const t = [];
     for (let s = 0; s < e; s++)
@@ -2121,7 +2142,7 @@ class ke {
     return he(32);
   }
 }
-class We {
+class Ke {
   /**
    * Generate a randomized timestamp for gift wrap creation
    * The timestamp will be between current time and maxAgeSeconds in the past
@@ -2131,7 +2152,7 @@ class We {
       if (e < 0)
         throw new b(
           "Max age seconds cannot be negative",
-          m.TIMESTAMP_RANDOMIZATION_FAILED
+          w.TIMESTAMP_RANDOMIZATION_FAILED
         );
       const t = Math.floor(Date.now() / 1e3);
       if (e === 0)
@@ -2141,7 +2162,7 @@ class We {
     } catch (t) {
       throw t instanceof b ? t : new b(
         `Timestamp randomization failed: ${t.message}`,
-        m.TIMESTAMP_RANDOMIZATION_FAILED,
+        w.TIMESTAMP_RANDOMIZATION_FAILED,
         t
       );
     }
@@ -2161,7 +2182,7 @@ class We {
     if (e <= 0)
       throw new b(
         "Timestamp count must be greater than 0",
-        m.TIMESTAMP_RANDOMIZATION_FAILED
+        w.TIMESTAMP_RANDOMIZATION_FAILED
       );
     const s = [];
     for (let i = 0; i < e; i++)
@@ -2200,42 +2221,42 @@ class We {
     if (e >= t)
       throw new b(
         "Window start must be before window end",
-        m.TIMESTAMP_RANDOMIZATION_FAILED
+        w.TIMESTAMP_RANDOMIZATION_FAILED
       );
     const s = t - e, i = this.generateSecureRandomOffset(s);
     return e + i;
   }
 }
-class _e {
+class ke {
   /**
    * Create a single gift wrap for one recipient
    */
   static async createGiftWrap(e, t, s, i) {
     try {
       this.validateSeal(e), this.validateRecipient(t);
-      const r = s || ke.generateEphemeralKeyPair();
-      if (!ke.validateEphemeralKeyPair(r))
+      const r = s || _e.generateEphemeralKeyPair();
+      if (!_e.validateEphemeralKeyPair(r))
         throw new b(
           "Invalid ephemeral key pair",
-          m.GIFT_WRAP_CREATION_FAILED
+          w.GIFT_WRAP_CREATION_FAILED
         );
-      const o = i || We.generateRandomizedTimestamp(), a = JSON.stringify(e), c = k.deriveConversationKey(
+      const o = i || Ke.generateRandomizedTimestamp(), a = JSON.stringify(e), c = I.deriveConversationKey(
         r.privateKey,
         t.pubkey
-      ), l = k.encrypt(a, c), h = t.relayHint ? ["p", t.pubkey, t.relayHint] : ["p", t.pubkey], d = {
+      ), l = I.encrypt(a, c), u = t.relayHint ? ["p", t.pubkey, t.relayHint] : ["p", t.pubkey], h = {
         pubkey: r.publicKey,
         created_at: o,
         kind: X.GIFT_WRAP_KIND,
-        tags: [h],
+        tags: [u],
         content: l.payload
-      }, g = this.calculateEventId(d), p = await this.signEvent(d, g, r.privateKey);
+      }, g = this.calculateEventId(h), p = await this.signEvent(h, g, r.privateKey);
       return {
         giftWrap: {
           id: g,
           pubkey: r.publicKey,
           created_at: o,
           kind: X.GIFT_WRAP_KIND,
-          tags: [h],
+          tags: [u],
           content: l.payload,
           sig: p
         },
@@ -2245,7 +2266,7 @@ class _e {
     } catch (r) {
       throw r instanceof b ? r : new b(
         `Gift wrap creation failed: ${r.message}`,
-        m.GIFT_WRAP_CREATION_FAILED,
+        w.GIFT_WRAP_CREATION_FAILED,
         r
       );
     }
@@ -2258,11 +2279,11 @@ class _e {
     if (!t || t.length === 0)
       throw new b(
         "At least one recipient is required",
-        m.NO_RECIPIENTS
+        w.NO_RECIPIENTS
       );
-    const s = [], i = ke.generateMultipleEphemeralKeyPairs(
+    const s = [], i = _e.generateMultipleEphemeralKeyPairs(
       t.length
-    ), r = We.generateMultipleRandomizedTimestamps(
+    ), r = Ke.generateMultipleRandomizedTimestamps(
       t.length
     );
     for (let o = 0; o < t.length; o++) {
@@ -2283,10 +2304,10 @@ class _e {
     try {
       if (!this.isValidGiftWrap(e))
         return { seal: null, isValid: !1 };
-      const s = k.deriveConversationKey(
+      const s = I.deriveConversationKey(
         t,
         e.pubkey
-      ), i = k.decrypt(e.content, s);
+      ), i = I.decrypt(e.content, s);
       if (!i.isValid)
         return { seal: null, isValid: !1 };
       const r = JSON.parse(i.plaintext);
@@ -2302,22 +2323,22 @@ class _e {
     if (!e || typeof e != "object")
       throw new b(
         "Seal must be a valid object",
-        m.INVALID_SEAL
+        w.INVALID_SEAL
       );
     if (e.kind !== X.SEAL_KIND)
       throw new b(
         "Seal must have kind 13",
-        m.INVALID_SEAL
+        w.INVALID_SEAL
       );
     if (!Array.isArray(e.tags) || e.tags.length !== 0)
       throw new b(
         "Seal must have empty tags array",
-        m.INVALID_SEAL
+        w.INVALID_SEAL
       );
     if (typeof e.content != "string")
       throw new b(
         "Seal must have valid content string",
-        m.INVALID_SEAL
+        w.INVALID_SEAL
       );
   }
   /**
@@ -2327,17 +2348,17 @@ class _e {
     if (!e || typeof e != "object")
       throw new b(
         "Recipient must be a valid object",
-        m.INVALID_RECIPIENT
+        w.INVALID_RECIPIENT
       );
     if (typeof e.pubkey != "string" || !/^[0-9a-f]{64}$/i.test(e.pubkey))
       throw new b(
         "Recipient must have valid pubkey",
-        m.INVALID_RECIPIENT
+        w.INVALID_RECIPIENT
       );
     if (e.relayHint && typeof e.relayHint != "string")
       throw new b(
         "Recipient relay hint must be a string if provided",
-        m.INVALID_RECIPIENT
+        w.INVALID_RECIPIENT
       );
   }
   /**
@@ -2377,7 +2398,7 @@ class _e {
     } catch (i) {
       throw new b(
         "Failed to sign gift wrap event",
-        m.GIFT_WRAP_CREATION_FAILED,
+        w.GIFT_WRAP_CREATION_FAILED,
         i
       );
     }
@@ -2417,14 +2438,14 @@ class re {
           r,
           t,
           c.pubkey
-        ), h = await _e.createGiftWrap(
+        ), u = await ke.createGiftWrap(
           l,
           {
             pubkey: c.pubkey,
             relayHint: c.relayHint || s.relayHint
           }
         );
-        o.push(h);
+        o.push(u);
       }
       const a = await pe.createSeal(
         r,
@@ -2440,7 +2461,7 @@ class re {
     } catch (r) {
       throw r instanceof b ? r : new b(
         `Gift wrap protocol failed: ${r.message}`,
-        m.GIFT_WRAP_CREATION_FAILED,
+        w.GIFT_WRAP_CREATION_FAILED,
         r
       );
     }
@@ -2451,7 +2472,7 @@ class re {
    */
   static async decryptGiftWrappedDM(e, t) {
     try {
-      const s = _e.decryptGiftWrap(
+      const s = ke.decryptGiftWrap(
         e,
         t
       );
@@ -2522,7 +2543,7 @@ class re {
    * Useful for filtering gift wraps from a relay
    */
   static filterGiftWrapsForRecipient(e, t) {
-    return e.filter((s) => _e.getRecipientFromGiftWrap(s) === t);
+    return e.filter((s) => ke.getRecipientFromGiftWrap(s) === t);
   }
   /**
    * Decrypt multiple gift wraps for a recipient
@@ -2543,23 +2564,23 @@ class re {
     if (typeof e != "string")
       throw new b(
         "Message must be a string",
-        m.INVALID_RUMOR
+        w.INVALID_RUMOR
       );
     if (typeof t != "string" || !/^[0-9a-f]{64}$/i.test(t))
       throw new b(
         "Invalid sender private key format",
-        m.SEAL_CREATION_FAILED
+        w.SEAL_CREATION_FAILED
       );
     if (!s || !Array.isArray(s.recipients) || s.recipients.length === 0)
       throw new b(
         "At least one recipient is required",
-        m.NO_RECIPIENTS
+        w.NO_RECIPIENTS
       );
     for (const i of s.recipients)
       if (!i || typeof i.pubkey != "string" || !/^[0-9a-f]{64}$/i.test(i.pubkey))
         throw new b(
           "Invalid recipient public key format",
-          m.INVALID_RECIPIENT
+          w.INVALID_RECIPIENT
         );
   }
   /**
@@ -2593,7 +2614,7 @@ class re {
         }
       }), new b(
         "Failed to derive public key from private key",
-        m.SEAL_CREATION_FAILED,
+        w.SEAL_CREATION_FAILED,
         t
       );
     }
@@ -2650,9 +2671,9 @@ class re {
       if (!/^[0-9a-f]{64}$/i.test(t))
         throw new b(
           "Invalid recipient private key format",
-          m.INVALID_PRIVATE_KEY
+          w.INVALID_PRIVATE_KEY
         );
-      const { SealCreator: s } = await Promise.resolve().then(() => vs), { NIP44Crypto: i } = await Promise.resolve().then(() => ms), r = await i.decrypt(
+      const { SealCreator: s } = await Promise.resolve().then(() => ms), { NIP44Crypto: i } = await Promise.resolve().then(() => ws), r = await i.decrypt(
         e.content,
         t,
         e.pubkey
@@ -2676,29 +2697,29 @@ class re {
     }
   }
 }
-const Es = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const vs = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   GiftWrapProtocol: re
 }, Symbol.toStringTag, { value: "Module" }));
-class wt {
+class yt {
   constructor(e) {
-    u(this, "_state");
-    u(this, "subscription");
-    u(this, "config");
+    d(this, "_state");
+    d(this, "subscription");
+    d(this, "config");
     // Reactive store properties
-    u(this, "messages");
-    u(this, "status");
-    u(this, "latest");
-    u(this, "error");
-    u(this, "subject");
-    this.config = e, this._state = P({
+    d(this, "messages");
+    d(this, "status");
+    d(this, "latest");
+    d(this, "error");
+    d(this, "subject");
+    this.config = e, this._state = _({
       messages: [],
       status: "connecting",
       latest: null,
       isTyping: !1,
       error: null,
       subject: e.subject
-    }), this.messages = w(this._state, (t) => t.messages), this.status = w(this._state, (t) => t.status), this.latest = w(this._state, (t) => t.latest), this.error = w(this._state, (t) => t.error), this.subject = w(this._state, (t) => t.subject), this.initializeSubscription();
+    }), this.messages = M(this._state, (t) => t.messages), this.status = M(this._state, (t) => t.status), this.latest = M(this._state, (t) => t.latest), this.error = M(this._state, (t) => t.error), this.subject = M(this._state, (t) => t.subject), this.initializeSubscription();
   }
   /**
    * Send an encrypted direct message
@@ -2740,7 +2761,7 @@ class wt {
         hasSeal: !!l.seal,
         giftWrapCount: l.giftWraps.length
       });
-      let h = !1, d;
+      let u = !1, h;
       for (const g of l.giftWraps)
         try {
           this.config.debug && console.log("📡 Publishing gift wrap:", {
@@ -2749,15 +2770,15 @@ class wt {
             tags: g.giftWrap.tags
           });
           const p = await this.config.relayManager.publishToAll(g.giftWrap);
-          this.config.debug && console.log("📡 Publish result:", p), p.some((y) => y.success) && (h = !0, a.eventId = g.giftWrap.id);
+          this.config.debug && console.log("📡 Publish result:", p), p.some((y) => y.success) && (u = !0, a.eventId = g.giftWrap.id);
         } catch (p) {
-          d = p instanceof Error ? p.message : "Publishing failed", this.config.debug && console.error("❌ Publish error:", p);
+          h = p instanceof Error ? p.message : "Publishing failed", this.config.debug && console.error("❌ Publish error:", p);
         }
-      if (h)
+      if (u)
         return this.updateMessageStatus(r, "sent"), this.config.debug && console.log(`✅ DM sent successfully: ${r}`), { success: !0, messageId: r };
       {
         this.updateMessageStatus(r, "failed");
-        const g = d || "Failed to publish to any relay";
+        const g = h || "Failed to publish to any relay";
         return this.setError(g), this.config.debug && console.error(`❌ DM send failed: ${g}`), { success: !1, error: g, messageId: r };
       }
     } catch (r) {
@@ -2925,21 +2946,21 @@ class wt {
     return this.messages.subscribe(e);
   }
 }
-class mt {
+class bt {
   constructor(e) {
-    u(this, "_state");
-    u(this, "subscription");
-    u(this, "config");
-    u(this, "roomId");
+    d(this, "_state");
+    d(this, "subscription");
+    d(this, "config");
+    d(this, "roomId");
     // Reactive store properties
-    u(this, "messages");
-    u(this, "status");
-    u(this, "latest");
-    u(this, "subject");
-    u(this, "participants");
-    u(this, "error");
+    d(this, "messages");
+    d(this, "status");
+    d(this, "latest");
+    d(this, "subject");
+    d(this, "participants");
+    d(this, "error");
     var t;
-    this.config = e, this.roomId = this.generateRoomId(), this._state = P({
+    this.config = e, this.roomId = this.generateRoomId(), this._state = _({
       messages: [],
       status: "connecting",
       latest: null,
@@ -2948,7 +2969,7 @@ class mt {
       // Include sender
       isTyping: !1,
       error: null
-    }), this.messages = w(this._state, (s) => s.messages), this.status = w(this._state, (s) => s.status), this.latest = w(this._state, (s) => s.latest), this.subject = w(this._state, (s) => s.subject), this.participants = w(this._state, (s) => s.participants), this.error = w(this._state, (s) => s.error), this.initializeSubscription();
+    }), this.messages = M(this._state, (s) => s.messages), this.status = M(this._state, (s) => s.status), this.latest = M(this._state, (s) => s.latest), this.subject = M(this._state, (s) => s.subject), this.participants = M(this._state, (s) => s.participants), this.error = M(this._state, (s) => s.error), this.initializeSubscription();
   }
   /**
    * Send an encrypted message to all room participants
@@ -2970,18 +2991,18 @@ class mt {
         participants: a
       };
       this.addMessage(c);
-      const h = {
+      const u = {
         recipients: a.filter((f) => f !== this.config.senderPubkey).map((f) => ({ pubkey: f })),
         relayHint: (s = (t = this.config.options) == null ? void 0 : t.relayHints) == null ? void 0 : s[0]
-      }, d = await re.createGiftWrappedDM(
+      }, h = await re.createGiftWrappedDM(
         e,
         this.config.senderPrivateKey,
-        h
+        u
       );
       let g = !1, p;
-      for (const f of d.giftWraps)
+      for (const f of h.giftWraps)
         try {
-          (await this.config.relayManager.publishToAll(f.giftWrap)).some((v) => v.success) && (g = !0, c.eventId = f.giftWrap.id);
+          (await this.config.relayManager.publishToAll(f.giftWrap)).some((m) => m.success) && (g = !0, c.eventId = f.giftWrap.id);
         } catch (y) {
           p = y instanceof Error ? y.message : "Publishing failed";
         }
@@ -3193,18 +3214,18 @@ class mt {
     return this.messages.subscribe(e);
   }
 }
-class vt {
+class wt {
   constructor(e) {
-    u(this, "conversations", /* @__PURE__ */ new Map());
-    u(this, "rooms", /* @__PURE__ */ new Map());
-    u(this, "config");
-    u(this, "_senderPubkey", null);
-    u(this, "_senderPrivateKey", null);
-    u(this, "parentNostr");
+    d(this, "conversations", /* @__PURE__ */ new Map());
+    d(this, "rooms", /* @__PURE__ */ new Map());
+    d(this, "config");
+    d(this, "_senderPubkey", null);
+    d(this, "_senderPrivateKey", null);
+    d(this, "parentNostr");
     // Reference to NostrUnchained instance
     // Reactive stores
-    u(this, "_conversationList", P([]));
-    u(this, "conversations$");
+    d(this, "_conversationList", _([]));
+    d(this, "conversations$");
     this.config = e, this.parentNostr = e.parent, this.conversations$ = this._conversationList, this.config.signingProvider && this.initializeSender();
   }
   /**
@@ -3317,7 +3338,7 @@ class vt {
       subscriptionManager: this.config.subscriptionManager,
       relayManager: this.config.relayManager,
       debug: this.config.debug
-    }, i = new wt(s);
+    }, i = new yt(s);
     return this.setupConversationReactivity(i), i;
   }
   async createRoom(e, t) {
@@ -3331,7 +3352,7 @@ class vt {
       relayManager: this.config.relayManager,
       options: t,
       debug: this.config.debug
-    }, r = new mt(i);
+    }, r = new bt(i);
     return this.setupRoomReactivity(r), r;
   }
   setupConversationReactivity(e) {
@@ -3354,12 +3375,12 @@ class vt {
     const e = [];
     this.conversations.forEach((t, s) => {
       let i = null, r = "disconnected", o;
-      const a = t.latest.subscribe((h) => {
-        i = h;
-      }), c = t.status.subscribe((h) => {
-        r = h;
-      }), l = t.subject.subscribe((h) => {
-        o = h;
+      const a = t.latest.subscribe((u) => {
+        i = u;
+      }), c = t.status.subscribe((u) => {
+        r = u;
+      }), l = t.subject.subscribe((u) => {
+        o = u;
       });
       a(), c(), l(), e.push({
         pubkey: s,
@@ -3375,12 +3396,12 @@ class vt {
         i = g;
       }), l = t.status.subscribe((g) => {
         r = g;
-      }), h = t.subject.subscribe((g) => {
+      }), u = t.subject.subscribe((g) => {
         o = g;
-      }), d = t.participants.subscribe((g) => {
+      }), h = t.participants.subscribe((g) => {
         a = g;
       });
-      c(), l(), h(), d(), e.push({
+      c(), l(), u(), h(), e.push({
         pubkey: s,
         // Use roomId as the identifier
         latestMessage: i,
@@ -3395,7 +3416,7 @@ class vt {
   async handleGlobalInboxEvent(e) {
     this.config.debug && console.log("🎁 Processing gift wrap event:", e.id);
     try {
-      const { GiftWrapProtocol: t } = await Promise.resolve().then(() => Es), s = await this.getPrivateKeySecurely(), i = await t.unwrapGiftWrap(e, s);
+      const { GiftWrapProtocol: t } = await Promise.resolve().then(() => vs), s = await this.getPrivateKeySecurely(), i = await t.unwrapGiftWrap(e, s);
       if (i) {
         const r = i.pubkey;
         if (this.config.debug && console.log("✅ Decrypted event (kind " + i.kind + ") from:", r.substring(0, 8) + "..."), i.kind === 4 || i.kind === 14) {
@@ -3461,12 +3482,12 @@ class vt {
     return this.config.debug && console.log("🎯 Delegating to Universal DM Module (cache-based) for:", e.substring(0, 16) + "..."), t.with(e);
   }
 }
-class Ms {
+class Es {
   constructor(e, t, s) {
-    u(this, "store");
-    u(this, "myPubkey");
-    u(this, "otherPubkey");
-    u(this, "nostr");
+    d(this, "store");
+    d(this, "myPubkey");
+    d(this, "otherPubkey");
+    d(this, "nostr");
     this.nostr = e, this.myPubkey = t, this.otherPubkey = s, this.store = this.nostr.query().kinds([14]).authors([this.myPubkey, this.otherPubkey]).tags("p", [this.myPubkey, this.otherPubkey]).execute();
   }
   // Svelte store interface - delegate to underlying store
@@ -3526,7 +3547,7 @@ class Ms {
     return t == null ? void 0 : t[1];
   }
 }
-class Ss {
+class Ms {
   constructor(e, t) {
     this.nostr = e, this.myPubkey = t;
   }
@@ -3534,23 +3555,23 @@ class Ss {
   with(e) {
     return this.nostr.startUniversalGiftWrapSubscription().catch((t) => {
       console.warn("⚠️ Failed to start gift wrap subscription for DMs:", t);
-    }), new Ms(this.nostr, this.myPubkey, e);
+    }), new Es(this.nostr, this.myPubkey, e);
   }
   // Room functionality - also just queries (with lazy gift wrap subscription)
   room(e, t) {
     return this.nostr.startUniversalGiftWrapSubscription().catch((s) => {
       console.warn("⚠️ Failed to start gift wrap subscription for DM room:", s);
-    }), new Ps(this.nostr, this.myPubkey, e, t);
+    }), new Ss(this.nostr, this.myPubkey, e, t);
   }
   // Get all conversations - query all kind 14 events I'm involved in
   get conversations() {
     return [];
   }
 }
-class Ps {
+class Ss {
   // TODO: Implement room store
   constructor(e, t, s, i) {
-    u(this, "store");
+    d(this, "store");
     this.nostr = e, this.myPubkey = t, this.participants = s, this.options = i, this.store = this.nostr.query().kinds([14]).tags("p", [this.myPubkey, ...this.participants]).execute();
   }
   subscribe(e) {
@@ -3577,19 +3598,19 @@ class Ps {
     return { success: !0 };
   }
 }
-class Is {
+class Ps {
   constructor(e) {
-    u(this, "config");
-    u(this, "contactCache", /* @__PURE__ */ new Map());
-    u(this, "activeSubscriptions", /* @__PURE__ */ new Map());
+    d(this, "config");
+    d(this, "contactCache", /* @__PURE__ */ new Map());
+    d(this, "activeSubscriptions", /* @__PURE__ */ new Map());
     // pubkey -> subscriptionId
     // Reactive stores
-    u(this, "_myContacts", P(null));
-    u(this, "_contactUpdates", P(/* @__PURE__ */ new Map()));
+    d(this, "_myContacts", _(null));
+    d(this, "_contactUpdates", _(/* @__PURE__ */ new Map()));
     // Public reactive properties
-    u(this, "mine");
-    u(this, "updates");
-    this.config = e, this.mine = w(this._myContacts, (t) => t), this.updates = w(this._contactUpdates, (t) => t), this.config.signingProvider && this.initializeOwnContacts();
+    d(this, "mine");
+    d(this, "updates");
+    this.config = e, this.mine = M(this._myContacts, (t) => t), this.updates = M(this._contactUpdates, (t) => t), this.config.signingProvider && this.initializeOwnContacts();
   }
   /**
    * Follow a new contact
@@ -3679,21 +3700,25 @@ class Is {
         const o = setTimeout(() => {
           r || (r = !0, i(null));
         }, t.timeout || 5e3);
-        this.config.subscriptionManager.subscribe([s], {
-          onEvent: (a) => {
-            if (!r && a.kind === 3) {
-              r = !0, clearTimeout(o);
-              try {
-                const c = this.parseContactEvent(a);
-                this.cacheContactList(c), this._contactUpdates.update((l) => (l.set(e, c), new Map(l))), i(c);
-              } catch {
-                i(null);
+        (async () => {
+          const c = await this.config.subscriptionManager.getOrCreateSubscription([s]), l = c.addListener({
+            onEvent: (u) => {
+              if (!r && u.kind === 3) {
+                r = !0, clearTimeout(o), c.removeListener(l);
+                try {
+                  const h = this.parseContactEvent(u);
+                  this.cacheContactList(h), this._contactUpdates.update((g) => (g.set(e, h), new Map(g))), i(h);
+                } catch {
+                  i(null);
+                }
               }
+            },
+            onEose: () => {
+              r || (r = !0, clearTimeout(o), c.removeListener(l), i(null));
             }
-          },
-          onEose: () => {
-            r || (r = !0, clearTimeout(o), i(null));
-          }
+          });
+        })().catch(() => {
+          r || (r = !0, clearTimeout(o), i(null));
         });
       });
     } catch (s) {
@@ -3741,8 +3766,8 @@ class Is {
   async publishContactList(e) {
     try {
       const t = await this.config.signingProvider.getPublicKey(), s = e.map((l) => {
-        const h = ["p", l.pubkey];
-        return l.relayUrl && h.push(l.relayUrl), l.petname && h.push(l.petname), h;
+        const u = ["p", l.pubkey];
+        return l.relayUrl && u.push(l.relayUrl), l.petname && u.push(l.petname), u;
       }), i = await this.config.eventBuilder.kind(3).content("").tags(s).build(), r = await this.config.signingProvider.signEvent(i);
       if ((await this.config.relayManager.publishToAll(r)).filter((l) => l.success).length === 0)
         return {
@@ -3803,19 +3828,19 @@ class Is {
     this.contactCache.set(e.ownerPubkey, t);
   }
 }
-class ks {
+class Is {
   constructor(e) {
-    u(this, "config");
-    u(this, "threadCache", /* @__PURE__ */ new Map());
-    u(this, "activeSubscriptions", /* @__PURE__ */ new Map());
+    d(this, "config");
+    d(this, "threadCache", /* @__PURE__ */ new Map());
+    d(this, "activeSubscriptions", /* @__PURE__ */ new Map());
     // threadId -> subscriptionId
     // Reactive stores
-    u(this, "_watchedThreads", P(/* @__PURE__ */ new Map()));
-    u(this, "_threadUpdates", P(/* @__PURE__ */ new Map()));
+    d(this, "_watchedThreads", _(/* @__PURE__ */ new Map()));
+    d(this, "_threadUpdates", _(/* @__PURE__ */ new Map()));
     // Public reactive properties
-    u(this, "watchedThreads");
-    u(this, "updates");
-    this.config = e, this.watchedThreads = w(this._watchedThreads, (t) => t), this.updates = w(this._threadUpdates, (t) => t);
+    d(this, "watchedThreads");
+    d(this, "updates");
+    this.config = e, this.watchedThreads = M(this._watchedThreads, (t) => t), this.updates = M(this._threadUpdates, (t) => t);
   }
   /**
    * Create a new thread (root message)
@@ -3829,10 +3854,10 @@ class ks {
     try {
       const t = await this.config.signingProvider.getPublicKey(), s = [];
       if (e.mentions)
-        for (const h of e.mentions)
-          s.push(["p", h]);
+        for (const u of e.mentions)
+          s.push(["p", u]);
       const i = await this.config.eventBuilder.kind(1).content(e.content).tags(s).build(), r = await this.config.signingProvider.signEvent(i);
-      if ((await this.config.relayManager.publishToAll(r)).filter((h) => h.success).length === 0)
+      if ((await this.config.relayManager.publishToAll(r)).filter((u) => u.success).length === 0)
         return {
           success: !1,
           error: "Failed to publish to any relay"
@@ -3856,7 +3881,7 @@ class ks {
         lastActivity: r.created_at,
         isWatched: !1
       };
-      return this.cacheThread(l), this._threadUpdates.update((h) => (h.set(r.id, l), new Map(h))), this.config.debug && console.log("Created thread:", l), {
+      return this.cacheThread(l), this._threadUpdates.update((u) => (u.set(r.id, l), new Map(u))), this.config.debug && console.log("Created thread:", l), {
         success: !0,
         eventId: r.id,
         message: c
@@ -3882,18 +3907,18 @@ class ks {
       s.push(["e", e.replyToEventId, "", "reply"]), e.rootEventId !== e.replyToEventId && s.push(["e", e.rootEventId, "", "root"]);
       const i = new Set(e.mentions || []), r = await this.get(e.rootEventId);
       if (r) {
-        const d = r.messages.find((g) => g.eventId === e.replyToEventId);
-        d && i.add(d.authorPubkey);
+        const h = r.messages.find((g) => g.eventId === e.replyToEventId);
+        h && i.add(h.authorPubkey);
       }
-      for (const d of i)
-        d !== t && s.push(["p", d]);
+      for (const h of i)
+        h !== t && s.push(["p", h]);
       const o = await this.config.eventBuilder.kind(1).content(e.content).tags(s).build(), a = await this.config.signingProvider.signEvent(o);
-      if ((await this.config.relayManager.publishToAll(a)).filter((d) => d.success).length === 0)
+      if ((await this.config.relayManager.publishToAll(a)).filter((h) => h.success).length === 0)
         return {
           success: !1,
           error: "Failed to publish to any relay"
         };
-      const h = {
+      const u = {
         eventId: a.id,
         authorPubkey: t,
         content: e.content,
@@ -3904,10 +3929,10 @@ class ks {
         depth: this.calculateDepth(e.replyToEventId, r),
         isOwn: !0
       };
-      return r && (r.messages.push(h), r.messageCount = r.messages.length, r.lastActivity = a.created_at, this.cacheThread(r), this._threadUpdates.update((d) => (d.set(e.rootEventId, r), new Map(d)))), this.config.debug && console.log("Created reply:", h), {
+      return r && (r.messages.push(u), r.messageCount = r.messages.length, r.lastActivity = a.created_at, this.cacheThread(r), this._threadUpdates.update((h) => (h.set(e.rootEventId, r), new Map(h)))), this.config.debug && console.log("Created reply:", u), {
         success: !0,
         eventId: a.id,
-        message: h
+        message: u
       };
     } catch (t) {
       return this.config.debug && console.error("Error creating reply:", t), {
@@ -3963,15 +3988,15 @@ class ks {
         onEvent: (l) => {
           if (l.kind === 1 && !a.has(l.id)) {
             a.add(l.id);
-            const h = this.parseTextNoteEvent(l, e);
-            h && o.push(h);
+            const u = this.parseTextNoteEvent(l, e);
+            u && o.push(u);
           }
         },
         onEose: () => {
           if (!r)
             if (r = !0, clearTimeout(c), o.length > 0) {
               const l = this.buildThread(e, o);
-              this.cacheThread(l), this._threadUpdates.update((h) => (h.set(e, l), new Map(h))), i(l);
+              this.cacheThread(l), this._threadUpdates.update((u) => (u.set(e, l), new Map(u))), i(l);
             } else
               i(null);
         }
@@ -3987,24 +4012,24 @@ class ks {
     const c = 5;
     for (; r.size > 0 && a < c; ) {
       a++;
-      const h = Array.from(r);
-      r.clear(), this.config.debug && console.log(`Thread fetch phase ${a}: querying ${h.length} events`);
-      const d = [];
-      h.length > 0 && d.push({
-        ids: h,
+      const u = Array.from(r);
+      r.clear(), this.config.debug && console.log(`Thread fetch phase ${a}: querying ${u.length} events`);
+      const h = [];
+      u.length > 0 && h.push({
+        ids: u,
         kinds: [1],
-        limit: h.length
+        limit: u.length
       });
-      for (const p of h)
-        o.has(p) || (d.push({
+      for (const p of u)
+        o.has(p) || (h.push({
           kinds: [1],
           "#e": [p],
           limit: Math.floor((t.limit || 100) / Math.max(1, a))
           // Reduce limit per phase
         }), o.add(p));
-      if (d.length === 0)
+      if (h.length === 0)
         break;
-      const g = await this.fetchEventsWithFilters(d, e, i);
+      const g = await this.fetchEventsWithFilters(h, e, i);
       for (const p of g)
         i.has(p.eventId) || (s.push(p), i.add(p.eventId), p.replyToEventId && !i.has(p.replyToEventId) && r.add(p.replyToEventId));
       if (this.config.debug && console.log(`Phase ${a} complete: found ${g.length} new messages, ${r.size} more to query`), g.length === 0)
@@ -4013,7 +4038,7 @@ class ks {
     if (s.length === 0)
       return null;
     const l = this.buildThread(e, s);
-    return this.cacheThread(l), this._threadUpdates.update((h) => (h.set(e, l), new Map(h))), this.config.debug && console.log(`Complete thread built: ${l.messageCount} messages across ${a} phases`), l;
+    return this.cacheThread(l), this._threadUpdates.update((u) => (u.set(e, l), new Map(u))), this.config.debug && console.log(`Complete thread built: ${l.messageCount} messages across ${a} phases`), l;
   }
   /**
    * Fetch events using provided filters and parse them
@@ -4094,27 +4119,27 @@ class ks {
     var s;
     try {
       const i = this.parseNIP10Tags(e.tags), r = i.find((f) => f.meaning === "root"), o = i.find((f) => f.meaning === "reply"), a = i.filter((f) => f.meaning === "mention"), c = i.filter((f) => f.tagType === "e");
-      let l, h = null, d = !1;
+      let l, u = null, h = !1;
       if (r)
-        l = r.value, d = l === t;
+        l = r.value, h = l === t;
       else if (o)
-        o.value === t ? (l = t, d = !0) : (l = o.value, d = c.some((f) => f.value === t), d && (l = t));
+        o.value === t ? (l = t, h = !0) : (l = o.value, h = c.some((f) => f.value === t), h && (l = t));
       else if (e.id === t)
-        l = e.id, d = !0;
+        l = e.id, h = !0;
       else if (c.find((y) => y.value === t))
-        l = t, d = !0;
+        l = t, h = !0;
       else
         return null;
-      if (!d)
+      if (!h)
         return null;
       if (o)
-        h = o.value;
+        u = o.value;
       else if (c.length > 0 && e.id !== l)
         if (c.length === 1)
-          h = c[0].value;
+          u = c[0].value;
         else {
           const f = c[c.length - 1];
-          f.value !== l && (h = f.value);
+          f.value !== l && (u = f.value);
         }
       const g = a.map((f) => f.value), p = (s = this.config.signingProvider) != null && s.getPublicKey ? this.config.signingProvider.getPublicKey() : Promise.resolve("");
       return {
@@ -4122,7 +4147,7 @@ class ks {
         authorPubkey: e.pubkey,
         content: e.content,
         createdAt: e.created_at,
-        replyToEventId: h,
+        replyToEventId: u,
         rootEventId: l,
         mentionedPubkeys: g,
         depth: 0,
@@ -4203,17 +4228,17 @@ class ks {
 }
 class _s {
   constructor(e) {
-    u(this, "config");
-    u(this, "reactionCache", /* @__PURE__ */ new Map());
-    u(this, "activeSubscriptions", /* @__PURE__ */ new Map());
+    d(this, "config");
+    d(this, "reactionCache", /* @__PURE__ */ new Map());
+    d(this, "activeSubscriptions", /* @__PURE__ */ new Map());
     // eventId -> subscriptionId
     // Reactive stores
-    u(this, "_reactionUpdates", P(/* @__PURE__ */ new Map()));
-    u(this, "_watchedEvents", P(/* @__PURE__ */ new Map()));
+    d(this, "_reactionUpdates", _(/* @__PURE__ */ new Map()));
+    d(this, "_watchedEvents", _(/* @__PURE__ */ new Map()));
     // Public reactive properties
-    u(this, "updates");
-    u(this, "watchedEvents");
-    this.config = e, this.updates = w(this._reactionUpdates, (t) => t), this.watchedEvents = w(this._watchedEvents, (t) => t);
+    d(this, "updates");
+    d(this, "watchedEvents");
+    this.config = e, this.updates = M(this._reactionUpdates, (t) => t), this.watchedEvents = M(this._watchedEvents, (t) => t);
   }
   /**
    * React to an event
@@ -4237,7 +4262,7 @@ class _s {
         ["p", e.targetAuthorPubkey]
         // Author of the event
       ], r = await this.config.eventBuilder.kind(7).content(e.reactionType).tags(i).build(), o = await this.config.signingProvider.signEvent(r);
-      if ((await this.config.relayManager.publishToAll(o)).filter((d) => d.success).length === 0)
+      if ((await this.config.relayManager.publishToAll(o)).filter((h) => h.success).length === 0)
         return {
           success: !1,
           error: "Failed to publish to any relay"
@@ -4250,8 +4275,8 @@ class _s {
         reactionType: e.reactionType,
         createdAt: o.created_at,
         isOwn: !0
-      }, h = this.getCachedReactions(e.targetEventId);
-      return h && (h.reactions.push(l), h.summary = this.aggregateReactions(h.reactions, t), h.timestamp = Date.now(), this.reactionCache.set(e.targetEventId, h), this._reactionUpdates.update((d) => (d.set(e.targetEventId, h.summary), new Map(d)))), this.config.debug && console.log("Created reaction:", l), {
+      }, u = this.getCachedReactions(e.targetEventId);
+      return u && (u.reactions.push(l), u.summary = this.aggregateReactions(u.reactions, t), u.timestamp = Date.now(), this.reactionCache.set(e.targetEventId, u), this._reactionUpdates.update((h) => (h.set(e.targetEventId, u.summary), new Map(h)))), this.config.debug && console.log("Created reaction:", l), {
         success: !0,
         eventId: o.id,
         reaction: l
@@ -4292,30 +4317,30 @@ class _s {
     try {
       const t = await this.getReactions(e);
       if (t)
-        this._watchedEvents.update((r) => (r.set(e, t.summary), new Map(r)));
+        this._watchedEvents.update((o) => (o.set(e, t.summary), new Map(o)));
       else {
-        const r = this.config.signingProvider ? await this.config.signingProvider.getPublicKey() : "", o = {
+        const o = this.config.signingProvider ? await this.config.signingProvider.getPublicKey() : "", a = {
           targetEventId: e,
           totalCount: 0,
           reactions: {},
           userReacted: !1
         };
-        this._watchedEvents.update((a) => (a.set(e, o), new Map(a)));
+        this._watchedEvents.update((c) => (c.set(e, a), new Map(c)));
       }
       const s = {
         kinds: [7],
         "#e": [e],
         since: Math.floor(Date.now() / 1e3)
         // Only new reactions
-      }, i = await this.config.subscriptionManager.subscribe([s], {
-        onEvent: (r) => {
-          if (r.kind === 7) {
-            const o = this.parseReactionEvent(r);
-            o && o.targetEventId === e && this.handleNewReaction(o);
+      }, i = await this.config.subscriptionManager.getOrCreateSubscription([s]), r = i.addListener({
+        onEvent: (o) => {
+          if (o.kind === 7) {
+            const a = this.parseReactionEvent(o);
+            a && a.targetEventId === e && this.handleNewReaction(a);
           }
         }
       });
-      return this.activeSubscriptions.set(e, i), this.config.debug && console.log(`Started watching reactions for event: ${e}`), !0;
+      return this.activeSubscriptions.set(e, { sharedSub: i, listenerId: r }), this.config.debug && console.log(`Started watching reactions for event: ${e}`), !0;
     } catch (t) {
       return this.config.debug && console.error("Error watching reactions:", t), !1;
     }
@@ -4356,27 +4381,31 @@ class _s {
       const o = [], a = /* @__PURE__ */ new Set(), c = setTimeout(() => {
         if (!r)
           if (r = !0, o.length > 0) {
-            const l = this.buildReactionCache(e, o);
-            this.cacheReactions(e, l), i(l);
+            const u = this.buildReactionCache(e, o);
+            this.cacheReactions(e, u), i(u);
           } else
             i(null);
       }, t.timeout || 5e3);
-      this.config.subscriptionManager.subscribe(s, {
-        onEvent: (l) => {
-          if (l.kind === 7 && !a.has(l.id)) {
-            a.add(l.id);
-            const h = this.parseReactionEvent(l);
-            h && h.targetEventId === e && o.push(h);
+      (async () => {
+        const u = await this.config.subscriptionManager.getOrCreateSubscription(s), h = u.addListener({
+          onEvent: (g) => {
+            if (g.kind === 7 && !a.has(g.id)) {
+              a.add(g.id);
+              const p = this.parseReactionEvent(g);
+              p && p.targetEventId === e && o.push(p);
+            }
+          },
+          onEose: () => {
+            if (!r)
+              if (r = !0, clearTimeout(c), u.removeListener(h), o.length > 0) {
+                const g = this.buildReactionCache(e, o);
+                this.cacheReactions(e, g), i(g);
+              } else
+                i(null);
           }
-        },
-        onEose: () => {
-          if (!r)
-            if (r = !0, clearTimeout(c), o.length > 0) {
-              const l = this.buildReactionCache(e, o);
-              this.cacheReactions(e, l), i(l);
-            } else
-              i(null);
-        }
+        });
+      })().catch(() => {
+        r || (r = !0, clearTimeout(c), i(null));
       });
     });
   }
@@ -4457,18 +4486,18 @@ class _s {
     this.reactionCache.set(e, t);
   }
 }
-class As {
+class ks {
   constructor(e) {
-    u(this, "config");
-    u(this, "feedCache", /* @__PURE__ */ new Map());
-    u(this, "activeSubscriptions", /* @__PURE__ */ new Map());
+    d(this, "config");
+    d(this, "feedCache", /* @__PURE__ */ new Map());
+    d(this, "activeSubscriptions", /* @__PURE__ */ new Map());
     // Reactive stores
-    u(this, "_globalFeed", P([]));
-    u(this, "_followingFeed", P([]));
+    d(this, "_globalFeed", _([]));
+    d(this, "_followingFeed", _([]));
     // Public reactive properties
-    u(this, "globalFeed");
-    u(this, "followingFeed");
-    this.config = e, this.globalFeed = w(this._globalFeed, (t) => t), this.followingFeed = w(this._followingFeed, (t) => t);
+    d(this, "globalFeed");
+    d(this, "followingFeed");
+    this.config = e, this.globalFeed = M(this._globalFeed, (t) => t), this.followingFeed = M(this._followingFeed, (t) => t);
   }
   /**
    * Get global feed (recent posts from all users)
@@ -4513,31 +4542,31 @@ class As {
       kinds: [1],
       since: Math.floor(Date.now() / 1e3),
       limit: 20
-    }, t = await this.config.subscriptionManager.subscribe([e], {
-      onEvent: (s) => {
-        const i = this.eventToFeedItem(s);
-        this._globalFeed.update((r) => [i, ...r.slice(0, 99)]);
+    }, t = await this.config.subscriptionManager.getOrCreateSubscription([e]), s = t.addListener({
+      onEvent: (i) => {
+        const r = this.eventToFeedItem(i);
+        this._globalFeed.update((o) => [r, ...o.slice(0, 99)]);
       }
     });
-    if (this.activeSubscriptions.set("global-updates", t), this.config.signingProvider)
+    if (this.activeSubscriptions.set("global-updates", { sharedSub: t, listenerId: s }), this.config.signingProvider)
       try {
-        const s = await this.config.signingProvider.getPublicKey(), i = await this.config.contactManager.getContacts(s);
-        if (i && i.followingList.length > 0) {
-          const r = {
+        const i = await this.config.signingProvider.getPublicKey(), r = await this.config.contactManager.getContacts(i);
+        if (r && r.followingList.length > 0) {
+          const o = {
             kinds: [1],
-            authors: i.followingList,
+            authors: r.followingList,
             since: Math.floor(Date.now() / 1e3),
             limit: 20
-          }, o = await this.config.subscriptionManager.subscribe([r], {
-            onEvent: (a) => {
-              const c = this.eventToFeedItem(a);
-              this._followingFeed.update((l) => [c, ...l.slice(0, 99)]);
+          }, a = await this.config.subscriptionManager.subscribe([o], {
+            onEvent: (c) => {
+              const l = this.eventToFeedItem(c);
+              this._followingFeed.update((u) => [l, ...u.slice(0, 99)]);
             }
           });
-          this.activeSubscriptions.set("following-updates", o);
+          this.activeSubscriptions.set("following-updates", a);
         }
-      } catch (s) {
-        this.config.debug && console.error("Error setting up following feed updates:", s);
+      } catch (i) {
+        this.config.debug && console.error("Error setting up following feed updates:", i);
       }
   }
   /**
@@ -4599,19 +4628,19 @@ class As {
     e === "global" ? this._globalFeed.set(t) : e === "following" && this._followingFeed.set(t), this.feedCache.set(e, t);
   }
 }
-class Ts {
+class As {
   constructor(e) {
-    u(this, "config");
-    u(this, "_contactManager");
-    u(this, "_threadManager");
-    u(this, "_reactionManager");
-    u(this, "_feedManager");
+    d(this, "config");
+    d(this, "_contactManager");
+    d(this, "_threadManager");
+    d(this, "_reactionManager");
+    d(this, "_feedManager");
     // Public API interfaces
     // profiles: handled by enhanced ProfileModule in core
-    u(this, "contacts");
-    u(this, "threads");
-    u(this, "reactions");
-    u(this, "feeds");
+    d(this, "contacts");
+    d(this, "threads");
+    d(this, "reactions");
+    d(this, "feeds");
     this.config = e, this.contacts = this.getContactManager(), this.threads = this.getThreadManager(), this.reactions = this.getReactionManager(), this.feeds = this.getFeedManager(), this.config.debug && console.log("SocialModule initialized with all managers");
   }
   /**
@@ -4641,7 +4670,7 @@ class Ts {
   }
   // Lazy initialization methods for better performance
   getContactManager() {
-    return this._contactManager || (this._contactManager = new Is({
+    return this._contactManager || (this._contactManager = new Ps({
       subscriptionManager: this.config.subscriptionManager,
       relayManager: this.config.relayManager,
       signingProvider: this.config.signingProvider,
@@ -4651,7 +4680,7 @@ class Ts {
     })), this._contactManager;
   }
   getThreadManager() {
-    return this._threadManager || (this._threadManager = new ks({
+    return this._threadManager || (this._threadManager = new Is({
       subscriptionManager: this.config.subscriptionManager,
       relayManager: this.config.relayManager,
       signingProvider: this.config.signingProvider,
@@ -4670,7 +4699,7 @@ class Ts {
     })), this._reactionManager;
   }
   getFeedManager() {
-    return this._feedManager || (this._feedManager = new As({
+    return this._feedManager || (this._feedManager = new ks({
       subscriptionManager: this.config.subscriptionManager,
       relayManager: this.config.relayManager,
       signingProvider: this.config.signingProvider,
@@ -4681,14 +4710,14 @@ class Ts {
     })), this._feedManager;
   }
 }
-class Cs {
+class Ts {
   constructor(e, t, s, i = {}) {
-    u(this, "listeners", /* @__PURE__ */ new Map());
-    u(this, "subscriptionResult");
-    u(this, "eventCount", 0);
-    u(this, "createdAt", Date.now());
-    u(this, "lastEventAt");
-    u(this, "debug");
+    d(this, "listeners", /* @__PURE__ */ new Map());
+    d(this, "subscriptionResult");
+    d(this, "eventCount", 0);
+    d(this, "createdAt", Date.now());
+    d(this, "lastEventAt");
+    d(this, "debug");
     this.key = e, this.filters = t, this.relays = s, this.debug = i.debug || !1;
   }
   /**
@@ -4793,6 +4822,13 @@ class Cs {
     return this.listeners.size > 0;
   }
   /**
+   * Check if this subscription is active
+   */
+  isActive() {
+    var e;
+    return ((e = this.subscriptionResult) == null ? void 0 : e.success) === !0 && this.hasListeners();
+  }
+  /**
    * Get the subscription ID if available
    */
   getSubscriptionId() {
@@ -4804,12 +4840,12 @@ class Cs {
     return `listener_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 }
-class Rs {
+class Cs {
   constructor(e) {
-    u(this, "subscriptions", /* @__PURE__ */ new Map());
-    u(this, "eventCallbacks", /* @__PURE__ */ new Map());
-    u(this, "sharedSubscriptions", /* @__PURE__ */ new Map());
-    u(this, "debug");
+    d(this, "subscriptions", /* @__PURE__ */ new Map());
+    d(this, "eventCallbacks", /* @__PURE__ */ new Map());
+    d(this, "sharedSubscriptions", /* @__PURE__ */ new Map());
+    d(this, "debug");
     this.relayManager = e, this.debug = e.debug || !1, this.setupRelayMessageHandling();
   }
   /**
@@ -4826,7 +4862,7 @@ class Rs {
       }
       return a;
     }
-    const r = new Cs(i, e, s, { debug: this.debug }), o = await this.subscribe(e, {
+    const r = new Ts(i, e, s, { debug: this.debug }), o = await this.subscribe(e, {
       relays: s,
       onEvent: (a) => r.broadcast(a),
       onEose: (a) => r.notifyEose(a),
@@ -4918,10 +4954,10 @@ class Rs {
           relayResults: [],
           error: a
         };
-      const c = this.generateSubscriptionId(), l = Date.now(), h = t.relays || this.relayManager.connectedRelays.length > 0 ? this.relayManager.connectedRelays : this.relayManager.relayUrls, d = {
+      const c = this.generateSubscriptionId(), l = Date.now(), u = t.relays || this.relayManager.connectedRelays.length > 0 ? this.relayManager.connectedRelays : this.relayManager.relayUrls, h = {
         id: c,
         filters: e,
-        relays: h,
+        relays: u,
         state: "pending",
         createdAt: l,
         eventCount: 0,
@@ -4932,32 +4968,32 @@ class Rs {
         eoseRelays: /* @__PURE__ */ new Set(),
         receivedEventIds: /* @__PURE__ */ new Set()
       };
-      if (h.forEach((v) => {
-        d.relayStates[v] = "active";
-      }), t.timeout && (d.timeoutId = setTimeout(() => {
+      if (u.forEach((m) => {
+        h.relayStates[m] = "active";
+      }), t.timeout && (h.timeoutId = setTimeout(() => {
         this.handleSubscriptionTimeout(c);
-      }, t.timeout)), this.subscriptions.set(c, d), this.debug) {
-        const v = this.summarizeFilters(e);
-        console.log(`Creating subscription ${c} with ${e.length} filters: ${v}`);
+      }, t.timeout)), this.subscriptions.set(c, h), this.debug) {
+        const m = this.summarizeFilters(e);
+        console.log(`Creating subscription ${c} with ${e.length} filters: ${m}`);
       }
       const g = t.retryAttempts || 1, p = t.retryDelay || 1e3;
       let f = [], y;
-      for (let v = 0; v < g; v++)
+      for (let m = 0; m < g; m++)
         try {
-          const M = ["REQ", c, ...e];
+          const E = ["REQ", c, ...e];
           try {
-            await ((i = (s = this.relayManager).sendToAll) == null ? void 0 : i.call(s, M)), f = h.map((_) => ({
-              relay: _,
+            await ((i = (s = this.relayManager).sendToAll) == null ? void 0 : i.call(s, E)), f = u.map((k) => ({
+              relay: k,
               success: !0,
               error: void 0
             }));
             break;
-          } catch (_) {
+          } catch (k) {
             f = [];
             let q = !1;
-            for (const le of h)
+            for (const le of u)
               try {
-                await ((o = (r = this.relayManager).sendToRelays) == null ? void 0 : o.call(r, [le], M)), f.push({
+                await ((o = (r = this.relayManager).sendToRelays) == null ? void 0 : o.call(r, [le], E)), f.push({
                   relay: le,
                   success: !0,
                   error: void 0
@@ -4971,18 +5007,18 @@ class Rs {
               }
             if (q)
               break;
-            y = _ instanceof Error ? _ : new Error("All relays failed");
+            y = k instanceof Error ? k : new Error("All relays failed");
           }
-        } catch (M) {
-          y = M instanceof Error ? M : new Error("Unknown error"), f = h.map((_) => ({
-            relay: _,
+        } catch (E) {
+          y = E instanceof Error ? E : new Error("Unknown error"), f = u.map((k) => ({
+            relay: k,
             success: !1,
             error: y
-          })), v < g - 1 && await new Promise((_) => setTimeout(_, p));
+          })), m < g - 1 && await new Promise((k) => setTimeout(k, p));
         }
-      const S = f.length > 0 && f.some((v) => v.success);
-      return S || (this.subscriptions.delete(c), d.timeoutId && clearTimeout(d.timeoutId)), {
-        subscription: S ? this.externalizeSubscription(d) : {},
+      const S = f.length > 0 && f.some((m) => m.success);
+      return S || (this.subscriptions.delete(c), h.timeoutId && clearTimeout(h.timeoutId)), {
+        subscription: S ? this.externalizeSubscription(h) : {},
         success: S,
         relayResults: f,
         error: S ? void 0 : {
@@ -5013,7 +5049,7 @@ class Rs {
     t.state = "active";
     try {
       const a = ["REQ", e, ...t.filters], c = this.relayManager.connectedRelays;
-      t.relays.length !== c.length || !t.relays.every((h) => c.includes(h)) ? await ((i = (s = this.relayManager).sendToRelays) == null ? void 0 : i.call(s, t.relays, a)) : await ((o = (r = this.relayManager).sendToAll) == null ? void 0 : o.call(r, a));
+      t.relays.length !== c.length || !t.relays.every((u) => c.includes(u)) ? await ((i = (s = this.relayManager).sendToRelays) == null ? void 0 : i.call(s, t.relays, a)) : await ((o = (r = this.relayManager).sendToAll) == null ? void 0 : o.call(r, a));
     } catch (a) {
       throw t.state = "error", a;
     }
@@ -5252,22 +5288,22 @@ class Rs {
 }
 class Se {
   constructor(e, t = {}) {
-    u(this, "events", /* @__PURE__ */ new Map());
+    d(this, "events", /* @__PURE__ */ new Map());
     // ALL events (decrypted)
-    u(this, "eventsByKind", /* @__PURE__ */ new Map());
+    d(this, "eventsByKind", /* @__PURE__ */ new Map());
     // Fast lookup by kind
-    u(this, "eventsByAuthor", /* @__PURE__ */ new Map());
+    d(this, "eventsByAuthor", /* @__PURE__ */ new Map());
     // Fast lookup by author
-    u(this, "eventsByTag", /* @__PURE__ */ new Map());
+    d(this, "eventsByTag", /* @__PURE__ */ new Map());
     // tag name → value → event IDs
-    u(this, "subscribers", /* @__PURE__ */ new Set());
-    u(this, "privateKey");
-    u(this, "config");
+    d(this, "subscribers", /* @__PURE__ */ new Set());
+    d(this, "privateKey");
+    d(this, "config");
     // LRU tracking
-    u(this, "accessOrder", []);
-    u(this, "lastAccess", /* @__PURE__ */ new Map());
+    d(this, "accessOrder", []);
+    d(this, "lastAccess", /* @__PURE__ */ new Map());
     // Statistics tracking
-    u(this, "stats", {
+    d(this, "stats", {
       queryCount: 0,
       totalQueryTime: 0,
       evictedCount: 0,
@@ -5361,7 +5397,7 @@ class Se {
       if (i.startsWith("#") && Array.isArray(r) && r.length > 0) {
         const o = i.slice(1), a = this.eventsByTag.get(o);
         if (a) {
-          const c = r.map((h) => a.get(h) || /* @__PURE__ */ new Set()), l = this.unionSets(c);
+          const c = r.map((u) => a.get(u) || /* @__PURE__ */ new Set()), l = this.unionSets(c);
           t = t ? this.intersectSets([t, l]) : l;
         } else
           t = /* @__PURE__ */ new Set();
@@ -5425,9 +5461,9 @@ class Se {
     return this.events.size * 1024 / (1024 * 1024);
   }
 }
-class Le {
+class mt {
   constructor() {
-    u(this, "filter", {});
+    d(this, "filter", {});
   }
   kinds(e) {
     return this.filter.kinds = e, this;
@@ -5467,13 +5503,13 @@ class Le {
     return this.kinds([6]);
   }
 }
-class De {
+class vt {
   constructor(e, t) {
-    u(this, "cache");
-    u(this, "filter");
-    u(this, "_data");
-    u(this, "subscribers", /* @__PURE__ */ new Set());
-    u(this, "unsubscribeCache");
+    d(this, "cache");
+    d(this, "filter");
+    d(this, "_data");
+    d(this, "subscribers", /* @__PURE__ */ new Set());
+    d(this, "unsubscribeCache");
     this.cache = e, this.filter = t, this._data = this.cache.query(t), this.unsubscribeCache = this.cache.subscribe((s) => {
       this.matchesFilter(s, t) && this.updateData();
     });
@@ -5492,7 +5528,7 @@ class De {
    * Returns a new store with transformed data
    */
   map(e) {
-    return new Ns(this, e);
+    return new Rs(this, e);
   }
   updateData() {
     this._data = this.cache.query(this.filter), this.notifySubscribers();
@@ -5501,14 +5537,14 @@ class De {
     this.subscribers.forEach((e) => e(this._data));
   }
   matchesFilter(e, t) {
-    return this.cache.query({ ...t, ids: [e.id] }).length > 0;
+    return !(t.kinds && !t.kinds.includes(e.kind) || t.authors && !t.authors.includes(e.pubkey) || t.ids && !t.ids.includes(e.id));
   }
 }
-class Ns {
+class Rs {
   constructor(e, t) {
-    u(this, "_data");
-    u(this, "subscribers", /* @__PURE__ */ new Set());
-    u(this, "sourceUnsubscriber");
+    d(this, "_data");
+    d(this, "subscribers", /* @__PURE__ */ new Set());
+    d(this, "sourceUnsubscriber");
     this.sourceStore = e, this.transform = t, this._data = this.transform(this.sourceStore.current), this.sourceUnsubscriber = this.sourceStore.subscribe((s) => {
       const i = this.transform(s);
       this._data !== i && (this._data = i, this.notifySubscribers());
@@ -5527,17 +5563,18 @@ class Ns {
     this.subscribers.forEach((e) => e(this._data));
   }
 }
-let Ls = class extends Le {
+class Ns extends mt {
   constructor(e) {
     super(), this.cache = e;
   }
   execute() {
-    return new De(this.cache, this.filter);
+    return new vt(this.cache, this.filter);
   }
-}, Ds = class extends Le {
+}
+class Ls extends mt {
   constructor(t, s) {
     super();
-    u(this, "relayUrls", []);
+    d(this, "relayUrls", []);
     this.cache = t, this.subscriptionManager = s;
   }
   relay(t) {
@@ -5549,34 +5586,30 @@ let Ls = class extends Le {
   /**
    * Execute the subscription and return a handle for lifecycle control
    * This provides excellent DX for managing subscriptions
+   * USES SMART DEDUPLICATION to prevent subscription overload
    */
   async execute() {
-    var o;
-    const t = this.relayUrls.length > 0 ? { relays: this.relayUrls } : {}, s = await this.subscriptionManager.subscribe([this.filter], {
-      ...t,
-      onEvent: (a) => {
-        this.cache.addEvent(a);
+    const t = this.relayUrls.length > 0 ? this.relayUrls : void 0, s = await this.subscriptionManager.getOrCreateSubscription([this.filter], t), i = s.addListener({
+      onEvent: (o) => {
+        this.cache.addEvent(o);
       }
-    });
-    if (!s.success || !s.subscription)
-      throw new Error(((o = s.error) == null ? void 0 : o.message) || "Subscription failed");
-    const i = s.subscription, r = new De(this.cache, this.filter);
+    }), r = new vt(this.cache, this.filter);
     return {
-      id: i.id,
+      id: s.key,
       store: r,
       stop: async () => {
-        await this.subscriptionManager.close(i.id);
+        s.removeListener(i);
       },
-      isActive: () => this.subscriptionManager.getActiveSubscriptions().some((c) => c.id === i.id)
+      isActive: () => s.isActive()
     };
   }
-};
+}
 class Et {
   constructor(e) {
-    u(this, "config");
-    u(this, "updates", {});
-    u(this, "shouldPreserveExisting", !0);
-    u(this, "customMetadata", {});
+    d(this, "config");
+    d(this, "updates", {});
+    d(this, "shouldPreserveExisting", !0);
+    d(this, "customMetadata", {});
     this.config = e;
   }
   /**
@@ -5661,7 +5694,7 @@ class Et {
       tags: [],
       created_at: Math.floor(Date.now() / 1e3),
       pubkey: t
-    }, i = I.addEventId(s), r = await this.config.signingProvider.signEvent(s);
+    }, i = P.addEventId(s), r = await this.config.signingProvider.signEvent(s);
     return {
       ...i,
       sig: r
@@ -5680,24 +5713,24 @@ class Et {
         tags: [],
         created_at: Math.floor(Date.now() / 1e3),
         pubkey: t
-      }, i = I.addEventId(s), r = await this.config.signingProvider.signEvent(s), o = {
+      }, i = P.addEventId(s), r = await this.config.signingProvider.signEvent(s), o = {
         ...i,
         sig: r
       }, c = (await Promise.allSettled(
-        this.config.relayManager.relayUrls.map(async (h) => {
+        this.config.relayManager.relayUrls.map(async (u) => {
           try {
-            return await this.config.relayManager.sendToRelay(h, ["EVENT", o]), { success: !0, relay: h };
-          } catch (d) {
+            return await this.config.relayManager.sendToRelay(u, ["EVENT", o]), { success: !0, relay: u };
+          } catch (h) {
             return {
               success: !1,
-              relay: h,
-              error: d instanceof Error ? d.message : "Unknown error"
+              relay: u,
+              error: h instanceof Error ? h.message : "Unknown error"
             };
           }
         })
       )).filter(
-        (h) => h.status === "fulfilled" && h.value.success
-      ).map((h) => h.value.relay);
+        (u) => u.status === "fulfilled" && u.value.success
+      ).map((u) => u.value.relay);
       return c.length > 0 ? (this.config.debug && console.log(`ProfileBuilder: Published to ${c.length} relays`), {
         success: !0,
         eventId: o.id
@@ -5737,27 +5770,31 @@ class Et {
         const r = setTimeout(() => {
           i || s(null);
         }, 3e3);
-        this.config.subscriptionManager.subscribe([t], {
-          onEvent: (o) => {
-            if (o.kind === 0 && o.pubkey === e && !i) {
-              i = !0, clearTimeout(r);
-              try {
-                const a = JSON.parse(o.content), c = {
-                  pubkey: o.pubkey,
-                  metadata: a,
-                  lastUpdated: o.created_at,
-                  eventId: o.id,
-                  isOwn: !0
-                };
-                s(c);
-              } catch {
-                s(null);
+        (async () => {
+          const a = await this.config.subscriptionManager.getOrCreateSubscription([t]), c = a.addListener({
+            onEvent: (l) => {
+              if (l.kind === 0 && l.pubkey === e && !i) {
+                i = !0, clearTimeout(r), a.removeListener(c);
+                try {
+                  const u = JSON.parse(l.content), h = {
+                    pubkey: l.pubkey,
+                    metadata: u,
+                    lastUpdated: l.created_at,
+                    eventId: l.id,
+                    isOwn: !0
+                  };
+                  s(h);
+                } catch {
+                  s(null);
+                }
               }
+            },
+            onEose: () => {
+              i || (clearTimeout(r), a.removeListener(c), s(null));
             }
-          },
-          onEose: () => {
-            i || (clearTimeout(r), s(null));
-          }
+          });
+        })().catch(() => {
+          i || (clearTimeout(r), s(null));
         });
       });
     } catch {
@@ -5767,8 +5804,8 @@ class Et {
 }
 class Mt {
   constructor(e) {
-    u(this, "config");
-    u(this, "pubkeys", []);
+    d(this, "config");
+    d(this, "pubkeys", []);
     this.config = e;
   }
   /**
@@ -5810,43 +5847,55 @@ class Mt {
             totalFound: i
           }));
         }, 5e3);
-        this.config.subscriptionManager.subscribe([e], {
-          onEvent: (c) => {
-            if (c.kind === 0 && this.pubkeys.includes(c.pubkey))
-              try {
-                const l = JSON.parse(c.content), h = {
-                  pubkey: c.pubkey,
-                  metadata: l,
-                  lastUpdated: c.created_at,
-                  eventId: c.id,
-                  isOwn: !1
-                  // Batch operations are typically for other users
-                };
-                t.set(c.pubkey, h), i++, this.config.debug && console.log(`ProfileBatchBuilder: Found profile for ${c.pubkey.substring(0, 16)}...`);
-              } catch (l) {
-                s.set(c.pubkey, "Failed to parse profile data"), this.config.debug && console.error(`ProfileBatchBuilder: Parse error for ${c.pubkey}:`, l);
-              }
-          },
-          onEose: () => {
-            o || (o = !0, clearTimeout(a), this.config.debug && console.log(`ProfileBatchBuilder: Batch complete - found ${i}/${this.pubkeys.length} profiles`), r({
-              profiles: t,
-              success: !0,
-              errors: s,
-              totalRequested: this.pubkeys.length,
-              totalFound: i
-            }));
-          },
-          onError: (c) => {
-            o || (o = !0, clearTimeout(a), this.pubkeys.forEach((l) => {
-              s.set(l, c.message);
-            }), r({
-              profiles: t,
-              success: !1,
-              errors: s,
-              totalRequested: this.pubkeys.length,
-              totalFound: i
-            }));
-          }
+        (async () => {
+          const l = await this.config.subscriptionManager.getOrCreateSubscription([e]), u = l.addListener({
+            onEvent: (h) => {
+              if (h.kind === 0 && this.pubkeys.includes(h.pubkey))
+                try {
+                  const g = JSON.parse(h.content), p = {
+                    pubkey: h.pubkey,
+                    metadata: g,
+                    lastUpdated: h.created_at,
+                    eventId: h.id,
+                    isOwn: !1
+                    // Batch operations are typically for other users
+                  };
+                  t.set(h.pubkey, p), i++, this.config.debug && console.log(`ProfileBatchBuilder: Found profile for ${h.pubkey.substring(0, 16)}...`);
+                } catch (g) {
+                  s.set(h.pubkey, "Failed to parse profile data"), this.config.debug && console.error(`ProfileBatchBuilder: Parse error for ${h.pubkey}:`, g);
+                }
+            },
+            onEose: () => {
+              o || (o = !0, clearTimeout(a), l.removeListener(u), this.config.debug && console.log(`ProfileBatchBuilder: Batch complete - found ${i}/${this.pubkeys.length} profiles`), r({
+                profiles: t,
+                success: !0,
+                errors: s,
+                totalRequested: this.pubkeys.length,
+                totalFound: i
+              }));
+            },
+            onError: (h) => {
+              o || (o = !0, clearTimeout(a), l.removeListener(u), this.pubkeys.forEach((g) => {
+                s.set(g, h.message);
+              }), r({
+                profiles: t,
+                success: !1,
+                errors: s,
+                totalRequested: this.pubkeys.length,
+                totalFound: i
+              }));
+            }
+          });
+        })().catch((l) => {
+          o || (o = !0, clearTimeout(a), this.config.debug && console.error("ProfileBatchBuilder: Failed to start batch:", l), this.pubkeys.forEach((u) => {
+            s.set(u, l instanceof Error ? l.message : "Unknown error");
+          }), r({
+            profiles: t,
+            success: !1,
+            errors: s,
+            totalRequested: this.pubkeys.length,
+            totalFound: i
+          }));
         });
       });
     } catch (e) {
@@ -5867,14 +5916,14 @@ class Mt {
    */
   asStore() {
     if (this.pubkeys.length === 0)
-      return P({
+      return _({
         profiles: /* @__PURE__ */ new Map(),
         loading: !1,
         loadingStates: /* @__PURE__ */ new Map(),
         errors: /* @__PURE__ */ new Map(),
         lastUpdated: /* @__PURE__ */ new Date()
       });
-    const e = P({
+    const e = _({
       profiles: /* @__PURE__ */ new Map(),
       loading: !0,
       loadingStates: /* @__PURE__ */ new Map(),
@@ -5897,8 +5946,8 @@ class Mt {
         authors: this.pubkeys,
         limit: this.pubkeys.length
       }, s = /* @__PURE__ */ new Map(), i = /* @__PURE__ */ new Map(), r = /* @__PURE__ */ new Map();
-      this.pubkeys.forEach((l) => {
-        s.set(l, null), i.set(l, !0);
+      this.pubkeys.forEach((u) => {
+        s.set(u, null), i.set(u, !0);
       }), e.set({
         profiles: s,
         loading: !0,
@@ -5908,54 +5957,54 @@ class Mt {
       });
       let o = !1;
       const a = setTimeout(() => {
-        o || (o = !0, this.pubkeys.forEach((l) => {
-          i.set(l, !1);
-        }), e.update((l) => ({
-          ...l,
+        o || (o = !0, this.pubkeys.forEach((u) => {
+          i.set(u, !1);
+        }), e.update((u) => ({
+          ...u,
           loading: !1,
           loadingStates: i,
           lastUpdated: /* @__PURE__ */ new Date()
         })));
-      }, 5e3), c = await this.config.subscriptionManager.subscribe([t], {
-        onEvent: (l) => {
-          if (l.kind === 0 && this.pubkeys.includes(l.pubkey))
+      }, 5e3), c = await this.config.subscriptionManager.getOrCreateSubscription([t]), l = c.addListener({
+        onEvent: (u) => {
+          if (u.kind === 0 && this.pubkeys.includes(u.pubkey))
             try {
-              const h = JSON.parse(l.content), d = {
-                pubkey: l.pubkey,
+              const h = JSON.parse(u.content), g = {
+                pubkey: u.pubkey,
                 metadata: h,
-                lastUpdated: l.created_at,
-                eventId: l.id,
+                lastUpdated: u.created_at,
+                eventId: u.id,
                 isOwn: !1
               };
-              s.set(l.pubkey, d), i.set(l.pubkey, !1), e.update((g) => ({
-                ...g,
+              s.set(u.pubkey, g), i.set(u.pubkey, !1), e.update((p) => ({
+                ...p,
                 profiles: new Map(s),
                 loadingStates: new Map(i)
-              })), this.config.debug && console.log(`ProfileBatchBuilder Store: Updated profile for ${l.pubkey.substring(0, 16)}...`);
+              })), this.config.debug && console.log(`ProfileBatchBuilder Store: Updated profile for ${u.pubkey.substring(0, 16)}...`);
             } catch (h) {
-              r.set(l.pubkey, h instanceof Error ? h : new Error("Parse error")), i.set(l.pubkey, !1), e.update((d) => ({
-                ...d,
+              r.set(u.pubkey, h instanceof Error ? h : new Error("Parse error")), i.set(u.pubkey, !1), e.update((g) => ({
+                ...g,
                 loadingStates: new Map(i),
                 errors: new Map(r)
               }));
             }
         },
         onEose: () => {
-          if (!o && (o = !0, clearTimeout(a), this.pubkeys.forEach((l) => {
-            i.set(l, !1);
-          }), e.update((l) => ({
-            ...l,
+          if (!o && (o = !0, clearTimeout(a), this.pubkeys.forEach((u) => {
+            i.set(u, !1);
+          }), e.update((u) => ({
+            ...u,
             loading: !1,
             loadingStates: new Map(i),
             lastUpdated: /* @__PURE__ */ new Date()
           })), this.config.debug)) {
-            const l = Array.from(s.values()).filter((h) => h !== null).length;
-            console.log(`ProfileBatchBuilder Store: Batch complete - ${l}/${this.pubkeys.length} profiles`);
+            const u = Array.from(s.values()).filter((h) => h !== null).length;
+            console.log(`ProfileBatchBuilder Store: Batch complete - ${u}/${this.pubkeys.length} profiles`);
           }
         },
-        onError: (l) => {
+        onError: (u) => {
           o || (o = !0, clearTimeout(a), this.pubkeys.forEach((h) => {
-            r.set(h, l), i.set(h, !1);
+            r.set(h, u), i.set(h, !1);
           }), e.update((h) => ({
             ...h,
             loading: !1,
@@ -5965,8 +6014,8 @@ class Mt {
           })));
         }
       });
-      setTimeout(async () => {
-        c.success && c.subscription && await this.config.subscriptionManager.close(c.subscription.id);
+      setTimeout(() => {
+        c.removeListener(l);
       }, 1e4);
     } catch (t) {
       const s = /* @__PURE__ */ new Map(), i = /* @__PURE__ */ new Map();
@@ -5984,8 +6033,8 @@ class Mt {
 }
 class St {
   constructor(e) {
-    u(this, "config");
-    u(this, "criteria", {});
+    d(this, "config");
+    d(this, "criteria", {});
     this.config = e;
   }
   /**
@@ -6034,24 +6083,28 @@ class St {
         const o = setTimeout(() => {
           r || (r = !0, this.finalizeResults(t, i));
         }, 1e4);
-        this.config.subscriptionManager.subscribe([e], {
-          onEvent: async (a) => {
-            if (a.kind === 0 && !s.has(a.pubkey)) {
-              s.add(a.pubkey);
-              try {
-                const c = await this.parseProfileEvent(a), l = await this.evaluateProfile(c);
-                l && (t.push(l), this.config.debug && console.log(`ProfileDiscoveryBuilder: Found match - ${c.metadata.name || "unnamed"} (score: ${l.relevanceScore})`), this.criteria.limit && t.length >= this.criteria.limit && (r || (r = !0, clearTimeout(o), this.finalizeResults(t, i))));
-              } catch (c) {
-                this.config.debug && console.error("ProfileDiscoveryBuilder: Error processing profile:", c);
+        (async () => {
+          const c = await this.config.subscriptionManager.getOrCreateSubscription([e]), l = c.addListener({
+            onEvent: async (u) => {
+              if (u.kind === 0 && !s.has(u.pubkey)) {
+                s.add(u.pubkey);
+                try {
+                  const h = await this.parseProfileEvent(u), g = await this.evaluateProfile(h);
+                  g && (t.push(g), this.config.debug && console.log(`ProfileDiscoveryBuilder: Found match - ${h.metadata.name || "unnamed"} (score: ${g.relevanceScore})`), this.criteria.limit && t.length >= this.criteria.limit && (r || (r = !0, clearTimeout(o), c.removeListener(l), this.finalizeResults(t, i))));
+                } catch (h) {
+                  this.config.debug && console.error("ProfileDiscoveryBuilder: Error processing profile:", h);
+                }
               }
+            },
+            onEose: () => {
+              r || (r = !0, clearTimeout(o), c.removeListener(l), this.finalizeResults(t, i));
+            },
+            onError: (u) => {
+              r || (r = !0, clearTimeout(o), c.removeListener(l), this.config.debug && console.error("ProfileDiscoveryBuilder: Search error:", u), i(t));
             }
-          },
-          onEose: () => {
-            r || (r = !0, clearTimeout(o), this.finalizeResults(t, i));
-          },
-          onError: (a) => {
-            r || (r = !0, clearTimeout(o), this.config.debug && console.error("ProfileDiscoveryBuilder: Search error:", a), i(t));
-          }
+          });
+        })().catch((c) => {
+          r || (r = !0, clearTimeout(o), this.config.debug && console.error("ProfileDiscoveryBuilder: Failed to start search:", c), i(t));
         });
       });
     } catch (e) {
@@ -6094,10 +6147,10 @@ class St {
         return null;
     }
     if (this.criteria.metadataFilters && this.criteria.metadataFilters.size > 0)
-      for (const [l, h] of this.criteria.metadataFilters) {
+      for (const [l, u] of this.criteria.metadataFilters) {
         r++;
-        const d = e.metadata[l];
-        d !== void 0 && (h === void 0 ? (t.push(l), i++, s += 0.3) : typeof d == "string" && typeof h == "string" ? d.toLowerCase().includes(h.toLowerCase()) && (t.push(l), i++, s += d.toLowerCase() === h.toLowerCase() ? 0.8 : 0.5) : d === h && (t.push(l), i++, s += 0.8));
+        const h = e.metadata[l];
+        h !== void 0 && (u === void 0 ? (t.push(l), i++, s += 0.3) : typeof h == "string" && typeof u == "string" ? h.toLowerCase().includes(u.toLowerCase()) && (t.push(l), i++, s += h.toLowerCase() === u.toLowerCase() ? 0.8 : 0.5) : h === u && (t.push(l), i++, s += 0.8));
       }
     if (this.criteria.verifiedOnly) {
       if (r++, e.metadata.nip05) {
@@ -6138,196 +6191,11 @@ class St {
   }
 }
 class Pt {
-  constructor(e) {
-    u(this, "config");
-    u(this, "store");
-    u(this, "sharedSubscriptionListenerId");
-    u(this, "activeRefreshListenerId");
-    // Derived stores for easy access
-    u(this, "follows");
-    u(this, "count");
-    u(this, "loading");
-    u(this, "error");
-    this.config = e, this.store = P({
-      follows: [],
-      loading: !0,
-      error: null,
-      lastUpdated: null
-    }), this.follows = w(this.store, (t) => t.follows), this.count = w(this.store, (t) => t.follows.length), this.loading = w(this.store, (t) => t.loading), this.error = w(this.store, (t) => t.error), this.initialize();
-  }
-  /**
-   * Subscribe to store changes (Svelte store interface)
-   */
-  subscribe(e) {
-    return this.store.subscribe(e);
-  }
-  /**
-   * Check if a pubkey is being followed
-   */
-  isFollowing(e) {
-    return w(
-      this.store,
-      (t) => t.follows.some((s) => s.pubkey === e)
-    );
-  }
-  /**
-   * Refresh follow list data by querying relays directly
-   */
-  async refresh() {
-    this.store.update((e) => ({ ...e, loading: !0, error: null }));
-    try {
-      const e = {
-        kinds: [3],
-        authors: [this.config.pubkey],
-        limit: 1
-      };
-      let t = !1, s = [];
-      const i = await this.config.subscriptionManager.getOrCreateSubscription([e]);
-      this.activeRefreshListenerId = i.addListener({
-        onEvent: async (r) => {
-          r.kind === 3 && r.pubkey === this.config.pubkey && !t && (t = !0, s = this.parseFollowListEvent(r), this.store.set({
-            follows: s,
-            loading: !1,
-            error: null,
-            lastUpdated: /* @__PURE__ */ new Date(),
-            eventId: r.id
-          }), this.config.debug && console.log(`FollowListStore: Found ${s.length} follows for ${this.config.pubkey}`));
-        },
-        onEose: () => {
-          t || (this.store.set({
-            follows: [],
-            loading: !1,
-            error: null,
-            lastUpdated: /* @__PURE__ */ new Date()
-          }), this.config.debug && console.log(`FollowListStore: No follow list found for ${this.config.pubkey}`));
-        },
-        onError: (r) => {
-          this.store.update((o) => ({
-            ...o,
-            loading: !1,
-            error: r
-          }));
-        }
-      }), setTimeout(() => {
-        if (this.activeRefreshListenerId) {
-          const r = i.removeListener(this.activeRefreshListenerId);
-          this.activeRefreshListenerId = void 0, r && this.config.subscriptionManager.cleanupSharedSubscriptions();
-        }
-        t || this.store.set({
-          follows: [],
-          loading: !1,
-          error: null,
-          lastUpdated: /* @__PURE__ */ new Date()
-        });
-      }, 3e3);
-    } catch (e) {
-      this.store.update((t) => ({
-        ...t,
-        loading: !1,
-        error: e instanceof Error ? e : new Error("Failed to fetch follow list")
-      }));
-    }
-  }
-  /**
-   * Subscribe to real-time follow list updates
-   */
-  async startSubscription() {
-    if (this.sharedSubscriptionListenerId) return;
-    const e = {
-      kinds: [3],
-      authors: [this.config.pubkey],
-      limit: 1
-    };
-    try {
-      const t = await this.config.subscriptionManager.getOrCreateSubscription([e]);
-      if (this.sharedSubscriptionListenerId = t.addListener({
-        onEvent: (s) => {
-          s.kind === 3 && s.pubkey === this.config.pubkey && this.handleFollowListUpdate(s);
-        },
-        onError: (s) => {
-          this.store.update((i) => ({ ...i, error: s }));
-        }
-      }), this.config.debug) {
-        const s = t.getStats();
-        console.log(`FollowListStore: Subscribed to follow list updates for ${this.config.pubkey} (${s.listenerCount} listeners on shared subscription)`);
-      }
-    } catch (t) {
-      this.store.update((s) => ({
-        ...s,
-        error: t instanceof Error ? t : new Error("Failed to subscribe")
-      }));
-    }
-  }
-  /**
-   * Unsubscribe from follow list updates
-   */
-  async unsubscribe() {
-    if (this.sharedSubscriptionListenerId) {
-      const e = {
-        kinds: [3],
-        authors: [this.config.pubkey],
-        limit: 1
-      }, s = (await this.config.subscriptionManager.getOrCreateSubscription([e])).removeListener(this.sharedSubscriptionListenerId);
-      this.sharedSubscriptionListenerId = void 0, s && await this.config.subscriptionManager.cleanupSharedSubscriptions(), this.config.debug && console.log(`FollowListStore: Unsubscribed from follow list updates for ${this.config.pubkey}`);
-    }
-    if (this.activeRefreshListenerId) {
-      const e = {
-        kinds: [3],
-        authors: [this.config.pubkey],
-        limit: 1
-      }, s = (await this.config.subscriptionManager.getOrCreateSubscription([e])).removeListener(this.activeRefreshListenerId);
-      this.activeRefreshListenerId = void 0, s && await this.config.subscriptionManager.cleanupSharedSubscriptions();
-    }
-  }
-  /**
-   * Clean up resources
-   */
-  async close() {
-    await this.unsubscribe();
-  }
-  // Private helper methods
-  async initialize() {
-    await this.refresh(), this.startSubscription();
-  }
-  parseFollowListEvent(e) {
-    const t = [];
-    try {
-      for (const s of e.tags)
-        if (s[0] === "p" && s[1]) {
-          const i = {
-            pubkey: s[1]
-          };
-          s[2] && (i.relayUrl = s[2]), s[3] && (i.petname = s[3]), t.push(i);
-        }
-      return this.config.debug && console.log(`FollowListStore: Parsed ${t.length} follows from event ${e.id}`), t;
-    } catch (s) {
-      return this.config.debug && console.error("FollowListStore: Failed to parse follow list event:", s), [];
-    }
-  }
-  handleFollowListUpdate(e) {
-    try {
-      const t = this.parseFollowListEvent(e);
-      this.store.set({
-        follows: t,
-        loading: !1,
-        error: null,
-        lastUpdated: /* @__PURE__ */ new Date(),
-        eventId: e.id
-      }), this.config.debug && console.log(`FollowListStore: Follow list updated for ${this.config.pubkey} (${t.length} follows)`);
-    } catch (t) {
-      this.store.update((s) => ({
-        ...s,
-        error: t instanceof Error ? t : new Error("Failed to parse follow list update")
-      }));
-    }
-  }
-}
-class It {
   constructor(e, t) {
-    u(this, "config");
-    u(this, "targetPubkey");
-    u(this, "relayUrl");
-    u(this, "petnameValue");
+    d(this, "config");
+    d(this, "targetPubkey");
+    d(this, "relayUrl");
+    d(this, "petnameValue");
     this.config = e, this.targetPubkey = t;
   }
   /**
@@ -6369,13 +6237,13 @@ class It {
         }),
         created_at: Math.floor(Date.now() / 1e3),
         pubkey: e
-      }, c = I.addEventId(a), l = await this.config.signingProvider.signEvent(a), h = {
+      }, c = P.addEventId(a), l = await this.config.signingProvider.signEvent(a), u = {
         ...c,
         sig: l
       }, g = (await Promise.allSettled(
         this.config.relayManager.relayUrls.map(async (f) => {
           try {
-            return await this.config.relayManager.sendToRelay(f, ["EVENT", h]), { success: !0, relay: f };
+            return await this.config.relayManager.sendToRelay(f, ["EVENT", u]), { success: !0, relay: f };
           } catch (y) {
             return {
               success: !1,
@@ -6389,7 +6257,7 @@ class It {
       ).map((f) => f.value.relay);
       return g.length > 0 ? (this.config.debug && console.log(`FollowBuilder: Published follow list to ${g.length} relays`), {
         success: !0,
-        eventId: h.id
+        eventId: u.id
       }) : {
         success: !1,
         error: "Failed to publish to any relay"
@@ -6409,21 +6277,20 @@ class It {
         authors: [e],
         limit: 1
       };
-      return new Promise((s) => {
+      return this.config.debug && console.log("FollowBuilder: Querying relays for current follow list..."), new Promise(async (s) => {
         let i = !1;
         const r = setTimeout(() => {
-          i || s([]);
-        }, 3e3);
-        this.config.subscriptionManager.subscribe([t], {
-          onEvent: (o) => {
-            if (o.kind === 3 && o.pubkey === e && !i) {
-              i = !0, clearTimeout(r);
-              const a = this.parseFollowListEvent(o);
-              s(a);
+          i || (this.config.debug && console.log("FollowBuilder: Relay query timeout, using empty array"), s([]));
+        }, 2e3), o = await this.config.subscriptionManager.getOrCreateSubscription([t]), a = o.addListener({
+          onEvent: (c) => {
+            if (c.kind === 3 && c.pubkey === e && !i) {
+              i = !0, clearTimeout(r), o.removeListener(a), this.config.debug && console.log("FollowBuilder: Found follow list from relay with", c.tags.filter((u) => u[0] === "p").length, "follows");
+              const l = this.parseFollowListEvent(c);
+              s(l);
             }
           },
           onEose: () => {
-            i || (clearTimeout(r), s([]));
+            i || (clearTimeout(r), o.removeListener(a), this.config.debug && console.log("FollowBuilder: No follow list found on relays, using empty array"), s([]));
           }
         });
       });
@@ -6447,11 +6314,11 @@ class It {
     }
   }
 }
-class kt {
+class It {
   constructor(e) {
-    u(this, "config");
-    u(this, "toAdd", []);
-    u(this, "toRemove", []);
+    d(this, "config");
+    d(this, "toAdd", []);
+    d(this, "toRemove", []);
     this.config = e;
   }
   /**
@@ -6495,10 +6362,10 @@ class kt {
         }),
         created_at: Math.floor(Date.now() / 1e3),
         pubkey: e
-      }, o = I.addEventId(r), a = await this.config.signingProvider.signEvent(r), c = {
+      }, o = P.addEventId(r), a = await this.config.signingProvider.signEvent(r), c = {
         ...o,
         sig: a
-      }, h = (await Promise.allSettled(
+      }, u = (await Promise.allSettled(
         this.config.relayManager.relayUrls.map(async (g) => {
           try {
             return await this.config.relayManager.sendToRelay(g, ["EVENT", c]), { success: !0, relay: g };
@@ -6513,7 +6380,7 @@ class kt {
       )).filter(
         (g) => g.status === "fulfilled" && g.value.success
       ).map((g) => g.value.relay);
-      return h.length > 0 ? (this.config.debug && (console.log(`FollowBatchBuilder: Published batch update to ${h.length} relays`), console.log(`FollowBatchBuilder: Final follow list has ${s.length} follows`)), {
+      return u.length > 0 ? (this.config.debug && (console.log(`FollowBatchBuilder: Published batch update to ${u.length} relays`), console.log(`FollowBatchBuilder: Final follow list has ${s.length} follows`), console.log("FollowBatchBuilder: Event will be received via subscription and cached properly")), {
         success: !0,
         eventId: c.id
       }) : {
@@ -6534,27 +6401,44 @@ class kt {
         kinds: [3],
         authors: [e],
         limit: 1
-      };
-      return new Promise((s) => {
-        let i = !1;
-        const r = setTimeout(() => {
-          i || s([]);
-        }, 3e3);
-        this.config.subscriptionManager.subscribe([t], {
-          onEvent: (o) => {
-            if (o.kind === 3 && o.pubkey === e && !i) {
-              i = !0, clearTimeout(r);
-              const a = this.parseFollowListEvent(o);
-              s(a);
-            }
-          },
-          onEose: () => {
-            i || (clearTimeout(r), s([]));
-          }
+      }, s = this.config.cache.query(t);
+      if (this.config.debug && (console.log("FollowBatchBuilder: Cache query returned", s.length, "events"), s.length > 0)) {
+        const i = s[0];
+        console.log("FollowBatchBuilder: Latest cached event:", {
+          id: i == null ? void 0 : i.id,
+          created_at: i == null ? void 0 : i.created_at,
+          tags: i == null ? void 0 : i.tags.filter((r) => r[0] === "p")
         });
+      }
+      if (s.length > 0) {
+        const i = s[0];
+        if (i && this.config.debug && console.log("FollowBatchBuilder: Using cached follow list with", i.tags.filter((r) => r[0] === "p").length, "follows"), i)
+          return this.parseFollowListEvent(i);
+      }
+      return this.config.debug && console.log("FollowBatchBuilder: No cached follow list found, querying relays..."), new Promise(async (i) => {
+        const r = setTimeout(() => {
+          this.config.debug && console.log("FollowBatchBuilder: Relay query timeout, using empty array"), i([]);
+        }, 2e3);
+        try {
+          const o = await this.config.subscriptionManager.getOrCreateSubscription([t]), a = o.addListener({
+            onEvent: (c) => {
+              c.kind === 3 && c.pubkey === e && (clearTimeout(r), o.removeListener(a), this.config.debug && console.log("FollowBatchBuilder: Found follow list from relay:", {
+                id: c.id,
+                created_at: c.created_at,
+                tags: c.tags.filter((l) => l[0] === "p"),
+                followCount: c.tags.filter((l) => l[0] === "p").length
+              }), i(this.parseFollowListEvent(c)));
+            },
+            onEose: () => {
+              clearTimeout(r), o.removeListener(a), this.config.debug && console.log("FollowBatchBuilder: No follow list found on relays, using empty array"), i([]);
+            }
+          });
+        } catch (o) {
+          clearTimeout(r), this.config.debug && console.error("FollowBatchBuilder: Error setting up relay subscription:", o), i([]);
+        }
       });
-    } catch {
-      return [];
+    } catch (e) {
+      return this.config.debug && console.error("FollowBatchBuilder: Error getting current follows:", e), [];
     }
   }
   parseFollowListEvent(e) {
@@ -6573,33 +6457,89 @@ class kt {
     }
   }
 }
+class Ds {
+  // Frontend expects this
+  constructor(e) {
+    d(this, "baseStore");
+    d(this, "count");
+    d(this, "follows");
+    this.baseStore = e, this.count = new _t(e), this.follows = e;
+  }
+  // Delegate to base store (for direct usage)
+  subscribe(e, t) {
+    return this.baseStore.subscribe(e, t);
+  }
+  get current() {
+    return this.baseStore.current;
+  }
+}
 class _t {
   constructor(e) {
-    u(this, "config");
-    u(this, "followStores", /* @__PURE__ */ new Map());
+    d(this, "sourceStore");
+    d(this, "_count", 0);
+    d(this, "subscribers", /* @__PURE__ */ new Set());
+    var t;
+    this.sourceStore = e, this._count = ((t = e.current) == null ? void 0 : t.length) || 0, e.subscribe((s) => {
+      const i = (s == null ? void 0 : s.length) || 0;
+      i !== this._count && (this._count = i, this.notifySubscribers());
+    });
+  }
+  subscribe(e) {
+    return e(this._count), this.subscribers.add(e), () => {
+      this.subscribers.delete(e);
+    };
+  }
+  get current() {
+    return this._count;
+  }
+  notifySubscribers() {
+    this.subscribers.forEach((e) => e(this._count));
+  }
+}
+class kt {
+  constructor(e) {
+    d(this, "config");
     this.config = e;
   }
   /**
    * Get own follow list as a reactive store
+   * CLEAN ARCHITECTURE: Uses base layer directly
    */
   async mine() {
+    var t, s;
     if (!this.config.signingProvider)
       throw new Error("Cannot access own follow list: No signing provider available. Initialize signing first.");
-    const e = await this.config.signingProvider.getPublicKey();
-    return this.of(e);
+    let e = (s = (t = this.config.signingProvider).getPublicKeySync) == null ? void 0 : s.call(t);
+    return e || (e = await this.config.signingProvider.getPublicKey()), this.of(e);
   }
   /**
-   * Get follow list for any pubkey as a reactive store
+   * Get follow list for any pubkey as a reactive store  
+   * CLEAN ARCHITECTURE: Uses base layer directly with smart deduplication
    */
   of(e) {
-    if (this.followStores.has(e))
-      return this.followStores.get(e);
-    const t = new Pt({
-      pubkey: e,
-      subscriptionManager: this.config.subscriptionManager,
-      debug: this.config.debug
+    this.config.nostr.sub().kinds([3]).authors([e]).limit(1).execute().catch((s) => {
+      this.config.debug && console.warn("Failed to start follow list subscription:", s);
     });
-    return this.followStores.set(e, t), t;
+    const t = this.config.nostr.query().kinds([3]).authors([e]).limit(1).execute().map((s) => this.parseFollowListEvents(s));
+    return new Ds(t);
+  }
+  /**
+   * Get followers for any pubkey - WHO FOLLOWS THIS USER
+   * Returns count of users who have this pubkey in their follow list
+   */
+  followers(e) {
+    this.config.nostr.sub().kinds([3]).tags("p", [e]).limit(100).execute().catch((s) => {
+      this.config.debug && console.warn("Failed to start followers subscription:", s);
+    });
+    const t = this.config.nostr.query().kinds([3]).tags("p", [e]).limit(100).execute().map((s) => {
+      const i = /* @__PURE__ */ new Set();
+      return s.forEach((r) => {
+        r.kind === 3 && r.tags.some(
+          (a) => a[0] === "p" && a[1] === e
+        ) && i.add(r.pubkey);
+      }), Array.from(i);
+    });
+    return new _t(t);
   }
   /**
    * Phase 4: Add a user to follow list
@@ -6608,11 +6548,11 @@ class _t {
   add(e) {
     if (!this.config.signingProvider)
       throw new Error("Cannot add follow: No signing provider available. Initialize signing first.");
-    return new It({
+    return new Pt({
       subscriptionManager: this.config.subscriptionManager,
       relayManager: this.config.relayManager,
       signingProvider: this.config.signingProvider,
-      debug: this.config.debug
+      debug: this.config.debug ?? !1
     }, e);
   }
   /**
@@ -6640,13 +6580,13 @@ class _t {
         }),
         created_at: Math.floor(Date.now() / 1e3),
         pubkey: t
-      }, c = I.addEventId(a), l = await this.config.signingProvider.signEvent(a), h = {
+      }, c = P.addEventId(a), l = await this.config.signingProvider.signEvent(a), u = {
         ...c,
         sig: l
       }, g = (await Promise.allSettled(
         this.config.relayManager.relayUrls.map(async (f) => {
           try {
-            return await this.config.relayManager.sendToRelay(f, ["EVENT", h]), { success: !0, relay: f };
+            return await this.config.relayManager.sendToRelay(f, ["EVENT", u]), { success: !0, relay: f };
           } catch (y) {
             return {
               success: !1,
@@ -6660,7 +6600,7 @@ class _t {
       ).map((f) => f.value.relay);
       return g.length > 0 ? (this.config.debug && console.log(`FollowsModule: Published updated follow list to ${g.length} relays`), {
         success: !0,
-        eventId: h.id
+        eventId: u.id
       }) : {
         success: !1,
         error: "Failed to publish to any relay"
@@ -6679,11 +6619,13 @@ class _t {
   batch() {
     if (!this.config.signingProvider)
       throw new Error("Cannot batch follow operations: No signing provider available. Initialize signing first.");
-    return new kt({
+    return new It({
       subscriptionManager: this.config.subscriptionManager,
       relayManager: this.config.relayManager,
       signingProvider: this.config.signingProvider,
-      debug: this.config.debug
+      cache: this.config.nostr.eventCache,
+      // Add cache for instant updates
+      debug: this.config.debug ?? !1
     });
   }
   /**
@@ -6696,38 +6638,57 @@ class _t {
    * Clean up resources
    */
   async close() {
-    for (const e of this.followStores.values())
-      await e.close();
-    this.followStores.clear();
   }
   // Private helper methods
+  /**
+   * Start subscription for follow list updates
+   */
+  async startFollowListSubscription(e) {
+    try {
+      await this.config.nostr.sub().kinds([3]).authors([e]).limit(1).execute();
+    } catch (t) {
+      this.config.debug && console.warn(`Failed to start follow list subscription for ${e}:`, t);
+    }
+  }
+  /**
+   * Parse NostrEvent[] to Follow[]
+   */
+  parseFollowListEvents(e) {
+    if (e.length === 0)
+      return [];
+    const t = e[0];
+    return !t || t.kind !== 3 ? [] : this.parseFollowListEvent(t);
+  }
   async getCurrentFollows() {
     try {
       const e = await this.config.signingProvider.getPublicKey(), t = {
         kinds: [3],
         authors: [e],
         limit: 1
-      };
-      return new Promise((s) => {
-        let i = !1;
-        const r = setTimeout(() => {
-          i || s([]);
-        }, 3e3);
-        this.config.subscriptionManager.subscribe([t], {
-          onEvent: (o) => {
-            if (o.kind === 3 && o.pubkey === e && !i) {
-              i = !0, clearTimeout(r);
-              const a = this.parseFollowListEvent(o);
-              s(a);
+      }, s = this.config.nostr.eventCache.query(t);
+      if (s.length > 0) {
+        const i = s[0];
+        return this.config.debug && console.log("FollowsModule: Using cached follow list with", i.tags.filter((r) => r[0] === "p").length, "follows"), this.parseFollowListEvent(i);
+      }
+      return this.config.debug && console.log("FollowsModule: No cached follow list found, querying relays..."), new Promise(async (i) => {
+        let r = !1;
+        const o = setTimeout(() => {
+          r || (this.config.debug && console.log("FollowsModule: Relay query timeout, using empty array"), i([]));
+        }, 2e3), a = await this.config.subscriptionManager.getOrCreateSubscription([t]), c = a.addListener({
+          onEvent: (l) => {
+            if (l.kind === 3 && l.pubkey === e && !r) {
+              r = !0, clearTimeout(o), a.removeListener(c), this.config.debug && console.log("FollowsModule: Found follow list from relay with", l.tags.filter((h) => h[0] === "p").length, "follows");
+              const u = this.parseFollowListEvent(l);
+              i(u);
             }
           },
           onEose: () => {
-            i || (clearTimeout(r), s([]));
+            r || (clearTimeout(o), a.removeListener(c), this.config.debug && console.log("FollowsModule: No follow list found on relays, using empty array"), i([]));
           }
         });
       });
-    } catch {
-      return [];
+    } catch (e) {
+      return this.config.debug && console.error("FollowsModule: Error getting current follows:", e), [];
     }
   }
   parseFollowListEvent(e) {
@@ -6748,8 +6709,8 @@ class _t {
 }
 class At {
   constructor(e) {
-    u(this, "config");
-    u(this, "_follows");
+    d(this, "config");
+    d(this, "_follows");
     this.config = e;
   }
   /**
@@ -6813,12 +6774,20 @@ class At {
    * Get access to follow list management (mine() and of() methods)
    */
   get follows() {
-    return this._follows || (this._follows = new _t({
+    return this._follows || (this._follows = new kt({
       subscriptionManager: this.config.subscriptionManager,
       relayManager: this.config.relayManager,
       signingProvider: this.config.signingProvider,
-      debug: this.config.debug
+      debug: this.config.debug,
+      nostr: this.config.nostr
     })), this._follows;
+  }
+  /**
+   * Get follower count for any pubkey
+   * Returns reactive count of users who follow this pubkey
+   */
+  followerCount(e) {
+    return this.follows.followers(e);
   }
   /**
    * Phase 5: Batch Profile Operations - Efficient multiple profile fetching
@@ -6853,48 +6822,48 @@ class At {
     this._follows && await this._follows.close();
   }
 }
-class ci {
+class oi {
   constructor(e = {}) {
-    u(this, "relayManager");
-    u(this, "subscriptionManager");
-    u(this, "cache");
-    u(this, "signingProvider");
-    u(this, "signingMethod");
-    u(this, "config");
-    u(this, "giftWrapSubscriptionActive", !1);
-    u(this, "cachedMyPubkey", null);
+    d(this, "relayManager");
+    d(this, "subscriptionManager");
+    d(this, "cache");
+    d(this, "signingProvider");
+    d(this, "signingMethod");
+    d(this, "config");
+    d(this, "giftWrapSubscriptionActive", !1);
+    d(this, "cachedMyPubkey", null);
     // Fluent Event Builder API
-    u(this, "events");
+    d(this, "events");
     // Direct Message API (Legacy)
-    u(this, "dm");
+    d(this, "dm");
     // Universal DM API (Cache-based)
-    u(this, "universalDM");
+    d(this, "universalDM");
     // Social Media API
-    u(this, "social");
+    d(this, "social");
     // Profile API (Enhanced)
-    u(this, "_profile");
+    d(this, "_profile");
     console.log("🔥 NostrUnchained v0.1.0-FIX (build:", (/* @__PURE__ */ new Date()).toISOString().substring(0, 19) + "Z)"), this.config = {
-      relays: e.relays ?? qt,
+      relays: e.relays ?? Jt,
       debug: e.debug ?? !1,
       retryAttempts: e.retryAttempts ?? se.RETRY_ATTEMPTS,
       retryDelay: e.retryDelay ?? se.RETRY_DELAY,
       timeout: e.timeout ?? se.PUBLISH_TIMEOUT,
       signingProvider: e.signingProvider
-    }, this.relayManager = new ts(this.config.relays, {
+    }, this.relayManager = new es(this.config.relays, {
       debug: this.config.debug
-    }), this.subscriptionManager = new Rs(this.relayManager), this.events = new is(this), e.signingProvider ? (this.signingProvider = e.signingProvider, this.signingMethod = e.signingProvider.constructor.name.includes("Extension") ? "extension" : "temporary", this.cache = new Se("", {}), this._initializeCache().catch((t) => {
+    }), this.subscriptionManager = new Cs(this.relayManager), this.events = new ss(this), e.signingProvider ? (this.signingProvider = e.signingProvider, this.signingMethod = e.signingProvider.constructor.name.includes("Extension") ? "extension" : "temporary", this.cache = new Se("", {}), this._initializeCache().catch((t) => {
       this.config.debug && console.log("⚠️ Cache initialization with private key failed:", t);
-    }), this.config.debug && console.log("🎯 NostrUnchained initialized with PROVIDED signing provider - Everything ready!")) : (this.cache = new Se("", {}), this.config.debug && console.log("🚨 NostrUnchained initialized WITHOUT signing provider - will auto-detect later")), this.dm = new vt({
+    }), this.config.debug && console.log("🎯 NostrUnchained initialized with PROVIDED signing provider - Everything ready!")) : (this.cache = new Se("", {}), this.config.debug && console.log("🚨 NostrUnchained initialized WITHOUT signing provider - will auto-detect later")), this.dm = new wt({
       subscriptionManager: this.subscriptionManager,
       relayManager: this.relayManager,
       signingProvider: this.signingProvider,
       debug: this.config.debug,
       parent: this
-    }), this.social = new Ts({
+    }), this.social = new As({
       subscriptionManager: this.subscriptionManager,
       relayManager: this.relayManager,
       signingProvider: this.signingProvider,
-      eventBuilder: new I(),
+      eventBuilder: new P(),
       debug: this.config.debug
     }), this.config.debug && console.log("NostrUnchained initialized with relays:", this.config.relays);
   }
@@ -6907,7 +6876,7 @@ class ci {
         const e = await this.signingProvider.getPrivateKeyForEncryption();
         this.cache = new Se(e, {});
         const t = await this.signingProvider.getPublicKey();
-        this.universalDM = new Ss(this, t), this.config.debug && console.log("🎯 Universal Cache and Universal DM Module initialized");
+        this.universalDM = new Ms(this, t), this.config.debug && console.log("🎯 Universal Cache and Universal DM Module initialized");
       } catch {
         this.cache = new Se("", {}), this.config.debug && console.log("⚠️ Could not get private key for cache, using empty key (no gift wrap decryption)");
       }
@@ -6920,7 +6889,7 @@ class ci {
       relayManager: this.relayManager,
       subscriptionManager: this.subscriptionManager,
       signingProvider: this.signingProvider,
-      eventBuilder: new I(),
+      eventBuilder: new P(),
       cache: this.cache,
       debug: this.config.debug,
       // REQUIRED: Pass NostrUnchained instance for clean architecture
@@ -6954,7 +6923,7 @@ class ci {
     else if (this.config.signingProvider)
       this.signingProvider = this.config.signingProvider, this.signingMethod = this.config.signingProvider.constructor.name.includes("Extension") ? "extension" : "temporary";
     else {
-      const { provider: t, method: s } = await ss.createBestAvailable();
+      const { provider: t, method: s } = await ts.createBestAvailable();
       this.signingProvider = t, this.signingMethod = s;
     }
     this.cachedMyPubkey = null, await this._initializeCache(), await this.dm.updateSigningProvider(this.signingProvider), await this.social.updateSigningProvider(this.signingProvider), this._profile && await this._profile.updateSigningProvider(this.signingProvider), this.config.debug && console.log(`Initialized signing with method: ${this.signingMethod}`);
@@ -6987,17 +6956,15 @@ class ci {
       return;
     }
     try {
-      const e = await this.signingProvider.getPublicKey(), t = await this.subscriptionManager.subscribe({
-        filters: [{
-          kinds: [1059],
-          // Gift wrap events
-          "#p": [e],
-          limit: 100
-          // Get recent messages
-        }],
-        relays: this.config.relays,
-        onEvent: async (s) => {
-          this.config.debug && console.log(`🎁 Received gift wrap event: ${s.id.substring(0, 8)}...`);
+      const e = await this.signingProvider.getPublicKey(), s = (await this.subscriptionManager.getOrCreateSubscription([{
+        kinds: [1059],
+        // Gift wrap events
+        "#p": [e],
+        limit: 100
+        // Get recent messages
+      }], this.config.relays)).addListener({
+        onEvent: async (i) => {
+          this.config.debug && console.log(`🎁 Received gift wrap event: ${i.id.substring(0, 8)}...`);
         },
         onEose: () => {
           this.config.debug && console.log("🎁 Gift wrap initial sync completed");
@@ -7020,10 +6987,10 @@ class ci {
   async publishToRelays(e, t) {
     if (!this.signingProvider)
       throw new Error("No signing provider available. Call initializeSigning() first.");
-    const s = I.validateEvent(e);
+    const s = P.validateEvent(e);
     if (!s.valid)
       throw new Error(`Invalid event: ${s.errors.join(", ")}`);
-    const i = I.calculateEventId(e), r = {
+    const i = P.calculateEventId(e), r = {
       ...e,
       id: i,
       sig: await this.signingProvider.signEvent({ ...e, id: i })
@@ -7047,10 +7014,10 @@ class ci {
   async publish(e) {
     if (!this.signingProvider)
       throw new Error("No signing provider available. Call initializeSigning() first.");
-    const t = I.validateEvent(e);
+    const t = P.validateEvent(e);
     if (!t.valid)
       throw new Error(`Invalid event: ${t.errors.join(", ")}`);
-    const s = I.calculateEventId(e), i = {
+    const s = P.calculateEventId(e), i = {
       ...e,
       id: s,
       sig: await this.signingProvider.signEvent({ ...e, id: s })
@@ -7104,18 +7071,24 @@ class ci {
    * Create a query builder for complex queries
    */
   query() {
-    return new Ls(this.cache);
+    return new Ns(this.cache);
   }
   /**
    * Create a subscription builder
    */
   sub() {
-    return new Ds(this.cache, this.subscriptionManager);
+    return new Ls(this.cache, this.subscriptionManager);
   }
   /**
    * Get the Universal Event Cache for advanced usage
    */
   getCache() {
+    return this.cache;
+  }
+  /**
+   * Get the universal event cache instance
+   */
+  get eventCache() {
     return this.cache;
   }
   /**
@@ -7150,67 +7123,22 @@ class ci {
     };
   }
 }
-class li extends Le {
-  constructor(e) {
-    super(), this.cache = e;
-  }
-  execute() {
-    return new De(this.cache, this.filter);
-  }
-}
-class ui extends Le {
-  constructor(t, s) {
-    super();
-    u(this, "relayUrls", []);
-    this.cache = t, this.subscriptionManager = s;
-  }
-  relay(t) {
-    return this.relayUrls = [t], this;
-  }
-  relays(t) {
-    return this.relayUrls = t, this;
-  }
-  /**
-   * Execute the subscription and return a handle for lifecycle control
-   * This provides excellent DX for managing subscriptions
-   */
-  async execute() {
-    var o;
-    const t = this.relayUrls.length > 0 ? { relays: this.relayUrls } : {}, s = await this.subscriptionManager.subscribe([this.filter], {
-      ...t,
-      onEvent: (a) => {
-        this.cache.addEvent(a);
-      }
-    });
-    if (!s.success || !s.subscription)
-      throw new Error(((o = s.error) == null ? void 0 : o.message) || "Subscription failed");
-    const i = s.subscription, r = new De(this.cache, this.filter);
-    return {
-      id: i.id,
-      store: r,
-      stop: async () => {
-        await this.subscriptionManager.close(i.id);
-      },
-      isActive: () => this.subscriptionManager.getActiveSubscriptions().some((c) => c.id === i.id)
-    };
-  }
-}
-const hi = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const ai = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  DMConversation: wt,
-  DMModule: vt,
-  DMRoom: mt,
-  EphemeralKeyManager: ke,
-  GiftWrapCreator: _e,
+  DMConversation: yt,
+  DMModule: wt,
+  DMRoom: bt,
+  EphemeralKeyManager: _e,
+  GiftWrapCreator: ke,
   GiftWrapProtocol: re,
-  NIP44Crypto: k,
+  NIP44Crypto: I,
   SealCreator: pe,
-  TimestampRandomizer: We
+  TimestampRandomizer: Ke
 }, Symbol.toStringTag, { value: "Module" }));
-class Tt {
+class Fs {
   constructor(e) {
-    u(this, "cache");
-    u(this, "stats", {
+    d(this, "cache");
+    d(this, "stats", {
       profileHits: 0,
       profileMisses: 0,
       followListHits: 0,
@@ -7269,8 +7197,8 @@ class Tt {
         (!l || c.created_at > l.created_at) && o.set(c.pubkey, c);
       }), o.forEach((c, l) => {
         try {
-          const h = JSON.parse(c.content);
-          s.set(l, h), this.stats.profileHits++;
+          const u = JSON.parse(c.content);
+          s.set(l, u), this.stats.profileHits++;
         } catch {
           this.stats.profileMisses++;
         }
@@ -7386,258 +7314,22 @@ class Tt {
     }
   }
 }
-class Fs {
-  constructor(e) {
-    u(this, "config");
-    u(this, "store");
-    u(this, "sharedSubscriptionListenerId");
-    u(this, "activeRefreshListenerId");
-    u(this, "cacheInterface");
-    // Phase 8: Cache interface
-    // Derived stores for easy access
-    u(this, "profile");
-    u(this, "loading");
-    u(this, "error");
-    this.config = e, e.cache && (this.cacheInterface = new Tt(e.cache), e.debug && console.log("📦 ProfileStore: Cache interface initialized for", e.pubkey.substring(0, 16) + "...")), this.store = P({
-      profile: null,
-      loading: !0,
-      error: null,
-      verified: !1,
-      lastUpdated: null
-    }), this.profile = w(this.store, (t) => t.profile), this.loading = w(this.store, (t) => t.loading), this.error = w(this.store, (t) => t.error), this.initialize();
-  }
-  /**
-   * Subscribe to store changes (Svelte store interface)
-   */
-  subscribe(e) {
-    return this.store.subscribe(e);
-  }
-  /**
-   * Refresh profile data - Phase 8: Cache-first strategy
-   */
-  async refresh() {
-    if (this.cacheInterface) {
-      const e = this.cacheInterface.getCachedProfile(this.config.pubkey), t = this.cacheInterface.hasRecentProfile(this.config.pubkey, 30);
-      if (e && t) {
-        const s = {
-          pubkey: this.config.pubkey,
-          metadata: e
-        }, i = await this.checkNip05Verification(s);
-        this.store.set({
-          profile: s,
-          loading: !1,
-          error: null,
-          verified: i,
-          lastUpdated: /* @__PURE__ */ new Date()
-        }), this.config.debug && console.log("📦 ProfileStore: Cache hit for", this.config.pubkey.substring(0, 16) + "...");
-        return;
-      } else this.config.debug && console.log("🔄 ProfileStore: Cache miss or stale for", this.config.pubkey.substring(0, 16) + "...");
-    }
-    this.store.update((e) => ({ ...e, loading: !0, error: null }));
-    try {
-      const e = {
-        kinds: [0],
-        authors: [this.config.pubkey],
-        limit: 1
-      };
-      let t = !1, s = null;
-      const i = await this.config.subscriptionManager.getOrCreateSubscription([e]);
-      this.activeRefreshListenerId = i.addListener({
-        onEvent: async (r) => {
-          if (r.kind === 0 && r.pubkey === this.config.pubkey && !t) {
-            t = !0, s = await this.parseProfileEvent(r);
-            const o = await this.checkNip05Verification(s);
-            this.store.set({
-              profile: s,
-              loading: !1,
-              error: null,
-              verified: o,
-              lastUpdated: /* @__PURE__ */ new Date()
-            });
-          }
-        },
-        onEose: () => {
-          t || this.store.set({
-            profile: null,
-            loading: !1,
-            error: null,
-            verified: !1,
-            lastUpdated: /* @__PURE__ */ new Date()
-          });
-        },
-        onError: (r) => {
-          this.store.update((o) => ({
-            ...o,
-            loading: !1,
-            error: r
-          }));
-        }
-      }), setTimeout(() => {
-        if (this.activeRefreshListenerId) {
-          const r = i.removeListener(this.activeRefreshListenerId);
-          this.activeRefreshListenerId = void 0, r && this.config.subscriptionManager.cleanupSharedSubscriptions();
-        }
-        t || this.store.set({
-          profile: null,
-          loading: !1,
-          error: null,
-          verified: !1,
-          lastUpdated: /* @__PURE__ */ new Date()
-        });
-      }, 3e3);
-    } catch (e) {
-      this.store.update((t) => ({
-        ...t,
-        loading: !1,
-        error: e instanceof Error ? e : new Error("Failed to fetch profile")
-      }));
-    }
-  }
-  /**
-   * Subscribe to real-time profile updates
-   */
-  async startSubscription() {
-    if (this.sharedSubscriptionListenerId) return;
-    const e = {
-      kinds: [0],
-      authors: [this.config.pubkey],
-      limit: 1
-    };
-    try {
-      const t = await this.config.subscriptionManager.getOrCreateSubscription([e]);
-      if (this.sharedSubscriptionListenerId = t.addListener({
-        onEvent: (s) => {
-          s.kind === 0 && s.pubkey === this.config.pubkey && this.handleProfileUpdate(s);
-        },
-        onError: (s) => {
-          this.store.update((i) => ({ ...i, error: s }));
-        }
-      }), this.config.debug) {
-        const s = t.getStats();
-        console.log(`ProfileStore: Subscribed to profile updates for ${this.config.pubkey} (${s.listenerCount} listeners on shared subscription)`);
-      }
-    } catch (t) {
-      this.store.update((s) => ({
-        ...s,
-        error: t instanceof Error ? t : new Error("Failed to subscribe")
-      }));
-    }
-  }
-  /**
-   * Unsubscribe from profile updates
-   */
-  async unsubscribe() {
-    if (this.sharedSubscriptionListenerId) {
-      const e = {
-        kinds: [0],
-        authors: [this.config.pubkey],
-        limit: 1
-      }, s = (await this.config.subscriptionManager.getOrCreateSubscription([e])).removeListener(this.sharedSubscriptionListenerId);
-      this.sharedSubscriptionListenerId = void 0, s && await this.config.subscriptionManager.cleanupSharedSubscriptions(), this.config.debug && console.log(`ProfileStore: Unsubscribed from profile updates for ${this.config.pubkey}`);
-    }
-    if (this.activeRefreshListenerId) {
-      const e = {
-        kinds: [0],
-        authors: [this.config.pubkey],
-        limit: 1
-      }, s = (await this.config.subscriptionManager.getOrCreateSubscription([e])).removeListener(this.activeRefreshListenerId);
-      this.activeRefreshListenerId = void 0, s && await this.config.subscriptionManager.cleanupSharedSubscriptions();
-    }
-  }
-  /**
-   * Clean up resources
-   */
-  async close() {
-    await this.unsubscribe();
-  }
-  // Private helper methods
-  async initialize() {
-    if (this.cacheInterface) {
-      const e = this.cacheInterface.getCachedProfile(this.config.pubkey);
-      if (e) {
-        const t = {
-          pubkey: this.config.pubkey,
-          metadata: e
-        };
-        this.store.set({
-          profile: t,
-          loading: !1,
-          // No loading spinner for cached data
-          error: null,
-          verified: !1,
-          // Will be updated async
-          lastUpdated: /* @__PURE__ */ new Date()
-        }), this.checkNip05Verification(t).then((s) => {
-          this.store.update((i) => ({ ...i, verified: s }));
-        }).catch(() => {
-        }), this.config.debug && console.log("⚡ ProfileStore: Instant load from cache for", this.config.pubkey.substring(0, 16) + "...");
-      }
-    }
-    await this.refresh(), this.startSubscription();
-  }
-  async parseProfileEvent(e) {
-    try {
-      const t = JSON.parse(e.content);
-      return {
-        pubkey: e.pubkey,
-        metadata: t,
-        lastUpdated: e.created_at,
-        eventId: e.id,
-        isOwn: !1
-        // Will be determined by caller if needed
-      };
-    } catch {
-      throw new Error("Failed to parse profile event");
-    }
-  }
-  async handleProfileUpdate(e) {
-    try {
-      const t = await this.parseProfileEvent(e), s = await this.checkNip05Verification(t);
-      this.store.set({
-        profile: t,
-        loading: !1,
-        error: null,
-        verified: s,
-        lastUpdated: /* @__PURE__ */ new Date()
-      }), this.config.debug && console.log(`ProfileStore: Profile updated for ${this.config.pubkey}`);
-    } catch (t) {
-      this.store.update((s) => ({
-        ...s,
-        error: t instanceof Error ? t : new Error("Failed to parse profile update")
-      }));
-    }
-  }
-  async checkNip05Verification(e) {
-    var t;
-    if (!e.metadata.nip05) return !1;
-    try {
-      const [s, i] = e.metadata.nip05.split("@");
-      if (!s || !i) return !1;
-      const r = await fetch(`https://${i}/.well-known/nostr.json?name=${s}`);
-      return r.ok ? ((t = (await r.json()).names) == null ? void 0 : t[s]) === e.pubkey : !1;
-    } catch (s) {
-      return this.config.debug && console.error("NIP-05 verification failed:", s), !1;
-    }
-  }
-}
-const di = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const ci = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  FollowBatchBuilder: kt,
-  FollowBuilder: It,
-  FollowListStore: Pt,
-  FollowsModule: _t,
+  FollowBatchBuilder: It,
+  FollowBuilder: Pt,
+  FollowsModule: kt,
   ProfileBatchBuilder: Mt,
   ProfileBuilder: Et,
-  ProfileCacheInterface: Tt,
+  ProfileCacheInterface: Fs,
   ProfileDiscoveryBuilder: St,
-  ProfileModule: At,
-  ProfileStore: Fs
+  ProfileModule: At
 }, Symbol.toStringTag, { value: "Module" }));
 /*! scure-base - MIT License (c) 2022 Paul Miller (paulmillr.com) */
-function Ct(n) {
+function Tt(n) {
   return n instanceof Uint8Array || ArrayBuffer.isView(n) && n.constructor.name === "Uint8Array";
 }
-function Rt(n, e) {
+function Ct(n, e) {
   return Array.isArray(e) ? e.length === 0 ? !0 : n ? e.every((t) => typeof t == "string") : e.every((t) => Number.isSafeInteger(t)) : !1;
 }
 function xs(n) {
@@ -7650,20 +7342,20 @@ function ve(n, e) {
     throw new Error(`${n}: string expected`);
   return !0;
 }
-function Nt(n) {
+function Rt(n) {
   if (!Number.isSafeInteger(n))
     throw new Error(`invalid integer: ${n}`);
 }
-function ze(n) {
+function Ve(n) {
   if (!Array.isArray(n))
     throw new Error("array expected");
 }
-function Lt(n, e) {
-  if (!Rt(!0, e))
+function Nt(n, e) {
+  if (!Ct(!0, e))
     throw new Error(`${n}: array of strings expected`);
 }
-function Dt(n, e) {
-  if (!Rt(!1, e))
+function Lt(n, e) {
+  if (!Ct(!1, e))
     throw new Error(`${n}: array of numbers expected`);
 }
 // @__NO_SIDE_EFFECTS__
@@ -7674,15 +7366,15 @@ function Os(...n) {
 // @__NO_SIDE_EFFECTS__
 function Us(n) {
   const e = typeof n == "string" ? n.split("") : n, t = e.length;
-  Lt("alphabet", e);
+  Nt("alphabet", e);
   const s = new Map(e.map((i, r) => [i, r]));
   return {
-    encode: (i) => (ze(i), i.map((r) => {
+    encode: (i) => (Ve(i), i.map((r) => {
       if (!Number.isSafeInteger(r) || r < 0 || r >= t)
         throw new Error(`alphabet.encode: digit index outside alphabet "${r}". Allowed: ${n}`);
       return e[r];
     })),
-    decode: (i) => (ze(i), i.map((r) => {
+    decode: (i) => (Ve(i), i.map((r) => {
       ve("alphabet.decode", r);
       const o = s.get(r);
       if (o === void 0)
@@ -7694,18 +7386,18 @@ function Us(n) {
 // @__NO_SIDE_EFFECTS__
 function $s(n = "") {
   return ve("join", n), {
-    encode: (e) => (Lt("join.decode", e), e.join(n)),
+    encode: (e) => (Nt("join.decode", e), e.join(n)),
     decode: (e) => (ve("join.decode", e), e.split(n))
   };
 }
-const Ft = (n, e) => e === 0 ? n : Ft(e, n % e), Ce = /* @__NO_SIDE_EFFECTS__ */ (n, e) => n + (e - Ft(n, e)), Ae = /* @__PURE__ */ (() => {
+const Dt = (n, e) => e === 0 ? n : Dt(e, n % e), Ce = /* @__NO_SIDE_EFFECTS__ */ (n, e) => n + (e - Dt(n, e)), Ae = /* @__PURE__ */ (() => {
   let n = [];
   for (let e = 0; e < 40; e++)
     n.push(2 ** e);
   return n;
 })();
-function He(n, e, t, s) {
-  if (ze(n), e <= 0 || e > 32)
+function We(n, e, t, s) {
+  if (Ve(n), e <= 0 || e > 32)
     throw new Error(`convertRadix2: wrong from=${e}`);
   if (t <= 0 || t > 32)
     throw new Error(`convertRadix2: wrong to=${t}`);
@@ -7714,16 +7406,16 @@ function He(n, e, t, s) {
   let i = 0, r = 0;
   const o = Ae[e], a = Ae[t] - 1, c = [];
   for (const l of n) {
-    if (Nt(l), l >= o)
+    if (Rt(l), l >= o)
       throw new Error(`convertRadix2: invalid data word=${l} from=${e}`);
     if (i = i << e | l, r + e > 32)
       throw new Error(`convertRadix2: carry overflow pos=${r} from=${e}`);
     for (r += e; r >= t; r -= t)
       c.push((i >> r - t & a) >>> 0);
-    const h = Ae[r];
-    if (h === void 0)
+    const u = Ae[r];
+    if (u === void 0)
       throw new Error("invalid carry");
-    i &= h - 1;
+    i &= u - 1;
   }
   if (i = i << t - r & a, !s && r >= e)
     throw new Error("Excess padding");
@@ -7733,20 +7425,20 @@ function He(n, e, t, s) {
 }
 // @__NO_SIDE_EFFECTS__
 function Bs(n, e = !1) {
-  if (Nt(n), n <= 0 || n > 32)
+  if (Rt(n), n <= 0 || n > 32)
     throw new Error("radix2: bits should be in (0..32]");
   if (/* @__PURE__ */ Ce(8, n) > 32 || /* @__PURE__ */ Ce(n, 8) > 32)
     throw new Error("radix2: carry overflow");
   return {
     encode: (t) => {
-      if (!Ct(t))
+      if (!Tt(t))
         throw new Error("radix2.encode input should be Uint8Array");
-      return He(Array.from(t), 8, n, !e);
+      return We(Array.from(t), 8, n, !e);
     },
-    decode: (t) => (Dt("radix2.decode", t), Uint8Array.from(He(t, n, 8, e)))
+    decode: (t) => (Lt("radix2.decode", t), Uint8Array.from(We(t, n, 8, e)))
   };
 }
-function lt(n) {
+function at(n) {
   return xs(n), function(...e) {
     try {
       return n.apply(null, e);
@@ -7754,15 +7446,15 @@ function lt(n) {
     }
   };
 }
-const Ge = /* @__PURE__ */ Os(/* @__PURE__ */ Us("qpzry9x8gf2tvdw0s3jn54khce6mua7l"), /* @__PURE__ */ $s("")), ut = [996825010, 642813549, 513874426, 1027748829, 705979059];
+const ze = /* @__PURE__ */ Os(/* @__PURE__ */ Us("qpzry9x8gf2tvdw0s3jn54khce6mua7l"), /* @__PURE__ */ $s("")), ct = [996825010, 642813549, 513874426, 1027748829, 705979059];
 function fe(n) {
   const e = n >> 25;
   let t = (n & 33554431) << 5;
-  for (let s = 0; s < ut.length; s++)
-    (e >> s & 1) === 1 && (t ^= ut[s]);
+  for (let s = 0; s < ct.length; s++)
+    (e >> s & 1) === 1 && (t ^= ct[s]);
   return t;
 }
-function ht(n, e, t = 1) {
+function lt(n, e, t = 1) {
   const s = n.length;
   let i = 1;
   for (let r = 0; r < s; r++) {
@@ -7778,53 +7470,53 @@ function ht(n, e, t = 1) {
     i = fe(i) ^ r;
   for (let r = 0; r < 6; r++)
     i = fe(i);
-  return i ^= t, Ge.encode(He([i % Ae[30]], 30, 5, !1));
+  return i ^= t, ze.encode(We([i % Ae[30]], 30, 5, !1));
 }
 // @__NO_SIDE_EFFECTS__
 function Ks(n) {
-  const e = n === "bech32" ? 1 : 734539939, t = /* @__PURE__ */ Bs(5), s = t.decode, i = t.encode, r = lt(s);
-  function o(d, g, p = 90) {
-    ve("bech32.encode prefix", d), Ct(g) && (g = Array.from(g)), Dt("bech32.encode", g);
-    const f = d.length;
+  const e = n === "bech32" ? 1 : 734539939, t = /* @__PURE__ */ Bs(5), s = t.decode, i = t.encode, r = at(s);
+  function o(h, g, p = 90) {
+    ve("bech32.encode prefix", h), Tt(g) && (g = Array.from(g)), Lt("bech32.encode", g);
+    const f = h.length;
     if (f === 0)
       throw new TypeError(`Invalid prefix length ${f}`);
     const y = f + 7 + g.length;
     if (p !== !1 && y > p)
       throw new TypeError(`Length ${y} exceeds limit ${p}`);
-    const S = d.toLowerCase(), v = ht(S, g, e);
-    return `${S}1${Ge.encode(g)}${v}`;
+    const S = h.toLowerCase(), m = lt(S, g, e);
+    return `${S}1${ze.encode(g)}${m}`;
   }
-  function a(d, g = 90) {
-    ve("bech32.decode input", d);
-    const p = d.length;
+  function a(h, g = 90) {
+    ve("bech32.decode input", h);
+    const p = h.length;
     if (p < 8 || g !== !1 && p > g)
-      throw new TypeError(`invalid string length: ${p} (${d}). Expected (8..${g})`);
-    const f = d.toLowerCase();
-    if (d !== f && d !== d.toUpperCase())
+      throw new TypeError(`invalid string length: ${p} (${h}). Expected (8..${g})`);
+    const f = h.toLowerCase();
+    if (h !== f && h !== h.toUpperCase())
       throw new Error("String must be lowercase or uppercase");
     const y = f.lastIndexOf("1");
     if (y === 0 || y === -1)
       throw new Error('Letter "1" must be present between prefix and data only');
-    const S = f.slice(0, y), v = f.slice(y + 1);
-    if (v.length < 6)
+    const S = f.slice(0, y), m = f.slice(y + 1);
+    if (m.length < 6)
       throw new Error("Data must be at least 6 characters long");
-    const M = Ge.decode(v).slice(0, -6), _ = ht(S, M, e);
-    if (!v.endsWith(_))
-      throw new Error(`Invalid checksum in ${d}: expected "${_}"`);
-    return { prefix: S, words: M };
+    const E = ze.decode(m).slice(0, -6), k = lt(S, E, e);
+    if (!m.endsWith(k))
+      throw new Error(`Invalid checksum in ${h}: expected "${k}"`);
+    return { prefix: S, words: E };
   }
-  const c = lt(a);
-  function l(d) {
-    const { prefix: g, words: p } = a(d, !1);
+  const c = at(a);
+  function l(h) {
+    const { prefix: g, words: p } = a(h, !1);
     return { prefix: g, words: p, bytes: s(p) };
   }
-  function h(d, g) {
-    return o(d, i(g));
+  function u(h, g) {
+    return o(h, i(g));
   }
   return {
     encode: o,
     decode: a,
-    encodeFromBytes: h,
+    encodeFromBytes: u,
     decodeToBytes: l,
     decodeUnsafe: c,
     fromWords: s,
@@ -7832,12 +7524,12 @@ function Ks(n) {
     toWords: i
   };
 }
-const Re = /* @__PURE__ */ Ks("bech32"), xt = 5e3, Ne = new TextEncoder(), Pe = new TextDecoder();
+const Re = /* @__PURE__ */ Ks("bech32"), Ft = 5e3, Ne = new TextEncoder(), Pe = new TextDecoder();
 function Vs(n) {
   const e = new Uint8Array(4);
   return e[0] = n >> 24 & 255, e[1] = n >> 16 & 255, e[2] = n >> 8 & 255, e[3] = n & 255, e;
 }
-function Be(n) {
+function Ue(n) {
   const e = {};
   let t = n;
   for (; t.length > 0 && !(t.length < 2); ) {
@@ -7848,68 +7540,68 @@ function Be(n) {
   }
   return e;
 }
-function Xe(n) {
+function Ye(n) {
   const e = [];
   return Object.entries(n).reverse().forEach(([t, s]) => {
     s.forEach((i) => {
       const r = new Uint8Array(i.length + 2);
       r.set([parseInt(t)], 0), r.set([i.length], 1), r.set(i, 2), e.push(r);
     });
-  }), zt(...e);
+  }), Wt(...e);
 }
-function Fe(n, e) {
+function Le(n, e) {
   const t = Re.toWords(e);
-  return Re.encode(n, t, xt);
+  return Re.encode(n, t, Ft);
 }
-function Ze(n, e) {
-  return Fe(n, e);
+function Qe(n, e) {
+  return Le(n, e);
 }
-function Je(n) {
-  var i, r, o, a, c, l, h;
-  const { prefix: e, words: t } = Re.decode(n, xt), s = new Uint8Array(Re.fromWords(t));
+function Xe(n) {
+  var i, r, o, a, c, l, u;
+  const { prefix: e, words: t } = Re.decode(n, Ft), s = new Uint8Array(Re.fromWords(t));
   switch (e) {
     case "nprofile": {
-      const d = Be(s);
-      if (!((i = d[0]) != null && i[0])) throw new Error("missing TLV 0 for nprofile");
-      if (d[0][0].length !== 32) throw new Error("TLV 0 should be 32 bytes");
+      const h = Ue(s);
+      if (!((i = h[0]) != null && i[0])) throw new Error("missing TLV 0 for nprofile");
+      if (h[0][0].length !== 32) throw new Error("TLV 0 should be 32 bytes");
       return {
         type: "nprofile",
         data: {
-          pubkey: Q(d[0][0]),
-          relays: d[1] ? d[1].map((g) => Pe.decode(g)) : []
+          pubkey: Q(h[0][0]),
+          relays: h[1] ? h[1].map((g) => Pe.decode(g)) : []
         }
       };
     }
     case "nevent": {
-      const d = Be(s);
-      if (!((r = d[0]) != null && r[0])) throw new Error("missing TLV 0 for nevent");
-      if (d[0][0].length !== 32) throw new Error("TLV 0 should be 32 bytes");
-      if (d[2] && d[2][0] && d[2][0].length !== 32) throw new Error("TLV 2 should be 32 bytes");
-      if (d[3] && d[3][0] && d[3][0].length !== 4) throw new Error("TLV 3 should be 4 bytes");
+      const h = Ue(s);
+      if (!((r = h[0]) != null && r[0])) throw new Error("missing TLV 0 for nevent");
+      if (h[0][0].length !== 32) throw new Error("TLV 0 should be 32 bytes");
+      if (h[2] && h[2][0] && h[2][0].length !== 32) throw new Error("TLV 2 should be 32 bytes");
+      if (h[3] && h[3][0] && h[3][0].length !== 4) throw new Error("TLV 3 should be 4 bytes");
       return {
         type: "nevent",
         data: {
-          id: Q(d[0][0]),
-          relays: d[1] ? d[1].map((g) => Pe.decode(g)) : [],
-          author: (o = d[2]) != null && o[0] ? Q(d[2][0]) : void 0,
-          kind: (a = d[3]) != null && a[0] ? parseInt(Q(d[3][0]), 16) : void 0
+          id: Q(h[0][0]),
+          relays: h[1] ? h[1].map((g) => Pe.decode(g)) : [],
+          author: (o = h[2]) != null && o[0] ? Q(h[2][0]) : void 0,
+          kind: (a = h[3]) != null && a[0] ? parseInt(Q(h[3][0]), 16) : void 0
         }
       };
     }
     case "naddr": {
-      const d = Be(s);
-      if (!((c = d[0]) != null && c[0])) throw new Error("missing TLV 0 for naddr");
-      if (!((l = d[2]) != null && l[0])) throw new Error("missing TLV 2 for naddr");
-      if (d[2][0].length !== 32) throw new Error("TLV 2 should be 32 bytes");
-      if (!((h = d[3]) != null && h[0])) throw new Error("missing TLV 3 for naddr");
-      if (d[3][0].length !== 4) throw new Error("TLV 3 should be 4 bytes");
+      const h = Ue(s);
+      if (!((c = h[0]) != null && c[0])) throw new Error("missing TLV 0 for naddr");
+      if (!((l = h[2]) != null && l[0])) throw new Error("missing TLV 2 for naddr");
+      if (h[2][0].length !== 32) throw new Error("TLV 2 should be 32 bytes");
+      if (!((u = h[3]) != null && u[0])) throw new Error("missing TLV 3 for naddr");
+      if (h[3][0].length !== 4) throw new Error("TLV 3 should be 4 bytes");
       return {
         type: "naddr",
         data: {
-          identifier: Pe.decode(d[0][0]),
-          pubkey: Q(d[2][0]),
-          kind: parseInt(Q(d[3][0]), 16),
-          relays: d[1] ? d[1].map((g) => Pe.decode(g)) : []
+          identifier: Pe.decode(h[0][0]),
+          pubkey: Q(h[2][0]),
+          kind: parseInt(Q(h[3][0]), 16),
+          relays: h[1] ? h[1].map((g) => Pe.decode(g)) : []
         }
       };
     }
@@ -7923,56 +7615,56 @@ function Je(n) {
   }
 }
 function Ws(n) {
-  return Ze("nsec", n);
+  return Qe("nsec", n);
 }
 function zs(n) {
-  return Ze("npub", ae(n));
+  return Qe("npub", ae(n));
 }
 function Hs(n) {
-  return Ze("note", ae(n));
+  return Qe("note", ae(n));
 }
 function Gs(n) {
-  const e = Xe({
+  const e = Ye({
     0: [ae(n.pubkey)],
     1: (n.relays || []).map((t) => Ne.encode(t))
   });
-  return Fe("nprofile", e);
+  return Le("nprofile", e);
 }
 function js(n) {
   let e;
   n.kind !== void 0 && (e = Vs(n.kind));
-  const t = Xe({
+  const t = Ye({
     0: [ae(n.id)],
     1: (n.relays || []).map((s) => Ne.encode(s)),
     2: n.author ? [ae(n.author)] : [],
     3: e ? [new Uint8Array(e)] : []
   });
-  return Fe("nevent", t);
+  return Le("nevent", t);
 }
 function Ys(n) {
   const e = new ArrayBuffer(4);
   new DataView(e).setUint32(0, n.kind, !1);
-  const t = Xe({
+  const t = Ye({
     0: [Ne.encode(n.identifier)],
     1: (n.relays || []).map((s) => Ne.encode(s)),
     2: [ae(n.pubkey)],
     3: [new Uint8Array(e)]
   });
-  return Fe("naddr", t);
+  return Le("naddr", t);
 }
-function gi(n) {
+function li(n) {
   const e = n.startsWith("0x") ? n.slice(2) : n;
   if (!/^[0-9a-fA-F]{64}$/.test(e))
     throw new Error("Invalid hex pubkey: must be 64 hex characters");
   return zs(e);
 }
-function fi(n) {
+function ui(n) {
   const e = n.startsWith("0x") ? n.slice(2) : n;
   if (!/^[0-9a-fA-F]{64}$/.test(e))
     throw new Error("Invalid hex privkey: must be 64 hex characters");
   return Ws(ae(e));
 }
-function pi(n) {
+function hi(n) {
   const e = n.startsWith("0x") ? n.slice(2) : n;
   if (!/^[0-9a-fA-F]{64}$/.test(e))
     throw new Error("Invalid hex event id: must be 64 hex characters");
@@ -7981,7 +7673,7 @@ function pi(n) {
 function Qs(n) {
   if (!n.startsWith("npub1"))
     throw new Error('Invalid npub: must start with "npub1"');
-  const e = Je(n);
+  const e = Xe(n);
   if (e.type !== "npub")
     throw new Error('Invalid npub: decoded type is not "npub"');
   return e.data;
@@ -7989,7 +7681,7 @@ function Qs(n) {
 function Xs(n) {
   if (!n.startsWith("nsec1"))
     throw new Error('Invalid nsec: must start with "nsec1"');
-  const e = Je(n);
+  const e = Xe(n);
   if (e.type !== "nsec")
     throw new Error('Invalid nsec: decoded type is not "nsec"');
   return Q(e.data);
@@ -7997,18 +7689,18 @@ function Xs(n) {
 function Zs(n) {
   if (!n.startsWith("note1"))
     throw new Error('Invalid note: must start with "note1"');
-  const e = Je(n);
+  const e = Xe(n);
   if (e.type !== "note")
     throw new Error('Invalid note: decoded type is not "note"');
   return e.data;
 }
-function yi(n, e) {
+function di(n, e) {
   const t = n.startsWith("0x") ? n.slice(2) : n;
   if (!/^[0-9a-fA-F]{64}$/.test(t))
     throw new Error("Invalid hex pubkey: must be 64 hex characters");
   return Gs({ pubkey: t, relays: e });
 }
-function bi(n, e, t, s) {
+function gi(n, e, t, s) {
   const i = n.startsWith("0x") ? n.slice(2) : n;
   if (!/^[0-9a-fA-F]{64}$/.test(i))
     throw new Error("Invalid hex event id: must be 64 hex characters");
@@ -8022,7 +7714,7 @@ function bi(n, e, t, s) {
     kind: s
   });
 }
-function wi(n, e, t, s) {
+function fi(n, e, t, s) {
   const i = e.startsWith("0x") ? e.slice(2) : e;
   if (!/^[0-9a-fA-F]{64}$/.test(i))
     throw new Error("Invalid hex pubkey: must be 64 hex characters");
@@ -8033,13 +7725,13 @@ function wi(n, e, t, s) {
     relays: s
   });
 }
-function mi(n) {
+function pi(n) {
   if (!n || typeof n != "string")
     return !1;
   const e = n.startsWith("0x") ? n.slice(2) : n;
   return /^[0-9a-fA-F]{64}$/.test(e);
 }
-function vi(n) {
+function yi(n) {
   if (!n || typeof n != "string" || !n.startsWith("npub1"))
     return !1;
   try {
@@ -8048,7 +7740,7 @@ function vi(n) {
     return !1;
   }
 }
-function Ei(n) {
+function bi(n) {
   if (!n || typeof n != "string" || !n.startsWith("nsec1"))
     return !1;
   try {
@@ -8057,7 +7749,7 @@ function Ei(n) {
     return !1;
   }
 }
-function Mi(n) {
+function wi(n) {
   if (!n || typeof n != "string" || !n.startsWith("note1"))
     return !1;
   try {
@@ -8066,43 +7758,43 @@ function Mi(n) {
     return !1;
   }
 }
-const Si = "0.1.0";
+const mi = "0.1.0";
 export {
-  qt as DEFAULT_RELAYS,
-  hi as DM,
-  tt as EVENT_KINDS,
+  Jt as DEFAULT_RELAYS,
+  ai as DM,
+  qe as EVENT_KINDS,
   R as ErrorHandler,
-  I as EventBuilder,
-  is as EventsModule,
-  st as ExtensionSigner,
-  Qe as FeedStoreImpl,
-  Oe as FluentEventBuilder,
-  Ye as LocalKeySigner,
-  ci as NostrUnchained,
-  di as Profile,
-  li as QueryBuilder,
+  P as EventBuilder,
+  ss as EventsModule,
+  et as ExtensionSigner,
+  je as FeedStoreImpl,
+  Fe as FluentEventBuilder,
+  Ge as LocalKeySigner,
+  oi as NostrUnchained,
+  ci as Profile,
+  Ns as QueryBuilder,
   ei as QuickSigner,
-  ts as RelayManager,
-  ss as SigningProviderFactory,
-  ui as SubBuilder,
-  Rs as SubscriptionManager,
+  es as RelayManager,
+  ts as SigningProviderFactory,
+  Ls as SubBuilder,
+  Cs as SubscriptionManager,
   ti as TemporarySigner,
-  Si as VERSION,
+  mi as VERSION,
   ii as createFeed,
   ni as createFeedFromFilter,
   ri as createFeedFromQuery,
-  wi as createNaddr,
-  bi as createNevent,
-  yi as createNprofile,
-  Je as decode,
-  w as derived,
-  pi as hexToNote,
-  gi as hexToNpub,
-  fi as hexToNsec,
-  mi as isValidHexKey,
-  Mi as isValidNote,
-  vi as isValidNpub,
-  Ei as isValidNsec,
+  fi as createNaddr,
+  gi as createNevent,
+  di as createNprofile,
+  Xe as decode,
+  M as derived,
+  hi as hexToNote,
+  li as hexToNpub,
+  ui as hexToNsec,
+  pi as isValidHexKey,
+  wi as isValidNote,
+  yi as isValidNpub,
+  bi as isValidNsec,
   Ys as naddrEncode,
   js as neventEncode,
   Hs as noteEncode,
@@ -8113,5 +7805,5 @@ export {
   Ws as nsecEncode,
   Xs as nsecToHex,
   si as setDefaultSubscriptionManager,
-  P as writable
+  _ as writable
 };

@@ -1,8 +1,8 @@
 /**
- * FollowManager - Consistent Follow System for Own vs Foreign Profiles
+ * FollowManager - Clean Architecture Follow System
  * 
- * Provides unified API for follow operations that handles the distinction
- * between own profiles and foreign profiles correctly.
+ * Uses NostrUnchained's reactive stores directly for perfect performance
+ * and instant updates. No more subscription management or cache duplication.
  */
 
 import type { NostrUnchained } from 'nostr-unchained';
@@ -33,20 +33,36 @@ export class FollowManager {
 	}
 
 	/**
-	 * Get follow state for any profile (own or foreign)
-	 * Uses NostrUnchained's built-in caching and stores
+	 * Get follow state for any profile using clean reactive stores
+	 * CLEAN ARCHITECTURE: Uses NostrUnchained base layer directly
 	 */
 	async getFollowState(targetPubkey: string): Promise<FollowState> {
 		const isOwnProfile = targetPubkey === this.myPubkey;
 		
 		try {
-			const [stats, isFollowing] = await Promise.all([
-				this.getFollowStats(targetPubkey),
-				isOwnProfile ? Promise.resolve(false) : this.checkIfFollowing(targetPubkey)
-			]);
+			// Use clean architecture - get follow list store directly
+			const followStore = isOwnProfile 
+				? await this.nostr.profile.follows.mine()
+				: this.nostr.profile.follows.of(targetPubkey);
+
+			// Get current stats from store
+			const followingCount = followStore.count.current;
+			
+			// Get followers count using new API
+			const followersCountStore = this.nostr.profile.followerCount(targetPubkey);
+			const followersCount = followersCountStore.current;
+			
+			// Check if following (only for non-own profiles)
+			let isFollowing = false;
+			if (!isOwnProfile) {
+				const myFollowStore = await this.nostr.profile.follows.mine();
+				const myFollows = myFollowStore.follows.current;
+				isFollowing = myFollows.some(follow => follow.pubkey === targetPubkey);
+			}
 
 			return {
-				...stats,
+				followingCount,
+				followersCount,
 				isFollowing,
 				isOwnProfile,
 				loading: false,
@@ -69,24 +85,24 @@ export class FollowManager {
 	}
 
 	/**
-	 * Get follow statistics for any profile
+	 * Get follow statistics using clean architecture
+	 * CLEAN ARCHITECTURE: Uses NostrUnchained stores directly
 	 */
 	async getFollowStats(targetPubkey: string): Promise<FollowStats> {
 		const isOwnProfile = targetPubkey === this.myPubkey;
 		
 		try {
-			// Get following count
-			const followingCount = isOwnProfile
-				? await this.getMyFollowingCount()
-				: await this.getFollowingCountOf(targetPubkey);
+			// Use clean architecture - get follow list store directly
+			const followStore = isOwnProfile 
+				? await this.nostr.profile.follows.mine()
+				: this.nostr.profile.follows.of(targetPubkey);
 
-			// Followers count - placeholder for now (complex to implement)
-			// Would require scanning all known follow lists for this pubkey
-			const followersCount = 0;
+			// Get followers count using new API
+			const followersCountStore = this.nostr.profile.followerCount(targetPubkey);
 
 			return {
-				followingCount,
-				followersCount
+				followingCount: followStore.count.current,
+				followersCount: followersCountStore.current
 			};
 		} catch (error) {
 			if (this.debug) {
@@ -101,7 +117,8 @@ export class FollowManager {
 	}
 
 	/**
-	 * Check if I'm following a specific user
+	 * Check if I'm following a specific user using clean architecture
+	 * CLEAN ARCHITECTURE: Uses current state from store directly
 	 */
 	async checkIfFollowing(targetPubkey: string): Promise<boolean> {
 		if (targetPubkey === this.myPubkey) {
@@ -110,14 +127,8 @@ export class FollowManager {
 
 		try {
 			const followStore = await this.nostr.profile.follows.mine();
-			return new Promise((resolve) => {
-				let unsubscribe: (() => void) | undefined;
-				unsubscribe = followStore.follows.subscribe((follows) => {
-					if (unsubscribe) unsubscribe();
-					const isFollowing = follows.some(follow => follow.pubkey === targetPubkey);
-					resolve(isFollowing);
-				});
-			});
+			const follows = followStore.follows.current;
+			return follows.some(follow => follow.pubkey === targetPubkey);
 		} catch (error) {
 			if (this.debug) {
 				console.error('FollowManager: Failed to check follow status:', error);
@@ -127,7 +138,8 @@ export class FollowManager {
 	}
 
 	/**
-	 * Follow a user
+	 * Follow a user using clean architecture
+	 * CLEAN ARCHITECTURE: Uses NostrUnchained batch API with instant cache updates
 	 */
 	async followUser(targetPubkey: string): Promise<void> {
 		if (targetPubkey === this.myPubkey) {
@@ -135,7 +147,7 @@ export class FollowManager {
 		}
 
 		try {
-			// Use the batch API to add a follow
+			// Use the clean batch API - this automatically adds to cache
 			await this.nostr.profile.follows.batch()
 				.add([targetPubkey])
 				.publish();
@@ -152,7 +164,8 @@ export class FollowManager {
 	}
 
 	/**
-	 * Unfollow a user
+	 * Unfollow a user using clean architecture
+	 * CLEAN ARCHITECTURE: Uses NostrUnchained batch API with instant cache updates
 	 */
 	async unfollowUser(targetPubkey: string): Promise<void> {
 		if (targetPubkey === this.myPubkey) {
@@ -160,7 +173,7 @@ export class FollowManager {
 		}
 
 		try {
-			// Use the batch API to remove a follow
+			// Use the clean batch API - this automatically adds to cache
 			await this.nostr.profile.follows.batch()
 				.remove([targetPubkey])
 				.publish();
@@ -177,105 +190,121 @@ export class FollowManager {
 	}
 
 	/**
-	 * Get my following count
-	 */
-	private async getMyFollowingCount(): Promise<number> {
-		try {
-			const followStore = await this.nostr.profile.follows.mine();
-			return new Promise((resolve) => {
-				let unsubscribe: (() => void) | undefined;
-				unsubscribe = followStore.count.subscribe((count) => {
-					if (unsubscribe) unsubscribe();
-					resolve(count);
-				});
-			});
-		} catch (error) {
-			if (this.debug) {
-				console.error('FollowManager: Failed to get my following count:', error);
-			}
-			return 0;
-		}
-	}
-
-	/**
-	 * Get following count of another user
-	 */
-	private async getFollowingCountOf(pubkey: string): Promise<number> {
-		try {
-			const followStore = this.nostr.profile.follows.of(pubkey);
-			return new Promise((resolve) => {
-				let unsubscribe: (() => void) | undefined;
-				unsubscribe = followStore.count.subscribe((count) => {
-					if (unsubscribe) unsubscribe();
-					resolve(count);
-				});
-			});
-		} catch (error) {
-			if (this.debug) {
-				console.error('FollowManager: Failed to get following count of user:', error);
-			}
-			return 0;
-		}
-	}
-
-	/**
-	 * Create a reactive store for follow state
-	 * Uses NostrUnchained's reactive stores directly
+	 * Create a reactive store for follow state using clean architecture
+	 * CLEAN ARCHITECTURE: Directly subscribes to NostrUnchained stores for instant updates
 	 */
 	createFollowStore(targetPubkey: string) {
+		const isOwnProfile = targetPubkey === this.myPubkey;
+		
 		let currentState: FollowState = {
 			followingCount: 0,
 			followersCount: 0,
 			isFollowing: false,
-			isOwnProfile: targetPubkey === this.myPubkey,
+			isOwnProfile,
 			loading: true,
 			error: null
 		};
 
 		const subscribers = new Set<(state: FollowState) => void>();
+		let followStoreUnsubscribe: (() => void) | undefined;
+		let myFollowStoreUnsubscribe: (() => void) | undefined;
 
 		const subscribe = (callback: (state: FollowState) => void) => {
 			subscribers.add(callback);
 			callback(currentState); // Immediate callback with current state
 			
-			return () => subscribers.delete(callback);
+			return () => {
+				subscribers.delete(callback);
+				// Clean up subscriptions when no more subscribers
+				if (subscribers.size === 0) {
+					followStoreUnsubscribe?.();
+					myFollowStoreUnsubscribe?.();
+				}
+			};
 		};
 
 		const updateState = (newState: Partial<FollowState>) => {
+			const oldState = currentState;
 			currentState = { ...currentState, ...newState };
+			if (this.debug) {
+				console.log('FollowManager: State updated for', targetPubkey, {
+					old: { followingCount: oldState.followingCount, followersCount: oldState.followersCount, isFollowing: oldState.isFollowing },
+					new: { followingCount: currentState.followingCount, followersCount: currentState.followersCount, isFollowing: currentState.isFollowing }
+				});
+			}
 			subscribers.forEach(callback => callback(currentState));
 		};
 
-		// Initial load
-		this.getFollowState(targetPubkey)
-			.then(state => updateState(state))
-			.catch(error => updateState({
-				loading: false,
-				error: error instanceof Error ? error.message : 'Failed to load'
-			}));
+		// Set up reactive subscriptions to NostrUnchained stores
+		const setupReactiveSubscriptions = async () => {
+			try {
+				// Subscribe to target's follow list for count
+				const followStore = isOwnProfile 
+					? await this.nostr.profile.follows.mine()
+					: this.nostr.profile.follows.of(targetPubkey);
+
+				followStoreUnsubscribe = followStore.count.subscribe((count: number) => {
+					if (this.debug) {
+						console.log(`FollowManager: Following count updated for ${targetPubkey}:`, count);
+					}
+					updateState({ followingCount: count });
+				});
+
+				// Subscribe to followers count using new API
+				const followersCountStore = this.nostr.profile.followerCount(targetPubkey);
+				const followersUnsubscribe = followersCountStore.subscribe((count: number) => {
+					if (this.debug) {
+						console.log(`FollowManager: Followers count updated for ${targetPubkey}:`, count);
+					}
+					updateState({ followersCount: count });
+				});
+
+				// If not own profile, also subscribe to my follow list to check if following
+				if (!isOwnProfile) {
+					const myFollowStore = await this.nostr.profile.follows.mine();
+					myFollowStoreUnsubscribe = myFollowStore.follows.subscribe((follows: any[]) => {
+						const isFollowing = follows.some((follow: any) => follow.pubkey === targetPubkey);
+						if (this.debug) {
+							console.log(`FollowManager: My follows updated, ${targetPubkey} isFollowing:`, isFollowing, 'total follows:', follows.length);
+						}
+						updateState({ isFollowing });
+					});
+				}
+
+				// Clean up followers subscription when main subscription is cleaned up
+				const originalFollowStoreUnsubscribe = followStoreUnsubscribe;
+				followStoreUnsubscribe = () => {
+					originalFollowStoreUnsubscribe?.();
+					followersUnsubscribe?.();
+				};
+
+				updateState({ loading: false, error: null });
+
+			} catch (error) {
+				updateState({
+					loading: false,
+					error: error instanceof Error ? error.message : 'Failed to setup reactive subscriptions'
+				});
+			}
+		};
+
+		// Initialize reactive subscriptions
+		setupReactiveSubscriptions();
 
 		return {
 			subscribe,
 			refresh: () => {
 				updateState({ loading: true, error: null });
-				return this.getFollowState(targetPubkey)
-					.then(state => updateState(state))
-					.catch(error => updateState({
-						loading: false,
-						error: error instanceof Error ? error.message : 'Failed to refresh'
-					}));
+				return setupReactiveSubscriptions();
 			},
 			follow: async () => {
-				if (currentState.isOwnProfile) return;
+				if (isOwnProfile) return;
 				
 				updateState({ loading: true, error: null });
 				try {
 					await this.followUser(targetPubkey);
-					// Optimistic update
-					updateState({ 
-						isFollowing: true, 
-						loading: false 
-					});
+					// No need for optimistic update - reactive subscriptions handle it
+					updateState({ loading: false });
 				} catch (error) {
 					updateState({
 						loading: false,
@@ -285,16 +314,13 @@ export class FollowManager {
 				}
 			},
 			unfollow: async () => {
-				if (currentState.isOwnProfile) return;
+				if (isOwnProfile) return;
 				
 				updateState({ loading: true, error: null });
 				try {
 					await this.unfollowUser(targetPubkey);
-					// Optimistic update
-					updateState({ 
-						isFollowing: false, 
-						loading: false 
-					});
+					// No need for optimistic update - reactive subscriptions handle it
+					updateState({ loading: false });
 				} catch (error) {
 					updateState({
 						loading: false,

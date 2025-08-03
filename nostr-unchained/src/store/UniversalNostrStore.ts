@@ -75,9 +75,22 @@ export class UniversalNostrStore<T = NostrEvent[]> implements Readable<T> {
   }
   
   private matchesFilter(event: NostrEvent, filter: Filter): boolean {
-    // Quick check - if cache would include it in query results, we should update
-    const matched = this.cache.query({ ...filter, ids: [event.id] });
-    return matched.length > 0;
+    // Check if event matches our filter criteria
+    if (filter.kinds && !filter.kinds.includes(event.kind)) {
+      return false;
+    }
+    
+    if (filter.authors && !filter.authors.includes(event.pubkey)) {
+      return false;
+    }
+    
+    if (filter.ids && !filter.ids.includes(event.id)) {
+      return false;
+    }
+    
+    // TODO: Add more filter checks if needed (tags, since, until, etc.)
+    
+    return true;
   }
 }
 

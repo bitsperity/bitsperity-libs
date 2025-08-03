@@ -9,6 +9,7 @@ import { EventBuilder } from '../core/EventBuilder.js';
 import type { SubscriptionManager } from '../subscription/SubscriptionManager.js';
 import type { RelayManager } from '../relay/RelayManager.js';
 import type { SigningProvider } from '../crypto/SigningProvider.js';
+import type { UniversalEventCache } from '../cache/UniversalEventCache.js';
 import type { Follow, PublishResult } from './types.js';
 import type { NostrEvent, Filter } from '../core/types.js';
 
@@ -16,6 +17,7 @@ export interface FollowBatchBuilderConfig {
   subscriptionManager: SubscriptionManager;
   relayManager: RelayManager;
   signingProvider: SigningProvider;
+  cache: UniversalEventCache;
   debug?: boolean;
 }
 
@@ -147,6 +149,7 @@ export class FollowBatchBuilder {
         if (this.config.debug) {
           console.log(`FollowBatchBuilder: Published batch update to ${successfulRelays.length} relays`);
           console.log(`FollowBatchBuilder: Final follow list has ${updatedFollows.length} follows`);
+          console.log(`FollowBatchBuilder: Event will be received via subscription and cached properly`);
         }
         return {
           success: true,
@@ -173,41 +176,89 @@ export class FollowBatchBuilder {
     try {
       const myPubkey = await this.config.signingProvider.getPublicKey();
       
-      // Query for current follow list
+      // Query for current follow list from cache first (much faster)
       const filter: Filter = {
         kinds: [3],
         authors: [myPubkey],
         limit: 1
       };
 
-      return new Promise((resolve) => {
-        let followListFound = false;
-        
-        const timeoutId = setTimeout(() => {
-          if (!followListFound) {
-            resolve([]); // Return empty if no follow list found
-          }
-        }, 3000);
+      // Check cache first
+      const cachedEvents = this.config.cache.query(filter);
+      if (this.config.debug) {
+        console.log('FollowBatchBuilder: Cache query returned', cachedEvents.length, 'events');
+        if (cachedEvents.length > 0) {
+          const latestEvent = cachedEvents[0];
+          console.log('FollowBatchBuilder: Latest cached event:', {
+            id: latestEvent?.id,
+            created_at: latestEvent?.created_at,
+            tags: latestEvent?.tags.filter((t: any[]) => t[0] === 'p')
+          });
+        }
+      }
+      if (cachedEvents.length > 0) {
+        const latestEvent = cachedEvents[0]; // Most recent event
+        if (latestEvent && this.config.debug) {
+          console.log('FollowBatchBuilder: Using cached follow list with', latestEvent.tags.filter((t: any[]) => t[0] === 'p').length, 'follows');
+        }
+        if (latestEvent) {
+          return this.parseFollowListEvent(latestEvent);
+        }
+      }
 
-        this.config.subscriptionManager.subscribe([filter], {
-          onEvent: (event: NostrEvent) => {
-            if (event.kind === 3 && event.pubkey === myPubkey && !followListFound) {
-              followListFound = true;
-              clearTimeout(timeoutId);
-              
-              const follows = this.parseFollowListEvent(event);
-              resolve(follows);
-            }
-          },
-          onEose: () => {
-            if (!followListFound) {
-              clearTimeout(timeoutId);
-              resolve([]); // No follow list found
-            }
+      if (this.config.debug) {
+        console.log('FollowBatchBuilder: No cached follow list found, querying relays...');
+      }
+      
+      // If not in cache, query relays directly using subscription manager
+      return new Promise(async (resolve) => {
+        const timeout = setTimeout(() => {
+          if (this.config.debug) {
+            console.log('FollowBatchBuilder: Relay query timeout, using empty array');
           }
-        });
+          resolve([]);
+        }, 2000); // 2 second timeout
+        
+        try {
+          const sharedSub = await this.config.subscriptionManager.getOrCreateSubscription([filter]);
+          const listenerId = sharedSub.addListener({
+            onEvent: (event: NostrEvent) => {
+              if (event.kind === 3 && event.pubkey === myPubkey) {
+                clearTimeout(timeout);
+                sharedSub.removeListener(listenerId);
+                if (this.config.debug) {
+                  console.log('FollowBatchBuilder: Found follow list from relay:', {
+                    id: event.id,
+                    created_at: event.created_at,
+                    tags: event.tags.filter((t: any[]) => t[0] === 'p'),
+                    followCount: event.tags.filter((t: any[]) => t[0] === 'p').length
+                  });
+                }
+                resolve(this.parseFollowListEvent(event));
+              }
+            },
+            onEose: () => {
+              clearTimeout(timeout);
+              sharedSub.removeListener(listenerId);
+              if (this.config.debug) {
+                console.log('FollowBatchBuilder: No follow list found on relays, using empty array');
+              }
+              resolve([]);
+            }
+          });
+        } catch (error) {
+          clearTimeout(timeout);
+          if (this.config.debug) {
+            console.error('FollowBatchBuilder: Error setting up relay subscription:', error);
+          }
+          resolve([]);
+        }
       });
-    } catch {
+      
+    } catch (error) {
+      if (this.config.debug) {
+        console.error('FollowBatchBuilder: Error getting current follows:', error);
+      }
       return []; // Return empty array on error
     }
   }

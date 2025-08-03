@@ -190,34 +190,47 @@ export class ContactManager {
           }
         }, options.timeout || 5000);
 
-        this.config.subscriptionManager.subscribe([filter], {
-          onEvent: (event: NostrEvent) => {
-            if (!resolved && event.kind === 3) {
-              resolved = true;
-              clearTimeout(timeout);
-              
-              try {
-                const contactList = this.parseContactEvent(event as ContactEvent);
-                this.cacheContactList(contactList);
+        const executeQuery = async () => {
+          const sharedSub = await this.config.subscriptionManager.getOrCreateSubscription([filter]);
+          const listenerId = sharedSub.addListener({
+            onEvent: (event: NostrEvent) => {
+              if (!resolved && event.kind === 3) {
+                resolved = true;
+                clearTimeout(timeout);
+                sharedSub.removeListener(listenerId);
                 
-                // Update reactive store
-                this._contactUpdates.update(lists => {
-                  lists.set(pubkey, contactList);
-                  return new Map(lists);
-                });
-                
-                resolve(contactList);
-              } catch (error) {
+                try {
+                  const contactList = this.parseContactEvent(event as ContactEvent);
+                  this.cacheContactList(contactList);
+                  
+                  // Update reactive store
+                  this._contactUpdates.update(lists => {
+                    lists.set(pubkey, contactList);
+                    return new Map(lists);
+                  });
+                  
+                  resolve(contactList);
+                } catch (error) {
+                  resolve(null);
+                }
+              }
+            },
+            onEose: () => {
+              if (!resolved) {
+                resolved = true;
+                clearTimeout(timeout);
+                sharedSub.removeListener(listenerId);
                 resolve(null);
               }
             }
-          },
-          onEose: () => {
-            if (!resolved) {
-              resolved = true;
-              clearTimeout(timeout);
-              resolve(null);
-            }
+          });
+        };
+        
+        executeQuery().catch(() => {
+          if (!resolved) {
+            resolved = true;
+            clearTimeout(timeout);
+            resolve(null);
           }
         });
       });

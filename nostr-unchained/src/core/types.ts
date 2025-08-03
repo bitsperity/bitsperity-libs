@@ -84,6 +84,7 @@ export interface RelayInfo {
 // Signing Provider Interface
 export interface SigningProvider {
   getPublicKey(): Promise<string>;
+  getPublicKeySync?(): string | null; // Optional synchronous access
   signEvent(event: UnsignedEvent): Promise<string>;
 }
 

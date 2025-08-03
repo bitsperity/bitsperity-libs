@@ -133,14 +133,15 @@ export class FeedManager {
       limit: 20
     };
 
-    const globalSubId = await this.config.subscriptionManager.subscribe([globalFilter], {
+    const globalSharedSub = await this.config.subscriptionManager.getOrCreateSubscription([globalFilter]);
+    const globalListenerId = globalSharedSub.addListener({
       onEvent: (event: NostrEvent) => {
         const feedItem = this.eventToFeedItem(event);
         this._globalFeed.update(feed => [feedItem, ...feed.slice(0, 99)]); // Keep last 100
       }
     });
 
-    this.activeSubscriptions.set('global-updates', globalSubId);
+    this.activeSubscriptions.set('global-updates', { sharedSub: globalSharedSub, listenerId: globalListenerId });
 
     // Following feed updates (if user has contacts)
     if (this.config.signingProvider) {

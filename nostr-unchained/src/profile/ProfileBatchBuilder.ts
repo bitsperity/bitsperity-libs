@@ -82,68 +82,97 @@ export class ProfileBatchBuilder {
           }
         }, 5000); // 5 second timeout for batch
 
-        this.config.subscriptionManager.subscribe([filter], {
-          onEvent: (event: NostrEvent) => {
-            if (event.kind === 0 && this.pubkeys.includes(event.pubkey)) {
-              try {
-                const metadata = JSON.parse(event.content);
-                const profile: UserProfile = {
-                  pubkey: event.pubkey,
-                  metadata,
-                  lastUpdated: event.created_at,
-                  eventId: event.id,
-                  isOwn: false // Batch operations are typically for other users
-                };
-                profiles.set(event.pubkey, profile);
-                foundCount++;
+        const executeBatch = async () => {
+          const sharedSub = await this.config.subscriptionManager.getOrCreateSubscription([filter]);
+          const listenerId = sharedSub.addListener({
+            onEvent: (event: NostrEvent) => {
+              if (event.kind === 0 && this.pubkeys.includes(event.pubkey)) {
+                try {
+                  const metadata = JSON.parse(event.content);
+                  const profile: UserProfile = {
+                    pubkey: event.pubkey,
+                    metadata,
+                    lastUpdated: event.created_at,
+                    eventId: event.id,
+                    isOwn: false // Batch operations are typically for other users
+                  };
+                  profiles.set(event.pubkey, profile);
+                  foundCount++;
 
-                if (this.config.debug) {
-                  console.log(`ProfileBatchBuilder: Found profile for ${event.pubkey.substring(0, 16)}...`);
-                }
-              } catch (error) {
-                errors.set(event.pubkey, 'Failed to parse profile data');
-                if (this.config.debug) {
-                  console.error(`ProfileBatchBuilder: Parse error for ${event.pubkey}:`, error);
+                  if (this.config.debug) {
+                    console.log(`ProfileBatchBuilder: Found profile for ${event.pubkey.substring(0, 16)}...`);
+                  }
+                } catch (error) {
+                  errors.set(event.pubkey, 'Failed to parse profile data');
+                  if (this.config.debug) {
+                    console.error(`ProfileBatchBuilder: Parse error for ${event.pubkey}:`, error);
+                  }
                 }
               }
-            }
-          },
-          onEose: () => {
-            if (!subscriptionComplete) {
-              subscriptionComplete = true;
-              clearTimeout(timeoutId);
-              
-              if (this.config.debug) {
-                console.log(`ProfileBatchBuilder: Batch complete - found ${foundCount}/${this.pubkeys.length} profiles`);
+            },
+            onEose: () => {
+              if (!subscriptionComplete) {
+                subscriptionComplete = true;
+                clearTimeout(timeoutId);
+                sharedSub.removeListener(listenerId);
+                
+                if (this.config.debug) {
+                  console.log(`ProfileBatchBuilder: Batch complete - found ${foundCount}/${this.pubkeys.length} profiles`);
+                }
+                
+                resolve({
+                  profiles,
+                  success: true,
+                  errors,
+                  totalRequested: this.pubkeys.length,
+                  totalFound: foundCount
+                });
               }
-              
-              resolve({
-                profiles,
-                success: true,
-                errors,
-                totalRequested: this.pubkeys.length,
-                totalFound: foundCount
-              });
+            },
+            onError: (error: Error) => {
+              if (!subscriptionComplete) {
+                subscriptionComplete = true;
+                clearTimeout(timeoutId);
+                sharedSub.removeListener(listenerId);
+                
+                // Mark all as failed
+                this.pubkeys.forEach(pubkey => {
+                  errors.set(pubkey, error.message);
+                });
+                
+                resolve({
+                  profiles,
+                  success: false,
+                  errors,
+                  totalRequested: this.pubkeys.length,
+                  totalFound: foundCount
+                });
+              }
             }
-          },
-          onError: (error: Error) => {
-            if (!subscriptionComplete) {
-              subscriptionComplete = true;
-              clearTimeout(timeoutId);
-              
-              // Mark all as failed
-              this.pubkeys.forEach(pubkey => {
-                errors.set(pubkey, error.message);
-              });
-              
-              resolve({
-                profiles,
-                success: false,
-                errors,
-                totalRequested: this.pubkeys.length,
-                totalFound: foundCount
-              });
+          });
+        };
+        
+        executeBatch().catch(error => {
+          if (!subscriptionComplete) {
+            subscriptionComplete = true;
+            clearTimeout(timeoutId);
+            
+            if (this.config.debug) {
+              console.error('ProfileBatchBuilder: Failed to start batch:', error);
             }
+            
+            // Mark all as failed
+            this.pubkeys.forEach(pubkey => {
+              errors.set(pubkey, error instanceof Error ? error.message : 'Unknown error');
+            });
+            
+            resolve({
+              profiles,
+              success: false,
+              errors,
+              totalRequested: this.pubkeys.length,
+              totalFound: foundCount
+            });
           }
         });
       });
@@ -258,7 +287,8 @@ export class ProfileBatchBuilder {
         }
       }, 5000);
 
-      const result = await this.config.subscriptionManager.subscribe([filter], {
+      const sharedSub = await this.config.subscriptionManager.getOrCreateSubscription([filter]);
+      const listenerId = sharedSub.addListener({
         onEvent: (event: NostrEvent) => {
           if (event.kind === 0 && this.pubkeys.includes(event.pubkey)) {
             try {
@@ -341,10 +371,8 @@ export class ProfileBatchBuilder {
       });
 
       // Close subscription after timeout to avoid memory leaks
-      setTimeout(async () => {
-        if (result.success && result.subscription) {
-          await this.config.subscriptionManager.close(result.subscription.id);
-        }
+      setTimeout(() => {
+        sharedSub.removeListener(listenerId);
       }, 10000);
 
     } catch (error) {

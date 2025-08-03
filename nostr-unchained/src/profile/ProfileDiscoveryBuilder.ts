@@ -93,56 +93,75 @@ export class ProfileDiscoveryBuilder {
           }
         }, 10000); // 10 second timeout for discovery
 
-        this.config.subscriptionManager.subscribe([filter], {
-          onEvent: async (event: NostrEvent) => {
-            if (event.kind === 0 && !processedPubkeys.has(event.pubkey)) {
-              processedPubkeys.add(event.pubkey);
-              
-              try {
-                const profile = await this.parseProfileEvent(event);
-                const discoveryResult = await this.evaluateProfile(profile);
+        const executeSearch = async () => {
+          const sharedSub = await this.config.subscriptionManager.getOrCreateSubscription([filter]);
+          const listenerId = sharedSub.addListener({
+            onEvent: async (event: NostrEvent) => {
+              if (event.kind === 0 && !processedPubkeys.has(event.pubkey)) {
+                processedPubkeys.add(event.pubkey);
                 
-                if (discoveryResult) {
-                  results.push(discoveryResult);
+                try {
+                  const profile = await this.parseProfileEvent(event);
+                  const discoveryResult = await this.evaluateProfile(profile);
                   
-                  if (this.config.debug) {
-                    console.log(`ProfileDiscoveryBuilder: Found match - ${profile.metadata.name || 'unnamed'} (score: ${discoveryResult.relevanceScore})`);
-                  }
+                  if (discoveryResult) {
+                    results.push(discoveryResult);
+                    
+                    if (this.config.debug) {
+                      console.log(`ProfileDiscoveryBuilder: Found match - ${profile.metadata.name || 'unnamed'} (score: ${discoveryResult.relevanceScore})`);
+                    }
 
-                  // Stop early if we have enough results
-                  if (this.criteria.limit && results.length >= this.criteria.limit) {
-                    if (!searchComplete) {
-                      searchComplete = true;
-                      clearTimeout(timeoutId);
-                      this.finalizeResults(results, resolve);
+                    // Stop early if we have enough results
+                    if (this.criteria.limit && results.length >= this.criteria.limit) {
+                      if (!searchComplete) {
+                        searchComplete = true;
+                        clearTimeout(timeoutId);
+                        sharedSub.removeListener(listenerId);
+                        this.finalizeResults(results, resolve);
+                      }
                     }
                   }
+                } catch (error) {
+                  if (this.config.debug) {
+                    console.error('ProfileDiscoveryBuilder: Error processing profile:', error);
+                  }
                 }
-              } catch (error) {
+              }
+            },
+            onEose: () => {
+              if (!searchComplete) {
+                searchComplete = true;
+                clearTimeout(timeoutId);
+                sharedSub.removeListener(listenerId);
+                this.finalizeResults(results, resolve);
+              }
+            },
+            onError: (error: Error) => {
+              if (!searchComplete) {
+                searchComplete = true;
+                clearTimeout(timeoutId);
+                sharedSub.removeListener(listenerId);
+                
                 if (this.config.debug) {
-                  console.error('ProfileDiscoveryBuilder: Error processing profile:', error);
+                  console.error('ProfileDiscoveryBuilder: Search error:', error);
                 }
+                
+                resolve(results); // Return partial results even on error
               }
             }
-          },
-          onEose: () => {
-            if (!searchComplete) {
-              searchComplete = true;
-              clearTimeout(timeoutId);
-              this.finalizeResults(results, resolve);
+          });
+        };
+        
+        executeSearch().catch(error => {
+          if (!searchComplete) {
+            searchComplete = true;
+            clearTimeout(timeoutId);
+            
+            if (this.config.debug) {
+              console.error('ProfileDiscoveryBuilder: Failed to start search:', error);
             }
-          },
-          onError: (error: Error) => {
-            if (!searchComplete) {
-              searchComplete = true;
-              clearTimeout(timeoutId);
-              
-              if (this.config.debug) {
-                console.error('ProfileDiscoveryBuilder: Search error:', error);
-              }
-              
-              resolve(results); // Return partial results even on error
-            }
+            
+            resolve(results);
           }
         });
       });

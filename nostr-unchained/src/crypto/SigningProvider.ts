@@ -16,16 +16,24 @@ import { ERROR_MESSAGES } from '../utils/constants.js';
  * NIP-07 Browser Extension Signer
  */
 export class ExtensionSigner implements SigningProvider {
+  private cachedPublicKey?: string;
+
   async getPublicKey(): Promise<string> {
     if (!window.nostr) {
       throw new Error(ERROR_MESSAGES.NO_EXTENSION);
     }
 
     try {
-      return await window.nostr.getPublicKey();
+      const pubkey = await window.nostr.getPublicKey();
+      this.cachedPublicKey = pubkey; // Cache for sync access
+      return pubkey;
     } catch (error) {
       throw new Error(`Extension signing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+  }
+
+  getPublicKeySync(): string | null {
+    return this.cachedPublicKey || null;
   }
 
   async signEvent(event: UnsignedEvent): Promise<string> {
@@ -70,6 +78,10 @@ export class LocalKeySigner implements SigningProvider {
   }
 
   async getPublicKey(): Promise<string> {
+    return this.publicKey;
+  }
+
+  getPublicKeySync(): string | null {
     return this.publicKey;
   }
 

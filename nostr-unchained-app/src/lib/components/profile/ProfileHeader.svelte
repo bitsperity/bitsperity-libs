@@ -11,6 +11,7 @@ import type { UserProfile } from '../../types/profile.js';
 import { copyToClipboard } from '../../utils/clipboard.js';
 import { formatPubkey } from '../../utils/nostr.js';
 import KeyDisplay from '../ui/KeyDisplay.svelte';
+import ProfileAvatar from '../ui/ProfileAvatar.svelte';
 
 // =============================================================================
 // Props & Types
@@ -78,7 +79,7 @@ async function handleCopyPubkey() {
 		{#if profile?.metadata?.picture}
 			<img 
 				src={profile.metadata.picture} 
-				alt="Profile avatar" 
+				alt="" 
 				class="avatar-image"
 			/>
 		{:else}
@@ -133,6 +134,7 @@ async function handleCopyPubkey() {
 	flex-shrink: 0;
 	margin-top: -20px; /* Subtle overlap with banner */
 }
+
 
 .avatar-image {
 	width: 80px;

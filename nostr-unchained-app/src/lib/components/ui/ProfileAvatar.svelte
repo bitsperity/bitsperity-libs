@@ -51,10 +51,10 @@ $effect(() => {
         const profileStore = profileModule.get(pubkey);
         
         // Subscribe to profile changes
-        const unsubscribe = profileStore.subscribe((state) => {
-          profile = state.profile;
-          isLoading = state.loading;
-          error = state.error ? state.error.message : null;
+        const unsubscribe = profileStore.subscribe((profileData) => {
+          profile = profileData;
+          isLoading = false;
+          error = null;
         });
         
         return () => {
@@ -103,8 +103,6 @@ const fontSizeMap = {
 
 function handleClick() {
   if (!clickable || !pubkey) return;
-  console.log('🎯 Profile avatar clicked', { pubkey, clickable });
-  console.log('🎯 Dispatching profileClick event with:', { pubkey });
   dispatch('profileClick', { pubkey });
 }
 

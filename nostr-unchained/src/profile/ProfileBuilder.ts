@@ -288,32 +288,44 @@ export class ProfileBuilder {
           }
         }, 3000);
 
-        this.config.subscriptionManager.subscribe([filter], {
-          onEvent: (event: NostrEvent) => {
-            if (event.kind === 0 && event.pubkey === myPubkey && !profileFound) {
-              profileFound = true;
-              clearTimeout(timeoutId);
-              
-              try {
-                const metadata = JSON.parse(event.content);
-                const profile: UserProfile = {
-                  pubkey: event.pubkey,
-                  metadata,
-                  lastUpdated: event.created_at,
-                  eventId: event.id,
-                  isOwn: true
-                };
-                resolve(profile);
-              } catch {
+        const executeGetProfile = async () => {
+          const sharedSub = await this.config.subscriptionManager.getOrCreateSubscription([filter]);
+          const listenerId = sharedSub.addListener({
+            onEvent: (event: NostrEvent) => {
+              if (event.kind === 0 && event.pubkey === myPubkey && !profileFound) {
+                profileFound = true;
+                clearTimeout(timeoutId);
+                sharedSub.removeListener(listenerId);
+                
+                try {
+                  const metadata = JSON.parse(event.content);
+                  const profile: UserProfile = {
+                    pubkey: event.pubkey,
+                    metadata,
+                    lastUpdated: event.created_at,
+                    eventId: event.id,
+                    isOwn: true
+                  };
+                  resolve(profile);
+                } catch {
+                  resolve(null);
+                }
+              }
+            },
+            onEose: () => {
+              if (!profileFound) {
+                clearTimeout(timeoutId);
+                sharedSub.removeListener(listenerId);
                 resolve(null);
               }
             }
-          },
-          onEose: () => {
-            if (!profileFound) {
-              clearTimeout(timeoutId);
-              resolve(null);
-            }
+          });
+        };
+        
+        executeGetProfile().catch(() => {
+          if (!profileFound) {
+            clearTimeout(timeoutId);
+            resolve(null);
           }
         });
       });

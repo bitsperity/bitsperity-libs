@@ -31,7 +31,7 @@
 	let currentProfilePubkey = $state<string | null>(null); // For viewing other profiles
 	let userInfo = $state<{ publicKey: string; signerType: string }>({
 		publicKey: '',
-		signerType: signer || 'unknown'
+		signerType: signer || 'extension'
 	});
 
 	// Get user info from NostrUnchained (signing already initialized in landing page)

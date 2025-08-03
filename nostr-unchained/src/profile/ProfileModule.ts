@@ -50,7 +50,7 @@ export class ProfileModule {
    * Returns UniversalNostrStore with automatic caching and live updates
    */
   get(pubkey: string): UniversalNostrStore<UserProfile | null> {
-    // Start subscription for live updates
+    // Start subscription for live updates - deduplication handled by SubscriptionManager
     this.startProfileSubscription(pubkey);
     
     // Return reactive store based on cache
@@ -136,10 +136,19 @@ export class ProfileModule {
         subscriptionManager: this.config.subscriptionManager,
         relayManager: this.config.relayManager,
         signingProvider: this.config.signingProvider,
-        debug: this.config.debug
+        debug: this.config.debug,
+        nostr: this.config.nostr
       });
     }
     return this._follows;
+  }
+
+  /**
+   * Get follower count for any pubkey
+   * Returns reactive count of users who follow this pubkey
+   */
+  followerCount(pubkey: string) {
+    return this.follows.followers(pubkey);
   }
 
   /**

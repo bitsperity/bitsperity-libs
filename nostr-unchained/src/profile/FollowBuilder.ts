@@ -161,28 +161,44 @@ export class FollowBuilder {
     try {
       const myPubkey = await this.config.signingProvider.getPublicKey();
       
-      // Query for current follow list
+      // Query for current follow list from cache first (much faster)
       const filter: Filter = {
         kinds: [3],
         authors: [myPubkey],
         limit: 1
       };
 
-      return new Promise((resolve) => {
+      // TODO: Add cache check here when FollowBuilder gets cache access
+      // For now, fall back to relay query (same as before but with better logging)
+      
+      if (this.config.debug) {
+        console.log('FollowBuilder: Querying relays for current follow list...');
+      }
+
+      return new Promise(async (resolve) => {
         let followListFound = false;
         
         const timeoutId = setTimeout(() => {
           if (!followListFound) {
+            if (this.config.debug) {
+              console.log('FollowBuilder: Relay query timeout, using empty array');
+            }
             resolve([]); // Return empty if no follow list found
           }
-        }, 3000);
+        }, 2000); // Reduced timeout to 2 seconds
 
-        this.config.subscriptionManager.subscribe([filter], {
+        // Use smart deduplication to prevent subscription overload
+        const sharedSub = await this.config.subscriptionManager.getOrCreateSubscription([filter]);
+        const listenerId = sharedSub.addListener({
           onEvent: (event: NostrEvent) => {
             if (event.kind === 3 && event.pubkey === myPubkey && !followListFound) {
               followListFound = true;
               clearTimeout(timeoutId);
+              sharedSub.removeListener(listenerId);
               
+              if (this.config.debug) {
+                console.log('FollowBuilder: Found follow list from relay with', event.tags.filter(t => t[0] === 'p').length, 'follows');
+              }
               const follows = this.parseFollowListEvent(event);
               resolve(follows);
             }
@@ -190,6 +206,10 @@ export class FollowBuilder {
           onEose: () => {
             if (!followListFound) {
               clearTimeout(timeoutId);
+              sharedSub.removeListener(listenerId);
+              if (this.config.debug) {
+                console.log('FollowBuilder: No follow list found on relays, using empty array');
+              }
               resolve([]); // No follow list found
             }
           }

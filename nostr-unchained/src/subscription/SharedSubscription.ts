@@ -208,6 +208,13 @@ export class SharedSubscription {
   }
 
   /**
+   * Check if this subscription is active
+   */
+  isActive(): boolean {
+    return this.subscriptionResult?.success === true && this.hasListeners();
+  }
+
+  /**
    * Get the subscription ID if available
    */
   getSubscriptionId(): string | undefined {
