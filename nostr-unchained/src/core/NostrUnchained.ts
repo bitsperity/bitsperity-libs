@@ -168,7 +168,7 @@ export class NostrUnchained {
         eventBuilder: new EventBuilder(),
         cache: this.cache,
         debug: this.config.debug,
-        // NEW: Pass NostrUnchained instance for clean architecture
+        // REQUIRED: Pass NostrUnchained instance for clean architecture
         nostr: this
       });
     }

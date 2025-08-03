@@ -43,47 +43,23 @@ let viewMode = $state<'display' | 'edit' | 'create'>('display');
 // PERFECT DX: Direct reactive store access - no manual subscribe needed!
 let profileStore = $derived(profilePubkey && nostr ? nostr.profile.get(profilePubkey) : null);
 
-// GENIUS: Svelte's $ syntax for reactive store values - CLEAN!
-let profileData = $derived(profileStore ? $profileStore : null);
+// PERFECT DX: Direct reactive store access - Pure UniversalNostrStore
+let profile = $derived(profileStore ? $profileStore : null);
 
-// PERFECT DX: Clean data extraction with format detection
-let profile = $derived(
-	profileData && typeof profileData === 'object' && 'profile' in profileData
-		? profileData.profile // OLD: ProfileStore format
-		: profileData // NEW: UniversalNostrStore format (direct UserProfile | null)
-);
+// CLEAN ARCHITECTURE: No loading state needed (cache-first is instant)
+let isLoading = $derived(false);
 
-let isLoading = $derived(
-	profileData && typeof profileData === 'object' && 'loading' in profileData
-		? profileData.loading // OLD: ProfileStore has loading state
-		: false // NEW: UniversalNostrStore is always loaded (cache-first)
-);
+// CLEAN ARCHITECTURE: No error state needed (base layer handles errors gracefully)
+let error = $derived<string | null>(null);
 
-let error = $derived(
-	profileData && typeof profileData === 'object' && 'error' in profileData && profileData.error
-		? profileData.error.message
-		: null
-);
-
-let verified = $derived(
-	profileData && typeof profileData === 'object' && 'verified' in profileData
-		? profileData.verified
-		: false // TODO: Implement NIP-05 verification in clean architecture
-);
+// TODO: Implement NIP-05 verification in clean architecture
+let verified = $derived(false);
 
 let hasProfileData = $derived(profile && (profile.metadata?.name || profile.metadata?.about || profile.metadata?.picture));
 
-// Auto-switch to create mode for own empty profiles (ONLY for old ProfileStore behavior)
-$effect(() => {
-	// IMPORTANT: Only auto-switch if we're using old ProfileStore format (has loading state)
-	// New clean architecture (UniversalNostrStore) starts with null but loads immediately from cache
-	const isUsingOldProfileStore = profileData && typeof profileData === 'object' && 'loading' in profileData;
-	
-	if (isUsingOldProfileStore && !isLoading && isOwnProfile && !profile && viewMode === 'display') {
-		console.log('Auto-switching to create mode (old ProfileStore behavior)');
-		viewMode = 'create';
-	}
-});
+// CLEAN ARCHITECTURE: No auto-create logic needed
+// Cache-first approach shows profiles immediately when available
+// Users can manually click "Create Profile" if needed
 
 // =============================================================================
 // Event Handlers

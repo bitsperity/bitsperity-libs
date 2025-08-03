@@ -1,18 +1,15 @@
 /**
- * ProfileModule - Enhanced Profile Management API
+ * ProfileModule - Clean Profile Management API
  * 
- * Provides the fluent, builder-pattern API for profile operations
- * as specified in the Profile DX proposal.
- * 
- * This module wraps the existing ProfileManager with enhanced functionality:
- * - Reactive profile stores with get() method
+ * Pure clean architecture implementation using base layer directly:
+ * - Uses nostr.query() for cache-first profile loading
+ * - Returns UniversalNostrStore for reactive profile data
  * - ProfileBuilder for fluent profile editing
  * - Batch operations for efficiency
  * - Follow list management
  * - Profile discovery
  */
 
-import { ProfileStore } from './ProfileStore.js';
 import { ProfileBuilder } from './ProfileBuilder.js';
 import { ProfileBatchBuilder } from './ProfileBatchBuilder.js';
 import { ProfileDiscoveryBuilder } from './ProfileDiscoveryBuilder.js';
@@ -22,28 +19,24 @@ import type { NostrUnchained } from '../core/NostrUnchained.js';
 import type { UserProfile } from './types.js';
 import type { NostrEvent } from '../core/types.js';
 import type { UniversalNostrStore } from '../store/UniversalNostrStore.js';
-// Legacy imports
+// Required for builders
 import type { RelayManager } from '../relay/RelayManager.js';
 import type { SubscriptionManager } from '../subscription/SubscriptionManager.js';
 import type { SigningProvider } from '../crypto/SigningProvider.js';
 import type { EventBuilder } from '../core/EventBuilder.js';
-// Phase 8: Cache optimization
-import type { UniversalEventCache } from '../cache/UniversalEventCache.js';
 
 export interface ProfileModuleConfig {
   relayManager: RelayManager;
   subscriptionManager: SubscriptionManager;
   signingProvider?: SigningProvider;
   eventBuilder: EventBuilder;
-  cache?: UniversalEventCache; // Phase 8: Optional cache for optimization
   debug?: boolean;
-  // New: NostrUnchained instance for clean base layer access
-  nostr?: NostrUnchained;
+  // REQUIRED: NostrUnchained instance for clean base layer access
+  nostr: NostrUnchained;
 }
 
 export class ProfileModule {
   private config: ProfileModuleConfig;
-  private profileStores = new Map<string, ProfileStore>();
   private _follows?: FollowsModule;
 
   constructor(config: ProfileModuleConfig) {
@@ -52,29 +45,11 @@ export class ProfileModule {
 
   /**
    * Get a reactive profile store for any pubkey
-   * This is the main entry point for profile subscriptions
    * 
-   * NEW: Uses clean base layer architecture when NostrUnchained instance is available
-   * LEGACY: Falls back to ProfileStore for backward compatibility
+   * CLEAN ARCHITECTURE: Uses base layer directly for perfect DX
+   * Returns UniversalNostrStore with automatic caching and live updates
    */
-  get(pubkey: string): ProfileStore | UniversalNostrStore<UserProfile | null> {
-    // NEW: Use clean base layer architecture if available
-    if (this.config.nostr) {
-      return this.getClean(pubkey);
-    }
-
-    // LEGACY: Backward compatibility with ProfileStore
-    return this.getLegacy(pubkey);
-  }
-
-  /**
-   * NEW: Clean base layer implementation
-   */
-  private getClean(pubkey: string): UniversalNostrStore<UserProfile | null> {
-    if (!this.config.nostr) {
-      throw new Error('NostrUnchained instance required for clean architecture');
-    }
-
+  get(pubkey: string): UniversalNostrStore<UserProfile | null> {
     // Start subscription for live updates
     this.startProfileSubscription(pubkey);
     
@@ -88,39 +63,9 @@ export class ProfileModule {
   }
 
   /**
-   * LEGACY: Original ProfileStore implementation
-   */
-  private getLegacy(pubkey: string): ProfileStore {
-    // Return existing store if available
-    if (this.profileStores.has(pubkey)) {
-      return this.profileStores.get(pubkey)!;
-    }
-
-    // Create new profile store (Phase 8: with cache support)
-    const store = new ProfileStore({
-      pubkey,
-      subscriptionManager: this.config.subscriptionManager,
-      cache: this.config.cache, // Phase 8: Pass cache to ProfileStore
-      debug: this.config.debug
-    });
-
-    // CRITICAL FIX: Start loading profile data immediately
-    store.refresh().catch(err => {
-      if (this.config.debug) {
-        console.error('Failed to start profile loading:', err);
-      }
-    });
-
-    this.profileStores.set(pubkey, store);
-    return store;
-  }
-
-  /**
-   * Start subscription for profile updates (Clean architecture)
+   * Start subscription for profile updates
    */
   private async startProfileSubscription(pubkey: string): Promise<void> {
-    if (!this.config.nostr) return;
-    
     try {
       await this.config.nostr.sub()
         .kinds([0])
@@ -135,7 +80,7 @@ export class ProfileModule {
   }
 
   /**
-   * Parse NostrEvent[] to UserProfile | null (Clean architecture)
+   * Parse NostrEvent[] to UserProfile | null
    */
   private parseProfileEvents(events: NostrEvent[], pubkey: string): UserProfile | null {
     if (events.length === 0) {
@@ -235,12 +180,6 @@ export class ProfileModule {
    * Clean up resources
    */
   async close(): Promise<void> {
-    // Close all profile stores
-    for (const store of this.profileStores.values()) {
-      await store.close();
-    }
-    this.profileStores.clear();
-
     // Close follows module if initialized
     if (this._follows) {
       await this._follows.close();

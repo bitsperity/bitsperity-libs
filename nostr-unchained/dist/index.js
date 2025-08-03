@@ -1,11 +1,11 @@
-var Ut = Object.defineProperty;
-var $t = (n, e, t) => e in n ? Ut(n, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : n[e] = t;
-var u = (n, e, t) => $t(n, typeof e != "symbol" ? e + "" : e, t);
+var Ot = Object.defineProperty;
+var Ut = (n, e, t) => e in n ? Ot(n, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : n[e] = t;
+var u = (n, e, t) => Ut(n, typeof e != "symbol" ? e + "" : e, t);
 import * as ne from "@noble/secp256k1";
-import { getSharedSecret as Bt } from "@noble/secp256k1";
+import { getSharedSecret as $t } from "@noble/secp256k1";
 const ue = typeof globalThis == "object" && "crypto" in globalThis ? globalThis.crypto : void 0;
 /*! noble-hashes - MIT License (c) 2022 Paul Miller (paulmillr.com) */
-function Kt(n) {
+function Bt(n) {
   return n instanceof Uint8Array || ArrayBuffer.isView(n) && n.constructor.name === "Uint8Array";
 }
 function Ke(n) {
@@ -13,7 +13,7 @@ function Ke(n) {
     throw new Error("positive integer expected, got " + n);
 }
 function de(n, ...e) {
-  if (!Kt(n))
+  if (!Bt(n))
     throw new Error("Uint8Array expected");
   if (e.length > 0 && !e.includes(n.length))
     throw new Error("Uint8Array expected of length " + e + ", got length=" + n.length);
@@ -29,7 +29,7 @@ function Te(n, e = !0) {
   if (e && n.finished)
     throw new Error("Hash#digest() has already been called");
 }
-function Vt(n, e) {
+function Kt(n, e) {
   de(n);
   const t = e.outputLen;
   if (n.length < t)
@@ -45,13 +45,13 @@ function xe(n) {
 function Z(n, e) {
   return n << 32 - e | n >>> e;
 }
-const dt = /* @ts-ignore */ typeof Uint8Array.from([]).toHex == "function" && typeof Uint8Array.fromHex == "function", Wt = /* @__PURE__ */ Array.from({ length: 256 }, (n, e) => e.toString(16).padStart(2, "0"));
+const dt = /* @ts-ignore */ typeof Uint8Array.from([]).toHex == "function" && typeof Uint8Array.fromHex == "function", Vt = /* @__PURE__ */ Array.from({ length: 256 }, (n, e) => e.toString(16).padStart(2, "0"));
 function Q(n) {
   if (de(n), dt)
     return n.toHex();
   let e = "";
   for (let t = 0; t < n.length; t++)
-    e += Wt[n[t]];
+    e += Vt[n[t]];
   return e;
 }
 const J = { _0: 48, _9: 57, A: 65, F: 70, a: 97, f: 102 };
@@ -82,15 +82,15 @@ function ae(n) {
   }
   return s;
 }
-function zt(n) {
+function Wt(n) {
   if (typeof n != "string")
     throw new Error("string expected");
   return new Uint8Array(new TextEncoder().encode(n));
 }
 function be(n) {
-  return typeof n == "string" && (n = zt(n)), de(n), n;
+  return typeof n == "string" && (n = Wt(n)), de(n), n;
 }
-function Ht(...n) {
+function zt(...n) {
   let e = 0;
   for (let s = 0; s < n.length; s++) {
     const i = n[s];
@@ -105,7 +105,7 @@ function Ht(...n) {
 }
 class gt {
 }
-function Gt(n) {
+function Ht(n) {
   const e = (s) => n().update(be(s)).digest(), t = n();
   return e.outputLen = t.outputLen, e.blockLen = t.blockLen, e.create = () => n(), e;
 }
@@ -116,19 +116,19 @@ function he(n = 32) {
     return Uint8Array.from(ue.randomBytes(n));
   throw new Error("crypto.getRandomValues must be defined");
 }
-function jt(n, e, t, s) {
+function Gt(n, e, t, s) {
   if (typeof n.setBigUint64 == "function")
     return n.setBigUint64(e, t, s);
   const i = BigInt(32), r = BigInt(4294967295), o = Number(t >> i & r), a = Number(t & r), c = s ? 4 : 0, l = s ? 0 : 4;
   n.setUint32(e + c, o, s), n.setUint32(e + l, a, s);
 }
-function Yt(n, e, t) {
+function jt(n, e, t) {
   return n & e ^ ~n & t;
 }
-function Qt(n, e, t) {
+function Yt(n, e, t) {
   return n & e ^ n & t ^ e & t;
 }
-class Xt extends gt {
+class Qt extends gt {
   constructor(e, t, s, i) {
     super(), this.finished = !1, this.length = 0, this.pos = 0, this.destroyed = !1, this.blockLen = e, this.outputLen = t, this.padOffset = s, this.isLE = i, this.buffer = new Uint8Array(e), this.view = xe(this.buffer);
   }
@@ -148,13 +148,13 @@ class Xt extends gt {
     return this.length += e.length, this.roundClean(), this;
   }
   digestInto(e) {
-    Te(this), Vt(e, this), this.finished = !0;
+    Te(this), Kt(e, this), this.finished = !0;
     const { buffer: t, view: s, blockLen: i, isLE: r } = this;
     let { pos: o } = this;
     t[o++] = 128, ye(this.buffer.subarray(o)), this.padOffset > i - o && (this.process(s, 0), o = 0);
     for (let d = o; d < i; d++)
       t[d] = 0;
-    jt(s, i - 8, BigInt(this.length * 8), r), this.process(s, 0);
+    Gt(s, i - 8, BigInt(this.length * 8), r), this.process(s, 0);
     const a = xe(e), c = this.outputLen;
     if (c % 4)
       throw new Error("_sha2: outputLen should be aligned to 32bit");
@@ -188,7 +188,7 @@ const ee = /* @__PURE__ */ Uint32Array.from([
   2600822924,
   528734635,
   1541459225
-]), Zt = /* @__PURE__ */ Uint32Array.from([
+]), Xt = /* @__PURE__ */ Uint32Array.from([
   1116352408,
   1899447441,
   3049323471,
@@ -254,7 +254,7 @@ const ee = /* @__PURE__ */ Uint32Array.from([
   3204031479,
   3329325298
 ]), te = /* @__PURE__ */ new Uint32Array(64);
-class Jt extends Xt {
+class Zt extends Qt {
   constructor(e = 32) {
     super(64, e, 8, !1), this.A = ee[0] | 0, this.B = ee[1] | 0, this.C = ee[2] | 0, this.D = ee[3] | 0, this.E = ee[4] | 0, this.F = ee[5] | 0, this.G = ee[6] | 0, this.H = ee[7] | 0;
   }
@@ -275,7 +275,7 @@ class Jt extends Xt {
     }
     let { A: s, B: i, C: r, D: o, E: a, F: c, G: l, H: h } = this;
     for (let d = 0; d < 64; d++) {
-      const g = Z(a, 6) ^ Z(a, 11) ^ Z(a, 25), p = h + g + Yt(a, c, l) + Zt[d] + te[d] | 0, y = (Z(s, 2) ^ Z(s, 13) ^ Z(s, 22)) + Qt(s, i, r) | 0;
+      const g = Z(a, 6) ^ Z(a, 11) ^ Z(a, 25), p = h + g + jt(a, c, l) + Xt[d] + te[d] | 0, y = (Z(s, 2) ^ Z(s, 13) ^ Z(s, 22)) + Yt(s, i, r) | 0;
       h = l, l = c, c = a, a = o + p | 0, o = r, r = i, i = s, s = p + y | 0;
     }
     s = s + this.A | 0, i = i + this.B | 0, r = r + this.C | 0, o = o + this.D | 0, a = a + this.E | 0, c = c + this.F | 0, l = l + this.G | 0, h = h + this.H | 0, this.set(s, i, r, o, a, c, l, h);
@@ -287,7 +287,7 @@ class Jt extends Xt {
     this.set(0, 0, 0, 0, 0, 0, 0, 0), ye(this.buffer);
   }
 }
-const qt = /* @__PURE__ */ Gt(() => new Jt()), oe = qt, es = [
+const Jt = /* @__PURE__ */ Ht(() => new Zt()), oe = Jt, qt = [
   "ws://umbrel.local:4848",
   // Local testing relay (highest priority)
   "wss://relay.damus.io"
@@ -431,7 +431,7 @@ class I {
     return r;
   }
 }
-async function ts() {
+async function es() {
   if (typeof WebSocket < "u")
     return WebSocket;
   try {
@@ -440,7 +440,7 @@ async function ts() {
     throw new Error("WebSocket not available. In Node.js, install: npm install ws");
   }
 }
-class ss {
+class ts {
   constructor(e, t = {}) {
     u(this, "connections", /* @__PURE__ */ new Map());
     u(this, "debug");
@@ -484,7 +484,7 @@ class ss {
       throw new Error(`Relay ${e} not configured`);
     return t.state === "connected" ? !0 : (t.state = "connecting", new Promise(async (s, i) => {
       try {
-        const r = await ts(), o = new r(e), a = setTimeout(() => {
+        const r = await es(), o = new r(e), a = setTimeout(() => {
           o.close(), t.state = "error", t.error = "Connection timeout", i(new Error(`Connection to ${e} timed out`));
         }, se.CONNECTION_TIMEOUT);
         o.onopen = () => {
@@ -734,7 +734,7 @@ class ei extends Ye {
 }
 class ti extends Ye {
 }
-class is {
+class ss {
   static async createBestAvailable() {
     if (await st.isAvailable())
       try {
@@ -1041,7 +1041,7 @@ class Oe {
     return this.eventData = { tags: [] }, this.signed = !1, this.signedEvent = void 0, this;
   }
 }
-class rs {
+class is {
   constructor(e) {
     u(this, "nostrInstance");
     this.nostrInstance = e;
@@ -1399,7 +1399,7 @@ class Qe {
     }), this._count.update((t) => t + 1));
   }
 }
-class ns {
+class rs {
   constructor(e) {
     u(this, "filter", {});
     u(this, "options", {});
@@ -1444,7 +1444,7 @@ function si(n) {
 function ii() {
   if (!ce)
     throw new Error("Default SubscriptionManager not set. Call setDefaultSubscriptionManager first.");
-  return new ns(ce);
+  return new rs(ce);
 }
 function ri(n) {
   if (!ce)
@@ -1497,11 +1497,11 @@ class pt extends gt {
 }
 const me = (n, e, t) => new pt(n, e).update(t).digest();
 me.create = (n, e) => new pt(n, e);
-function os(n, e, t) {
+function ns(n, e, t) {
   return je(n), t === void 0 && (t = new Uint8Array(n.outputLen)), me(n, be(t), be(e));
 }
 const Ue = /* @__PURE__ */ Uint8Array.from([0]), it = /* @__PURE__ */ Uint8Array.of();
-function as(n, e, t, s = 32) {
+function os(n, e, t, s = 32) {
   je(n), Ke(s);
   const i = n.outputLen;
   if (s > 255 * i)
@@ -1513,9 +1513,9 @@ function as(n, e, t, s = 32) {
     Ue[0] = h + 1, c.update(h === 0 ? it : l).update(t).update(Ue).digestInto(l), o.set(l, i * h), a._cloneInto(c);
   return a.destroy(), c.destroy(), ye(l, Ue), o.slice(0, s);
 }
-const rt = (n, e, t, s, i) => as(n, os(n, e, t), s, i);
+const rt = (n, e, t, s, i) => os(n, ns(n, e, t), s, i);
 /*! noble-ciphers - MIT License (c) 2023 Paul Miller (paulmillr.com) */
-function cs(n) {
+function as(n) {
   return n instanceof Uint8Array || ArrayBuffer.isView(n) && n.constructor.name === "Uint8Array";
 }
 function nt(n) {
@@ -1527,7 +1527,7 @@ function $e(n) {
     throw new Error("positive integer expected, got " + n);
 }
 function Ee(n, ...e) {
-  if (!cs(n))
+  if (!as(n))
     throw new Error("Uint8Array expected");
   if (e.length > 0 && !e.includes(n.length))
     throw new Error("Uint8Array expected of length " + e + ", got length=" + n.length);
@@ -1535,11 +1535,11 @@ function Ee(n, ...e) {
 function ie(n) {
   return new Uint32Array(n.buffer, n.byteOffset, Math.floor(n.byteLength / 4));
 }
-function ls(...n) {
+function cs(...n) {
   for (let e = 0; e < n.length; e++)
     n[e].fill(0);
 }
-function us(n, e) {
+function ls(n, e) {
   if (e == null || typeof e != "object")
     throw new Error("options must be defined");
   return Object.assign(n, e);
@@ -1547,15 +1547,15 @@ function us(n, e) {
 function ot(n) {
   return Uint8Array.from(n);
 }
-const yt = (n) => Uint8Array.from(n.split("").map((e) => e.charCodeAt(0))), hs = yt("expand 16-byte k"), ds = yt("expand 32-byte k"), gs = ie(hs), fs = ie(ds);
+const yt = (n) => Uint8Array.from(n.split("").map((e) => e.charCodeAt(0))), us = yt("expand 16-byte k"), hs = yt("expand 32-byte k"), ds = ie(us), gs = ie(hs);
 function E(n, e) {
   return n << e | n >>> 32 - e;
 }
 function Ve(n) {
   return n.byteOffset % 4 === 0;
 }
-const Me = 64, ps = 16, bt = 2 ** 32 - 1, at = new Uint32Array();
-function ys(n, e, t, s, i, r, o, a) {
+const Me = 64, fs = 16, bt = 2 ** 32 - 1, at = new Uint32Array();
+function ps(n, e, t, s, i, r, o, a) {
   const c = i.length, l = new Uint8Array(Me), h = ie(l), d = Ve(i) && Ve(r), g = d ? ie(i) : at, p = d ? ie(r) : at;
   for (let f = 0; f < c; o++) {
     if (n(e, t, s, h, o, a), o >= bt)
@@ -1565,7 +1565,7 @@ function ys(n, e, t, s, i, r, o, a) {
       const S = f / 4;
       if (f % 4 !== 0)
         throw new Error("arx: invalid block position");
-      for (let v = 0, M; v < ps; v++)
+      for (let v = 0, M; v < fs; v++)
         M = S + v, p[M] = g[M] ^ h[v];
       f += Me;
       continue;
@@ -1575,8 +1575,8 @@ function ys(n, e, t, s, i, r, o, a) {
     f += y;
   }
 }
-function bs(n, e) {
-  const { allowShortKeys: t, extendNonceFn: s, counterLength: i, counterRight: r, rounds: o } = us({ allowShortKeys: !1, counterLength: 8, counterRight: !1, rounds: 20 }, e);
+function ys(n, e) {
+  const { allowShortKeys: t, extendNonceFn: s, counterLength: i, counterRight: r, rounds: o } = ls({ allowShortKeys: !1, counterLength: 8, counterRight: !1, rounds: 20 }, e);
   if (typeof n != "function")
     throw new Error("core must be a function");
   return $e(i), $e(o), nt(r), nt(t), (a, c, l, h, d = 0) => {
@@ -1589,9 +1589,9 @@ function bs(n, e) {
     const p = [];
     let f = a.length, y, S;
     if (f === 32)
-      p.push(y = ot(a)), S = fs;
+      p.push(y = ot(a)), S = gs;
     else if (f === 16 && t)
-      y = new Uint8Array(32), y.set(a), y.set(a, 16), S = gs, p.push(y);
+      y = new Uint8Array(32), y.set(a), y.set(a, 16), S = ds, p.push(y);
     else
       throw new Error(`arx: invalid 32-byte key, got length=${f}`);
     Ve(c) || p.push(c = ot(c));
@@ -1609,21 +1609,21 @@ function bs(n, e) {
       q.set(c, r ? 0 : 12 - c.length), c = q, p.push(c);
     }
     const _ = ie(c);
-    return ys(n, S, v, _, l, h, d, o), ls(...p), h;
+    return ps(n, S, v, _, l, h, d, o), cs(...p), h;
   };
 }
-function ws(n, e, t, s, i, r = 20) {
+function bs(n, e, t, s, i, r = 20) {
   let o = n[0], a = n[1], c = n[2], l = n[3], h = e[0], d = e[1], g = e[2], p = e[3], f = e[4], y = e[5], S = e[6], v = e[7], M = i, _ = t[0], q = t[1], le = t[2], A = o, D = a, F = c, x = l, O = h, U = d, $ = g, B = p, K = f, V = y, W = S, z = v, H = M, G = _, j = q, Y = le;
   for (let qe = 0; qe < r; qe += 2)
     A = A + O | 0, H = E(H ^ A, 16), K = K + H | 0, O = E(O ^ K, 12), A = A + O | 0, H = E(H ^ A, 8), K = K + H | 0, O = E(O ^ K, 7), D = D + U | 0, G = E(G ^ D, 16), V = V + G | 0, U = E(U ^ V, 12), D = D + U | 0, G = E(G ^ D, 8), V = V + G | 0, U = E(U ^ V, 7), F = F + $ | 0, j = E(j ^ F, 16), W = W + j | 0, $ = E($ ^ W, 12), F = F + $ | 0, j = E(j ^ F, 8), W = W + j | 0, $ = E($ ^ W, 7), x = x + B | 0, Y = E(Y ^ x, 16), z = z + Y | 0, B = E(B ^ z, 12), x = x + B | 0, Y = E(Y ^ x, 8), z = z + Y | 0, B = E(B ^ z, 7), A = A + U | 0, Y = E(Y ^ A, 16), W = W + Y | 0, U = E(U ^ W, 12), A = A + U | 0, Y = E(Y ^ A, 8), W = W + Y | 0, U = E(U ^ W, 7), D = D + $ | 0, H = E(H ^ D, 16), z = z + H | 0, $ = E($ ^ z, 12), D = D + $ | 0, H = E(H ^ D, 8), z = z + H | 0, $ = E($ ^ z, 7), F = F + B | 0, G = E(G ^ F, 16), K = K + G | 0, B = E(B ^ K, 12), F = F + B | 0, G = E(G ^ F, 8), K = K + G | 0, B = E(B ^ K, 7), x = x + O | 0, j = E(j ^ x, 16), V = V + j | 0, O = E(O ^ V, 12), x = x + O | 0, j = E(j ^ x, 8), V = V + j | 0, O = E(O ^ V, 7);
   let T = 0;
   s[T++] = o + A | 0, s[T++] = a + D | 0, s[T++] = c + F | 0, s[T++] = l + x | 0, s[T++] = h + O | 0, s[T++] = d + U | 0, s[T++] = g + $ | 0, s[T++] = p + B | 0, s[T++] = f + K | 0, s[T++] = y + V | 0, s[T++] = S + W | 0, s[T++] = v + z | 0, s[T++] = M + H | 0, s[T++] = _ + G | 0, s[T++] = q + j | 0, s[T++] = le + Y | 0;
 }
-const ct = /* @__PURE__ */ bs(ws, {
+const ct = /* @__PURE__ */ ys(bs, {
   counterRight: !1,
   counterLength: 4,
   allowShortKeys: !1
-}), ms = {
+}), ws = {
   saltInfo: "nip44-v2"
 };
 class C extends Error {
@@ -1652,7 +1652,7 @@ class k {
           "Invalid public key format",
           N.INVALID_KEY
         );
-      const o = Bt(s, i, !0).slice(1);
+      const o = $t(s, i, !0).slice(1);
       return rt(oe, o, this.SALT, new Uint8Array(0), 32);
     } catch (s) {
       throw s instanceof C ? s : new C(
@@ -1845,8 +1845,8 @@ class k {
     }
   }
 }
-u(k, "VERSION", 2), u(k, "SALT", new TextEncoder().encode(ms.saltInfo)), u(k, "NONCE_SIZE", 32), u(k, "CHACHA_KEY_SIZE", 32), u(k, "CHACHA_NONCE_SIZE", 12), u(k, "HMAC_KEY_SIZE", 32), u(k, "MAC_SIZE", 32), u(k, "VERSION_SIZE", 1);
-const vs = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+u(k, "VERSION", 2), u(k, "SALT", new TextEncoder().encode(ws.saltInfo)), u(k, "NONCE_SIZE", 32), u(k, "CHACHA_KEY_SIZE", 32), u(k, "CHACHA_NONCE_SIZE", 12), u(k, "HMAC_KEY_SIZE", 32), u(k, "MAC_SIZE", 32), u(k, "VERSION_SIZE", 1);
+const ms = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   NIP44Crypto: k
 }, Symbol.toStringTag, { value: "Module" }));
@@ -2049,7 +2049,7 @@ class pe {
     }
   }
 }
-const Es = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const vs = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   SealCreator: pe
 }, Symbol.toStringTag, { value: "Module" }));
@@ -2652,7 +2652,7 @@ class re {
           "Invalid recipient private key format",
           m.INVALID_PRIVATE_KEY
         );
-      const { SealCreator: s } = await Promise.resolve().then(() => Es), { NIP44Crypto: i } = await Promise.resolve().then(() => vs), r = await i.decrypt(
+      const { SealCreator: s } = await Promise.resolve().then(() => vs), { NIP44Crypto: i } = await Promise.resolve().then(() => ms), r = await i.decrypt(
         e.content,
         t,
         e.pubkey
@@ -2676,7 +2676,7 @@ class re {
     }
   }
 }
-const Ms = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const Es = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   GiftWrapProtocol: re
 }, Symbol.toStringTag, { value: "Module" }));
@@ -3395,7 +3395,7 @@ class vt {
   async handleGlobalInboxEvent(e) {
     this.config.debug && console.log("🎁 Processing gift wrap event:", e.id);
     try {
-      const { GiftWrapProtocol: t } = await Promise.resolve().then(() => Ms), s = await this.getPrivateKeySecurely(), i = await t.unwrapGiftWrap(e, s);
+      const { GiftWrapProtocol: t } = await Promise.resolve().then(() => Es), s = await this.getPrivateKeySecurely(), i = await t.unwrapGiftWrap(e, s);
       if (i) {
         const r = i.pubkey;
         if (this.config.debug && console.log("✅ Decrypted event (kind " + i.kind + ") from:", r.substring(0, 8) + "..."), i.kind === 4 || i.kind === 14) {
@@ -3461,7 +3461,7 @@ class vt {
     return this.config.debug && console.log("🎯 Delegating to Universal DM Module (cache-based) for:", e.substring(0, 16) + "..."), t.with(e);
   }
 }
-class Ss {
+class Ms {
   constructor(e, t, s) {
     u(this, "store");
     u(this, "myPubkey");
@@ -3526,7 +3526,7 @@ class Ss {
     return t == null ? void 0 : t[1];
   }
 }
-class Ps {
+class Ss {
   constructor(e, t) {
     this.nostr = e, this.myPubkey = t;
   }
@@ -3534,20 +3534,20 @@ class Ps {
   with(e) {
     return this.nostr.startUniversalGiftWrapSubscription().catch((t) => {
       console.warn("⚠️ Failed to start gift wrap subscription for DMs:", t);
-    }), new Ss(this.nostr, this.myPubkey, e);
+    }), new Ms(this.nostr, this.myPubkey, e);
   }
   // Room functionality - also just queries (with lazy gift wrap subscription)
   room(e, t) {
     return this.nostr.startUniversalGiftWrapSubscription().catch((s) => {
       console.warn("⚠️ Failed to start gift wrap subscription for DM room:", s);
-    }), new Is(this.nostr, this.myPubkey, e, t);
+    }), new Ps(this.nostr, this.myPubkey, e, t);
   }
   // Get all conversations - query all kind 14 events I'm involved in
   get conversations() {
     return [];
   }
 }
-class Is {
+class Ps {
   // TODO: Implement room store
   constructor(e, t, s, i) {
     u(this, "store");
@@ -3577,7 +3577,7 @@ class Is {
     return { success: !0 };
   }
 }
-class ks {
+class Is {
   constructor(e) {
     u(this, "config");
     u(this, "contactCache", /* @__PURE__ */ new Map());
@@ -3803,7 +3803,7 @@ class ks {
     this.contactCache.set(e.ownerPubkey, t);
   }
 }
-class _s {
+class ks {
   constructor(e) {
     u(this, "config");
     u(this, "threadCache", /* @__PURE__ */ new Map());
@@ -4201,7 +4201,7 @@ class _s {
     this.threadCache.set(e.rootEventId, t);
   }
 }
-class As {
+class _s {
   constructor(e) {
     u(this, "config");
     u(this, "reactionCache", /* @__PURE__ */ new Map());
@@ -4457,7 +4457,7 @@ class As {
     this.reactionCache.set(e, t);
   }
 }
-class Ts {
+class As {
   constructor(e) {
     u(this, "config");
     u(this, "feedCache", /* @__PURE__ */ new Map());
@@ -4599,7 +4599,7 @@ class Ts {
     e === "global" ? this._globalFeed.set(t) : e === "following" && this._followingFeed.set(t), this.feedCache.set(e, t);
   }
 }
-class Cs {
+class Ts {
   constructor(e) {
     u(this, "config");
     u(this, "_contactManager");
@@ -4641,7 +4641,7 @@ class Cs {
   }
   // Lazy initialization methods for better performance
   getContactManager() {
-    return this._contactManager || (this._contactManager = new ks({
+    return this._contactManager || (this._contactManager = new Is({
       subscriptionManager: this.config.subscriptionManager,
       relayManager: this.config.relayManager,
       signingProvider: this.config.signingProvider,
@@ -4651,7 +4651,7 @@ class Cs {
     })), this._contactManager;
   }
   getThreadManager() {
-    return this._threadManager || (this._threadManager = new _s({
+    return this._threadManager || (this._threadManager = new ks({
       subscriptionManager: this.config.subscriptionManager,
       relayManager: this.config.relayManager,
       signingProvider: this.config.signingProvider,
@@ -4661,7 +4661,7 @@ class Cs {
     })), this._threadManager;
   }
   getReactionManager() {
-    return this._reactionManager || (this._reactionManager = new As({
+    return this._reactionManager || (this._reactionManager = new _s({
       subscriptionManager: this.config.subscriptionManager,
       relayManager: this.config.relayManager,
       signingProvider: this.config.signingProvider,
@@ -4670,7 +4670,7 @@ class Cs {
     })), this._reactionManager;
   }
   getFeedManager() {
-    return this._feedManager || (this._feedManager = new Ts({
+    return this._feedManager || (this._feedManager = new As({
       subscriptionManager: this.config.subscriptionManager,
       relayManager: this.config.relayManager,
       signingProvider: this.config.signingProvider,
@@ -4681,7 +4681,7 @@ class Cs {
     })), this._feedManager;
   }
 }
-class Rs {
+class Cs {
   constructor(e, t, s, i = {}) {
     u(this, "listeners", /* @__PURE__ */ new Map());
     u(this, "subscriptionResult");
@@ -4804,7 +4804,7 @@ class Rs {
     return `listener_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 }
-class Ns {
+class Rs {
   constructor(e) {
     u(this, "subscriptions", /* @__PURE__ */ new Map());
     u(this, "eventCallbacks", /* @__PURE__ */ new Map());
@@ -4826,7 +4826,7 @@ class Ns {
       }
       return a;
     }
-    const r = new Rs(i, e, s, { debug: this.debug }), o = await this.subscribe(e, {
+    const r = new Cs(i, e, s, { debug: this.debug }), o = await this.subscribe(e, {
       relays: s,
       onEvent: (a) => r.broadcast(a),
       onEose: (a) => r.notifyEose(a),
@@ -5492,7 +5492,7 @@ class De {
    * Returns a new store with transformed data
    */
   map(e) {
-    return new Ls(this, e);
+    return new Ns(this, e);
   }
   updateData() {
     this._data = this.cache.query(this.filter), this.notifySubscribers();
@@ -5504,7 +5504,7 @@ class De {
     return this.cache.query({ ...t, ids: [e.id] }).length > 0;
   }
 }
-class Ls {
+class Ns {
   constructor(e, t) {
     u(this, "_data");
     u(this, "subscribers", /* @__PURE__ */ new Set());
@@ -5527,14 +5527,14 @@ class Ls {
     this.subscribers.forEach((e) => e(this._data));
   }
 }
-let Ds = class extends Le {
+let Ls = class extends Le {
   constructor(e) {
     super(), this.cache = e;
   }
   execute() {
     return new De(this.cache, this.filter);
   }
-}, Fs = class extends Le {
+}, Ds = class extends Le {
   constructor(t, s) {
     super();
     u(this, "relayUrls", []);
@@ -5572,6 +5572,1642 @@ let Ds = class extends Le {
   }
 };
 class Et {
+  constructor(e) {
+    u(this, "config");
+    u(this, "updates", {});
+    u(this, "shouldPreserveExisting", !0);
+    u(this, "customMetadata", {});
+    this.config = e;
+  }
+  /**
+   * Set display name
+   */
+  name(e) {
+    return this.updates.name = e, this;
+  }
+  /**
+   * Set bio/about text
+   */
+  about(e) {
+    return this.updates.about = e, this;
+  }
+  /**
+   * Set profile picture URL
+   */
+  picture(e) {
+    return this.updates.picture = e, this;
+  }
+  /**
+   * Set banner image URL
+   */
+  banner(e) {
+    return this.updates.banner = e, this;
+  }
+  /**
+   * Set NIP-05 identifier
+   */
+  nip05(e) {
+    return this.updates.nip05 = e, this;
+  }
+  /**
+   * Set Lightning address (lud16)
+   */
+  lud16(e) {
+    return this.updates.lud16 = e, this;
+  }
+  /**
+   * Set website URL
+   */
+  website(e) {
+    return this.updates.website = e, this;
+  }
+  /**
+   * Set GitHub username (NIP-39 external identity)
+   */
+  github(e) {
+    return this.customMetadata.github = e, this;
+  }
+  /**
+   * Set Twitter/X username (NIP-39 external identity)
+   */
+  twitter(e) {
+    return this.customMetadata.twitter = e, this;
+  }
+  /**
+   * Set Telegram username (NIP-39 external identity)
+   */
+  telegram(e) {
+    return this.customMetadata.telegram = e, this;
+  }
+  /**
+   * Add custom metadata field
+   */
+  metadata(e, t) {
+    return this.customMetadata[e] = t, this;
+  }
+  /**
+   * Whether to preserve existing fields (default: true)
+   */
+  preserveExisting(e = !0) {
+    return this.shouldPreserveExisting = e, this;
+  }
+  /**
+   * Sign the profile event (without publishing)
+   */
+  async sign() {
+    const e = await this.prepareProfileData(), t = await this.config.signingProvider.getPublicKey(), s = {
+      kind: 0,
+      content: JSON.stringify(e),
+      tags: [],
+      created_at: Math.floor(Date.now() / 1e3),
+      pubkey: t
+    }, i = I.addEventId(s), r = await this.config.signingProvider.signEvent(s);
+    return {
+      ...i,
+      sig: r
+    };
+  }
+  /**
+   * Publish the profile update
+   */
+  async publish() {
+    try {
+      const e = await this.prepareProfileData();
+      this.config.debug && console.log("ProfileBuilder: Publishing profile:", e);
+      const t = await this.config.signingProvider.getPublicKey(), s = {
+        kind: 0,
+        content: JSON.stringify(e),
+        tags: [],
+        created_at: Math.floor(Date.now() / 1e3),
+        pubkey: t
+      }, i = I.addEventId(s), r = await this.config.signingProvider.signEvent(s), o = {
+        ...i,
+        sig: r
+      }, c = (await Promise.allSettled(
+        this.config.relayManager.relayUrls.map(async (h) => {
+          try {
+            return await this.config.relayManager.sendToRelay(h, ["EVENT", o]), { success: !0, relay: h };
+          } catch (d) {
+            return {
+              success: !1,
+              relay: h,
+              error: d instanceof Error ? d.message : "Unknown error"
+            };
+          }
+        })
+      )).filter(
+        (h) => h.status === "fulfilled" && h.value.success
+      ).map((h) => h.value.relay);
+      return c.length > 0 ? (this.config.debug && console.log(`ProfileBuilder: Published to ${c.length} relays`), {
+        success: !0,
+        eventId: o.id
+      }) : {
+        success: !1,
+        error: "Failed to publish to any relay"
+      };
+    } catch (e) {
+      return {
+        success: !1,
+        error: e instanceof Error ? e.message : "Failed to publish profile"
+      };
+    }
+  }
+  // Private helper methods
+  async prepareProfileData() {
+    let e = {};
+    if (this.shouldPreserveExisting) {
+      const s = await this.getCurrentProfile();
+      s ? (e = { ...s.metadata }, this.config.debug && console.log("ProfileBuilder: Preserving existing profile data:", e)) : this.config.debug && console.log("ProfileBuilder: No existing profile found to preserve");
+    }
+    const t = {
+      ...e,
+      ...this.updates
+    };
+    return Object.keys(this.customMetadata).length > 0 && Object.assign(t, this.customMetadata), t;
+  }
+  async getCurrentProfile() {
+    try {
+      const e = await this.config.signingProvider.getPublicKey(), t = {
+        kinds: [0],
+        authors: [e],
+        limit: 1
+      };
+      return new Promise((s) => {
+        let i = !1;
+        const r = setTimeout(() => {
+          i || s(null);
+        }, 3e3);
+        this.config.subscriptionManager.subscribe([t], {
+          onEvent: (o) => {
+            if (o.kind === 0 && o.pubkey === e && !i) {
+              i = !0, clearTimeout(r);
+              try {
+                const a = JSON.parse(o.content), c = {
+                  pubkey: o.pubkey,
+                  metadata: a,
+                  lastUpdated: o.created_at,
+                  eventId: o.id,
+                  isOwn: !0
+                };
+                s(c);
+              } catch {
+                s(null);
+              }
+            }
+          },
+          onEose: () => {
+            i || (clearTimeout(r), s(null));
+          }
+        });
+      });
+    } catch {
+      return null;
+    }
+  }
+}
+class Mt {
+  constructor(e) {
+    u(this, "config");
+    u(this, "pubkeys", []);
+    this.config = e;
+  }
+  /**
+   * Set the list of pubkeys to fetch profiles for
+   */
+  get(e) {
+    return this.pubkeys = [...e], this;
+  }
+  /**
+   * Execute batch profile fetch
+   */
+  async execute() {
+    if (this.pubkeys.length === 0)
+      return {
+        profiles: /* @__PURE__ */ new Map(),
+        success: !0,
+        errors: /* @__PURE__ */ new Map(),
+        totalRequested: 0,
+        totalFound: 0
+      };
+    this.config.debug && console.log(`ProfileBatchBuilder: Fetching ${this.pubkeys.length} profiles`);
+    try {
+      const e = {
+        kinds: [0],
+        authors: this.pubkeys,
+        limit: this.pubkeys.length
+      }, t = /* @__PURE__ */ new Map(), s = /* @__PURE__ */ new Map();
+      let i = 0;
+      return this.pubkeys.forEach((r) => {
+        t.set(r, null);
+      }), new Promise((r) => {
+        let o = !1;
+        const a = setTimeout(() => {
+          o || (o = !0, r({
+            profiles: t,
+            success: !0,
+            errors: s,
+            totalRequested: this.pubkeys.length,
+            totalFound: i
+          }));
+        }, 5e3);
+        this.config.subscriptionManager.subscribe([e], {
+          onEvent: (c) => {
+            if (c.kind === 0 && this.pubkeys.includes(c.pubkey))
+              try {
+                const l = JSON.parse(c.content), h = {
+                  pubkey: c.pubkey,
+                  metadata: l,
+                  lastUpdated: c.created_at,
+                  eventId: c.id,
+                  isOwn: !1
+                  // Batch operations are typically for other users
+                };
+                t.set(c.pubkey, h), i++, this.config.debug && console.log(`ProfileBatchBuilder: Found profile for ${c.pubkey.substring(0, 16)}...`);
+              } catch (l) {
+                s.set(c.pubkey, "Failed to parse profile data"), this.config.debug && console.error(`ProfileBatchBuilder: Parse error for ${c.pubkey}:`, l);
+              }
+          },
+          onEose: () => {
+            o || (o = !0, clearTimeout(a), this.config.debug && console.log(`ProfileBatchBuilder: Batch complete - found ${i}/${this.pubkeys.length} profiles`), r({
+              profiles: t,
+              success: !0,
+              errors: s,
+              totalRequested: this.pubkeys.length,
+              totalFound: i
+            }));
+          },
+          onError: (c) => {
+            o || (o = !0, clearTimeout(a), this.pubkeys.forEach((l) => {
+              s.set(l, c.message);
+            }), r({
+              profiles: t,
+              success: !1,
+              errors: s,
+              totalRequested: this.pubkeys.length,
+              totalFound: i
+            }));
+          }
+        });
+      });
+    } catch (e) {
+      const t = /* @__PURE__ */ new Map();
+      return this.pubkeys.forEach((s) => {
+        t.set(s, e instanceof Error ? e.message : "Unknown error");
+      }), {
+        profiles: /* @__PURE__ */ new Map(),
+        success: !1,
+        errors: t,
+        totalRequested: this.pubkeys.length,
+        totalFound: 0
+      };
+    }
+  }
+  /**
+   * Create a reactive store for batch profile operations
+   */
+  asStore() {
+    if (this.pubkeys.length === 0)
+      return P({
+        profiles: /* @__PURE__ */ new Map(),
+        loading: !1,
+        loadingStates: /* @__PURE__ */ new Map(),
+        errors: /* @__PURE__ */ new Map(),
+        lastUpdated: /* @__PURE__ */ new Date()
+      });
+    const e = P({
+      profiles: /* @__PURE__ */ new Map(),
+      loading: !0,
+      loadingStates: /* @__PURE__ */ new Map(),
+      errors: /* @__PURE__ */ new Map(),
+      lastUpdated: null
+    }), t = /* @__PURE__ */ new Map();
+    return this.pubkeys.forEach((s) => {
+      t.set(s, !0);
+    }), e.update((s) => ({
+      ...s,
+      loadingStates: t
+    })), this.executeBatchForStore(e), e;
+  }
+  // Private helper methods
+  async executeBatchForStore(e) {
+    this.config.debug && console.log(`ProfileBatchBuilder: Creating reactive store for ${this.pubkeys.length} profiles`);
+    try {
+      const t = {
+        kinds: [0],
+        authors: this.pubkeys,
+        limit: this.pubkeys.length
+      }, s = /* @__PURE__ */ new Map(), i = /* @__PURE__ */ new Map(), r = /* @__PURE__ */ new Map();
+      this.pubkeys.forEach((l) => {
+        s.set(l, null), i.set(l, !0);
+      }), e.set({
+        profiles: s,
+        loading: !0,
+        loadingStates: i,
+        errors: r,
+        lastUpdated: null
+      });
+      let o = !1;
+      const a = setTimeout(() => {
+        o || (o = !0, this.pubkeys.forEach((l) => {
+          i.set(l, !1);
+        }), e.update((l) => ({
+          ...l,
+          loading: !1,
+          loadingStates: i,
+          lastUpdated: /* @__PURE__ */ new Date()
+        })));
+      }, 5e3), c = await this.config.subscriptionManager.subscribe([t], {
+        onEvent: (l) => {
+          if (l.kind === 0 && this.pubkeys.includes(l.pubkey))
+            try {
+              const h = JSON.parse(l.content), d = {
+                pubkey: l.pubkey,
+                metadata: h,
+                lastUpdated: l.created_at,
+                eventId: l.id,
+                isOwn: !1
+              };
+              s.set(l.pubkey, d), i.set(l.pubkey, !1), e.update((g) => ({
+                ...g,
+                profiles: new Map(s),
+                loadingStates: new Map(i)
+              })), this.config.debug && console.log(`ProfileBatchBuilder Store: Updated profile for ${l.pubkey.substring(0, 16)}...`);
+            } catch (h) {
+              r.set(l.pubkey, h instanceof Error ? h : new Error("Parse error")), i.set(l.pubkey, !1), e.update((d) => ({
+                ...d,
+                loadingStates: new Map(i),
+                errors: new Map(r)
+              }));
+            }
+        },
+        onEose: () => {
+          if (!o && (o = !0, clearTimeout(a), this.pubkeys.forEach((l) => {
+            i.set(l, !1);
+          }), e.update((l) => ({
+            ...l,
+            loading: !1,
+            loadingStates: new Map(i),
+            lastUpdated: /* @__PURE__ */ new Date()
+          })), this.config.debug)) {
+            const l = Array.from(s.values()).filter((h) => h !== null).length;
+            console.log(`ProfileBatchBuilder Store: Batch complete - ${l}/${this.pubkeys.length} profiles`);
+          }
+        },
+        onError: (l) => {
+          o || (o = !0, clearTimeout(a), this.pubkeys.forEach((h) => {
+            r.set(h, l), i.set(h, !1);
+          }), e.update((h) => ({
+            ...h,
+            loading: !1,
+            loadingStates: new Map(i),
+            errors: new Map(r),
+            lastUpdated: /* @__PURE__ */ new Date()
+          })));
+        }
+      });
+      setTimeout(async () => {
+        c.success && c.subscription && await this.config.subscriptionManager.close(c.subscription.id);
+      }, 1e4);
+    } catch (t) {
+      const s = /* @__PURE__ */ new Map(), i = /* @__PURE__ */ new Map();
+      this.pubkeys.forEach((r) => {
+        s.set(r, !1), i.set(r, t instanceof Error ? t : new Error("Subscription error"));
+      }), e.update((r) => ({
+        ...r,
+        loading: !1,
+        loadingStates: s,
+        errors: i,
+        lastUpdated: /* @__PURE__ */ new Date()
+      }));
+    }
+  }
+}
+class St {
+  constructor(e) {
+    u(this, "config");
+    u(this, "criteria", {});
+    this.config = e;
+  }
+  /**
+   * Search profiles by NIP-05 identifier
+   */
+  byNip05(e) {
+    return this.criteria.nip05Query = e.toLowerCase(), this;
+  }
+  /**
+   * Search profiles by name (substring match)
+   */
+  byName(e) {
+    return this.criteria.nameQuery = e.toLowerCase(), this;
+  }
+  /**
+   * Filter profiles by metadata key-value pairs
+   */
+  withMetadata(e, t) {
+    return this.criteria.metadataFilters || (this.criteria.metadataFilters = /* @__PURE__ */ new Map()), this.criteria.metadataFilters.set(e, t), this;
+  }
+  /**
+   * Only include NIP-05 verified profiles
+   */
+  verified() {
+    return this.criteria.verifiedOnly = !0, this;
+  }
+  /**
+   * Limit the number of results returned
+   */
+  limit(e) {
+    return this.criteria.limit = Math.max(1, Math.min(e, 100)), this;
+  }
+  /**
+   * Execute the profile discovery search
+   */
+  async execute() {
+    this.config.debug && console.log("ProfileDiscoveryBuilder: Starting discovery with criteria:", this.criteria);
+    try {
+      const e = {
+        kinds: [0],
+        limit: this.criteria.limit || 50
+        // Default limit
+      }, t = [], s = /* @__PURE__ */ new Set();
+      return new Promise((i) => {
+        let r = !1;
+        const o = setTimeout(() => {
+          r || (r = !0, this.finalizeResults(t, i));
+        }, 1e4);
+        this.config.subscriptionManager.subscribe([e], {
+          onEvent: async (a) => {
+            if (a.kind === 0 && !s.has(a.pubkey)) {
+              s.add(a.pubkey);
+              try {
+                const c = await this.parseProfileEvent(a), l = await this.evaluateProfile(c);
+                l && (t.push(l), this.config.debug && console.log(`ProfileDiscoveryBuilder: Found match - ${c.metadata.name || "unnamed"} (score: ${l.relevanceScore})`), this.criteria.limit && t.length >= this.criteria.limit && (r || (r = !0, clearTimeout(o), this.finalizeResults(t, i))));
+              } catch (c) {
+                this.config.debug && console.error("ProfileDiscoveryBuilder: Error processing profile:", c);
+              }
+            }
+          },
+          onEose: () => {
+            r || (r = !0, clearTimeout(o), this.finalizeResults(t, i));
+          },
+          onError: (a) => {
+            r || (r = !0, clearTimeout(o), this.config.debug && console.error("ProfileDiscoveryBuilder: Search error:", a), i(t));
+          }
+        });
+      });
+    } catch (e) {
+      return this.config.debug && console.error("ProfileDiscoveryBuilder: Failed to start discovery:", e), [];
+    }
+  }
+  // Private helper methods
+  async parseProfileEvent(e) {
+    try {
+      const t = JSON.parse(e.content);
+      return {
+        pubkey: e.pubkey,
+        metadata: t,
+        lastUpdated: e.created_at,
+        eventId: e.id,
+        isOwn: !1
+      };
+    } catch {
+      throw new Error("Failed to parse profile event");
+    }
+  }
+  async evaluateProfile(e) {
+    var a, c;
+    const t = [];
+    let s = 0, i = 0, r = 0;
+    if (this.criteria.nameQuery) {
+      r++;
+      const l = ((a = e.metadata.name) == null ? void 0 : a.toLowerCase()) || "";
+      if (l.includes(this.criteria.nameQuery))
+        t.push("name"), i++, l === this.criteria.nameQuery ? s += 1 : l.startsWith(this.criteria.nameQuery) ? s += 0.8 : s += 0.5;
+      else
+        return null;
+    }
+    if (this.criteria.nip05Query) {
+      r++;
+      const l = ((c = e.metadata.nip05) == null ? void 0 : c.toLowerCase()) || "";
+      if (l.includes(this.criteria.nip05Query))
+        t.push("nip05"), i++, s += l === this.criteria.nip05Query ? 1 : 0.7;
+      else
+        return null;
+    }
+    if (this.criteria.metadataFilters && this.criteria.metadataFilters.size > 0)
+      for (const [l, h] of this.criteria.metadataFilters) {
+        r++;
+        const d = e.metadata[l];
+        d !== void 0 && (h === void 0 ? (t.push(l), i++, s += 0.3) : typeof d == "string" && typeof h == "string" ? d.toLowerCase().includes(h.toLowerCase()) && (t.push(l), i++, s += d.toLowerCase() === h.toLowerCase() ? 0.8 : 0.5) : d === h && (t.push(l), i++, s += 0.8));
+      }
+    if (this.criteria.verifiedOnly) {
+      if (r++, e.metadata.nip05) {
+        if (await this.checkNip05Verification(e))
+          t.push("verified"), i++, s += 0.5;
+        else if (this.criteria.verifiedOnly)
+          return null;
+      } else if (this.criteria.verifiedOnly)
+        return null;
+    }
+    if (r === 0 && (s = 0.1, i = 1, r = 1), r > 0 && i === 0)
+      return null;
+    const o = Math.min(1, s / Math.max(r, 1));
+    return {
+      profile: e,
+      matchedFields: t,
+      relevanceScore: o
+    };
+  }
+  async checkNip05Verification(e) {
+    var t;
+    if (!e.metadata.nip05) return !1;
+    try {
+      const [s, i] = e.metadata.nip05.split("@");
+      if (!s || !i) return !1;
+      const r = new AbortController(), o = setTimeout(() => r.abort(), 5e3), a = await fetch(`https://${i}/.well-known/nostr.json?name=${s}`, {
+        signal: r.signal
+      });
+      return clearTimeout(o), a.ok ? ((t = (await a.json()).names) == null ? void 0 : t[s]) === e.pubkey : !1;
+    } catch (s) {
+      return this.config.debug && console.error("ProfileDiscoveryBuilder: NIP-05 verification failed:", s), !1;
+    }
+  }
+  finalizeResults(e, t) {
+    e.sort((i, r) => r.relevanceScore - i.relevanceScore);
+    const s = this.criteria.limit ? e.slice(0, this.criteria.limit) : e;
+    this.config.debug && console.log(`ProfileDiscoveryBuilder: Discovery complete - found ${s.length} matches`), t(s);
+  }
+}
+class Pt {
+  constructor(e) {
+    u(this, "config");
+    u(this, "store");
+    u(this, "sharedSubscriptionListenerId");
+    u(this, "activeRefreshListenerId");
+    // Derived stores for easy access
+    u(this, "follows");
+    u(this, "count");
+    u(this, "loading");
+    u(this, "error");
+    this.config = e, this.store = P({
+      follows: [],
+      loading: !0,
+      error: null,
+      lastUpdated: null
+    }), this.follows = w(this.store, (t) => t.follows), this.count = w(this.store, (t) => t.follows.length), this.loading = w(this.store, (t) => t.loading), this.error = w(this.store, (t) => t.error), this.initialize();
+  }
+  /**
+   * Subscribe to store changes (Svelte store interface)
+   */
+  subscribe(e) {
+    return this.store.subscribe(e);
+  }
+  /**
+   * Check if a pubkey is being followed
+   */
+  isFollowing(e) {
+    return w(
+      this.store,
+      (t) => t.follows.some((s) => s.pubkey === e)
+    );
+  }
+  /**
+   * Refresh follow list data by querying relays directly
+   */
+  async refresh() {
+    this.store.update((e) => ({ ...e, loading: !0, error: null }));
+    try {
+      const e = {
+        kinds: [3],
+        authors: [this.config.pubkey],
+        limit: 1
+      };
+      let t = !1, s = [];
+      const i = await this.config.subscriptionManager.getOrCreateSubscription([e]);
+      this.activeRefreshListenerId = i.addListener({
+        onEvent: async (r) => {
+          r.kind === 3 && r.pubkey === this.config.pubkey && !t && (t = !0, s = this.parseFollowListEvent(r), this.store.set({
+            follows: s,
+            loading: !1,
+            error: null,
+            lastUpdated: /* @__PURE__ */ new Date(),
+            eventId: r.id
+          }), this.config.debug && console.log(`FollowListStore: Found ${s.length} follows for ${this.config.pubkey}`));
+        },
+        onEose: () => {
+          t || (this.store.set({
+            follows: [],
+            loading: !1,
+            error: null,
+            lastUpdated: /* @__PURE__ */ new Date()
+          }), this.config.debug && console.log(`FollowListStore: No follow list found for ${this.config.pubkey}`));
+        },
+        onError: (r) => {
+          this.store.update((o) => ({
+            ...o,
+            loading: !1,
+            error: r
+          }));
+        }
+      }), setTimeout(() => {
+        if (this.activeRefreshListenerId) {
+          const r = i.removeListener(this.activeRefreshListenerId);
+          this.activeRefreshListenerId = void 0, r && this.config.subscriptionManager.cleanupSharedSubscriptions();
+        }
+        t || this.store.set({
+          follows: [],
+          loading: !1,
+          error: null,
+          lastUpdated: /* @__PURE__ */ new Date()
+        });
+      }, 3e3);
+    } catch (e) {
+      this.store.update((t) => ({
+        ...t,
+        loading: !1,
+        error: e instanceof Error ? e : new Error("Failed to fetch follow list")
+      }));
+    }
+  }
+  /**
+   * Subscribe to real-time follow list updates
+   */
+  async startSubscription() {
+    if (this.sharedSubscriptionListenerId) return;
+    const e = {
+      kinds: [3],
+      authors: [this.config.pubkey],
+      limit: 1
+    };
+    try {
+      const t = await this.config.subscriptionManager.getOrCreateSubscription([e]);
+      if (this.sharedSubscriptionListenerId = t.addListener({
+        onEvent: (s) => {
+          s.kind === 3 && s.pubkey === this.config.pubkey && this.handleFollowListUpdate(s);
+        },
+        onError: (s) => {
+          this.store.update((i) => ({ ...i, error: s }));
+        }
+      }), this.config.debug) {
+        const s = t.getStats();
+        console.log(`FollowListStore: Subscribed to follow list updates for ${this.config.pubkey} (${s.listenerCount} listeners on shared subscription)`);
+      }
+    } catch (t) {
+      this.store.update((s) => ({
+        ...s,
+        error: t instanceof Error ? t : new Error("Failed to subscribe")
+      }));
+    }
+  }
+  /**
+   * Unsubscribe from follow list updates
+   */
+  async unsubscribe() {
+    if (this.sharedSubscriptionListenerId) {
+      const e = {
+        kinds: [3],
+        authors: [this.config.pubkey],
+        limit: 1
+      }, s = (await this.config.subscriptionManager.getOrCreateSubscription([e])).removeListener(this.sharedSubscriptionListenerId);
+      this.sharedSubscriptionListenerId = void 0, s && await this.config.subscriptionManager.cleanupSharedSubscriptions(), this.config.debug && console.log(`FollowListStore: Unsubscribed from follow list updates for ${this.config.pubkey}`);
+    }
+    if (this.activeRefreshListenerId) {
+      const e = {
+        kinds: [3],
+        authors: [this.config.pubkey],
+        limit: 1
+      }, s = (await this.config.subscriptionManager.getOrCreateSubscription([e])).removeListener(this.activeRefreshListenerId);
+      this.activeRefreshListenerId = void 0, s && await this.config.subscriptionManager.cleanupSharedSubscriptions();
+    }
+  }
+  /**
+   * Clean up resources
+   */
+  async close() {
+    await this.unsubscribe();
+  }
+  // Private helper methods
+  async initialize() {
+    await this.refresh(), this.startSubscription();
+  }
+  parseFollowListEvent(e) {
+    const t = [];
+    try {
+      for (const s of e.tags)
+        if (s[0] === "p" && s[1]) {
+          const i = {
+            pubkey: s[1]
+          };
+          s[2] && (i.relayUrl = s[2]), s[3] && (i.petname = s[3]), t.push(i);
+        }
+      return this.config.debug && console.log(`FollowListStore: Parsed ${t.length} follows from event ${e.id}`), t;
+    } catch (s) {
+      return this.config.debug && console.error("FollowListStore: Failed to parse follow list event:", s), [];
+    }
+  }
+  handleFollowListUpdate(e) {
+    try {
+      const t = this.parseFollowListEvent(e);
+      this.store.set({
+        follows: t,
+        loading: !1,
+        error: null,
+        lastUpdated: /* @__PURE__ */ new Date(),
+        eventId: e.id
+      }), this.config.debug && console.log(`FollowListStore: Follow list updated for ${this.config.pubkey} (${t.length} follows)`);
+    } catch (t) {
+      this.store.update((s) => ({
+        ...s,
+        error: t instanceof Error ? t : new Error("Failed to parse follow list update")
+      }));
+    }
+  }
+}
+class It {
+  constructor(e, t) {
+    u(this, "config");
+    u(this, "targetPubkey");
+    u(this, "relayUrl");
+    u(this, "petnameValue");
+    this.config = e, this.targetPubkey = t;
+  }
+  /**
+   * Set preferred relay for this follow
+   */
+  relay(e) {
+    return this.relayUrl = e, this;
+  }
+  /**
+   * Set pet name for this follow
+   */
+  petname(e) {
+    return this.petnameValue = e, this;
+  }
+  /**
+   * Publish the updated follow list
+   */
+  async publish() {
+    try {
+      const e = await this.config.signingProvider.getPublicKey();
+      this.config.debug && console.log("FollowBuilder: Adding follow for", this.targetPubkey.substring(0, 16) + "...");
+      const t = await this.getCurrentFollows();
+      if (t.some((f) => f.pubkey === this.targetPubkey))
+        return this.config.debug && console.log("FollowBuilder: Already following", this.targetPubkey.substring(0, 16) + "..."), {
+          success: !1,
+          error: "Already following this user"
+        };
+      const i = {
+        pubkey: this.targetPubkey,
+        relayUrl: this.relayUrl,
+        petname: this.petnameValue
+      }, a = {
+        kind: 3,
+        content: "",
+        // Follow lists typically have empty content
+        tags: [...t, i].map((f) => {
+          const y = ["p", f.pubkey];
+          return f.relayUrl && y.push(f.relayUrl), f.petname && y.push(f.petname), y;
+        }),
+        created_at: Math.floor(Date.now() / 1e3),
+        pubkey: e
+      }, c = I.addEventId(a), l = await this.config.signingProvider.signEvent(a), h = {
+        ...c,
+        sig: l
+      }, g = (await Promise.allSettled(
+        this.config.relayManager.relayUrls.map(async (f) => {
+          try {
+            return await this.config.relayManager.sendToRelay(f, ["EVENT", h]), { success: !0, relay: f };
+          } catch (y) {
+            return {
+              success: !1,
+              relay: f,
+              error: y instanceof Error ? y.message : "Unknown error"
+            };
+          }
+        })
+      )).filter(
+        (f) => f.status === "fulfilled" && f.value.success
+      ).map((f) => f.value.relay);
+      return g.length > 0 ? (this.config.debug && console.log(`FollowBuilder: Published follow list to ${g.length} relays`), {
+        success: !0,
+        eventId: h.id
+      }) : {
+        success: !1,
+        error: "Failed to publish to any relay"
+      };
+    } catch (e) {
+      return {
+        success: !1,
+        error: e instanceof Error ? e.message : "Failed to add follow"
+      };
+    }
+  }
+  // Private helper methods
+  async getCurrentFollows() {
+    try {
+      const e = await this.config.signingProvider.getPublicKey(), t = {
+        kinds: [3],
+        authors: [e],
+        limit: 1
+      };
+      return new Promise((s) => {
+        let i = !1;
+        const r = setTimeout(() => {
+          i || s([]);
+        }, 3e3);
+        this.config.subscriptionManager.subscribe([t], {
+          onEvent: (o) => {
+            if (o.kind === 3 && o.pubkey === e && !i) {
+              i = !0, clearTimeout(r);
+              const a = this.parseFollowListEvent(o);
+              s(a);
+            }
+          },
+          onEose: () => {
+            i || (clearTimeout(r), s([]));
+          }
+        });
+      });
+    } catch {
+      return [];
+    }
+  }
+  parseFollowListEvent(e) {
+    const t = [];
+    try {
+      for (const s of e.tags)
+        if (s[0] === "p" && s[1]) {
+          const i = {
+            pubkey: s[1]
+          };
+          s[2] && (i.relayUrl = s[2]), s[3] && (i.petname = s[3]), t.push(i);
+        }
+      return t;
+    } catch (s) {
+      return this.config.debug && console.error("FollowBuilder: Failed to parse follow list event:", s), [];
+    }
+  }
+}
+class kt {
+  constructor(e) {
+    u(this, "config");
+    u(this, "toAdd", []);
+    u(this, "toRemove", []);
+    this.config = e;
+  }
+  /**
+   * Add multiple pubkeys to follow list
+   */
+  add(e) {
+    return this.toAdd.push(...e), this;
+  }
+  /**
+   * Remove multiple pubkeys from follow list
+   */
+  remove(e) {
+    return this.toRemove.push(...e), this;
+  }
+  /**
+   * Publish the batch follow list update
+   */
+  async publish() {
+    if (this.toAdd.length === 0 && this.toRemove.length === 0)
+      return {
+        success: !1,
+        error: "No follow operations specified"
+      };
+    try {
+      const e = await this.config.signingProvider.getPublicKey();
+      this.config.debug && console.log(`FollowBatchBuilder: Batch operation - adding ${this.toAdd.length}, removing ${this.toRemove.length}`);
+      let s = [...await this.getCurrentFollows()];
+      if (this.toRemove.length > 0 && (s = s.filter(
+        (g) => !this.toRemove.includes(g.pubkey)
+      ), this.config.debug && console.log(`FollowBatchBuilder: Removed ${this.toRemove.length} follows`)), this.toAdd.length > 0) {
+        const g = this.toAdd.filter((p) => !s.some((f) => f.pubkey === p)).map((p) => ({ pubkey: p }));
+        s.push(...g), this.config.debug && console.log(`FollowBatchBuilder: Added ${g.length} new follows (${this.toAdd.length - g.length} were duplicates)`);
+      }
+      const r = {
+        kind: 3,
+        content: "",
+        // Follow lists typically have empty content
+        tags: s.map((g) => {
+          const p = ["p", g.pubkey];
+          return g.relayUrl && p.push(g.relayUrl), g.petname && p.push(g.petname), p;
+        }),
+        created_at: Math.floor(Date.now() / 1e3),
+        pubkey: e
+      }, o = I.addEventId(r), a = await this.config.signingProvider.signEvent(r), c = {
+        ...o,
+        sig: a
+      }, h = (await Promise.allSettled(
+        this.config.relayManager.relayUrls.map(async (g) => {
+          try {
+            return await this.config.relayManager.sendToRelay(g, ["EVENT", c]), { success: !0, relay: g };
+          } catch (p) {
+            return {
+              success: !1,
+              relay: g,
+              error: p instanceof Error ? p.message : "Unknown error"
+            };
+          }
+        })
+      )).filter(
+        (g) => g.status === "fulfilled" && g.value.success
+      ).map((g) => g.value.relay);
+      return h.length > 0 ? (this.config.debug && (console.log(`FollowBatchBuilder: Published batch update to ${h.length} relays`), console.log(`FollowBatchBuilder: Final follow list has ${s.length} follows`)), {
+        success: !0,
+        eventId: c.id
+      }) : {
+        success: !1,
+        error: "Failed to publish to any relay"
+      };
+    } catch (e) {
+      return {
+        success: !1,
+        error: e instanceof Error ? e.message : "Failed to publish batch update"
+      };
+    }
+  }
+  // Private helper methods
+  async getCurrentFollows() {
+    try {
+      const e = await this.config.signingProvider.getPublicKey(), t = {
+        kinds: [3],
+        authors: [e],
+        limit: 1
+      };
+      return new Promise((s) => {
+        let i = !1;
+        const r = setTimeout(() => {
+          i || s([]);
+        }, 3e3);
+        this.config.subscriptionManager.subscribe([t], {
+          onEvent: (o) => {
+            if (o.kind === 3 && o.pubkey === e && !i) {
+              i = !0, clearTimeout(r);
+              const a = this.parseFollowListEvent(o);
+              s(a);
+            }
+          },
+          onEose: () => {
+            i || (clearTimeout(r), s([]));
+          }
+        });
+      });
+    } catch {
+      return [];
+    }
+  }
+  parseFollowListEvent(e) {
+    const t = [];
+    try {
+      for (const s of e.tags)
+        if (s[0] === "p" && s[1]) {
+          const i = {
+            pubkey: s[1]
+          };
+          s[2] && (i.relayUrl = s[2]), s[3] && (i.petname = s[3]), t.push(i);
+        }
+      return t;
+    } catch (s) {
+      return this.config.debug && console.error("FollowBatchBuilder: Failed to parse follow list event:", s), [];
+    }
+  }
+}
+class _t {
+  constructor(e) {
+    u(this, "config");
+    u(this, "followStores", /* @__PURE__ */ new Map());
+    this.config = e;
+  }
+  /**
+   * Get own follow list as a reactive store
+   */
+  async mine() {
+    if (!this.config.signingProvider)
+      throw new Error("Cannot access own follow list: No signing provider available. Initialize signing first.");
+    const e = await this.config.signingProvider.getPublicKey();
+    return this.of(e);
+  }
+  /**
+   * Get follow list for any pubkey as a reactive store
+   */
+  of(e) {
+    if (this.followStores.has(e))
+      return this.followStores.get(e);
+    const t = new Pt({
+      pubkey: e,
+      subscriptionManager: this.config.subscriptionManager,
+      debug: this.config.debug
+    });
+    return this.followStores.set(e, t), t;
+  }
+  /**
+   * Phase 4: Add a user to follow list
+   * Returns FollowBuilder for fluent API configuration
+   */
+  add(e) {
+    if (!this.config.signingProvider)
+      throw new Error("Cannot add follow: No signing provider available. Initialize signing first.");
+    return new It({
+      subscriptionManager: this.config.subscriptionManager,
+      relayManager: this.config.relayManager,
+      signingProvider: this.config.signingProvider,
+      debug: this.config.debug
+    }, e);
+  }
+  /**
+   * Phase 4: Remove a user from follow list
+   */
+  async remove(e) {
+    if (!this.config.signingProvider)
+      throw new Error("Cannot remove follow: No signing provider available. Initialize signing first.");
+    try {
+      const t = await this.config.signingProvider.getPublicKey();
+      this.config.debug && console.log("FollowsModule: Removing follow for", e.substring(0, 16) + "...");
+      const s = await this.getCurrentFollows();
+      if (!s.some((f) => f.pubkey === e))
+        return this.config.debug && console.log("FollowsModule: Not following", e.substring(0, 16) + "..."), {
+          success: !1,
+          error: "Not following this user"
+        };
+      const a = {
+        kind: 3,
+        content: "",
+        // Follow lists typically have empty content
+        tags: s.filter((f) => f.pubkey !== e).map((f) => {
+          const y = ["p", f.pubkey];
+          return f.relayUrl && y.push(f.relayUrl), f.petname && y.push(f.petname), y;
+        }),
+        created_at: Math.floor(Date.now() / 1e3),
+        pubkey: t
+      }, c = I.addEventId(a), l = await this.config.signingProvider.signEvent(a), h = {
+        ...c,
+        sig: l
+      }, g = (await Promise.allSettled(
+        this.config.relayManager.relayUrls.map(async (f) => {
+          try {
+            return await this.config.relayManager.sendToRelay(f, ["EVENT", h]), { success: !0, relay: f };
+          } catch (y) {
+            return {
+              success: !1,
+              relay: f,
+              error: y instanceof Error ? y.message : "Unknown error"
+            };
+          }
+        })
+      )).filter(
+        (f) => f.status === "fulfilled" && f.value.success
+      ).map((f) => f.value.relay);
+      return g.length > 0 ? (this.config.debug && console.log(`FollowsModule: Published updated follow list to ${g.length} relays`), {
+        success: !0,
+        eventId: h.id
+      }) : {
+        success: !1,
+        error: "Failed to publish to any relay"
+      };
+    } catch (t) {
+      return {
+        success: !1,
+        error: t instanceof Error ? t.message : "Failed to remove follow"
+      };
+    }
+  }
+  /**
+   * Phase 5: Batch follow operations
+   * Returns FollowBatchBuilder for bulk add/remove operations
+   */
+  batch() {
+    if (!this.config.signingProvider)
+      throw new Error("Cannot batch follow operations: No signing provider available. Initialize signing first.");
+    return new kt({
+      subscriptionManager: this.config.subscriptionManager,
+      relayManager: this.config.relayManager,
+      signingProvider: this.config.signingProvider,
+      debug: this.config.debug
+    });
+  }
+  /**
+   * Update signing provider when it becomes available
+   */
+  async updateSigningProvider(e) {
+    this.config.signingProvider = e;
+  }
+  /**
+   * Clean up resources
+   */
+  async close() {
+    for (const e of this.followStores.values())
+      await e.close();
+    this.followStores.clear();
+  }
+  // Private helper methods
+  async getCurrentFollows() {
+    try {
+      const e = await this.config.signingProvider.getPublicKey(), t = {
+        kinds: [3],
+        authors: [e],
+        limit: 1
+      };
+      return new Promise((s) => {
+        let i = !1;
+        const r = setTimeout(() => {
+          i || s([]);
+        }, 3e3);
+        this.config.subscriptionManager.subscribe([t], {
+          onEvent: (o) => {
+            if (o.kind === 3 && o.pubkey === e && !i) {
+              i = !0, clearTimeout(r);
+              const a = this.parseFollowListEvent(o);
+              s(a);
+            }
+          },
+          onEose: () => {
+            i || (clearTimeout(r), s([]));
+          }
+        });
+      });
+    } catch {
+      return [];
+    }
+  }
+  parseFollowListEvent(e) {
+    const t = [];
+    try {
+      for (const s of e.tags)
+        if (s[0] === "p" && s[1]) {
+          const i = {
+            pubkey: s[1]
+          };
+          s[2] && (i.relayUrl = s[2]), s[3] && (i.petname = s[3]), t.push(i);
+        }
+      return t;
+    } catch (s) {
+      return this.config.debug && console.error("FollowsModule: Failed to parse follow list event:", s), [];
+    }
+  }
+}
+class At {
+  constructor(e) {
+    u(this, "config");
+    u(this, "_follows");
+    this.config = e;
+  }
+  /**
+   * Get a reactive profile store for any pubkey
+   * 
+   * CLEAN ARCHITECTURE: Uses base layer directly for perfect DX
+   * Returns UniversalNostrStore with automatic caching and live updates
+   */
+  get(e) {
+    return this.startProfileSubscription(e), this.config.nostr.query().kinds([0]).authors([e]).limit(1).execute().map((t) => this.parseProfileEvents(t, e));
+  }
+  /**
+   * Start subscription for profile updates
+   */
+  async startProfileSubscription(e) {
+    try {
+      await this.config.nostr.sub().kinds([0]).authors([e]).limit(1).execute();
+    } catch (t) {
+      this.config.debug && console.warn(`Failed to start profile subscription for ${e}:`, t);
+    }
+  }
+  /**
+   * Parse NostrEvent[] to UserProfile | null
+   */
+  parseProfileEvents(e, t) {
+    if (e.length === 0)
+      return null;
+    const s = e[0];
+    if (s.kind !== 0 || s.pubkey !== t)
+      return null;
+    try {
+      const i = JSON.parse(s.content);
+      return {
+        pubkey: s.pubkey,
+        metadata: i,
+        lastUpdated: s.created_at,
+        eventId: s.id,
+        isOwn: !1
+        // Will be determined by caller if needed
+      };
+    } catch (i) {
+      return this.config.debug && console.warn(`Failed to parse profile event for ${t}:`, i), null;
+    }
+  }
+  /**
+   * Phase 2: Profile Creation & Updates - Fluent Builder API
+   * Creates a ProfileBuilder for updating profiles with field preservation
+   */
+  edit() {
+    if (!this.config.signingProvider)
+      throw new Error("Cannot edit profile: No signing provider available. Initialize signing first.");
+    return new Et({
+      subscriptionManager: this.config.subscriptionManager,
+      relayManager: this.config.relayManager,
+      signingProvider: this.config.signingProvider,
+      debug: this.config.debug
+    });
+  }
+  /**
+   * Phase 3: Follow List Operations - Access to follow lists
+   * Get access to follow list management (mine() and of() methods)
+   */
+  get follows() {
+    return this._follows || (this._follows = new _t({
+      subscriptionManager: this.config.subscriptionManager,
+      relayManager: this.config.relayManager,
+      signingProvider: this.config.signingProvider,
+      debug: this.config.debug
+    })), this._follows;
+  }
+  /**
+   * Phase 5: Batch Profile Operations - Efficient multiple profile fetching
+   * Creates a ProfileBatchBuilder for bulk profile operations
+   */
+  batch() {
+    return new Mt({
+      subscriptionManager: this.config.subscriptionManager,
+      debug: this.config.debug
+    });
+  }
+  /**
+   * Phase 6: Profile Discovery - Search and discover profiles
+   * Creates a ProfileDiscoveryBuilder for profile search operations
+   */
+  discover() {
+    return new St({
+      subscriptionManager: this.config.subscriptionManager,
+      debug: this.config.debug
+    });
+  }
+  /**
+   * Update signing provider when it becomes available
+   */
+  async updateSigningProvider(e) {
+    this.config.signingProvider = e, this._follows && await this._follows.updateSigningProvider(e);
+  }
+  /**
+   * Clean up resources
+   */
+  async close() {
+    this._follows && await this._follows.close();
+  }
+}
+class ci {
+  constructor(e = {}) {
+    u(this, "relayManager");
+    u(this, "subscriptionManager");
+    u(this, "cache");
+    u(this, "signingProvider");
+    u(this, "signingMethod");
+    u(this, "config");
+    u(this, "giftWrapSubscriptionActive", !1);
+    u(this, "cachedMyPubkey", null);
+    // Fluent Event Builder API
+    u(this, "events");
+    // Direct Message API (Legacy)
+    u(this, "dm");
+    // Universal DM API (Cache-based)
+    u(this, "universalDM");
+    // Social Media API
+    u(this, "social");
+    // Profile API (Enhanced)
+    u(this, "_profile");
+    console.log("🔥 NostrUnchained v0.1.0-FIX (build:", (/* @__PURE__ */ new Date()).toISOString().substring(0, 19) + "Z)"), this.config = {
+      relays: e.relays ?? qt,
+      debug: e.debug ?? !1,
+      retryAttempts: e.retryAttempts ?? se.RETRY_ATTEMPTS,
+      retryDelay: e.retryDelay ?? se.RETRY_DELAY,
+      timeout: e.timeout ?? se.PUBLISH_TIMEOUT,
+      signingProvider: e.signingProvider
+    }, this.relayManager = new ts(this.config.relays, {
+      debug: this.config.debug
+    }), this.subscriptionManager = new Rs(this.relayManager), this.events = new is(this), e.signingProvider ? (this.signingProvider = e.signingProvider, this.signingMethod = e.signingProvider.constructor.name.includes("Extension") ? "extension" : "temporary", this.cache = new Se("", {}), this._initializeCache().catch((t) => {
+      this.config.debug && console.log("⚠️ Cache initialization with private key failed:", t);
+    }), this.config.debug && console.log("🎯 NostrUnchained initialized with PROVIDED signing provider - Everything ready!")) : (this.cache = new Se("", {}), this.config.debug && console.log("🚨 NostrUnchained initialized WITHOUT signing provider - will auto-detect later")), this.dm = new vt({
+      subscriptionManager: this.subscriptionManager,
+      relayManager: this.relayManager,
+      signingProvider: this.signingProvider,
+      debug: this.config.debug,
+      parent: this
+    }), this.social = new Ts({
+      subscriptionManager: this.subscriptionManager,
+      relayManager: this.relayManager,
+      signingProvider: this.signingProvider,
+      eventBuilder: new I(),
+      debug: this.config.debug
+    }), this.config.debug && console.log("NostrUnchained initialized with relays:", this.config.relays);
+  }
+  /**
+   * Initialize cache with signing provider's private key
+   */
+  async _initializeCache() {
+    if (this.signingProvider)
+      try {
+        const e = await this.signingProvider.getPrivateKeyForEncryption();
+        this.cache = new Se(e, {});
+        const t = await this.signingProvider.getPublicKey();
+        this.universalDM = new Ss(this, t), this.config.debug && console.log("🎯 Universal Cache and Universal DM Module initialized");
+      } catch {
+        this.cache = new Se("", {}), this.config.debug && console.log("⚠️ Could not get private key for cache, using empty key (no gift wrap decryption)");
+      }
+  }
+  /**
+   * Get enhanced profile module (PERFECT DX - always works!)
+   */
+  get profile() {
+    return this._profile || (this._profile = new At({
+      relayManager: this.relayManager,
+      subscriptionManager: this.subscriptionManager,
+      signingProvider: this.signingProvider,
+      eventBuilder: new I(),
+      cache: this.cache,
+      debug: this.config.debug,
+      // REQUIRED: Pass NostrUnchained instance for clean architecture
+      nostr: this
+    })), this._profile;
+  }
+  /**
+   * Get configured relay URLs
+   */
+  get relays() {
+    return this.config.relays;
+  }
+  /**
+   * Get connected relays
+   */
+  get connectedRelays() {
+    return this.relayManager.connectedRelays;
+  }
+  /**
+   * Initialize signing provider
+   * PERFECT DX: Only needed if signingProvider wasn't provided in constructor
+   * If it was provided, this does nothing (idempotent)
+   */
+  async initializeSigning(e) {
+    if (this.signingProvider && !e) {
+      this.config.debug && console.log("🚫 Signing already initialized - skipping (Perfect DX!)");
+      return;
+    }
+    if (e)
+      this.signingProvider = e, this.signingMethod = e.constructor.name.includes("Extension") ? "extension" : "temporary";
+    else if (this.config.signingProvider)
+      this.signingProvider = this.config.signingProvider, this.signingMethod = this.config.signingProvider.constructor.name.includes("Extension") ? "extension" : "temporary";
+    else {
+      const { provider: t, method: s } = await ss.createBestAvailable();
+      this.signingProvider = t, this.signingMethod = s;
+    }
+    this.cachedMyPubkey = null, await this._initializeCache(), await this.dm.updateSigningProvider(this.signingProvider), await this.social.updateSigningProvider(this.signingProvider), this._profile && await this._profile.updateSigningProvider(this.signingProvider), this.config.debug && console.log(`Initialized signing with method: ${this.signingMethod}`);
+  }
+  /**
+   * Connect to relays
+   */
+  async connect() {
+    try {
+      if (await this.relayManager.connect(), this.config.debug) {
+        const e = this.relayManager.getStats();
+        console.log("Relay connection stats:", e);
+      }
+    } catch (e) {
+      throw R.handleConnectionError("relays", e);
+    }
+  }
+  /**
+   * Start universal gift wrap subscription (Lazy Loading)
+   * This is the critical piece that makes DMs work with the Universal Cache
+   * Only starts if not already active - gives users proper control
+   */
+  async startUniversalGiftWrapSubscription() {
+    if (this.giftWrapSubscriptionActive) {
+      this.config.debug && console.log("🎁 Gift wrap subscription already active - skipping");
+      return;
+    }
+    if (!this.signingProvider) {
+      this.config.debug && console.log("⚠️ Cannot start gift wrap subscription - no signing provider");
+      return;
+    }
+    try {
+      const e = await this.signingProvider.getPublicKey(), t = await this.subscriptionManager.subscribe({
+        filters: [{
+          kinds: [1059],
+          // Gift wrap events
+          "#p": [e],
+          limit: 100
+          // Get recent messages
+        }],
+        relays: this.config.relays,
+        onEvent: async (s) => {
+          this.config.debug && console.log(`🎁 Received gift wrap event: ${s.id.substring(0, 8)}...`);
+        },
+        onEose: () => {
+          this.config.debug && console.log("🎁 Gift wrap initial sync completed");
+        }
+      });
+      this.giftWrapSubscriptionActive = !0, this.config.debug && console.log("🎁 Universal gift wrap subscription started successfully");
+    } catch (e) {
+      throw console.error("Failed to start gift wrap subscription:", e), e;
+    }
+  }
+  /**
+   * Disconnect from all relays
+   */
+  async disconnect() {
+    await this.relayManager.disconnect();
+  }
+  /**
+   * Publish event to specific relays
+   */
+  async publishToRelays(e, t) {
+    if (!this.signingProvider)
+      throw new Error("No signing provider available. Call initializeSigning() first.");
+    const s = I.validateEvent(e);
+    if (!s.valid)
+      throw new Error(`Invalid event: ${s.errors.join(", ")}`);
+    const i = I.calculateEventId(e), r = {
+      ...e,
+      id: i,
+      sig: await this.signingProvider.signEvent({ ...e, id: i })
+    }, o = await this.relayManager.publishToRelays(r, t), a = o.some((c) => c.success);
+    return {
+      success: a,
+      eventId: a ? r.id : void 0,
+      event: a ? r : void 0,
+      relayResults: o,
+      timestamp: Date.now(),
+      error: a ? void 0 : {
+        message: "Failed to publish to any relay",
+        code: "PUBLISH_FAILED",
+        retryable: !0
+      }
+    };
+  }
+  /**
+   * Publish an event
+   */
+  async publish(e) {
+    if (!this.signingProvider)
+      throw new Error("No signing provider available. Call initializeSigning() first.");
+    const t = I.validateEvent(e);
+    if (!t.valid)
+      throw new Error(`Invalid event: ${t.errors.join(", ")}`);
+    const s = I.calculateEventId(e), i = {
+      ...e,
+      id: s,
+      sig: await this.signingProvider.signEvent({ ...e, id: s })
+    }, r = await this.relayManager.publishToAll(i), o = r.some((a) => a.success);
+    return {
+      success: o,
+      eventId: o ? i.id : void 0,
+      event: o ? i : void 0,
+      relayResults: r,
+      timestamp: Date.now(),
+      error: o ? void 0 : {
+        message: "Failed to publish to any relay",
+        code: "PUBLISH_FAILED",
+        retryable: !0
+      }
+    };
+  }
+  /**
+   * Get public key
+   */
+  async getPublicKey() {
+    if (!this.signingProvider)
+      throw new Error("No signing provider available. Call initializeSigning() first.");
+    return this.cachedMyPubkey || (this.cachedMyPubkey = await this.signingProvider.getPublicKey()), this.cachedMyPubkey;
+  }
+  /**
+   * PERFECT DX: Get my pubkey synchronously (cached)
+   * Returns null if not available yet - perfect for reactive UI
+   */
+  get me() {
+    return this.cachedMyPubkey;
+  }
+  /**
+   * PERFECT DX: Get my pubkey as Promise (always works)
+   * Caches result for instant sync access via .me
+   */
+  async getMe() {
+    try {
+      return await this.getPublicKey();
+    } catch {
+      return null;
+    }
+  }
+  /**
+   * Get relay statistics
+   */
+  getRelayStats() {
+    return this.relayManager.getStats();
+  }
+  /**
+   * Create a query builder for complex queries
+   */
+  query() {
+    return new Ls(this.cache);
+  }
+  /**
+   * Create a subscription builder
+   */
+  sub() {
+    return new Ds(this.cache, this.subscriptionManager);
+  }
+  /**
+   * Get the Universal Event Cache for advanced usage
+   */
+  getCache() {
+    return this.cache;
+  }
+  /**
+   * Get cache statistics
+   */
+  getCacheStatistics() {
+    return this.cache.getStatistics();
+  }
+  /**
+   * Get the subscription manager for advanced usage
+   */
+  getSubscriptionManager() {
+    return this.subscriptionManager;
+  }
+  /**
+   * Get Universal DM Module (lazy-loaded)
+   */
+  getDM() {
+    return this.universalDM;
+  }
+  /**
+   * Get debug info
+   */
+  getDebugInfo() {
+    return {
+      signingMethod: this.signingMethod || "none",
+      connectedRelays: this.connectedRelays.length,
+      cacheSize: this.cache.getStatistics().totalEvents,
+      subscriptions: 0,
+      // TODO: Get from subscription manager
+      giftWrapActive: this.giftWrapSubscriptionActive
+    };
+  }
+}
+class li extends Le {
+  constructor(e) {
+    super(), this.cache = e;
+  }
+  execute() {
+    return new De(this.cache, this.filter);
+  }
+}
+class ui extends Le {
+  constructor(t, s) {
+    super();
+    u(this, "relayUrls", []);
+    this.cache = t, this.subscriptionManager = s;
+  }
+  relay(t) {
+    return this.relayUrls = [t], this;
+  }
+  relays(t) {
+    return this.relayUrls = t, this;
+  }
+  /**
+   * Execute the subscription and return a handle for lifecycle control
+   * This provides excellent DX for managing subscriptions
+   */
+  async execute() {
+    var o;
+    const t = this.relayUrls.length > 0 ? { relays: this.relayUrls } : {}, s = await this.subscriptionManager.subscribe([this.filter], {
+      ...t,
+      onEvent: (a) => {
+        this.cache.addEvent(a);
+      }
+    });
+    if (!s.success || !s.subscription)
+      throw new Error(((o = s.error) == null ? void 0 : o.message) || "Subscription failed");
+    const i = s.subscription, r = new De(this.cache, this.filter);
+    return {
+      id: i.id,
+      store: r,
+      stop: async () => {
+        await this.subscriptionManager.close(i.id);
+      },
+      isActive: () => this.subscriptionManager.getActiveSubscriptions().some((c) => c.id === i.id)
+    };
+  }
+}
+const hi = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  DMConversation: wt,
+  DMModule: vt,
+  DMRoom: mt,
+  EphemeralKeyManager: ke,
+  GiftWrapCreator: _e,
+  GiftWrapProtocol: re,
+  NIP44Crypto: k,
+  SealCreator: pe,
+  TimestampRandomizer: We
+}, Symbol.toStringTag, { value: "Module" }));
+class Tt {
   constructor(e) {
     u(this, "cache");
     u(this, "stats", {
@@ -5750,7 +7386,7 @@ class Et {
     }
   }
 }
-class Mt {
+class Fs {
   constructor(e) {
     u(this, "config");
     u(this, "store");
@@ -5762,7 +7398,7 @@ class Mt {
     u(this, "profile");
     u(this, "loading");
     u(this, "error");
-    this.config = e, e.cache && (this.cacheInterface = new Et(e.cache), e.debug && console.log("📦 ProfileStore: Cache interface initialized for", e.pubkey.substring(0, 16) + "...")), this.store = P({
+    this.config = e, e.cache && (this.cacheInterface = new Tt(e.cache), e.debug && console.log("📦 ProfileStore: Cache interface initialized for", e.pubkey.substring(0, 16) + "...")), this.store = P({
       profile: null,
       loading: !0,
       error: null,
@@ -5984,1689 +7620,24 @@ class Mt {
     }
   }
 }
-class St {
-  constructor(e) {
-    u(this, "config");
-    u(this, "updates", {});
-    u(this, "shouldPreserveExisting", !0);
-    u(this, "customMetadata", {});
-    this.config = e;
-  }
-  /**
-   * Set display name
-   */
-  name(e) {
-    return this.updates.name = e, this;
-  }
-  /**
-   * Set bio/about text
-   */
-  about(e) {
-    return this.updates.about = e, this;
-  }
-  /**
-   * Set profile picture URL
-   */
-  picture(e) {
-    return this.updates.picture = e, this;
-  }
-  /**
-   * Set banner image URL
-   */
-  banner(e) {
-    return this.updates.banner = e, this;
-  }
-  /**
-   * Set NIP-05 identifier
-   */
-  nip05(e) {
-    return this.updates.nip05 = e, this;
-  }
-  /**
-   * Set Lightning address (lud16)
-   */
-  lud16(e) {
-    return this.updates.lud16 = e, this;
-  }
-  /**
-   * Set website URL
-   */
-  website(e) {
-    return this.updates.website = e, this;
-  }
-  /**
-   * Set GitHub username (NIP-39 external identity)
-   */
-  github(e) {
-    return this.customMetadata.github = e, this;
-  }
-  /**
-   * Set Twitter/X username (NIP-39 external identity)
-   */
-  twitter(e) {
-    return this.customMetadata.twitter = e, this;
-  }
-  /**
-   * Set Telegram username (NIP-39 external identity)
-   */
-  telegram(e) {
-    return this.customMetadata.telegram = e, this;
-  }
-  /**
-   * Add custom metadata field
-   */
-  metadata(e, t) {
-    return this.customMetadata[e] = t, this;
-  }
-  /**
-   * Whether to preserve existing fields (default: true)
-   */
-  preserveExisting(e = !0) {
-    return this.shouldPreserveExisting = e, this;
-  }
-  /**
-   * Sign the profile event (without publishing)
-   */
-  async sign() {
-    const e = await this.prepareProfileData(), t = await this.config.signingProvider.getPublicKey(), s = {
-      kind: 0,
-      content: JSON.stringify(e),
-      tags: [],
-      created_at: Math.floor(Date.now() / 1e3),
-      pubkey: t
-    }, i = I.addEventId(s), r = await this.config.signingProvider.signEvent(s);
-    return {
-      ...i,
-      sig: r
-    };
-  }
-  /**
-   * Publish the profile update
-   */
-  async publish() {
-    try {
-      const e = await this.prepareProfileData();
-      this.config.debug && console.log("ProfileBuilder: Publishing profile:", e);
-      const t = await this.config.signingProvider.getPublicKey(), s = {
-        kind: 0,
-        content: JSON.stringify(e),
-        tags: [],
-        created_at: Math.floor(Date.now() / 1e3),
-        pubkey: t
-      }, i = I.addEventId(s), r = await this.config.signingProvider.signEvent(s), o = {
-        ...i,
-        sig: r
-      }, c = (await Promise.allSettled(
-        this.config.relayManager.relayUrls.map(async (h) => {
-          try {
-            return await this.config.relayManager.sendToRelay(h, ["EVENT", o]), { success: !0, relay: h };
-          } catch (d) {
-            return {
-              success: !1,
-              relay: h,
-              error: d instanceof Error ? d.message : "Unknown error"
-            };
-          }
-        })
-      )).filter(
-        (h) => h.status === "fulfilled" && h.value.success
-      ).map((h) => h.value.relay);
-      return c.length > 0 ? (this.config.debug && console.log(`ProfileBuilder: Published to ${c.length} relays`), {
-        success: !0,
-        eventId: o.id
-      }) : {
-        success: !1,
-        error: "Failed to publish to any relay"
-      };
-    } catch (e) {
-      return {
-        success: !1,
-        error: e instanceof Error ? e.message : "Failed to publish profile"
-      };
-    }
-  }
-  // Private helper methods
-  async prepareProfileData() {
-    let e = {};
-    if (this.shouldPreserveExisting) {
-      const s = await this.getCurrentProfile();
-      s ? (e = { ...s.metadata }, this.config.debug && console.log("ProfileBuilder: Preserving existing profile data:", e)) : this.config.debug && console.log("ProfileBuilder: No existing profile found to preserve");
-    }
-    const t = {
-      ...e,
-      ...this.updates
-    };
-    return Object.keys(this.customMetadata).length > 0 && Object.assign(t, this.customMetadata), t;
-  }
-  async getCurrentProfile() {
-    try {
-      const e = await this.config.signingProvider.getPublicKey(), t = {
-        kinds: [0],
-        authors: [e],
-        limit: 1
-      };
-      return new Promise((s) => {
-        let i = !1;
-        const r = setTimeout(() => {
-          i || s(null);
-        }, 3e3);
-        this.config.subscriptionManager.subscribe([t], {
-          onEvent: (o) => {
-            if (o.kind === 0 && o.pubkey === e && !i) {
-              i = !0, clearTimeout(r);
-              try {
-                const a = JSON.parse(o.content), c = {
-                  pubkey: o.pubkey,
-                  metadata: a,
-                  lastUpdated: o.created_at,
-                  eventId: o.id,
-                  isOwn: !0
-                };
-                s(c);
-              } catch {
-                s(null);
-              }
-            }
-          },
-          onEose: () => {
-            i || (clearTimeout(r), s(null));
-          }
-        });
-      });
-    } catch {
-      return null;
-    }
-  }
-}
-class Pt {
-  constructor(e) {
-    u(this, "config");
-    u(this, "pubkeys", []);
-    this.config = e;
-  }
-  /**
-   * Set the list of pubkeys to fetch profiles for
-   */
-  get(e) {
-    return this.pubkeys = [...e], this;
-  }
-  /**
-   * Execute batch profile fetch
-   */
-  async execute() {
-    if (this.pubkeys.length === 0)
-      return {
-        profiles: /* @__PURE__ */ new Map(),
-        success: !0,
-        errors: /* @__PURE__ */ new Map(),
-        totalRequested: 0,
-        totalFound: 0
-      };
-    this.config.debug && console.log(`ProfileBatchBuilder: Fetching ${this.pubkeys.length} profiles`);
-    try {
-      const e = {
-        kinds: [0],
-        authors: this.pubkeys,
-        limit: this.pubkeys.length
-      }, t = /* @__PURE__ */ new Map(), s = /* @__PURE__ */ new Map();
-      let i = 0;
-      return this.pubkeys.forEach((r) => {
-        t.set(r, null);
-      }), new Promise((r) => {
-        let o = !1;
-        const a = setTimeout(() => {
-          o || (o = !0, r({
-            profiles: t,
-            success: !0,
-            errors: s,
-            totalRequested: this.pubkeys.length,
-            totalFound: i
-          }));
-        }, 5e3);
-        this.config.subscriptionManager.subscribe([e], {
-          onEvent: (c) => {
-            if (c.kind === 0 && this.pubkeys.includes(c.pubkey))
-              try {
-                const l = JSON.parse(c.content), h = {
-                  pubkey: c.pubkey,
-                  metadata: l,
-                  lastUpdated: c.created_at,
-                  eventId: c.id,
-                  isOwn: !1
-                  // Batch operations are typically for other users
-                };
-                t.set(c.pubkey, h), i++, this.config.debug && console.log(`ProfileBatchBuilder: Found profile for ${c.pubkey.substring(0, 16)}...`);
-              } catch (l) {
-                s.set(c.pubkey, "Failed to parse profile data"), this.config.debug && console.error(`ProfileBatchBuilder: Parse error for ${c.pubkey}:`, l);
-              }
-          },
-          onEose: () => {
-            o || (o = !0, clearTimeout(a), this.config.debug && console.log(`ProfileBatchBuilder: Batch complete - found ${i}/${this.pubkeys.length} profiles`), r({
-              profiles: t,
-              success: !0,
-              errors: s,
-              totalRequested: this.pubkeys.length,
-              totalFound: i
-            }));
-          },
-          onError: (c) => {
-            o || (o = !0, clearTimeout(a), this.pubkeys.forEach((l) => {
-              s.set(l, c.message);
-            }), r({
-              profiles: t,
-              success: !1,
-              errors: s,
-              totalRequested: this.pubkeys.length,
-              totalFound: i
-            }));
-          }
-        });
-      });
-    } catch (e) {
-      const t = /* @__PURE__ */ new Map();
-      return this.pubkeys.forEach((s) => {
-        t.set(s, e instanceof Error ? e.message : "Unknown error");
-      }), {
-        profiles: /* @__PURE__ */ new Map(),
-        success: !1,
-        errors: t,
-        totalRequested: this.pubkeys.length,
-        totalFound: 0
-      };
-    }
-  }
-  /**
-   * Create a reactive store for batch profile operations
-   */
-  asStore() {
-    if (this.pubkeys.length === 0)
-      return P({
-        profiles: /* @__PURE__ */ new Map(),
-        loading: !1,
-        loadingStates: /* @__PURE__ */ new Map(),
-        errors: /* @__PURE__ */ new Map(),
-        lastUpdated: /* @__PURE__ */ new Date()
-      });
-    const e = P({
-      profiles: /* @__PURE__ */ new Map(),
-      loading: !0,
-      loadingStates: /* @__PURE__ */ new Map(),
-      errors: /* @__PURE__ */ new Map(),
-      lastUpdated: null
-    }), t = /* @__PURE__ */ new Map();
-    return this.pubkeys.forEach((s) => {
-      t.set(s, !0);
-    }), e.update((s) => ({
-      ...s,
-      loadingStates: t
-    })), this.executeBatchForStore(e), e;
-  }
-  // Private helper methods
-  async executeBatchForStore(e) {
-    this.config.debug && console.log(`ProfileBatchBuilder: Creating reactive store for ${this.pubkeys.length} profiles`);
-    try {
-      const t = {
-        kinds: [0],
-        authors: this.pubkeys,
-        limit: this.pubkeys.length
-      }, s = /* @__PURE__ */ new Map(), i = /* @__PURE__ */ new Map(), r = /* @__PURE__ */ new Map();
-      this.pubkeys.forEach((l) => {
-        s.set(l, null), i.set(l, !0);
-      }), e.set({
-        profiles: s,
-        loading: !0,
-        loadingStates: i,
-        errors: r,
-        lastUpdated: null
-      });
-      let o = !1;
-      const a = setTimeout(() => {
-        o || (o = !0, this.pubkeys.forEach((l) => {
-          i.set(l, !1);
-        }), e.update((l) => ({
-          ...l,
-          loading: !1,
-          loadingStates: i,
-          lastUpdated: /* @__PURE__ */ new Date()
-        })));
-      }, 5e3), c = await this.config.subscriptionManager.subscribe([t], {
-        onEvent: (l) => {
-          if (l.kind === 0 && this.pubkeys.includes(l.pubkey))
-            try {
-              const h = JSON.parse(l.content), d = {
-                pubkey: l.pubkey,
-                metadata: h,
-                lastUpdated: l.created_at,
-                eventId: l.id,
-                isOwn: !1
-              };
-              s.set(l.pubkey, d), i.set(l.pubkey, !1), e.update((g) => ({
-                ...g,
-                profiles: new Map(s),
-                loadingStates: new Map(i)
-              })), this.config.debug && console.log(`ProfileBatchBuilder Store: Updated profile for ${l.pubkey.substring(0, 16)}...`);
-            } catch (h) {
-              r.set(l.pubkey, h instanceof Error ? h : new Error("Parse error")), i.set(l.pubkey, !1), e.update((d) => ({
-                ...d,
-                loadingStates: new Map(i),
-                errors: new Map(r)
-              }));
-            }
-        },
-        onEose: () => {
-          if (!o && (o = !0, clearTimeout(a), this.pubkeys.forEach((l) => {
-            i.set(l, !1);
-          }), e.update((l) => ({
-            ...l,
-            loading: !1,
-            loadingStates: new Map(i),
-            lastUpdated: /* @__PURE__ */ new Date()
-          })), this.config.debug)) {
-            const l = Array.from(s.values()).filter((h) => h !== null).length;
-            console.log(`ProfileBatchBuilder Store: Batch complete - ${l}/${this.pubkeys.length} profiles`);
-          }
-        },
-        onError: (l) => {
-          o || (o = !0, clearTimeout(a), this.pubkeys.forEach((h) => {
-            r.set(h, l), i.set(h, !1);
-          }), e.update((h) => ({
-            ...h,
-            loading: !1,
-            loadingStates: new Map(i),
-            errors: new Map(r),
-            lastUpdated: /* @__PURE__ */ new Date()
-          })));
-        }
-      });
-      setTimeout(async () => {
-        c.success && c.subscription && await this.config.subscriptionManager.close(c.subscription.id);
-      }, 1e4);
-    } catch (t) {
-      const s = /* @__PURE__ */ new Map(), i = /* @__PURE__ */ new Map();
-      this.pubkeys.forEach((r) => {
-        s.set(r, !1), i.set(r, t instanceof Error ? t : new Error("Subscription error"));
-      }), e.update((r) => ({
-        ...r,
-        loading: !1,
-        loadingStates: s,
-        errors: i,
-        lastUpdated: /* @__PURE__ */ new Date()
-      }));
-    }
-  }
-}
-class It {
-  constructor(e) {
-    u(this, "config");
-    u(this, "criteria", {});
-    this.config = e;
-  }
-  /**
-   * Search profiles by NIP-05 identifier
-   */
-  byNip05(e) {
-    return this.criteria.nip05Query = e.toLowerCase(), this;
-  }
-  /**
-   * Search profiles by name (substring match)
-   */
-  byName(e) {
-    return this.criteria.nameQuery = e.toLowerCase(), this;
-  }
-  /**
-   * Filter profiles by metadata key-value pairs
-   */
-  withMetadata(e, t) {
-    return this.criteria.metadataFilters || (this.criteria.metadataFilters = /* @__PURE__ */ new Map()), this.criteria.metadataFilters.set(e, t), this;
-  }
-  /**
-   * Only include NIP-05 verified profiles
-   */
-  verified() {
-    return this.criteria.verifiedOnly = !0, this;
-  }
-  /**
-   * Limit the number of results returned
-   */
-  limit(e) {
-    return this.criteria.limit = Math.max(1, Math.min(e, 100)), this;
-  }
-  /**
-   * Execute the profile discovery search
-   */
-  async execute() {
-    this.config.debug && console.log("ProfileDiscoveryBuilder: Starting discovery with criteria:", this.criteria);
-    try {
-      const e = {
-        kinds: [0],
-        limit: this.criteria.limit || 50
-        // Default limit
-      }, t = [], s = /* @__PURE__ */ new Set();
-      return new Promise((i) => {
-        let r = !1;
-        const o = setTimeout(() => {
-          r || (r = !0, this.finalizeResults(t, i));
-        }, 1e4);
-        this.config.subscriptionManager.subscribe([e], {
-          onEvent: async (a) => {
-            if (a.kind === 0 && !s.has(a.pubkey)) {
-              s.add(a.pubkey);
-              try {
-                const c = await this.parseProfileEvent(a), l = await this.evaluateProfile(c);
-                l && (t.push(l), this.config.debug && console.log(`ProfileDiscoveryBuilder: Found match - ${c.metadata.name || "unnamed"} (score: ${l.relevanceScore})`), this.criteria.limit && t.length >= this.criteria.limit && (r || (r = !0, clearTimeout(o), this.finalizeResults(t, i))));
-              } catch (c) {
-                this.config.debug && console.error("ProfileDiscoveryBuilder: Error processing profile:", c);
-              }
-            }
-          },
-          onEose: () => {
-            r || (r = !0, clearTimeout(o), this.finalizeResults(t, i));
-          },
-          onError: (a) => {
-            r || (r = !0, clearTimeout(o), this.config.debug && console.error("ProfileDiscoveryBuilder: Search error:", a), i(t));
-          }
-        });
-      });
-    } catch (e) {
-      return this.config.debug && console.error("ProfileDiscoveryBuilder: Failed to start discovery:", e), [];
-    }
-  }
-  // Private helper methods
-  async parseProfileEvent(e) {
-    try {
-      const t = JSON.parse(e.content);
-      return {
-        pubkey: e.pubkey,
-        metadata: t,
-        lastUpdated: e.created_at,
-        eventId: e.id,
-        isOwn: !1
-      };
-    } catch {
-      throw new Error("Failed to parse profile event");
-    }
-  }
-  async evaluateProfile(e) {
-    var a, c;
-    const t = [];
-    let s = 0, i = 0, r = 0;
-    if (this.criteria.nameQuery) {
-      r++;
-      const l = ((a = e.metadata.name) == null ? void 0 : a.toLowerCase()) || "";
-      if (l.includes(this.criteria.nameQuery))
-        t.push("name"), i++, l === this.criteria.nameQuery ? s += 1 : l.startsWith(this.criteria.nameQuery) ? s += 0.8 : s += 0.5;
-      else
-        return null;
-    }
-    if (this.criteria.nip05Query) {
-      r++;
-      const l = ((c = e.metadata.nip05) == null ? void 0 : c.toLowerCase()) || "";
-      if (l.includes(this.criteria.nip05Query))
-        t.push("nip05"), i++, s += l === this.criteria.nip05Query ? 1 : 0.7;
-      else
-        return null;
-    }
-    if (this.criteria.metadataFilters && this.criteria.metadataFilters.size > 0)
-      for (const [l, h] of this.criteria.metadataFilters) {
-        r++;
-        const d = e.metadata[l];
-        d !== void 0 && (h === void 0 ? (t.push(l), i++, s += 0.3) : typeof d == "string" && typeof h == "string" ? d.toLowerCase().includes(h.toLowerCase()) && (t.push(l), i++, s += d.toLowerCase() === h.toLowerCase() ? 0.8 : 0.5) : d === h && (t.push(l), i++, s += 0.8));
-      }
-    if (this.criteria.verifiedOnly) {
-      if (r++, e.metadata.nip05) {
-        if (await this.checkNip05Verification(e))
-          t.push("verified"), i++, s += 0.5;
-        else if (this.criteria.verifiedOnly)
-          return null;
-      } else if (this.criteria.verifiedOnly)
-        return null;
-    }
-    if (r === 0 && (s = 0.1, i = 1, r = 1), r > 0 && i === 0)
-      return null;
-    const o = Math.min(1, s / Math.max(r, 1));
-    return {
-      profile: e,
-      matchedFields: t,
-      relevanceScore: o
-    };
-  }
-  async checkNip05Verification(e) {
-    var t;
-    if (!e.metadata.nip05) return !1;
-    try {
-      const [s, i] = e.metadata.nip05.split("@");
-      if (!s || !i) return !1;
-      const r = new AbortController(), o = setTimeout(() => r.abort(), 5e3), a = await fetch(`https://${i}/.well-known/nostr.json?name=${s}`, {
-        signal: r.signal
-      });
-      return clearTimeout(o), a.ok ? ((t = (await a.json()).names) == null ? void 0 : t[s]) === e.pubkey : !1;
-    } catch (s) {
-      return this.config.debug && console.error("ProfileDiscoveryBuilder: NIP-05 verification failed:", s), !1;
-    }
-  }
-  finalizeResults(e, t) {
-    e.sort((i, r) => r.relevanceScore - i.relevanceScore);
-    const s = this.criteria.limit ? e.slice(0, this.criteria.limit) : e;
-    this.config.debug && console.log(`ProfileDiscoveryBuilder: Discovery complete - found ${s.length} matches`), t(s);
-  }
-}
-class kt {
-  constructor(e) {
-    u(this, "config");
-    u(this, "store");
-    u(this, "sharedSubscriptionListenerId");
-    u(this, "activeRefreshListenerId");
-    // Derived stores for easy access
-    u(this, "follows");
-    u(this, "count");
-    u(this, "loading");
-    u(this, "error");
-    this.config = e, this.store = P({
-      follows: [],
-      loading: !0,
-      error: null,
-      lastUpdated: null
-    }), this.follows = w(this.store, (t) => t.follows), this.count = w(this.store, (t) => t.follows.length), this.loading = w(this.store, (t) => t.loading), this.error = w(this.store, (t) => t.error), this.initialize();
-  }
-  /**
-   * Subscribe to store changes (Svelte store interface)
-   */
-  subscribe(e) {
-    return this.store.subscribe(e);
-  }
-  /**
-   * Check if a pubkey is being followed
-   */
-  isFollowing(e) {
-    return w(
-      this.store,
-      (t) => t.follows.some((s) => s.pubkey === e)
-    );
-  }
-  /**
-   * Refresh follow list data by querying relays directly
-   */
-  async refresh() {
-    this.store.update((e) => ({ ...e, loading: !0, error: null }));
-    try {
-      const e = {
-        kinds: [3],
-        authors: [this.config.pubkey],
-        limit: 1
-      };
-      let t = !1, s = [];
-      const i = await this.config.subscriptionManager.getOrCreateSubscription([e]);
-      this.activeRefreshListenerId = i.addListener({
-        onEvent: async (r) => {
-          r.kind === 3 && r.pubkey === this.config.pubkey && !t && (t = !0, s = this.parseFollowListEvent(r), this.store.set({
-            follows: s,
-            loading: !1,
-            error: null,
-            lastUpdated: /* @__PURE__ */ new Date(),
-            eventId: r.id
-          }), this.config.debug && console.log(`FollowListStore: Found ${s.length} follows for ${this.config.pubkey}`));
-        },
-        onEose: () => {
-          t || (this.store.set({
-            follows: [],
-            loading: !1,
-            error: null,
-            lastUpdated: /* @__PURE__ */ new Date()
-          }), this.config.debug && console.log(`FollowListStore: No follow list found for ${this.config.pubkey}`));
-        },
-        onError: (r) => {
-          this.store.update((o) => ({
-            ...o,
-            loading: !1,
-            error: r
-          }));
-        }
-      }), setTimeout(() => {
-        if (this.activeRefreshListenerId) {
-          const r = i.removeListener(this.activeRefreshListenerId);
-          this.activeRefreshListenerId = void 0, r && this.config.subscriptionManager.cleanupSharedSubscriptions();
-        }
-        t || this.store.set({
-          follows: [],
-          loading: !1,
-          error: null,
-          lastUpdated: /* @__PURE__ */ new Date()
-        });
-      }, 3e3);
-    } catch (e) {
-      this.store.update((t) => ({
-        ...t,
-        loading: !1,
-        error: e instanceof Error ? e : new Error("Failed to fetch follow list")
-      }));
-    }
-  }
-  /**
-   * Subscribe to real-time follow list updates
-   */
-  async startSubscription() {
-    if (this.sharedSubscriptionListenerId) return;
-    const e = {
-      kinds: [3],
-      authors: [this.config.pubkey],
-      limit: 1
-    };
-    try {
-      const t = await this.config.subscriptionManager.getOrCreateSubscription([e]);
-      if (this.sharedSubscriptionListenerId = t.addListener({
-        onEvent: (s) => {
-          s.kind === 3 && s.pubkey === this.config.pubkey && this.handleFollowListUpdate(s);
-        },
-        onError: (s) => {
-          this.store.update((i) => ({ ...i, error: s }));
-        }
-      }), this.config.debug) {
-        const s = t.getStats();
-        console.log(`FollowListStore: Subscribed to follow list updates for ${this.config.pubkey} (${s.listenerCount} listeners on shared subscription)`);
-      }
-    } catch (t) {
-      this.store.update((s) => ({
-        ...s,
-        error: t instanceof Error ? t : new Error("Failed to subscribe")
-      }));
-    }
-  }
-  /**
-   * Unsubscribe from follow list updates
-   */
-  async unsubscribe() {
-    if (this.sharedSubscriptionListenerId) {
-      const e = {
-        kinds: [3],
-        authors: [this.config.pubkey],
-        limit: 1
-      }, s = (await this.config.subscriptionManager.getOrCreateSubscription([e])).removeListener(this.sharedSubscriptionListenerId);
-      this.sharedSubscriptionListenerId = void 0, s && await this.config.subscriptionManager.cleanupSharedSubscriptions(), this.config.debug && console.log(`FollowListStore: Unsubscribed from follow list updates for ${this.config.pubkey}`);
-    }
-    if (this.activeRefreshListenerId) {
-      const e = {
-        kinds: [3],
-        authors: [this.config.pubkey],
-        limit: 1
-      }, s = (await this.config.subscriptionManager.getOrCreateSubscription([e])).removeListener(this.activeRefreshListenerId);
-      this.activeRefreshListenerId = void 0, s && await this.config.subscriptionManager.cleanupSharedSubscriptions();
-    }
-  }
-  /**
-   * Clean up resources
-   */
-  async close() {
-    await this.unsubscribe();
-  }
-  // Private helper methods
-  async initialize() {
-    await this.refresh(), this.startSubscription();
-  }
-  parseFollowListEvent(e) {
-    const t = [];
-    try {
-      for (const s of e.tags)
-        if (s[0] === "p" && s[1]) {
-          const i = {
-            pubkey: s[1]
-          };
-          s[2] && (i.relayUrl = s[2]), s[3] && (i.petname = s[3]), t.push(i);
-        }
-      return this.config.debug && console.log(`FollowListStore: Parsed ${t.length} follows from event ${e.id}`), t;
-    } catch (s) {
-      return this.config.debug && console.error("FollowListStore: Failed to parse follow list event:", s), [];
-    }
-  }
-  handleFollowListUpdate(e) {
-    try {
-      const t = this.parseFollowListEvent(e);
-      this.store.set({
-        follows: t,
-        loading: !1,
-        error: null,
-        lastUpdated: /* @__PURE__ */ new Date(),
-        eventId: e.id
-      }), this.config.debug && console.log(`FollowListStore: Follow list updated for ${this.config.pubkey} (${t.length} follows)`);
-    } catch (t) {
-      this.store.update((s) => ({
-        ...s,
-        error: t instanceof Error ? t : new Error("Failed to parse follow list update")
-      }));
-    }
-  }
-}
-class _t {
-  constructor(e, t) {
-    u(this, "config");
-    u(this, "targetPubkey");
-    u(this, "relayUrl");
-    u(this, "petnameValue");
-    this.config = e, this.targetPubkey = t;
-  }
-  /**
-   * Set preferred relay for this follow
-   */
-  relay(e) {
-    return this.relayUrl = e, this;
-  }
-  /**
-   * Set pet name for this follow
-   */
-  petname(e) {
-    return this.petnameValue = e, this;
-  }
-  /**
-   * Publish the updated follow list
-   */
-  async publish() {
-    try {
-      const e = await this.config.signingProvider.getPublicKey();
-      this.config.debug && console.log("FollowBuilder: Adding follow for", this.targetPubkey.substring(0, 16) + "...");
-      const t = await this.getCurrentFollows();
-      if (t.some((f) => f.pubkey === this.targetPubkey))
-        return this.config.debug && console.log("FollowBuilder: Already following", this.targetPubkey.substring(0, 16) + "..."), {
-          success: !1,
-          error: "Already following this user"
-        };
-      const i = {
-        pubkey: this.targetPubkey,
-        relayUrl: this.relayUrl,
-        petname: this.petnameValue
-      }, a = {
-        kind: 3,
-        content: "",
-        // Follow lists typically have empty content
-        tags: [...t, i].map((f) => {
-          const y = ["p", f.pubkey];
-          return f.relayUrl && y.push(f.relayUrl), f.petname && y.push(f.petname), y;
-        }),
-        created_at: Math.floor(Date.now() / 1e3),
-        pubkey: e
-      }, c = I.addEventId(a), l = await this.config.signingProvider.signEvent(a), h = {
-        ...c,
-        sig: l
-      }, g = (await Promise.allSettled(
-        this.config.relayManager.relayUrls.map(async (f) => {
-          try {
-            return await this.config.relayManager.sendToRelay(f, ["EVENT", h]), { success: !0, relay: f };
-          } catch (y) {
-            return {
-              success: !1,
-              relay: f,
-              error: y instanceof Error ? y.message : "Unknown error"
-            };
-          }
-        })
-      )).filter(
-        (f) => f.status === "fulfilled" && f.value.success
-      ).map((f) => f.value.relay);
-      return g.length > 0 ? (this.config.debug && console.log(`FollowBuilder: Published follow list to ${g.length} relays`), {
-        success: !0,
-        eventId: h.id
-      }) : {
-        success: !1,
-        error: "Failed to publish to any relay"
-      };
-    } catch (e) {
-      return {
-        success: !1,
-        error: e instanceof Error ? e.message : "Failed to add follow"
-      };
-    }
-  }
-  // Private helper methods
-  async getCurrentFollows() {
-    try {
-      const e = await this.config.signingProvider.getPublicKey(), t = {
-        kinds: [3],
-        authors: [e],
-        limit: 1
-      };
-      return new Promise((s) => {
-        let i = !1;
-        const r = setTimeout(() => {
-          i || s([]);
-        }, 3e3);
-        this.config.subscriptionManager.subscribe([t], {
-          onEvent: (o) => {
-            if (o.kind === 3 && o.pubkey === e && !i) {
-              i = !0, clearTimeout(r);
-              const a = this.parseFollowListEvent(o);
-              s(a);
-            }
-          },
-          onEose: () => {
-            i || (clearTimeout(r), s([]));
-          }
-        });
-      });
-    } catch {
-      return [];
-    }
-  }
-  parseFollowListEvent(e) {
-    const t = [];
-    try {
-      for (const s of e.tags)
-        if (s[0] === "p" && s[1]) {
-          const i = {
-            pubkey: s[1]
-          };
-          s[2] && (i.relayUrl = s[2]), s[3] && (i.petname = s[3]), t.push(i);
-        }
-      return t;
-    } catch (s) {
-      return this.config.debug && console.error("FollowBuilder: Failed to parse follow list event:", s), [];
-    }
-  }
-}
-class At {
-  constructor(e) {
-    u(this, "config");
-    u(this, "toAdd", []);
-    u(this, "toRemove", []);
-    this.config = e;
-  }
-  /**
-   * Add multiple pubkeys to follow list
-   */
-  add(e) {
-    return this.toAdd.push(...e), this;
-  }
-  /**
-   * Remove multiple pubkeys from follow list
-   */
-  remove(e) {
-    return this.toRemove.push(...e), this;
-  }
-  /**
-   * Publish the batch follow list update
-   */
-  async publish() {
-    if (this.toAdd.length === 0 && this.toRemove.length === 0)
-      return {
-        success: !1,
-        error: "No follow operations specified"
-      };
-    try {
-      const e = await this.config.signingProvider.getPublicKey();
-      this.config.debug && console.log(`FollowBatchBuilder: Batch operation - adding ${this.toAdd.length}, removing ${this.toRemove.length}`);
-      let s = [...await this.getCurrentFollows()];
-      if (this.toRemove.length > 0 && (s = s.filter(
-        (g) => !this.toRemove.includes(g.pubkey)
-      ), this.config.debug && console.log(`FollowBatchBuilder: Removed ${this.toRemove.length} follows`)), this.toAdd.length > 0) {
-        const g = this.toAdd.filter((p) => !s.some((f) => f.pubkey === p)).map((p) => ({ pubkey: p }));
-        s.push(...g), this.config.debug && console.log(`FollowBatchBuilder: Added ${g.length} new follows (${this.toAdd.length - g.length} were duplicates)`);
-      }
-      const r = {
-        kind: 3,
-        content: "",
-        // Follow lists typically have empty content
-        tags: s.map((g) => {
-          const p = ["p", g.pubkey];
-          return g.relayUrl && p.push(g.relayUrl), g.petname && p.push(g.petname), p;
-        }),
-        created_at: Math.floor(Date.now() / 1e3),
-        pubkey: e
-      }, o = I.addEventId(r), a = await this.config.signingProvider.signEvent(r), c = {
-        ...o,
-        sig: a
-      }, h = (await Promise.allSettled(
-        this.config.relayManager.relayUrls.map(async (g) => {
-          try {
-            return await this.config.relayManager.sendToRelay(g, ["EVENT", c]), { success: !0, relay: g };
-          } catch (p) {
-            return {
-              success: !1,
-              relay: g,
-              error: p instanceof Error ? p.message : "Unknown error"
-            };
-          }
-        })
-      )).filter(
-        (g) => g.status === "fulfilled" && g.value.success
-      ).map((g) => g.value.relay);
-      return h.length > 0 ? (this.config.debug && (console.log(`FollowBatchBuilder: Published batch update to ${h.length} relays`), console.log(`FollowBatchBuilder: Final follow list has ${s.length} follows`)), {
-        success: !0,
-        eventId: c.id
-      }) : {
-        success: !1,
-        error: "Failed to publish to any relay"
-      };
-    } catch (e) {
-      return {
-        success: !1,
-        error: e instanceof Error ? e.message : "Failed to publish batch update"
-      };
-    }
-  }
-  // Private helper methods
-  async getCurrentFollows() {
-    try {
-      const e = await this.config.signingProvider.getPublicKey(), t = {
-        kinds: [3],
-        authors: [e],
-        limit: 1
-      };
-      return new Promise((s) => {
-        let i = !1;
-        const r = setTimeout(() => {
-          i || s([]);
-        }, 3e3);
-        this.config.subscriptionManager.subscribe([t], {
-          onEvent: (o) => {
-            if (o.kind === 3 && o.pubkey === e && !i) {
-              i = !0, clearTimeout(r);
-              const a = this.parseFollowListEvent(o);
-              s(a);
-            }
-          },
-          onEose: () => {
-            i || (clearTimeout(r), s([]));
-          }
-        });
-      });
-    } catch {
-      return [];
-    }
-  }
-  parseFollowListEvent(e) {
-    const t = [];
-    try {
-      for (const s of e.tags)
-        if (s[0] === "p" && s[1]) {
-          const i = {
-            pubkey: s[1]
-          };
-          s[2] && (i.relayUrl = s[2]), s[3] && (i.petname = s[3]), t.push(i);
-        }
-      return t;
-    } catch (s) {
-      return this.config.debug && console.error("FollowBatchBuilder: Failed to parse follow list event:", s), [];
-    }
-  }
-}
-class Tt {
-  constructor(e) {
-    u(this, "config");
-    u(this, "followStores", /* @__PURE__ */ new Map());
-    this.config = e;
-  }
-  /**
-   * Get own follow list as a reactive store
-   */
-  async mine() {
-    if (!this.config.signingProvider)
-      throw new Error("Cannot access own follow list: No signing provider available. Initialize signing first.");
-    const e = await this.config.signingProvider.getPublicKey();
-    return this.of(e);
-  }
-  /**
-   * Get follow list for any pubkey as a reactive store
-   */
-  of(e) {
-    if (this.followStores.has(e))
-      return this.followStores.get(e);
-    const t = new kt({
-      pubkey: e,
-      subscriptionManager: this.config.subscriptionManager,
-      debug: this.config.debug
-    });
-    return this.followStores.set(e, t), t;
-  }
-  /**
-   * Phase 4: Add a user to follow list
-   * Returns FollowBuilder for fluent API configuration
-   */
-  add(e) {
-    if (!this.config.signingProvider)
-      throw new Error("Cannot add follow: No signing provider available. Initialize signing first.");
-    return new _t({
-      subscriptionManager: this.config.subscriptionManager,
-      relayManager: this.config.relayManager,
-      signingProvider: this.config.signingProvider,
-      debug: this.config.debug
-    }, e);
-  }
-  /**
-   * Phase 4: Remove a user from follow list
-   */
-  async remove(e) {
-    if (!this.config.signingProvider)
-      throw new Error("Cannot remove follow: No signing provider available. Initialize signing first.");
-    try {
-      const t = await this.config.signingProvider.getPublicKey();
-      this.config.debug && console.log("FollowsModule: Removing follow for", e.substring(0, 16) + "...");
-      const s = await this.getCurrentFollows();
-      if (!s.some((f) => f.pubkey === e))
-        return this.config.debug && console.log("FollowsModule: Not following", e.substring(0, 16) + "..."), {
-          success: !1,
-          error: "Not following this user"
-        };
-      const a = {
-        kind: 3,
-        content: "",
-        // Follow lists typically have empty content
-        tags: s.filter((f) => f.pubkey !== e).map((f) => {
-          const y = ["p", f.pubkey];
-          return f.relayUrl && y.push(f.relayUrl), f.petname && y.push(f.petname), y;
-        }),
-        created_at: Math.floor(Date.now() / 1e3),
-        pubkey: t
-      }, c = I.addEventId(a), l = await this.config.signingProvider.signEvent(a), h = {
-        ...c,
-        sig: l
-      }, g = (await Promise.allSettled(
-        this.config.relayManager.relayUrls.map(async (f) => {
-          try {
-            return await this.config.relayManager.sendToRelay(f, ["EVENT", h]), { success: !0, relay: f };
-          } catch (y) {
-            return {
-              success: !1,
-              relay: f,
-              error: y instanceof Error ? y.message : "Unknown error"
-            };
-          }
-        })
-      )).filter(
-        (f) => f.status === "fulfilled" && f.value.success
-      ).map((f) => f.value.relay);
-      return g.length > 0 ? (this.config.debug && console.log(`FollowsModule: Published updated follow list to ${g.length} relays`), {
-        success: !0,
-        eventId: h.id
-      }) : {
-        success: !1,
-        error: "Failed to publish to any relay"
-      };
-    } catch (t) {
-      return {
-        success: !1,
-        error: t instanceof Error ? t.message : "Failed to remove follow"
-      };
-    }
-  }
-  /**
-   * Phase 5: Batch follow operations
-   * Returns FollowBatchBuilder for bulk add/remove operations
-   */
-  batch() {
-    if (!this.config.signingProvider)
-      throw new Error("Cannot batch follow operations: No signing provider available. Initialize signing first.");
-    return new At({
-      subscriptionManager: this.config.subscriptionManager,
-      relayManager: this.config.relayManager,
-      signingProvider: this.config.signingProvider,
-      debug: this.config.debug
-    });
-  }
-  /**
-   * Update signing provider when it becomes available
-   */
-  async updateSigningProvider(e) {
-    this.config.signingProvider = e;
-  }
-  /**
-   * Clean up resources
-   */
-  async close() {
-    for (const e of this.followStores.values())
-      await e.close();
-    this.followStores.clear();
-  }
-  // Private helper methods
-  async getCurrentFollows() {
-    try {
-      const e = await this.config.signingProvider.getPublicKey(), t = {
-        kinds: [3],
-        authors: [e],
-        limit: 1
-      };
-      return new Promise((s) => {
-        let i = !1;
-        const r = setTimeout(() => {
-          i || s([]);
-        }, 3e3);
-        this.config.subscriptionManager.subscribe([t], {
-          onEvent: (o) => {
-            if (o.kind === 3 && o.pubkey === e && !i) {
-              i = !0, clearTimeout(r);
-              const a = this.parseFollowListEvent(o);
-              s(a);
-            }
-          },
-          onEose: () => {
-            i || (clearTimeout(r), s([]));
-          }
-        });
-      });
-    } catch {
-      return [];
-    }
-  }
-  parseFollowListEvent(e) {
-    const t = [];
-    try {
-      for (const s of e.tags)
-        if (s[0] === "p" && s[1]) {
-          const i = {
-            pubkey: s[1]
-          };
-          s[2] && (i.relayUrl = s[2]), s[3] && (i.petname = s[3]), t.push(i);
-        }
-      return t;
-    } catch (s) {
-      return this.config.debug && console.error("FollowsModule: Failed to parse follow list event:", s), [];
-    }
-  }
-}
-class Ct {
-  constructor(e) {
-    u(this, "config");
-    u(this, "profileStores", /* @__PURE__ */ new Map());
-    u(this, "_follows");
-    this.config = e;
-  }
-  /**
-   * Get a reactive profile store for any pubkey
-   * This is the main entry point for profile subscriptions
-   * 
-   * NEW: Uses clean base layer architecture when NostrUnchained instance is available
-   * LEGACY: Falls back to ProfileStore for backward compatibility
-   */
-  get(e) {
-    return this.config.nostr ? this.getClean(e) : this.getLegacy(e);
-  }
-  /**
-   * NEW: Clean base layer implementation
-   */
-  getClean(e) {
-    if (!this.config.nostr)
-      throw new Error("NostrUnchained instance required for clean architecture");
-    return this.startProfileSubscription(e), this.config.nostr.query().kinds([0]).authors([e]).limit(1).execute().map((t) => this.parseProfileEvents(t, e));
-  }
-  /**
-   * LEGACY: Original ProfileStore implementation
-   */
-  getLegacy(e) {
-    if (this.profileStores.has(e))
-      return this.profileStores.get(e);
-    const t = new Mt({
-      pubkey: e,
-      subscriptionManager: this.config.subscriptionManager,
-      cache: this.config.cache,
-      // Phase 8: Pass cache to ProfileStore
-      debug: this.config.debug
-    });
-    return t.refresh().catch((s) => {
-      this.config.debug && console.error("Failed to start profile loading:", s);
-    }), this.profileStores.set(e, t), t;
-  }
-  /**
-   * Start subscription for profile updates (Clean architecture)
-   */
-  async startProfileSubscription(e) {
-    if (this.config.nostr)
-      try {
-        await this.config.nostr.sub().kinds([0]).authors([e]).limit(1).execute();
-      } catch (t) {
-        this.config.debug && console.warn(`Failed to start profile subscription for ${e}:`, t);
-      }
-  }
-  /**
-   * Parse NostrEvent[] to UserProfile | null (Clean architecture)
-   */
-  parseProfileEvents(e, t) {
-    if (e.length === 0)
-      return null;
-    const s = e[0];
-    if (s.kind !== 0 || s.pubkey !== t)
-      return null;
-    try {
-      const i = JSON.parse(s.content);
-      return {
-        pubkey: s.pubkey,
-        metadata: i,
-        lastUpdated: s.created_at,
-        eventId: s.id,
-        isOwn: !1
-        // Will be determined by caller if needed
-      };
-    } catch (i) {
-      return this.config.debug && console.warn(`Failed to parse profile event for ${t}:`, i), null;
-    }
-  }
-  /**
-   * Phase 2: Profile Creation & Updates - Fluent Builder API
-   * Creates a ProfileBuilder for updating profiles with field preservation
-   */
-  edit() {
-    if (!this.config.signingProvider)
-      throw new Error("Cannot edit profile: No signing provider available. Initialize signing first.");
-    return new St({
-      subscriptionManager: this.config.subscriptionManager,
-      relayManager: this.config.relayManager,
-      signingProvider: this.config.signingProvider,
-      debug: this.config.debug
-    });
-  }
-  /**
-   * Phase 3: Follow List Operations - Access to follow lists
-   * Get access to follow list management (mine() and of() methods)
-   */
-  get follows() {
-    return this._follows || (this._follows = new Tt({
-      subscriptionManager: this.config.subscriptionManager,
-      relayManager: this.config.relayManager,
-      signingProvider: this.config.signingProvider,
-      debug: this.config.debug
-    })), this._follows;
-  }
-  /**
-   * Phase 5: Batch Profile Operations - Efficient multiple profile fetching
-   * Creates a ProfileBatchBuilder for bulk profile operations
-   */
-  batch() {
-    return new Pt({
-      subscriptionManager: this.config.subscriptionManager,
-      debug: this.config.debug
-    });
-  }
-  /**
-   * Phase 6: Profile Discovery - Search and discover profiles
-   * Creates a ProfileDiscoveryBuilder for profile search operations
-   */
-  discover() {
-    return new It({
-      subscriptionManager: this.config.subscriptionManager,
-      debug: this.config.debug
-    });
-  }
-  /**
-   * Update signing provider when it becomes available
-   */
-  async updateSigningProvider(e) {
-    this.config.signingProvider = e, this._follows && await this._follows.updateSigningProvider(e);
-  }
-  /**
-   * Clean up resources
-   */
-  async close() {
-    for (const e of this.profileStores.values())
-      await e.close();
-    this.profileStores.clear(), this._follows && await this._follows.close();
-  }
-}
-class ci {
-  constructor(e = {}) {
-    u(this, "relayManager");
-    u(this, "subscriptionManager");
-    u(this, "cache");
-    u(this, "signingProvider");
-    u(this, "signingMethod");
-    u(this, "config");
-    u(this, "giftWrapSubscriptionActive", !1);
-    u(this, "cachedMyPubkey", null);
-    // Fluent Event Builder API
-    u(this, "events");
-    // Direct Message API (Legacy)
-    u(this, "dm");
-    // Universal DM API (Cache-based)
-    u(this, "universalDM");
-    // Social Media API
-    u(this, "social");
-    // Profile API (Enhanced)
-    u(this, "_profile");
-    console.log("🔥 NostrUnchained v0.1.0-FIX (build:", (/* @__PURE__ */ new Date()).toISOString().substring(0, 19) + "Z)"), this.config = {
-      relays: e.relays ?? es,
-      debug: e.debug ?? !1,
-      retryAttempts: e.retryAttempts ?? se.RETRY_ATTEMPTS,
-      retryDelay: e.retryDelay ?? se.RETRY_DELAY,
-      timeout: e.timeout ?? se.PUBLISH_TIMEOUT,
-      signingProvider: e.signingProvider
-    }, this.relayManager = new ss(this.config.relays, {
-      debug: this.config.debug
-    }), this.subscriptionManager = new Ns(this.relayManager), this.events = new rs(this), e.signingProvider ? (this.signingProvider = e.signingProvider, this.signingMethod = e.signingProvider.constructor.name.includes("Extension") ? "extension" : "temporary", this.cache = new Se("", {}), this._initializeCache().catch((t) => {
-      this.config.debug && console.log("⚠️ Cache initialization with private key failed:", t);
-    }), this.config.debug && console.log("🎯 NostrUnchained initialized with PROVIDED signing provider - Everything ready!")) : (this.cache = new Se("", {}), this.config.debug && console.log("🚨 NostrUnchained initialized WITHOUT signing provider - will auto-detect later")), this.dm = new vt({
-      subscriptionManager: this.subscriptionManager,
-      relayManager: this.relayManager,
-      signingProvider: this.signingProvider,
-      debug: this.config.debug,
-      parent: this
-    }), this.social = new Cs({
-      subscriptionManager: this.subscriptionManager,
-      relayManager: this.relayManager,
-      signingProvider: this.signingProvider,
-      eventBuilder: new I(),
-      debug: this.config.debug
-    }), this.config.debug && console.log("NostrUnchained initialized with relays:", this.config.relays);
-  }
-  /**
-   * Initialize cache with signing provider's private key
-   */
-  async _initializeCache() {
-    if (this.signingProvider)
-      try {
-        const e = await this.signingProvider.getPrivateKeyForEncryption();
-        this.cache = new Se(e, {});
-        const t = await this.signingProvider.getPublicKey();
-        this.universalDM = new Ps(this, t), this.config.debug && console.log("🎯 Universal Cache and Universal DM Module initialized");
-      } catch {
-        this.cache = new Se("", {}), this.config.debug && console.log("⚠️ Could not get private key for cache, using empty key (no gift wrap decryption)");
-      }
-  }
-  /**
-   * Get enhanced profile module (PERFECT DX - always works!)
-   */
-  get profile() {
-    return this._profile || (this._profile = new Ct({
-      relayManager: this.relayManager,
-      subscriptionManager: this.subscriptionManager,
-      signingProvider: this.signingProvider,
-      eventBuilder: new I(),
-      cache: this.cache,
-      debug: this.config.debug,
-      // NEW: Pass NostrUnchained instance for clean architecture
-      nostr: this
-    })), this._profile;
-  }
-  /**
-   * Get configured relay URLs
-   */
-  get relays() {
-    return this.config.relays;
-  }
-  /**
-   * Get connected relays
-   */
-  get connectedRelays() {
-    return this.relayManager.connectedRelays;
-  }
-  /**
-   * Initialize signing provider
-   * PERFECT DX: Only needed if signingProvider wasn't provided in constructor
-   * If it was provided, this does nothing (idempotent)
-   */
-  async initializeSigning(e) {
-    if (this.signingProvider && !e) {
-      this.config.debug && console.log("🚫 Signing already initialized - skipping (Perfect DX!)");
-      return;
-    }
-    if (e)
-      this.signingProvider = e, this.signingMethod = e.constructor.name.includes("Extension") ? "extension" : "temporary";
-    else if (this.config.signingProvider)
-      this.signingProvider = this.config.signingProvider, this.signingMethod = this.config.signingProvider.constructor.name.includes("Extension") ? "extension" : "temporary";
-    else {
-      const { provider: t, method: s } = await is.createBestAvailable();
-      this.signingProvider = t, this.signingMethod = s;
-    }
-    this.cachedMyPubkey = null, await this._initializeCache(), await this.dm.updateSigningProvider(this.signingProvider), await this.social.updateSigningProvider(this.signingProvider), this._profile && await this._profile.updateSigningProvider(this.signingProvider), this.config.debug && console.log(`Initialized signing with method: ${this.signingMethod}`);
-  }
-  /**
-   * Connect to relays
-   */
-  async connect() {
-    try {
-      if (await this.relayManager.connect(), this.config.debug) {
-        const e = this.relayManager.getStats();
-        console.log("Relay connection stats:", e);
-      }
-    } catch (e) {
-      throw R.handleConnectionError("relays", e);
-    }
-  }
-  /**
-   * Start universal gift wrap subscription (Lazy Loading)
-   * This is the critical piece that makes DMs work with the Universal Cache
-   * Only starts if not already active - gives users proper control
-   */
-  async startUniversalGiftWrapSubscription() {
-    if (this.giftWrapSubscriptionActive) {
-      this.config.debug && console.log("🎁 Gift wrap subscription already active - skipping");
-      return;
-    }
-    if (!this.signingProvider) {
-      this.config.debug && console.log("⚠️ Cannot start gift wrap subscription - no signing provider");
-      return;
-    }
-    try {
-      const e = await this.signingProvider.getPublicKey(), t = await this.subscriptionManager.subscribe({
-        filters: [{
-          kinds: [1059],
-          // Gift wrap events
-          "#p": [e],
-          limit: 100
-          // Get recent messages
-        }],
-        relays: this.config.relays,
-        onEvent: async (s) => {
-          this.config.debug && console.log(`🎁 Received gift wrap event: ${s.id.substring(0, 8)}...`);
-        },
-        onEose: () => {
-          this.config.debug && console.log("🎁 Gift wrap initial sync completed");
-        }
-      });
-      this.giftWrapSubscriptionActive = !0, this.config.debug && console.log("🎁 Universal gift wrap subscription started successfully");
-    } catch (e) {
-      throw console.error("Failed to start gift wrap subscription:", e), e;
-    }
-  }
-  /**
-   * Disconnect from all relays
-   */
-  async disconnect() {
-    await this.relayManager.disconnect();
-  }
-  /**
-   * Publish event to specific relays
-   */
-  async publishToRelays(e, t) {
-    if (!this.signingProvider)
-      throw new Error("No signing provider available. Call initializeSigning() first.");
-    const s = I.validateEvent(e);
-    if (!s.valid)
-      throw new Error(`Invalid event: ${s.errors.join(", ")}`);
-    const i = I.calculateEventId(e), r = {
-      ...e,
-      id: i,
-      sig: await this.signingProvider.signEvent({ ...e, id: i })
-    }, o = await this.relayManager.publishToRelays(r, t), a = o.some((c) => c.success);
-    return {
-      success: a,
-      eventId: a ? r.id : void 0,
-      event: a ? r : void 0,
-      relayResults: o,
-      timestamp: Date.now(),
-      error: a ? void 0 : {
-        message: "Failed to publish to any relay",
-        code: "PUBLISH_FAILED",
-        retryable: !0
-      }
-    };
-  }
-  /**
-   * Publish an event
-   */
-  async publish(e) {
-    if (!this.signingProvider)
-      throw new Error("No signing provider available. Call initializeSigning() first.");
-    const t = I.validateEvent(e);
-    if (!t.valid)
-      throw new Error(`Invalid event: ${t.errors.join(", ")}`);
-    const s = I.calculateEventId(e), i = {
-      ...e,
-      id: s,
-      sig: await this.signingProvider.signEvent({ ...e, id: s })
-    }, r = await this.relayManager.publishToAll(i), o = r.some((a) => a.success);
-    return {
-      success: o,
-      eventId: o ? i.id : void 0,
-      event: o ? i : void 0,
-      relayResults: r,
-      timestamp: Date.now(),
-      error: o ? void 0 : {
-        message: "Failed to publish to any relay",
-        code: "PUBLISH_FAILED",
-        retryable: !0
-      }
-    };
-  }
-  /**
-   * Get public key
-   */
-  async getPublicKey() {
-    if (!this.signingProvider)
-      throw new Error("No signing provider available. Call initializeSigning() first.");
-    return this.cachedMyPubkey || (this.cachedMyPubkey = await this.signingProvider.getPublicKey()), this.cachedMyPubkey;
-  }
-  /**
-   * PERFECT DX: Get my pubkey synchronously (cached)
-   * Returns null if not available yet - perfect for reactive UI
-   */
-  get me() {
-    return this.cachedMyPubkey;
-  }
-  /**
-   * PERFECT DX: Get my pubkey as Promise (always works)
-   * Caches result for instant sync access via .me
-   */
-  async getMe() {
-    try {
-      return await this.getPublicKey();
-    } catch {
-      return null;
-    }
-  }
-  /**
-   * Get relay statistics
-   */
-  getRelayStats() {
-    return this.relayManager.getStats();
-  }
-  /**
-   * Create a query builder for complex queries
-   */
-  query() {
-    return new Ds(this.cache);
-  }
-  /**
-   * Create a subscription builder
-   */
-  sub() {
-    return new Fs(this.cache, this.subscriptionManager);
-  }
-  /**
-   * Get the Universal Event Cache for advanced usage
-   */
-  getCache() {
-    return this.cache;
-  }
-  /**
-   * Get cache statistics
-   */
-  getCacheStatistics() {
-    return this.cache.getStatistics();
-  }
-  /**
-   * Get the subscription manager for advanced usage
-   */
-  getSubscriptionManager() {
-    return this.subscriptionManager;
-  }
-  /**
-   * Get Universal DM Module (lazy-loaded)
-   */
-  getDM() {
-    return this.universalDM;
-  }
-  /**
-   * Get debug info
-   */
-  getDebugInfo() {
-    return {
-      signingMethod: this.signingMethod || "none",
-      connectedRelays: this.connectedRelays.length,
-      cacheSize: this.cache.getStatistics().totalEvents,
-      subscriptions: 0,
-      // TODO: Get from subscription manager
-      giftWrapActive: this.giftWrapSubscriptionActive
-    };
-  }
-}
-class li extends Le {
-  constructor(e) {
-    super(), this.cache = e;
-  }
-  execute() {
-    return new De(this.cache, this.filter);
-  }
-}
-class ui extends Le {
-  constructor(t, s) {
-    super();
-    u(this, "relayUrls", []);
-    this.cache = t, this.subscriptionManager = s;
-  }
-  relay(t) {
-    return this.relayUrls = [t], this;
-  }
-  relays(t) {
-    return this.relayUrls = t, this;
-  }
-  /**
-   * Execute the subscription and return a handle for lifecycle control
-   * This provides excellent DX for managing subscriptions
-   */
-  async execute() {
-    var o;
-    const t = this.relayUrls.length > 0 ? { relays: this.relayUrls } : {}, s = await this.subscriptionManager.subscribe([this.filter], {
-      ...t,
-      onEvent: (a) => {
-        this.cache.addEvent(a);
-      }
-    });
-    if (!s.success || !s.subscription)
-      throw new Error(((o = s.error) == null ? void 0 : o.message) || "Subscription failed");
-    const i = s.subscription, r = new De(this.cache, this.filter);
-    return {
-      id: i.id,
-      store: r,
-      stop: async () => {
-        await this.subscriptionManager.close(i.id);
-      },
-      isActive: () => this.subscriptionManager.getActiveSubscriptions().some((c) => c.id === i.id)
-    };
-  }
-}
-const hi = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const di = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  DMConversation: wt,
-  DMModule: vt,
-  DMRoom: mt,
-  EphemeralKeyManager: ke,
-  GiftWrapCreator: _e,
-  GiftWrapProtocol: re,
-  NIP44Crypto: k,
-  SealCreator: pe,
-  TimestampRandomizer: We
-}, Symbol.toStringTag, { value: "Module" })), di = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
-  __proto__: null,
-  FollowBatchBuilder: At,
-  FollowBuilder: _t,
-  FollowListStore: kt,
-  FollowsModule: Tt,
-  ProfileBatchBuilder: Pt,
-  ProfileBuilder: St,
-  ProfileCacheInterface: Et,
-  ProfileDiscoveryBuilder: It,
-  ProfileModule: Ct,
-  ProfileStore: Mt
+  FollowBatchBuilder: kt,
+  FollowBuilder: It,
+  FollowListStore: Pt,
+  FollowsModule: _t,
+  ProfileBatchBuilder: Mt,
+  ProfileBuilder: Et,
+  ProfileCacheInterface: Tt,
+  ProfileDiscoveryBuilder: St,
+  ProfileModule: At,
+  ProfileStore: Fs
 }, Symbol.toStringTag, { value: "Module" }));
 /*! scure-base - MIT License (c) 2022 Paul Miller (paulmillr.com) */
-function Rt(n) {
+function Ct(n) {
   return n instanceof Uint8Array || ArrayBuffer.isView(n) && n.constructor.name === "Uint8Array";
 }
-function Nt(n, e) {
+function Rt(n, e) {
   return Array.isArray(e) ? e.length === 0 ? !0 : n ? e.every((t) => typeof t == "string") : e.every((t) => Number.isSafeInteger(t)) : !1;
 }
 function xs(n) {
@@ -7679,7 +7650,7 @@ function ve(n, e) {
     throw new Error(`${n}: string expected`);
   return !0;
 }
-function Lt(n) {
+function Nt(n) {
   if (!Number.isSafeInteger(n))
     throw new Error(`invalid integer: ${n}`);
 }
@@ -7687,12 +7658,12 @@ function ze(n) {
   if (!Array.isArray(n))
     throw new Error("array expected");
 }
-function Dt(n, e) {
-  if (!Nt(!0, e))
+function Lt(n, e) {
+  if (!Rt(!0, e))
     throw new Error(`${n}: array of strings expected`);
 }
-function Ft(n, e) {
-  if (!Nt(!1, e))
+function Dt(n, e) {
+  if (!Rt(!1, e))
     throw new Error(`${n}: array of numbers expected`);
 }
 // @__NO_SIDE_EFFECTS__
@@ -7703,7 +7674,7 @@ function Os(...n) {
 // @__NO_SIDE_EFFECTS__
 function Us(n) {
   const e = typeof n == "string" ? n.split("") : n, t = e.length;
-  Dt("alphabet", e);
+  Lt("alphabet", e);
   const s = new Map(e.map((i, r) => [i, r]));
   return {
     encode: (i) => (ze(i), i.map((r) => {
@@ -7723,11 +7694,11 @@ function Us(n) {
 // @__NO_SIDE_EFFECTS__
 function $s(n = "") {
   return ve("join", n), {
-    encode: (e) => (Dt("join.decode", e), e.join(n)),
+    encode: (e) => (Lt("join.decode", e), e.join(n)),
     decode: (e) => (ve("join.decode", e), e.split(n))
   };
 }
-const xt = (n, e) => e === 0 ? n : xt(e, n % e), Ce = /* @__NO_SIDE_EFFECTS__ */ (n, e) => n + (e - xt(n, e)), Ae = /* @__PURE__ */ (() => {
+const Ft = (n, e) => e === 0 ? n : Ft(e, n % e), Ce = /* @__NO_SIDE_EFFECTS__ */ (n, e) => n + (e - Ft(n, e)), Ae = /* @__PURE__ */ (() => {
   let n = [];
   for (let e = 0; e < 40; e++)
     n.push(2 ** e);
@@ -7743,7 +7714,7 @@ function He(n, e, t, s) {
   let i = 0, r = 0;
   const o = Ae[e], a = Ae[t] - 1, c = [];
   for (const l of n) {
-    if (Lt(l), l >= o)
+    if (Nt(l), l >= o)
       throw new Error(`convertRadix2: invalid data word=${l} from=${e}`);
     if (i = i << e | l, r + e > 32)
       throw new Error(`convertRadix2: carry overflow pos=${r} from=${e}`);
@@ -7762,17 +7733,17 @@ function He(n, e, t, s) {
 }
 // @__NO_SIDE_EFFECTS__
 function Bs(n, e = !1) {
-  if (Lt(n), n <= 0 || n > 32)
+  if (Nt(n), n <= 0 || n > 32)
     throw new Error("radix2: bits should be in (0..32]");
   if (/* @__PURE__ */ Ce(8, n) > 32 || /* @__PURE__ */ Ce(n, 8) > 32)
     throw new Error("radix2: carry overflow");
   return {
     encode: (t) => {
-      if (!Rt(t))
+      if (!Ct(t))
         throw new Error("radix2.encode input should be Uint8Array");
       return He(Array.from(t), 8, n, !e);
     },
-    decode: (t) => (Ft("radix2.decode", t), Uint8Array.from(He(t, n, 8, e)))
+    decode: (t) => (Dt("radix2.decode", t), Uint8Array.from(He(t, n, 8, e)))
   };
 }
 function lt(n) {
@@ -7813,7 +7784,7 @@ function ht(n, e, t = 1) {
 function Ks(n) {
   const e = n === "bech32" ? 1 : 734539939, t = /* @__PURE__ */ Bs(5), s = t.decode, i = t.encode, r = lt(s);
   function o(d, g, p = 90) {
-    ve("bech32.encode prefix", d), Rt(g) && (g = Array.from(g)), Ft("bech32.encode", g);
+    ve("bech32.encode prefix", d), Ct(g) && (g = Array.from(g)), Dt("bech32.encode", g);
     const f = d.length;
     if (f === 0)
       throw new TypeError(`Invalid prefix length ${f}`);
@@ -7861,7 +7832,7 @@ function Ks(n) {
     toWords: i
   };
 }
-const Re = /* @__PURE__ */ Ks("bech32"), Ot = 5e3, Ne = new TextEncoder(), Pe = new TextDecoder();
+const Re = /* @__PURE__ */ Ks("bech32"), xt = 5e3, Ne = new TextEncoder(), Pe = new TextDecoder();
 function Vs(n) {
   const e = new Uint8Array(4);
   return e[0] = n >> 24 & 255, e[1] = n >> 16 & 255, e[2] = n >> 8 & 255, e[3] = n & 255, e;
@@ -7884,18 +7855,18 @@ function Xe(n) {
       const r = new Uint8Array(i.length + 2);
       r.set([parseInt(t)], 0), r.set([i.length], 1), r.set(i, 2), e.push(r);
     });
-  }), Ht(...e);
+  }), zt(...e);
 }
 function Fe(n, e) {
   const t = Re.toWords(e);
-  return Re.encode(n, t, Ot);
+  return Re.encode(n, t, xt);
 }
 function Ze(n, e) {
   return Fe(n, e);
 }
 function Je(n) {
   var i, r, o, a, c, l, h;
-  const { prefix: e, words: t } = Re.decode(n, Ot), s = new Uint8Array(Re.fromWords(t));
+  const { prefix: e, words: t } = Re.decode(n, xt), s = new Uint8Array(Re.fromWords(t));
   switch (e) {
     case "nprofile": {
       const d = Be(s);
@@ -8097,12 +8068,12 @@ function Mi(n) {
 }
 const Si = "0.1.0";
 export {
-  es as DEFAULT_RELAYS,
+  qt as DEFAULT_RELAYS,
   hi as DM,
   tt as EVENT_KINDS,
   R as ErrorHandler,
   I as EventBuilder,
-  rs as EventsModule,
+  is as EventsModule,
   st as ExtensionSigner,
   Qe as FeedStoreImpl,
   Oe as FluentEventBuilder,
@@ -8111,10 +8082,10 @@ export {
   di as Profile,
   li as QueryBuilder,
   ei as QuickSigner,
-  ss as RelayManager,
-  is as SigningProviderFactory,
+  ts as RelayManager,
+  ss as SigningProviderFactory,
   ui as SubBuilder,
-  Ns as SubscriptionManager,
+  Rs as SubscriptionManager,
   ti as TemporarySigner,
   Si as VERSION,
   ii as createFeed,
