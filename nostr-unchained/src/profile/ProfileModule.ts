@@ -33,6 +33,8 @@ export interface ProfileModuleConfig {
   debug?: boolean;
   // REQUIRED: NostrUnchained instance for clean base layer access
   nostr: NostrUnchained;
+  // For backwards compatibility with batch builders
+  cache?: any;
 }
 
 export class ProfileModule {
@@ -119,10 +121,10 @@ export class ProfileModule {
     }
 
     return new ProfileBuilder({
-      subscriptionManager: this.config.subscriptionManager,
       relayManager: this.config.relayManager,
       signingProvider: this.config.signingProvider,
-      debug: this.config.debug
+      debug: this.config.debug,
+      nostr: this.config.nostr
     });
   }
 

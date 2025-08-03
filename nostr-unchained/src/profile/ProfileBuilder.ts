@@ -6,17 +6,18 @@
  */
 
 import { EventBuilder } from '../core/EventBuilder.js';
-import type { SubscriptionManager } from '../subscription/SubscriptionManager.js';
+import type { NostrUnchained } from '../core/NostrUnchained.js';
 import type { RelayManager } from '../relay/RelayManager.js';
 import type { SigningProvider } from '../crypto/SigningProvider.js';
 import type { ProfileMetadata, UserProfile, PublishResult } from './types.js';
 import type { NostrEvent, Filter } from '../core/types.js';
 
 export interface ProfileBuilderConfig {
-  subscriptionManager: SubscriptionManager;
   relayManager: RelayManager;
   signingProvider: SigningProvider;
   debug?: boolean;
+  // CLEAN ARCHITECTURE: Use base layer instead of direct SubscriptionManager
+  nostr: NostrUnchained;
 }
 
 export class ProfileBuilder {
@@ -272,63 +273,60 @@ export class ProfileBuilder {
     try {
       const myPubkey = await this.config.signingProvider.getPublicKey();
       
-      // Query for current profile
-      const filter: Filter = {
-        kinds: [0],
-        authors: [myPubkey],
-        limit: 1
-      };
+      // CLEAN ARCHITECTURE: Use base layer for cache-first profile loading
+      const profileStore = this.config.nostr.query()
+        .kinds([0])
+        .authors([myPubkey])
+        .limit(1)
+        .execute();
 
-      return new Promise((resolve) => {
-        let profileFound = false;
-        
-        const timeoutId = setTimeout(() => {
-          if (!profileFound) {
-            resolve(null);
-          }
-        }, 3000);
+      // Try cache first (instant!)
+      const currentProfile = profileStore.current;
+      if (currentProfile && currentProfile.length > 0) {
+        const event = currentProfile[0];
+        try {
+          const metadata = JSON.parse(event.content);
+          return {
+            pubkey: event.pubkey,
+            metadata,
+            lastUpdated: event.created_at,
+            eventId: event.id,
+            isOwn: true
+          };
+        } catch {
+          return null;
+        }
+      }
 
-        const executeGetProfile = async () => {
-          const sharedSub = await this.config.subscriptionManager.getOrCreateSubscription([filter]);
-          const listenerId = sharedSub.addListener({
-            onEvent: (event: NostrEvent) => {
-              if (event.kind === 0 && event.pubkey === myPubkey && !profileFound) {
-                profileFound = true;
-                clearTimeout(timeoutId);
-                sharedSub.removeListener(listenerId);
-                
-                try {
-                  const metadata = JSON.parse(event.content);
-                  const profile: UserProfile = {
-                    pubkey: event.pubkey,
-                    metadata,
-                    lastUpdated: event.created_at,
-                    eventId: event.id,
-                    isOwn: true
-                  };
-                  resolve(profile);
-                } catch {
-                  resolve(null);
-                }
-              }
-            },
-            onEose: () => {
-              if (!profileFound) {
-                clearTimeout(timeoutId);
-                sharedSub.removeListener(listenerId);
-                resolve(null);
-              }
-            }
-          });
-        };
-        
-        executeGetProfile().catch(() => {
-          if (!profileFound) {
-            clearTimeout(timeoutId);
-            resolve(null);
-          }
-        });
-      });
+      // If not in cache, start subscription and wait briefly
+      await this.config.nostr.sub()
+        .kinds([0])
+        .authors([myPubkey])
+        .limit(1)
+        .execute();
+
+      // Wait a bit for subscription to populate cache
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Check cache again
+      const updatedProfile = profileStore.current;
+      if (updatedProfile && updatedProfile.length > 0) {
+        const event = updatedProfile[0];
+        try {
+          const metadata = JSON.parse(event.content);
+          return {
+            pubkey: event.pubkey,
+            metadata,
+            lastUpdated: event.created_at,
+            eventId: event.id,
+            isOwn: true
+          };
+        } catch {
+          return null;
+        }
+      }
+
+      return null;
     } catch {
       return null;
     }
