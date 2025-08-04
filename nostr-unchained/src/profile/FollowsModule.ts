@@ -327,8 +327,8 @@ export class FollowsModule {
       subscriptionManager: this.config.subscriptionManager,
       relayManager: this.config.relayManager,
       signingProvider: this.config.signingProvider,
-      cache: this.config.nostr.eventCache, // Add cache for instant updates
-      debug: this.config.debug ?? false
+      debug: this.config.debug ?? false,
+      nostr: this.config.nostr // CLEAN ARCHITECTURE: Pass nostr instance
     });
   }
 
