@@ -1,48 +1,33 @@
 /**
- * Social Media Core Module
+ * Social Module - Clean Architecture Social Media API
  * 
- * Session 4: Complete social media functionality for nostr-unchained
- * - User Profiles (NIP-01 Kind 0)
- * - Contact Management (NIP-02 Kind 3) 
- * - Threading & Replies (NIP-10)
- * - Reactions (NIP-25 Kind 7)
- * - Social Feeds
+ * Comprehensive social media functionality following clean 3-layer architecture:
+ * - Content Creation & Management (NIP-01, NIP-18, NIP-23)
+ * - Social Interactions (NIP-25 reactions, NIP-10 threading)
+ * - Communities & Communication (NIP-28, NIP-72)
+ * - Moderation & Safety (NIP-32, NIP-56)
+ * - Lists & Organization (NIP-51)
+ * 
+ * Implementation Status:
+ * - Phase 1 (MVP): Content, Reactions, Threads, Feeds - TODO
+ * - Phase 2 (Extended): Communities, Lists, Moderation - TODO  
+ * - Phase 3 (Advanced): Advanced communities, Polls - TODO
  */
 
+// Main API
 export { SocialModule } from './api/SocialModule.js';
-export { ProfileManager } from './profiles/ProfileManager.js';
-export { ContactManager } from './contacts/ContactManager.js';
-export { ThreadManager } from './threads/ThreadManager.js';
-export { ReactionManager } from './reactions/ReactionManager.js';
-export { FeedManager } from './feeds/FeedManager.js';
+export type { SocialModuleConfig } from './api/SocialModule.js';
 
-// Types
-export type {
-  UserProfile,
-  ProfileMetadata,
-  ProfileUpdate
-} from './types/profile-types.js';
+// Types - Preserved from previous implementation
+export * from './types/contact-types.js';
+export * from './types/reaction-types.js';
+export * from './types/thread-types.js';
+export * from './types/feed-types.js';
 
-export type {
-  Contact,
-  ContactList,
-  FollowEvent
-} from './types/contact-types.js';
-
-export type {
-  Thread,
-  ThreadMessage,
-  ReplyContext
-} from './types/thread-types.js';
-
-export type {
-  Reaction,
-  ReactionSummary,
-  ReactionType
-} from './types/reaction-types.js';
-
-export type {
-  SocialFeed,
-  FeedPost,
-  FeedOptions
-} from './types/feed-types.js';
+// Module exports (TODO: Implement in phases)
+// export { ContentModule } from './content/ContentModule.js';
+// export { ReactionModule } from './reactions/ReactionModule.js';
+// export { ThreadModule } from './threads/ThreadModule.js';
+// export { FeedModule } from './feeds/FeedModule.js';
+// export { CommunityModule } from './communities/CommunityModule.js';
+// export { ListModule } from './lists/ListModule.js';

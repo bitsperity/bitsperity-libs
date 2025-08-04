@@ -115,12 +115,9 @@ export class NostrUnchained {
       parent: this
     });
 
-    // Initialize Social module - works with or without signing provider  
+    // Initialize Social module - CLEAN ARCHITECTURE with nostr instance
     this.social = new SocialModule({
-      subscriptionManager: this.subscriptionManager,
-      relayManager: this.relayManager,
-      signingProvider: this.signingProvider,
-      eventBuilder: new EventBuilder(),
+      nostr: this,
       debug: this.config.debug
     });
 
