@@ -9,6 +9,8 @@
  */
 
 import type { NostrUnchained } from '../../core/NostrUnchained.js';
+import { ReactionModule } from '../reactions/ReactionModule.js';
+import { ContentModule } from '../content/ContentModule.js';
 
 export interface SocialModuleConfig {
   nostr: NostrUnchained;
@@ -19,8 +21,8 @@ export class SocialModule {
   private config: SocialModuleConfig;
 
   // Lazy-loaded modules
-  private _content?: any; // ContentModule;
-  private _reactions?: any; // ReactionModule;
+  private _content?: ContentModule;
+  private _reactions?: ReactionModule;
   private _threads?: any; // ThreadModule;
   private _feeds?: any; // FeedModule;
   private _communities?: any; // CommunityModule;
@@ -40,8 +42,7 @@ export class SocialModule {
    */
   get content() {
     if (!this._content) {
-      // TODO: Implement ContentModule
-      throw new Error('ContentModule not yet implemented - Coming in Phase 1');
+      this._content = new ContentModule(this.config.nostr, this.config.debug);
     }
     return this._content;
   }
@@ -52,8 +53,7 @@ export class SocialModule {
    */
   get reactions() {
     if (!this._reactions) {
-      // TODO: Implement ReactionModule
-      throw new Error('ReactionModule not yet implemented - Coming in Phase 1');
+      this._reactions = new ReactionModule(this.config.nostr, this.config.debug);
     }
     return this._reactions;
   }

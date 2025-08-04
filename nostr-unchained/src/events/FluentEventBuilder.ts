@@ -132,7 +132,9 @@ export class FluentEventBuilder {
    * Explicitly sign the event (optional - auto-signs on publish)
    */
   async sign(): Promise<FluentEventBuilder> {
-    if (!this.eventData.content) {
+    // Content validation - some event types allow empty content
+    const contentRequired = this.eventData.kind !== 6 && this.eventData.kind !== 5; // Reposts and deletions can have empty content
+    if (contentRequired && !this.eventData.content) {
       throw new Error('Content is required before signing');
     }
 
@@ -188,7 +190,9 @@ export class FluentEventBuilder {
    * Publish the event to relays
    */
   async publish(): Promise<PublishResult> {
-    if (!this.eventData.content) {
+    // Content validation - some event types allow empty content
+    const contentRequired = this.eventData.kind !== 6 && this.eventData.kind !== 5; // Reposts and deletions can have empty content
+    if (contentRequired && !this.eventData.content) {
       throw new Error('Content is required before publishing');
     }
 
@@ -320,6 +324,16 @@ export class EventsModule {
       .kind(7)
       .content(reaction)
       .tag('e', eventId);
+  }
+
+  /**
+   * Quick create deletion event (NIP-09)
+   */
+  deletion(eventId: string, reason?: string): FluentEventBuilder {
+    return this.create()
+      .kind(5) // NIP-09 deletion event
+      .content(reason || '') // Optional deletion reason
+      .tag('e', eventId); // Reference to event being deleted
   }
 
   /**
