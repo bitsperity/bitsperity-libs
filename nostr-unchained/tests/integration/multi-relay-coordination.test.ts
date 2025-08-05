@@ -9,11 +9,12 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { NostrUnchained } from '@/index';
+import { EventBuilder } from '../../src/core/EventBuilder.js';
 
 describe('Multi-Relay Coordination', () => {
   let nostr: NostrUnchained;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     nostr = new NostrUnchained({
       relays: [
         'ws://umbrel.local:4848',    // Local relay (confirmed working)
@@ -23,6 +24,10 @@ describe('Multi-Relay Coordination', () => {
       debug: true,
       timeout: 30000
     });
+    
+    // Initialize signing and connect
+    await nostr.initializeSigning();
+    await nostr.connect();
   });
 
   afterEach(async () => {
@@ -32,7 +37,9 @@ describe('Multi-Relay Coordination', () => {
   describe('Real Multi-Relay Publishing', () => {
     it('should handle real multi-relay publishing with fault tolerance', async () => {
       const testMessage = `Multi-relay coordination test: ${Date.now()}`;
-      const result = await nostr.publish(testMessage);
+      const pubkey = await nostr.getPublicKey();
+      const event = EventBuilder.createTextNote(testMessage, pubkey);
+      const result = await nostr.publish(event);
 
       // Verify publishing succeeded to at least one relay
       expect(result.success).toBe(true);
@@ -59,8 +66,14 @@ describe('Multi-Relay Coordination', () => {
         timeout: 15000
       });
 
+      // Initialize signing and connect
+      await resilientNostr.initializeSigning();
+      await resilientNostr.connect();
+
       const testMessage = `Resilience test: ${Date.now()}`;
-      const result = await resilientNostr.publish(testMessage);
+      const pubkey = await resilientNostr.getPublicKey();
+      const event = EventBuilder.createTextNote(testMessage, pubkey);
+      const result = await resilientNostr.publish(event);
 
       // Should succeed despite some relay failures
       expect(result.success).toBe(true);
@@ -137,9 +150,15 @@ describe('Multi-Relay Coordination', () => {
         timeout: 15000
       });
 
+      // Initialize signing and connect first
+      await connectionTestNostr.initializeSigning();
+      await connectionTestNostr.connect();
+      
       // First, establish connection
       const firstMessage = `Connection state test 1: ${Date.now()}`;
-      const firstResult = await connectionTestNostr.publish(firstMessage);
+      const pubkey = await connectionTestNostr.getPublicKey();
+      const firstEvent = EventBuilder.createTextNote(firstMessage, pubkey);
+      const firstResult = await connectionTestNostr.publish(firstEvent);
       expect(firstResult.success).toBe(true);
 
       // Disconnect and reconnect
@@ -150,7 +169,8 @@ describe('Multi-Relay Coordination', () => {
 
       // Try to publish again (should reconnect automatically)
       const secondMessage = `Connection state test 2: ${Date.now()}`;
-      const secondResult = await connectionTestNostr.publish(secondMessage);
+      const secondEvent = EventBuilder.createTextNote(secondMessage, pubkey);
+      const secondResult = await connectionTestNostr.publish(secondEvent);
       expect(secondResult.success).toBe(true);
 
       console.log('✅ Connection state management verified');
@@ -163,7 +183,9 @@ describe('Multi-Relay Coordination', () => {
     it('should demonstrate real event deduplication with multi-relay queries', async () => {
       // Publish same event to multiple relays, then query
       const testMessage = `Deduplication test: ${Date.now()}`;
-      const publishResult = await nostr.publish(testMessage);
+      const pubkey = await nostr.getPublicKey();
+      const event = EventBuilder.createTextNote(testMessage, pubkey);
+      const publishResult = await nostr.publish(event);
       
       expect(publishResult.success).toBe(true);
       

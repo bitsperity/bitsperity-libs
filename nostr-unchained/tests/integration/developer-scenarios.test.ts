@@ -9,6 +9,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { NostrUnchained } from '@/index';
+import { EventBuilder } from '../../src/core/EventBuilder.js';
 
 describe('Developer Scenarios', () => {
   let nostr: NostrUnchained;
@@ -105,9 +106,15 @@ describe('Developer Scenarios', () => {
         timeout: 20000
       });
 
+      // Initialize signing and connect
+      await unreliableNostr.initializeSigning();
+      await unreliableNostr.connect();
+
       // Should still work despite some relay failures
       const testMessage = `Error recovery test: ${Date.now()}`;
-      const publishResult = await unreliableNostr.publish(testMessage);
+      const pubkey = await unreliableNostr.getPublicKey();
+      const event = EventBuilder.createTextNote(testMessage, pubkey);
+      const publishResult = await unreliableNostr.publish(event);
 
       expect(publishResult.success).toBe(true);
       expect(publishResult.eventId).toBeDefined();
@@ -178,9 +185,15 @@ describe('Developer Scenarios', () => {
         timeout: 10000
       });
 
+      // Initialize signing and connect
+      await invalidRelayNostr.initializeSigning();
+      await invalidRelayNostr.connect();
+
       // Should still work with valid relay
       const testMessage = `Developer error handling test: ${Date.now()}`;
-      const result = await invalidRelayNostr.publish(testMessage);
+      const pubkey = await invalidRelayNostr.getPublicKey();
+      const event = EventBuilder.createTextNote(testMessage, pubkey);
+      const result = await invalidRelayNostr.publish(event);
 
       // At least one relay should succeed
       const workingRelays = result.relayResults.filter(r => r.success);

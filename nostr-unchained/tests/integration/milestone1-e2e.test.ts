@@ -37,7 +37,7 @@ describe('Milestone 1: E2E Integration Tests', () => {
 
       // Publishing test
       const content = `E2E test message: ${Date.now()}`;
-      const pubkey = await nostr.signingProvider.getPublicKey();
+      const pubkey = await nostr.getPublicKey();
       const event = EventBuilder.createTextNote(content, pubkey);
       const result = await nostr.publish(event);
 
@@ -66,7 +66,7 @@ describe('Milestone 1: E2E Integration Tests', () => {
       await nostr.connect();
 
       const content = `Multi-relay test: ${Date.now()}`;
-      const pubkey = await nostr.signingProvider.getPublicKey();
+      const pubkey = await nostr.getPublicKey();
       const event = EventBuilder.createTextNote(content, pubkey);
       const result = await nostr.publish(event);
 
@@ -98,7 +98,7 @@ describe('Milestone 1: E2E Integration Tests', () => {
 
       // Step 3: First publish attempt
       const content = "My first Nostr message!";
-      const pubkey = await nostr.signingProvider.getPublicKey();
+      const pubkey = await nostr.getPublicKey();
       const event = EventBuilder.createTextNote(content, pubkey);
       const result = await nostr.publish(event);
 
@@ -125,7 +125,7 @@ describe('Milestone 1: E2E Integration Tests', () => {
       await debugNostr.connect();
 
       const content = "Debug info test";
-      const pubkey = await debugNostr.signingProvider.getPublicKey();
+      const pubkey = await debugNostr.getPublicKey();
       const event = EventBuilder.createTextNote(content, pubkey);
       const result = await debugNostr.publish(event);
 
@@ -154,7 +154,7 @@ describe('Milestone 1: E2E Integration Tests', () => {
 
       // First attempt might fail due to timing
       const content1 = "Network resilience test 1";
-      const pubkey = await nostr.signingProvider.getPublicKey();
+      const pubkey = await nostr.getPublicKey();
       const event1 = EventBuilder.createTextNote(content1, pubkey);
       const result1 = await nostr.publish(event1);
 
@@ -228,7 +228,7 @@ describe('Milestone 1: E2E Integration Tests', () => {
       
       // Should fallback to temporary keys and still work
       const content = "No extension test";
-      const pubkey = await nostr.signingProvider.getPublicKey();
+      const pubkey = await nostr.getPublicKey();
       const event = EventBuilder.createTextNote(content, pubkey);
       const result = await nostr.publish(event);
 
@@ -264,7 +264,7 @@ describe('Milestone 1: E2E Integration Tests', () => {
       for (let i = 0; i < 5; i++) {
         const publishStart = Date.now();
         const content = `Performance test ${i}`;
-        const pubkey = await testNostr.signingProvider.getPublicKey();
+        const pubkey = await testNostr.getPublicKey();
         const event = EventBuilder.createTextNote(content, pubkey);
         const result = await testNostr.publish(event);
         const publishTime = Date.now() - publishStart;
@@ -312,7 +312,7 @@ describe('Milestone 1: E2E Integration Tests', () => {
         // Realistic delay between posts
         await new Promise(resolve => setTimeout(resolve, 1000)); // Reduced delay
         
-        const pubkey = await socialNostr.signingProvider.getPublicKey();
+        const pubkey = await socialNostr.getPublicKey();
         const event = EventBuilder.createTextNote(post, pubkey);
         const result = await socialNostr.publish(event);
         results.push(result);
