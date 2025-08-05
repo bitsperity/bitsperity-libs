@@ -156,6 +156,7 @@ export class EventBuilder {
     
     // Event kinds that explicitly allow or require empty content
     const emptyContentKinds = [
+      3,    // NIP-02: Contact list / Follow list (typically has empty content)
       5,    // NIP-09: Event deletion (may have empty content)
       6,    // NIP-18: Repost (requires empty content)
       7,    // NIP-25: Reaction (may have empty content for simple reactions)
