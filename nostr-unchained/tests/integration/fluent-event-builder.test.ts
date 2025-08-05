@@ -7,6 +7,7 @@
 
 import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';
 import { NostrUnchained } from '../../src/index.js';
+import { EventBuilder } from '../../src/core/EventBuilder.js';
 
 describe('Fluent Event Builder API - Real Integration Tests', () => {
   let nostr: NostrUnchained;
@@ -18,6 +19,9 @@ describe('Fluent Event Builder API - Real Integration Tests', () => {
       debug: true
     });
 
+    // Initialize signing provider
+    await nostr.initializeSigning();
+    
     // Connect to relay
     await nostr.connect();
   });
@@ -263,7 +267,9 @@ describe('Fluent Event Builder API - Real Integration Tests', () => {
 
   describe('Backward Compatibility', () => {
     it('should maintain backward compatibility with simple publish API', async () => {
-      const result = await nostr.publish("Simple publish still works!");
+      const pubkey = await nostr.getPublicKey();
+      const event = EventBuilder.createTextNote("Simple publish still works!", pubkey);
+      const result = await nostr.publish(event);
 
       expect(result.success).toBe(true);
       expect(result.event?.kind).toBe(1);

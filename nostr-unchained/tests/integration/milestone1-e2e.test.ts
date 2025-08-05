@@ -7,6 +7,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { NostrUnchained } from '@/index';
+import { EventBuilder } from '../../src/core/EventBuilder.js';
 
 describe('Milestone 1: E2E Integration Tests', () => {
   let nostr: NostrUnchained;
@@ -27,13 +28,18 @@ describe('Milestone 1: E2E Integration Tests', () => {
         relays: ['ws://umbrel.local:4848']
       });
 
+      // Initialize signing provider
+      await nostr.initializeSigning();
+
       // Connection test
       await nostr.connect();
       expect(nostr.connectedRelays).toContain('ws://umbrel.local:4848');
 
       // Publishing test
       const content = `E2E test message: ${Date.now()}`;
-      const result = await nostr.publish(content);
+      const pubkey = await nostr.signingProvider.getPublicKey();
+      const event = EventBuilder.createTextNote(content, pubkey);
+      const result = await nostr.publish(event);
 
       expect(result.success).toBe(true);
       expect(result.eventId).toMatch(/^[a-f0-9]{64}$/);
@@ -53,7 +59,16 @@ describe('Milestone 1: E2E Integration Tests', () => {
         ]
       });
 
-      const result = await nostr.publish(`Multi-relay test: ${Date.now()}`);
+      // Initialize signing provider
+      await nostr.initializeSigning();
+      
+      // Connect to relays
+      await nostr.connect();
+
+      const content = `Multi-relay test: ${Date.now()}`;
+      const pubkey = await nostr.signingProvider.getPublicKey();
+      const event = EventBuilder.createTextNote(content, pubkey);
+      const result = await nostr.publish(event);
 
       // Should succeed overall if at least one relay works  
       expect(result.success).toBe(true);
@@ -75,8 +90,17 @@ describe('Milestone 1: E2E Integration Tests', () => {
       // Step 1: Install and import (simulated)
       const nostr = new NostrUnchained();
 
-      // Step 2: First publish attempt
-      const result = await nostr.publish("My first Nostr message!");
+      // Step 2: Initialize signing
+      await nostr.initializeSigning();
+      
+      // Step 2.5: Connect to relay
+      await nostr.connect();
+
+      // Step 3: First publish attempt
+      const content = "My first Nostr message!";
+      const pubkey = await nostr.signingProvider.getPublicKey();
+      const event = EventBuilder.createTextNote(content, pubkey);
+      const result = await nostr.publish(event);
 
       const totalTime = Date.now() - startTime;
 
@@ -94,7 +118,16 @@ describe('Milestone 1: E2E Integration Tests', () => {
         relays: ['ws://umbrel.local:4848'] // Use working relay
       });
 
-      const result = await debugNostr.publish("Debug info test");
+      // Initialize signing provider
+      await debugNostr.initializeSigning();
+      
+      // Connect to relay
+      await debugNostr.connect();
+
+      const content = "Debug info test";
+      const pubkey = await debugNostr.signingProvider.getPublicKey();
+      const event = EventBuilder.createTextNote(content, pubkey);
+      const result = await debugNostr.publish(event);
 
       // Should provide debugging information
       expect(result.debug).toBeDefined();
@@ -113,8 +146,17 @@ describe('Milestone 1: E2E Integration Tests', () => {
         retryDelay: 1000
       });
 
+      // Initialize signing provider
+      await nostr.initializeSigning();
+      
+      // Connect to relay
+      await nostr.connect();
+
       // First attempt might fail due to timing
-      const result1 = await nostr.publish("Network resilience test 1");
+      const content1 = "Network resilience test 1";
+      const pubkey = await nostr.signingProvider.getPublicKey();
+      const event1 = EventBuilder.createTextNote(content1, pubkey);
+      const result1 = await nostr.publish(event1);
 
       // Should eventually succeed or provide clear error
       if (!result1.success) {
@@ -123,17 +165,33 @@ describe('Milestone 1: E2E Integration Tests', () => {
       }
 
       // Second attempt should have better chance
-      const result2 = await nostr.publish("Network resilience test 2");
+      const content2 = "Network resilience test 2";
+      const event2 = EventBuilder.createTextNote(content2, pubkey);
+      const result2 = await nostr.publish(event2);
       
       // At least one should succeed in normal conditions
       expect(result1.success || result2.success).toBe(true);
     }, 60000);
 
     it('should handle relay overload gracefully', async () => {
+      const testNostr = new NostrUnchained({
+        relays: ['ws://umbrel.local:4848'],
+        timeout: 5000
+      });
+      
+      // Initialize signing provider
+      await testNostr.initializeSigning();
+      
+      // Connect to relay
+      await testNostr.connect();
+      
       // Simulate relay overload by sending many requests
-      const promises = Array.from({ length: 10 }, (_, i) =>
-        nostr.publish(`Load test message ${i}`)
-      );
+      const pubkey = await testNostr.signingProvider.getPublicKey();
+      const promises = Array.from({ length: 10 }, (_, i) => {
+        const content = `Load test message ${i}`;
+        const event = EventBuilder.createTextNote(content, pubkey);
+        return testNostr.publish(event);
+      });
 
       const results = await Promise.all(promises);
 
@@ -146,6 +204,8 @@ describe('Milestone 1: E2E Integration Tests', () => {
         expect(result.error?.message).toBeDefined();
         expect(result.error?.retryable).toBeDefined();
       });
+      
+      await testNostr.disconnect();
     }, 60000);
   });
 
@@ -160,8 +220,17 @@ describe('Milestone 1: E2E Integration Tests', () => {
         debug: true
       });
       
+      // Initialize signing provider
+      await nostr.initializeSigning();
+      
+      // Connect to relay
+      await nostr.connect();
+      
       // Should fallback to temporary keys and still work
-      const result = await nostr.publish("No extension test");
+      const content = "No extension test";
+      const pubkey = await nostr.signingProvider.getPublicKey();
+      const event = EventBuilder.createTextNote(content, pubkey);
+      const result = await nostr.publish(event);
 
       expect(result.success).toBe(true);
       expect(result.eventId).toBeDefined();
@@ -178,6 +247,9 @@ describe('Milestone 1: E2E Integration Tests', () => {
         relays: ['ws://umbrel.local:4848']
       });
 
+      // Initialize signing provider
+      await testNostr.initializeSigning();
+
       const metrics = {
         connectionTime: 0,
         publishTimes: [] as number[]
@@ -191,7 +263,10 @@ describe('Milestone 1: E2E Integration Tests', () => {
       // Measure publish times
       for (let i = 0; i < 5; i++) {
         const publishStart = Date.now();
-        const result = await testNostr.publish(`Performance test ${i}`);
+        const content = `Performance test ${i}`;
+        const pubkey = await testNostr.signingProvider.getPublicKey();
+        const event = EventBuilder.createTextNote(content, pubkey);
+        const result = await testNostr.publish(event);
         const publishTime = Date.now() - publishStart;
 
         if (result.success) {
@@ -217,6 +292,12 @@ describe('Milestone 1: E2E Integration Tests', () => {
         relays: ['ws://umbrel.local:4848']
       });
 
+      // Initialize signing provider
+      await socialNostr.initializeSigning();
+      
+      // Connect to relay
+      await socialNostr.connect();
+
       // Simulate real social media usage
       const posts = [
         "Hello Nostr! This is my first post.",
@@ -231,7 +312,9 @@ describe('Milestone 1: E2E Integration Tests', () => {
         // Realistic delay between posts
         await new Promise(resolve => setTimeout(resolve, 1000)); // Reduced delay
         
-        const result = await socialNostr.publish(post);
+        const pubkey = await socialNostr.signingProvider.getPublicKey();
+        const event = EventBuilder.createTextNote(post, pubkey);
+        const result = await socialNostr.publish(event);
         results.push(result);
         
         // Should succeed for typical usage

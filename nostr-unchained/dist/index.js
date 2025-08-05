@@ -1,27 +1,27 @@
-var Ft = Object.defineProperty;
-var Ot = (n, e, t) => e in n ? Ft(n, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : n[e] = t;
+var Lt = Object.defineProperty;
+var Ot = (n, e, t) => e in n ? Lt(n, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : n[e] = t;
 var l = (n, e, t) => Ot(n, typeof e != "symbol" ? e + "" : e, t);
 import * as ne from "@noble/secp256k1";
 import { getSharedSecret as $t } from "@noble/secp256k1";
 const ue = typeof globalThis == "object" && "crypto" in globalThis ? globalThis.crypto : void 0;
 /*! noble-hashes - MIT License (c) 2022 Paul Miller (paulmillr.com) */
-function Ut(n) {
+function Bt(n) {
   return n instanceof Uint8Array || ArrayBuffer.isView(n) && n.constructor.name === "Uint8Array";
 }
-function Ue(n) {
+function Be(n) {
   if (!Number.isSafeInteger(n) || n < 0)
     throw new Error("positive integer expected, got " + n);
 }
 function de(n, ...e) {
-  if (!Ut(n))
+  if (!Bt(n))
     throw new Error("Uint8Array expected");
   if (e.length > 0 && !e.includes(n.length))
     throw new Error("Uint8Array expected of length " + e + ", got length=" + n.length);
 }
-function Ge(n) {
+function ze(n) {
   if (typeof n != "function" || typeof n.create != "function")
     throw new Error("Hash should be wrapped by utils.createHasher");
-  Ue(n.outputLen), Ue(n.blockLen);
+  Be(n.outputLen), Be(n.blockLen);
 }
 function Te(n, e = !0) {
   if (n.destroyed)
@@ -29,7 +29,7 @@ function Te(n, e = !0) {
   if (e && n.finished)
     throw new Error("Hash#digest() has already been called");
 }
-function Bt(n, e) {
+function Ut(n, e) {
   de(n);
   const t = e.outputLen;
   if (n.length < t)
@@ -39,14 +39,14 @@ function ye(...n) {
   for (let e = 0; e < n.length; e++)
     n[e].fill(0);
 }
-function xe(n) {
+function De(n) {
   return new DataView(n.buffer, n.byteOffset, n.byteLength);
 }
-function X(n, e) {
+function Z(n, e) {
   return n << 32 - e | n >>> e;
 }
 const ut = /* @ts-ignore */ typeof Uint8Array.from([]).toHex == "function" && typeof Uint8Array.fromHex == "function", Kt = /* @__PURE__ */ Array.from({ length: 256 }, (n, e) => e.toString(16).padStart(2, "0"));
-function Y(n) {
+function q(n) {
   if (de(n), ut)
     return n.toHex();
   let e = "";
@@ -54,14 +54,14 @@ function Y(n) {
     e += Kt[n[t]];
   return e;
 }
-const Z = { _0: 48, _9: 57, A: 65, F: 70, a: 97, f: 102 };
+const J = { _0: 48, _9: 57, A: 65, F: 70, a: 97, f: 102 };
 function Je(n) {
-  if (n >= Z._0 && n <= Z._9)
-    return n - Z._0;
-  if (n >= Z.A && n <= Z.F)
-    return n - (Z.A - 10);
-  if (n >= Z.a && n <= Z.f)
-    return n - (Z.a - 10);
+  if (n >= J._0 && n <= J._9)
+    return n - J._0;
+  if (n >= J.A && n <= J.F)
+    return n - (J.A - 10);
+  if (n >= J.a && n <= J.f)
+    return n - (J.a - 10);
 }
 function ae(n) {
   if (typeof n != "string")
@@ -72,13 +72,13 @@ function ae(n) {
   if (e % 2)
     throw new Error("hex string expected, got unpadded hex of length " + e);
   const s = new Uint8Array(t);
-  for (let r = 0, i = 0; r < t; r++, i += 2) {
-    const o = Je(n.charCodeAt(i)), a = Je(n.charCodeAt(i + 1));
+  for (let i = 0, r = 0; i < t; i++, r += 2) {
+    const o = Je(n.charCodeAt(r)), a = Je(n.charCodeAt(r + 1));
     if (o === void 0 || a === void 0) {
-      const c = n[i] + n[i + 1];
-      throw new Error('hex string expected, got non-hex character "' + c + '" at index ' + i);
+      const c = n[r] + n[r + 1];
+      throw new Error('hex string expected, got non-hex character "' + c + '" at index ' + r);
     }
-    s[r] = o * 16 + a;
+    s[i] = o * 16 + a;
   }
   return s;
 }
@@ -90,22 +90,22 @@ function Vt(n) {
 function be(n) {
   return typeof n == "string" && (n = Vt(n)), de(n), n;
 }
-function Wt(...n) {
+function Ht(...n) {
   let e = 0;
   for (let s = 0; s < n.length; s++) {
-    const r = n[s];
-    de(r), e += r.length;
+    const i = n[s];
+    de(i), e += i.length;
   }
   const t = new Uint8Array(e);
-  for (let s = 0, r = 0; s < n.length; s++) {
-    const i = n[s];
-    t.set(i, r), r += i.length;
+  for (let s = 0, i = 0; s < n.length; s++) {
+    const r = n[s];
+    t.set(r, i), i += r.length;
   }
   return t;
 }
 class ht {
 }
-function zt(n) {
+function Wt(n) {
   const e = (s) => n().update(be(s)).digest(), t = n();
   return e.outputLen = t.outputLen, e.blockLen = t.blockLen, e.create = () => n(), e;
 }
@@ -116,53 +116,53 @@ function he(n = 32) {
     return Uint8Array.from(ue.randomBytes(n));
   throw new Error("crypto.getRandomValues must be defined");
 }
-function Gt(n, e, t, s) {
+function zt(n, e, t, s) {
   if (typeof n.setBigUint64 == "function")
     return n.setBigUint64(e, t, s);
-  const r = BigInt(32), i = BigInt(4294967295), o = Number(t >> r & i), a = Number(t & i), c = s ? 4 : 0, h = s ? 0 : 4;
-  n.setUint32(e + c, o, s), n.setUint32(e + h, a, s);
-}
-function Ht(n, e, t) {
-  return n & e ^ ~n & t;
+  const i = BigInt(32), r = BigInt(4294967295), o = Number(t >> i & r), a = Number(t & r), c = s ? 4 : 0, u = s ? 0 : 4;
+  n.setUint32(e + c, o, s), n.setUint32(e + u, a, s);
 }
 function jt(n, e, t) {
+  return n & e ^ ~n & t;
+}
+function Gt(n, e, t) {
   return n & e ^ n & t ^ e & t;
 }
-class Yt extends ht {
-  constructor(e, t, s, r) {
-    super(), this.finished = !1, this.length = 0, this.pos = 0, this.destroyed = !1, this.blockLen = e, this.outputLen = t, this.padOffset = s, this.isLE = r, this.buffer = new Uint8Array(e), this.view = xe(this.buffer);
+class qt extends ht {
+  constructor(e, t, s, i) {
+    super(), this.finished = !1, this.length = 0, this.pos = 0, this.destroyed = !1, this.blockLen = e, this.outputLen = t, this.padOffset = s, this.isLE = i, this.buffer = new Uint8Array(e), this.view = De(this.buffer);
   }
   update(e) {
     Te(this), e = be(e), de(e);
-    const { view: t, buffer: s, blockLen: r } = this, i = e.length;
-    for (let o = 0; o < i; ) {
-      const a = Math.min(r - this.pos, i - o);
-      if (a === r) {
-        const c = xe(e);
-        for (; r <= i - o; o += r)
+    const { view: t, buffer: s, blockLen: i } = this, r = e.length;
+    for (let o = 0; o < r; ) {
+      const a = Math.min(i - this.pos, r - o);
+      if (a === i) {
+        const c = De(e);
+        for (; i <= r - o; o += i)
           this.process(c, o);
         continue;
       }
-      s.set(e.subarray(o, o + a), this.pos), this.pos += a, o += a, this.pos === r && (this.process(t, 0), this.pos = 0);
+      s.set(e.subarray(o, o + a), this.pos), this.pos += a, o += a, this.pos === i && (this.process(t, 0), this.pos = 0);
     }
     return this.length += e.length, this.roundClean(), this;
   }
   digestInto(e) {
-    Te(this), Bt(e, this), this.finished = !0;
-    const { buffer: t, view: s, blockLen: r, isLE: i } = this;
+    Te(this), Ut(e, this), this.finished = !0;
+    const { buffer: t, view: s, blockLen: i, isLE: r } = this;
     let { pos: o } = this;
-    t[o++] = 128, ye(this.buffer.subarray(o)), this.padOffset > r - o && (this.process(s, 0), o = 0);
-    for (let u = o; u < r; u++)
-      t[u] = 0;
-    Gt(s, r - 8, BigInt(this.length * 8), i), this.process(s, 0);
-    const a = xe(e), c = this.outputLen;
+    t[o++] = 128, ye(this.buffer.subarray(o)), this.padOffset > i - o && (this.process(s, 0), o = 0);
+    for (let h = o; h < i; h++)
+      t[h] = 0;
+    zt(s, i - 8, BigInt(this.length * 8), r), this.process(s, 0);
+    const a = De(e), c = this.outputLen;
     if (c % 4)
       throw new Error("_sha2: outputLen should be aligned to 32bit");
-    const h = c / 4, d = this.get();
-    if (h > d.length)
+    const u = c / 4, d = this.get();
+    if (u > d.length)
       throw new Error("_sha2: outputLen bigger than state");
-    for (let u = 0; u < h; u++)
-      a.setUint32(4 * u, d[u], i);
+    for (let h = 0; h < u; h++)
+      a.setUint32(4 * h, d[h], r);
   }
   digest() {
     const { buffer: e, outputLen: t } = this;
@@ -172,14 +172,14 @@ class Yt extends ht {
   }
   _cloneInto(e) {
     e || (e = new this.constructor()), e.set(...this.get());
-    const { blockLen: t, buffer: s, length: r, finished: i, destroyed: o, pos: a } = this;
-    return e.destroyed = o, e.finished = i, e.length = r, e.pos = a, r % t && e.buffer.set(s), e;
+    const { blockLen: t, buffer: s, length: i, finished: r, destroyed: o, pos: a } = this;
+    return e.destroyed = o, e.finished = r, e.length = i, e.pos = a, i % t && e.buffer.set(s), e;
   }
   clone() {
     return this._cloneInto();
   }
 }
-const Q = /* @__PURE__ */ Uint32Array.from([
+const ee = /* @__PURE__ */ Uint32Array.from([
   1779033703,
   3144134277,
   1013904242,
@@ -188,7 +188,7 @@ const Q = /* @__PURE__ */ Uint32Array.from([
   2600822924,
   528734635,
   1541459225
-]), qt = /* @__PURE__ */ Uint32Array.from([
+]), Yt = /* @__PURE__ */ Uint32Array.from([
   1116352408,
   1899447441,
   3049323471,
@@ -253,41 +253,41 @@ const Q = /* @__PURE__ */ Uint32Array.from([
   2756734187,
   3204031479,
   3329325298
-]), ee = /* @__PURE__ */ new Uint32Array(64);
-class Xt extends Yt {
+]), te = /* @__PURE__ */ new Uint32Array(64);
+class Xt extends qt {
   constructor(e = 32) {
-    super(64, e, 8, !1), this.A = Q[0] | 0, this.B = Q[1] | 0, this.C = Q[2] | 0, this.D = Q[3] | 0, this.E = Q[4] | 0, this.F = Q[5] | 0, this.G = Q[6] | 0, this.H = Q[7] | 0;
+    super(64, e, 8, !1), this.A = ee[0] | 0, this.B = ee[1] | 0, this.C = ee[2] | 0, this.D = ee[3] | 0, this.E = ee[4] | 0, this.F = ee[5] | 0, this.G = ee[6] | 0, this.H = ee[7] | 0;
   }
   get() {
-    const { A: e, B: t, C: s, D: r, E: i, F: o, G: a, H: c } = this;
-    return [e, t, s, r, i, o, a, c];
+    const { A: e, B: t, C: s, D: i, E: r, F: o, G: a, H: c } = this;
+    return [e, t, s, i, r, o, a, c];
   }
   // prettier-ignore
-  set(e, t, s, r, i, o, a, c) {
-    this.A = e | 0, this.B = t | 0, this.C = s | 0, this.D = r | 0, this.E = i | 0, this.F = o | 0, this.G = a | 0, this.H = c | 0;
+  set(e, t, s, i, r, o, a, c) {
+    this.A = e | 0, this.B = t | 0, this.C = s | 0, this.D = i | 0, this.E = r | 0, this.F = o | 0, this.G = a | 0, this.H = c | 0;
   }
   process(e, t) {
-    for (let u = 0; u < 16; u++, t += 4)
-      ee[u] = e.getUint32(t, !1);
-    for (let u = 16; u < 64; u++) {
-      const g = ee[u - 15], p = ee[u - 2], f = X(g, 7) ^ X(g, 18) ^ g >>> 3, y = X(p, 17) ^ X(p, 19) ^ p >>> 10;
-      ee[u] = y + ee[u - 7] + f + ee[u - 16] | 0;
+    for (let h = 0; h < 16; h++, t += 4)
+      te[h] = e.getUint32(t, !1);
+    for (let h = 16; h < 64; h++) {
+      const f = te[h - 15], b = te[h - 2], g = Z(f, 7) ^ Z(f, 18) ^ f >>> 3, p = Z(b, 17) ^ Z(b, 19) ^ b >>> 10;
+      te[h] = p + te[h - 7] + g + te[h - 16] | 0;
     }
-    let { A: s, B: r, C: i, D: o, E: a, F: c, G: h, H: d } = this;
-    for (let u = 0; u < 64; u++) {
-      const g = X(a, 6) ^ X(a, 11) ^ X(a, 25), p = d + g + Ht(a, c, h) + qt[u] + ee[u] | 0, y = (X(s, 2) ^ X(s, 13) ^ X(s, 22)) + jt(s, r, i) | 0;
-      d = h, h = c, c = a, a = o + p | 0, o = i, i = r, r = s, s = p + y | 0;
+    let { A: s, B: i, C: r, D: o, E: a, F: c, G: u, H: d } = this;
+    for (let h = 0; h < 64; h++) {
+      const f = Z(a, 6) ^ Z(a, 11) ^ Z(a, 25), b = d + f + jt(a, c, u) + Yt[h] + te[h] | 0, p = (Z(s, 2) ^ Z(s, 13) ^ Z(s, 22)) + Gt(s, i, r) | 0;
+      d = u, u = c, c = a, a = o + b | 0, o = r, r = i, i = s, s = b + p | 0;
     }
-    s = s + this.A | 0, r = r + this.B | 0, i = i + this.C | 0, o = o + this.D | 0, a = a + this.E | 0, c = c + this.F | 0, h = h + this.G | 0, d = d + this.H | 0, this.set(s, r, i, o, a, c, h, d);
+    s = s + this.A | 0, i = i + this.B | 0, r = r + this.C | 0, o = o + this.D | 0, a = a + this.E | 0, c = c + this.F | 0, u = u + this.G | 0, d = d + this.H | 0, this.set(s, i, r, o, a, c, u, d);
   }
   roundClean() {
-    ye(ee);
+    ye(te);
   }
   destroy() {
     this.set(0, 0, 0, 0, 0, 0, 0, 0), ye(this.buffer);
   }
 }
-const Zt = /* @__PURE__ */ zt(() => new Xt()), oe = Zt, Jt = [
+const Zt = /* @__PURE__ */ Wt(() => new Xt()), oe = Zt, Jt = [
   "ws://umbrel.local:4848",
   // Local testing relay (highest priority)
   "wss://relay.damus.io"
@@ -311,7 +311,7 @@ const Zt = /* @__PURE__ */ zt(() => new Xt()), oe = Zt, Jt = [
   CONTACT_LIST: 3,
   ENCRYPTED_DM: 4,
   DELETE: 5
-}, C = {
+}, N = {
   EMPTY_CONTENT: "Content cannot be empty",
   CONTENT_TOO_LONG: "Content too long",
   NO_RELAYS: "No relays configured",
@@ -326,7 +326,7 @@ const Zt = /* @__PURE__ */ zt(() => new Xt()), oe = Zt, Jt = [
   CONNECTION_FAILED: "Check your internet connection and try again",
   NO_EXTENSION: "Install a Nostr browser extension or the library will use a temporary key",
   PUBLISH_FAILED: "Try again or check if your relays are accessible"
-}, Ae = {
+}, Ie = {
   HEX_64: /^[a-f0-9]{64}$/,
   // Event IDs and public keys
   HEX_128: /^[a-f0-9]{128}$/,
@@ -334,7 +334,7 @@ const Zt = /* @__PURE__ */ zt(() => new Xt()), oe = Zt, Jt = [
   WEBSOCKET_URL: /^wss?:\/\/.+/
   // WebSocket URLs
 };
-class A {
+class k {
   /**
    * Create a text note event (kind 1)
    */
@@ -362,14 +362,14 @@ class A {
       e.kind,
       e.tags,
       e.content
-    ]), s = new TextEncoder().encode(t), r = oe(s);
-    return Y(r);
+    ]), s = new TextEncoder().encode(t), i = oe(s);
+    return q(i);
   }
   /**
    * Add event ID to unsigned event
    */
   static addEventId(e) {
-    const t = A.calculateEventId(e);
+    const t = k.calculateEventId(e);
     return { ...e, id: t };
   }
   /**
@@ -377,14 +377,14 @@ class A {
    */
   static validateEvent(e) {
     const t = [];
-    if (e.pubkey || t.push("Missing pubkey"), e.created_at || t.push("Missing created_at"), typeof e.kind != "number" && t.push("Missing or invalid kind"), Array.isArray(e.tags) || t.push("Missing or invalid tags"), typeof e.content != "string" && t.push("Missing or invalid content"), e.pubkey && !Ae.HEX_64.test(e.pubkey) && t.push("Invalid pubkey format (must be 64-character hex string)"), e.id && !Ae.HEX_64.test(e.id) && t.push("Invalid event ID format (must be 64-character hex string)"), e.sig && !Ae.HEX_128.test(e.sig) && t.push("Invalid signature format (must be 128-character hex string)"), e.content === "" && t.push(C.EMPTY_CONTENT), e.content && e.content.length > se.MAX_CONTENT_LENGTH && t.push(C.CONTENT_TOO_LONG), e.created_at) {
-      const s = Math.floor(Date.now() / 1e3), r = s - 3600, i = s + 3600;
-      (e.created_at < r || e.created_at > i) && t.push("Timestamp is too far in the past or future");
+    if (e.pubkey || t.push("Missing pubkey"), e.created_at || t.push("Missing created_at"), typeof e.kind != "number" && t.push("Missing or invalid kind"), Array.isArray(e.tags) || t.push("Missing or invalid tags"), typeof e.content != "string" && t.push("Missing or invalid content"), e.pubkey && !Ie.HEX_64.test(e.pubkey) && t.push("Invalid pubkey format (must be 64-character hex string)"), e.id && !Ie.HEX_64.test(e.id) && t.push("Invalid event ID format (must be 64-character hex string)"), e.sig && !Ie.HEX_128.test(e.sig) && t.push("Invalid signature format (must be 128-character hex string)"), e.content === "" && !this.isEmptyContentAllowed(e.kind) && t.push(N.EMPTY_CONTENT), e.content && e.content.length > se.MAX_CONTENT_LENGTH && t.push(N.CONTENT_TOO_LONG), e.created_at) {
+      const s = Math.floor(Date.now() / 1e3), i = s - 3600, r = s + 3600;
+      (e.created_at < i || e.created_at > r) && t.push("Timestamp is too far in the past or future");
     }
-    return e.tags && (Array.isArray(e.tags) ? e.tags.forEach((s, r) => {
-      Array.isArray(s) ? s.forEach((i, o) => {
-        typeof i != "string" && t.push(`Tag ${r}[${o}] must be a string`);
-      }) : t.push(`Tag ${r} must be an array`);
+    return e.tags && (Array.isArray(e.tags) ? e.tags.forEach((s, i) => {
+      Array.isArray(s) ? s.forEach((r, o) => {
+        typeof r != "string" && t.push(`Tag ${i}[${o}] must be a string`);
+      }) : t.push(`Tag ${i} must be an array`);
     }) : t.push("Tags must be an array")), {
       valid: t.length === 0,
       errors: t
@@ -393,18 +393,34 @@ class A {
   /**
    * Validate content before event creation
    */
-  static validateContent(e) {
-    const t = [];
-    return e === "" && t.push(C.EMPTY_CONTENT), e.length > se.MAX_CONTENT_LENGTH && t.push(C.CONTENT_TOO_LONG), {
-      valid: t.length === 0,
-      errors: t
+  static validateContent(e, t) {
+    const s = [];
+    return e === "" && !this.isEmptyContentAllowed(t) && s.push(N.EMPTY_CONTENT), e.length > se.MAX_CONTENT_LENGTH && s.push(N.CONTENT_TOO_LONG), {
+      valid: s.length === 0,
+      errors: s
     };
+  }
+  /**
+   * Check if empty content is allowed for specific event kinds
+   */
+  static isEmptyContentAllowed(e) {
+    return e ? [
+      5,
+      // NIP-09: Event deletion (may have empty content)
+      6,
+      // NIP-18: Repost (requires empty content)
+      7,
+      // NIP-25: Reaction (may have empty content for simple reactions)
+      // NOTE: 1059 (Gift wraps) removed - they MUST have encrypted content per NIP-44
+      1984
+      // NIP-56: Reporting (may have empty content with just tags)
+    ].includes(e) : !1;
   }
   /**
    * Verify event ID matches calculated hash
    */
   static verifyEventId(e) {
-    return A.calculateEventId({
+    return k.calculateEventId({
       pubkey: e.pubkey,
       created_at: e.created_at,
       kind: e.kind,
@@ -416,19 +432,19 @@ class A {
    * Create a complete event with validation
    */
   static async createEvent(e, t, s = {}) {
-    const r = A.validateContent(e);
-    if (!r.valid)
-      throw new Error(`Invalid content: ${r.errors.join(", ")}`);
-    const i = {
+    const i = k.validateContent(e, s.kind);
+    if (!i.valid)
+      throw new Error(`Invalid content: ${i.errors.join(", ")}`);
+    const r = {
       pubkey: t,
       created_at: s.created_at ?? Math.floor(Date.now() / 1e3),
       kind: s.kind ?? Qe.TEXT_NOTE,
       tags: s.tags ?? [],
       content: e
-    }, o = A.validateEvent(i);
+    }, o = k.validateEvent(r);
     if (!o.valid)
       throw new Error(`Invalid event: ${o.errors.join(", ")}`);
-    return i;
+    return r;
   }
 }
 async function Qt() {
@@ -445,6 +461,13 @@ class es {
     l(this, "connections", /* @__PURE__ */ new Map());
     l(this, "debug");
     l(this, "messageHandler");
+    // Reconnection configuration
+    l(this, "maxReconnectAttempts", 5);
+    l(this, "baseReconnectDelay", 1e3);
+    // 1 second
+    l(this, "maxReconnectDelay", 3e4);
+    // 30 seconds
+    l(this, "reconnectEnabled", !0);
     l(this, "pendingPublishes", /* @__PURE__ */ new Map());
     this.debug = t.debug ?? !1, e.forEach((s) => {
       this.connections.set(s, {
@@ -482,22 +505,22 @@ class es {
     const t = this.connections.get(e);
     if (!t)
       throw new Error(`Relay ${e} not configured`);
-    return t.state === "connected" ? !0 : (t.state = "connecting", new Promise(async (s, r) => {
+    return t.state === "connected" ? !0 : (t.state = "connecting", new Promise(async (s, i) => {
       try {
-        const i = await Qt(), o = new i(e), a = setTimeout(() => {
-          o.close(), t.state = "error", t.error = "Connection timeout", r(new Error(`Connection to ${e} timed out`));
+        const r = await Qt(), o = new r(e), a = setTimeout(() => {
+          o.close(), t.state = "error", t.error = "Connection timeout", i(new Error(`Connection to ${e} timed out`));
         }, se.CONNECTION_TIMEOUT);
         o.onopen = () => {
           clearTimeout(a), t.ws = o, t.state = "connected", t.lastConnected = Date.now(), t.error = void 0, this.debug && console.log(`Connected to relay: ${e}`), s(!0);
         }, o.onerror = (c) => {
-          clearTimeout(a), t.state = "error", t.error = "WebSocket error", this.debug && console.error(`WebSocket error for ${e}:`, c), r(new Error(`Failed to connect to ${e}: WebSocket error`));
-        }, o.onclose = () => {
-          t.state = "disconnected", t.ws = void 0, this.debug && console.log(`Disconnected from relay: ${e}`);
+          clearTimeout(a), t.state = "error", t.error = "WebSocket error", this.debug && console.error(`WebSocket error for ${e}:`, c), i(new Error(`Failed to connect to ${e}: WebSocket error`));
+        }, o.onclose = (c) => {
+          t.state = "disconnected", t.ws = void 0, this.debug && console.log(`Disconnected from relay: ${e}`, c.code, c.reason), this.reconnectEnabled && c.code !== 1e3 && this.scheduleReconnection(e);
         }, o.onmessage = (c) => {
           this.handleRelayMessage(e, c.data);
         };
-      } catch (i) {
-        t.state = "error", t.error = i instanceof Error ? i.message : "Unknown error", r(i);
+      } catch (r) {
+        t.state = "error", t.error = r instanceof Error ? r.message : "Unknown error", i(r);
       }
     }));
   }
@@ -505,44 +528,44 @@ class es {
    * Publish event to specific relays
    */
   async publishToRelays(e, t) {
-    const s = [], r = t.map(async (i) => {
+    const s = [], i = t.map(async (r) => {
       const o = Date.now();
       try {
-        const a = await this.publishToRelay(i, e), c = Date.now() - o;
+        const a = await this.publishToRelay(r, e), c = Date.now() - o;
         s.push({
-          relay: i,
+          relay: r,
           success: a,
           latency: c
         });
       } catch (a) {
         const c = Date.now() - o;
         s.push({
-          relay: i,
+          relay: r,
           success: !1,
           error: a instanceof Error ? a.message : "Unknown error",
           latency: c
         });
       }
     });
-    return await Promise.allSettled(r), s;
+    return await Promise.allSettled(i), s;
   }
   /**
    * Publish event to all connected relays
    */
   async publishToAll(e) {
-    const t = [], s = this.connectedRelays.map(async (r) => {
-      const i = Date.now();
+    const t = [], s = this.connectedRelays.map(async (i) => {
+      const r = Date.now();
       try {
-        const o = await this.publishToRelay(r, e), a = Date.now() - i;
+        const o = await this.publishToRelay(i, e), a = Date.now() - r;
         t.push({
-          relay: r,
+          relay: i,
           success: o,
           latency: a
         });
       } catch (o) {
-        const a = Date.now() - i;
+        const a = Date.now() - r;
         t.push({
-          relay: r,
+          relay: i,
           success: !1,
           error: o instanceof Error ? o.message : "Unknown error",
           latency: a
@@ -558,16 +581,16 @@ class es {
     const s = this.connections.get(e);
     if (!s || s.state !== "connected" || !s.ws)
       throw new Error(`Not connected to relay: ${e}`);
-    return new Promise((r, i) => {
+    return new Promise((i, r) => {
       const o = s.ws, a = ["EVENT", t], c = setTimeout(() => {
-        i(new Error("Publish timeout"));
-      }, se.PUBLISH_TIMEOUT), h = t.id;
-      this.pendingPublishes.set(h, { resolve: r, reject: i, timeout: c });
+        r(new Error("Publish timeout"));
+      }, se.PUBLISH_TIMEOUT), u = t.id;
+      this.pendingPublishes.set(u, { resolve: i, reject: r, timeout: c });
       try {
         const d = JSON.stringify(a);
-        o.send(d), this.debug && (console.log(`📤 Publishing event ${t.id} to ${e}`), console.log("📤 Message:", d), console.log("📤 Added to pending:", h));
+        o.send(d), this.debug && (console.log(`📤 Publishing event ${t.id} to ${e}`), console.log("📤 Message:", d), console.log("📤 Added to pending:", u));
       } catch (d) {
-        clearTimeout(c), this.pendingPublishes.delete(h), i(d);
+        clearTimeout(c), this.pendingPublishes.delete(u), r(d);
       }
     });
   }
@@ -578,11 +601,11 @@ class es {
     try {
       const s = JSON.parse(t);
       if (this.debug && console.log(`📥 Message from ${e}:`, s), s[0] === "OK") {
-        const [, r, i, o] = s, a = this.pendingPublishes.get(r);
-        this.debug && (console.log(`OK for event ${r}, success: ${i}, pending: ${!!a}`), console.log("Pending publishes:", Array.from(this.pendingPublishes.keys()))), a ? (clearTimeout(a.timeout), this.pendingPublishes.delete(r), i ? a.resolve(!0) : a.reject(new Error(o || "Relay rejected event"))) : this.debug && console.warn(`No pending publish found for event ID: ${r}`);
+        const [, i, r, o] = s, a = this.pendingPublishes.get(i);
+        this.debug && (console.log(`OK for event ${i}, success: ${r}, pending: ${!!a}`), console.log("Pending publishes:", Array.from(this.pendingPublishes.keys()))), a ? (clearTimeout(a.timeout), this.pendingPublishes.delete(i), r ? a.resolve(!0) : a.reject(new Error(o || "Relay rejected event"))) : this.debug && console.warn(`No pending publish found for event ID: ${i}`);
       } else if (s[0] === "NOTICE") {
-        const [, r] = s;
-        this.debug && console.log(`Notice from ${e}:`, r);
+        const [, i] = s;
+        this.debug && console.log(`Notice from ${e}:`, i);
       } else (s[0] === "EVENT" || s[0] === "EOSE") && (this.messageHandler ? this.messageHandler(e, s) : this.debug && console.log(`No message handler registered for ${s[0]} message`));
     } catch (s) {
       this.debug && console.error(`Failed to parse message from ${e}:`, s);
@@ -610,7 +633,7 @@ class es {
    */
   async testRelay(e) {
     try {
-      return Ae.WEBSOCKET_URL.test(e) ? (await this.connectToRelay(e), { success: !0 }) : {
+      return Ie.WEBSOCKET_URL.test(e) ? (await this.connectToRelay(e), { success: !0 }) : {
         success: !1,
         error: "Invalid WebSocket URL format"
       };
@@ -636,8 +659,8 @@ class es {
    */
   async sendToAll(e) {
     const t = this.connectedRelays.map(
-      (s) => this.sendToRelay(s, e).catch((r) => {
-        this.debug && console.warn(`Failed to send to ${s}:`, r);
+      (s) => this.sendToRelay(s, e).catch((i) => {
+        this.debug && console.warn(`Failed to send to ${s}:`, i);
       })
     );
     await Promise.allSettled(t);
@@ -647,8 +670,8 @@ class es {
    */
   async sendToRelays(e, t) {
     const s = e.map(
-      (r) => this.sendToRelay(r, t).catch((i) => {
-        this.debug && console.warn(`Failed to send to ${r}:`, i);
+      (i) => this.sendToRelay(i, t).catch((r) => {
+        this.debug && console.warn(`Failed to send to ${i}:`, r);
       })
     );
     await Promise.allSettled(s);
@@ -660,8 +683,8 @@ class es {
     const s = this.connections.get(e);
     if (!s || s.state !== "connected" || !s.ws)
       throw new Error(`Not connected to relay: ${e}`);
-    const r = JSON.stringify(t);
-    s.ws.send(r), this.debug && console.log(`📤 Sent to ${e}:`, r);
+    const i = JSON.stringify(t);
+    s.ws.send(i), this.debug && console.log(`📤 Sent to ${e}:`, i);
   }
   /**
    * Register a message handler for subscription messages (EVENT, EOSE)
@@ -684,6 +707,79 @@ class es {
       e[t.state]++;
     }), e;
   }
+  /**
+   * Schedule reconnection with exponential backoff
+   */
+  scheduleReconnection(e) {
+    const t = this.connections.get(e);
+    if (!t) return;
+    if (t.reconnectTimeout && (clearTimeout(t.reconnectTimeout), t.reconnectTimeout = void 0), t.reconnectAttempts === void 0 && (t.reconnectAttempts = 0), t.reconnectAttempts >= this.maxReconnectAttempts) {
+      this.debug && console.warn(`Max reconnection attempts reached for relay: ${e}`), t.state = "error", t.error = `Max reconnection attempts (${this.maxReconnectAttempts}) exceeded`;
+      return;
+    }
+    const i = Math.min(
+      this.baseReconnectDelay * Math.pow(2, t.reconnectAttempts),
+      this.maxReconnectDelay
+    ) + Math.random() * 1e3;
+    this.debug && console.log(`Scheduling reconnection to ${e} in ${Math.round(i)}ms (attempt ${t.reconnectAttempts + 1}/${this.maxReconnectAttempts})`), t.reconnectTimeout = setTimeout(() => {
+      this.attemptReconnection(e);
+    }, i);
+  }
+  /**
+   * Attempt to reconnect to a relay
+   */
+  async attemptReconnection(e) {
+    const t = this.connections.get(e);
+    if (t) {
+      t.reconnectAttempts = (t.reconnectAttempts || 0) + 1, t.lastReconnectAttempt = Date.now(), this.debug && console.log(`Attempting reconnection to ${e} (attempt ${t.reconnectAttempts})`);
+      try {
+        await this.connectToRelay(e) && (t.reconnectAttempts = 0, t.reconnectTimeout = void 0, this.debug && console.log(`Successfully reconnected to relay: ${e}`));
+      } catch (s) {
+        this.debug && console.warn(`Reconnection attempt failed for ${e}:`, s), t.reconnectAttempts < this.maxReconnectAttempts ? this.scheduleReconnection(e) : (t.state = "error", t.error = `Reconnection failed after ${this.maxReconnectAttempts} attempts`);
+      }
+    }
+  }
+  /**
+   * Enable or disable automatic reconnection
+   */
+  setReconnectionEnabled(e) {
+    if (this.reconnectEnabled = e, !e)
+      for (const t of this.connections.values())
+        t.reconnectTimeout && (clearTimeout(t.reconnectTimeout), t.reconnectTimeout = void 0);
+  }
+  /**
+   * Configure reconnection parameters
+   */
+  configureReconnection(e) {
+    e.maxAttempts !== void 0 && (this.maxReconnectAttempts = Math.max(1, e.maxAttempts)), e.baseDelay !== void 0 && (this.baseReconnectDelay = Math.max(100, e.baseDelay)), e.maxDelay !== void 0 && (this.maxReconnectDelay = Math.max(this.baseReconnectDelay, e.maxDelay));
+  }
+  /**
+   * Manually trigger reconnection for a specific relay
+   */
+  async reconnectRelay(e) {
+    const t = this.connections.get(e);
+    if (!t)
+      throw new Error(`Relay ${e} not configured`);
+    return t.reconnectTimeout && (clearTimeout(t.reconnectTimeout), t.reconnectTimeout = void 0), t.reconnectAttempts = 0, this.connectToRelay(e);
+  }
+  /**
+   * Get reconnection status for all relays
+   */
+  getReconnectionStatus() {
+    const e = {};
+    for (const [t, s] of this.connections.entries())
+      if (e[t] = {
+        attempts: s.reconnectAttempts || 0,
+        lastAttempt: s.lastReconnectAttempt
+      }, s.reconnectTimeout) {
+        const i = Date.now(), r = s.lastReconnectAttempt || i, o = Math.min(
+          this.baseReconnectDelay * Math.pow(2, (s.reconnectAttempts || 0) - 1),
+          this.maxReconnectDelay
+        ), a = r + o;
+        e[t].nextAttemptIn = Math.max(0, a - i);
+      }
+    return e;
+  }
 }
 class et {
   constructor() {
@@ -691,7 +787,7 @@ class et {
   }
   async getPublicKey() {
     if (!window.nostr)
-      throw new Error(C.NO_EXTENSION);
+      throw new Error(N.NO_EXTENSION);
     try {
       const e = await window.nostr.getPublicKey();
       return this.cachedPublicKey = e, e;
@@ -704,7 +800,7 @@ class et {
   }
   async signEvent(e) {
     if (!window.nostr)
-      throw new Error(C.NO_EXTENSION);
+      throw new Error(N.NO_EXTENSION);
     try {
       return (await window.nostr.signEvent(e)).sig;
     } catch (t) {
@@ -715,12 +811,12 @@ class et {
     return typeof window < "u" && typeof window.nostr < "u" && typeof window.nostr.getPublicKey == "function" && typeof window.nostr.signEvent == "function";
   }
 }
-class He {
+class je {
   constructor() {
     l(this, "privateKey");
     l(this, "publicKey");
     const e = he(32);
-    this.privateKey = Y(e), this.publicKey = Y(ne.schnorr.getPublicKey(this.privateKey));
+    this.privateKey = q(e), this.publicKey = q(ne.schnorr.getPublicKey(this.privateKey));
   }
   async getPublicKey() {
     return this.publicKey;
@@ -729,8 +825,8 @@ class He {
     return this.publicKey;
   }
   async signEvent(e) {
-    const t = A.calculateEventId(e), s = await ne.schnorr.sign(t, this.privateKey);
-    return Y(s);
+    const t = k.calculateEventId(e), s = await ne.schnorr.sign(t, this.privateKey);
+    return q(s);
   }
   /**
    * Get private key for NIP-44 encryption
@@ -740,9 +836,9 @@ class He {
     return this.privateKey;
   }
 }
-class qs extends He {
+class Qs extends je {
 }
-class Xs extends He {
+class ei extends je {
 }
 class ts {
   static async createBestAvailable() {
@@ -757,12 +853,12 @@ class ts {
         console.warn("Extension detected but failed to initialize:", e);
       }
     return {
-      provider: new He(),
+      provider: new je(),
       method: "temporary"
     };
   }
 }
-class N {
+class R {
   /**
    * Create a standardized Nostr error
    */
@@ -778,27 +874,27 @@ class N {
    * Handle content validation errors
    */
   static handleContentError(e) {
-    return e === "" ? N.createError("validation", C.EMPTY_CONTENT, {
+    return e === "" ? R.createError("validation", N.EMPTY_CONTENT, {
       retryable: !0,
       suggestion: ge.EMPTY_CONTENT
-    }) : e.length > 8192 ? N.createError("validation", C.CONTENT_TOO_LONG, {
+    }) : e.length > 8192 ? R.createError("validation", N.CONTENT_TOO_LONG, {
       retryable: !0,
       suggestion: ge.CONTENT_TOO_LONG
-    }) : N.createError("validation", C.INVALID_EVENT);
+    }) : R.createError("validation", N.INVALID_EVENT);
   }
   /**
    * Handle signing errors
    */
   static handleSigningError(e) {
     const t = e.message.toLowerCase();
-    return t.includes("user declined") || t.includes("denied") ? N.createError("signing", "User declined to sign the event", {
+    return t.includes("user declined") || t.includes("denied") ? R.createError("signing", "User declined to sign the event", {
       retryable: !0,
       userAction: "User declined signing",
       suggestion: "Click approve in your Nostr extension to publish the event"
-    }) : t.includes("no extension") ? N.createError("signing", C.NO_EXTENSION, {
+    }) : t.includes("no extension") ? R.createError("signing", N.NO_EXTENSION, {
       retryable: !1,
       suggestion: ge.NO_EXTENSION
-    }) : N.createError("signing", C.SIGNING_FAILED, {
+    }) : R.createError("signing", N.SIGNING_FAILED, {
       retryable: !0,
       suggestion: "Check your Nostr extension and try again"
     });
@@ -808,13 +904,13 @@ class N {
    */
   static handleConnectionError(e, t) {
     const s = t.message.toLowerCase();
-    return s.includes("timeout") ? N.createError("network", `Connection to ${e} timed out`, {
+    return s.includes("timeout") ? R.createError("network", `Connection to ${e} timed out`, {
       retryable: !0,
       suggestion: "The relay might be slow or unavailable. Try again or use different relays"
-    }) : s.includes("refused") || s.includes("failed to connect") ? N.createError("network", `Failed to connect to ${e}`, {
+    }) : s.includes("refused") || s.includes("failed to connect") ? R.createError("network", `Failed to connect to ${e}`, {
       retryable: !0,
       suggestion: "The relay might be down. Check the relay URL or try different relays"
-    }) : N.createError("network", C.CONNECTION_FAILED, {
+    }) : R.createError("network", N.CONNECTION_FAILED, {
       retryable: !0,
       suggestion: ge.CONNECTION_FAILED
     });
@@ -823,42 +919,42 @@ class N {
    * Analyze relay results and determine overall success/failure
    */
   static analyzeRelayResults(e) {
-    const t = e.length, s = e.filter((i) => i.success), r = e.filter((i) => !i.success);
+    const t = e.length, s = e.filter((r) => r.success), i = e.filter((r) => !r.success);
     if (t === 0)
       return {
         success: !1,
-        error: N.createError("config", C.NO_RELAYS, {
+        error: R.createError("config", N.NO_RELAYS, {
           retryable: !1,
           suggestion: "Configure at least one relay URL"
         })
       };
     if (s.length === 0) {
-      const i = r.every(
+      const r = i.every(
         (a) => {
           var c;
           return (c = a.error) == null ? void 0 : c.toLowerCase().includes("timeout");
         }
-      ), o = r.every(
+      ), o = i.every(
         (a) => {
-          var c, h;
-          return ((c = a.error) == null ? void 0 : c.toLowerCase().includes("connect")) || ((h = a.error) == null ? void 0 : h.toLowerCase().includes("refused"));
+          var c, u;
+          return ((c = a.error) == null ? void 0 : c.toLowerCase().includes("connect")) || ((u = a.error) == null ? void 0 : u.toLowerCase().includes("refused"));
         }
       );
-      return i ? {
+      return r ? {
         success: !1,
-        error: N.createError("network", "All relays timed out", {
+        error: R.createError("network", "All relays timed out", {
           retryable: !0,
           suggestion: "Check your internet connection or try again later"
         })
       } : o ? {
         success: !1,
-        error: N.createError("network", "Could not connect to any relay", {
+        error: R.createError("network", "Could not connect to any relay", {
           retryable: !0,
           suggestion: "Check relay URLs and your internet connection"
         })
       } : {
         success: !1,
-        error: N.createError("relay", C.PUBLISH_FAILED, {
+        error: R.createError("relay", N.PUBLISH_FAILED, {
           retryable: !0,
           suggestion: ge.PUBLISH_FAILED
         })
@@ -872,8 +968,8 @@ class N {
   static formatErrorForUser(e, t) {
     let s = e.message;
     if (t != null && t.relayResults) {
-      const r = t.relayResults.filter((o) => o.success).length, i = t.relayResults.length;
-      r > 0 ? s += ` (${r}/${i} relays succeeded)` : s += ` (0/${i} relays succeeded)`;
+      const i = t.relayResults.filter((o) => o.success).length, r = t.relayResults.length;
+      i > 0 ? s += ` (${i}/${r} relays succeeded)` : s += ` (0/${r} relays succeeded)`;
     }
     return e.suggestion && (s += `
 
@@ -894,7 +990,7 @@ This error is retryable - you can try again.`), s;
     return Math.min(t * Math.pow(2, e), 3e4);
   }
 }
-class Le {
+class Fe {
   // Optional relay selection
   constructor(e) {
     l(this, "eventData");
@@ -923,8 +1019,8 @@ class Le {
    * Add a tag to the event
    */
   tag(e, t, ...s) {
-    const r = [e, t, ...s];
-    return this.eventData.tags.push(r), this;
+    const i = [e, t, ...s];
+    return this.eventData.tags.push(i), this;
   }
   /**
    * Add multiple tags at once
@@ -978,26 +1074,26 @@ class Le {
    * Explicitly sign the event (optional - auto-signs on publish)
    */
   async sign() {
-    if (!this.eventData.content)
+    if (this.eventData.kind !== 6 && this.eventData.kind !== 5 && !this.eventData.content)
       throw new Error("Content is required before signing");
-    const e = this.nostrInstance.signingProvider;
-    if (!e)
+    const t = this.nostrInstance.signingProvider;
+    if (!t)
       throw new Error("No signing provider available. Call initializeSigning() first.");
-    const t = {
-      pubkey: await e.getPublicKey(),
+    const s = {
+      pubkey: await t.getPublicKey(),
       kind: this.eventData.kind || 1,
       content: this.eventData.content,
       tags: this.eventData.tags,
       created_at: this.eventData.created_at || Math.floor(Date.now() / 1e3)
-    }, s = A.validateEvent(t);
-    if (!s.valid)
-      throw new Error(`Invalid event: ${s.errors.join(", ")}`);
-    const r = A.calculateEventId(t), i = {
-      ...t,
+    }, i = k.validateEvent(s);
+    if (!i.valid)
+      throw new Error(`Invalid event: ${i.errors.join(", ")}`);
+    const r = k.calculateEventId(s), o = {
+      ...s,
       id: r,
-      sig: await e.signEvent({ ...t, id: r })
+      sig: await t.signEvent({ ...s, id: r })
     };
-    return this.signedEvent = i, this.signed = !0, this;
+    return this.signedEvent = o, this.signed = !0, this;
   }
   /**
    * Get the built event without publishing (useful for preview)
@@ -1009,34 +1105,34 @@ class Le {
    * Publish the event to relays
    */
   async publish() {
-    if (!this.eventData.content)
+    if (this.eventData.kind !== 6 && this.eventData.kind !== 5 && !this.eventData.content)
       throw new Error("Content is required before publishing");
     if (this.signed && this.signedEvent) {
-      const r = this.targetRelays ? await this.nostrInstance.relayManager.publishToRelays(this.signedEvent, this.targetRelays) : await this.nostrInstance.relayManager.publishToAll(this.signedEvent), i = r.some((o) => o.success);
+      const r = this.targetRelays ? await this.nostrInstance.relayManager.publishToRelays(this.signedEvent, this.targetRelays) : await this.nostrInstance.relayManager.publishToAll(this.signedEvent), o = r.some((a) => a.success);
       return {
-        success: i,
-        eventId: i ? this.signedEvent.id : void 0,
-        event: i ? this.signedEvent : void 0,
+        success: o,
+        eventId: o ? this.signedEvent.id : void 0,
+        event: o ? this.signedEvent : void 0,
         relayResults: r,
         timestamp: Date.now(),
-        error: i ? void 0 : {
+        error: o ? void 0 : {
           message: "Failed to publish to any relay",
           code: "PUBLISH_FAILED",
           retryable: !0
         }
       };
     }
-    const e = this.nostrInstance.signingProvider;
-    if (!e)
+    const t = this.nostrInstance.signingProvider;
+    if (!t)
       throw new Error("No signing provider available. Call initializeSigning() first.");
-    const s = {
-      pubkey: await e.getPublicKey(),
+    const i = {
+      pubkey: await t.getPublicKey(),
       kind: this.eventData.kind || 1,
       content: this.eventData.content,
       tags: this.eventData.tags,
       created_at: this.eventData.created_at || Math.floor(Date.now() / 1e3)
     };
-    return this.targetRelays ? await this.nostrInstance.publishToRelays(s, this.targetRelays) : await this.nostrInstance.publish(s);
+    return this.targetRelays ? await this.nostrInstance.publishToRelays(i, this.targetRelays) : await this.nostrInstance.publish(i);
   }
   /**
    * Get the current event data (for debugging/inspection)
@@ -1060,19 +1156,19 @@ class ss {
    * Create a new fluent event builder
    */
   create() {
-    return new Le(this.nostrInstance);
+    return new Fe(this.nostrInstance);
   }
   /**
    * Direct fluent API - start with kind
    */
   kind(e) {
-    return new Le(this.nostrInstance).kind(e);
+    return new Fe(this.nostrInstance).kind(e);
   }
   /**
    * Direct fluent API - start with content  
    */
   content(e) {
-    return new Le(this.nostrInstance).content(e);
+    return new Fe(this.nostrInstance).content(e);
   }
   /**
    * Quick create text note
@@ -1099,13 +1195,19 @@ class ss {
     return this.create().kind(7).content(t).tag("e", e);
   }
   /**
+   * Quick create deletion event (NIP-09)
+   */
+  deletion(e, t) {
+    return this.create().kind(5).content(t || "").tag("e", e);
+  }
+  /**
    * Direct publish from JSON data (bypasses fluent building)
    */
   async publish(e) {
     return await this.nostrInstance.publish(e);
   }
 }
-function te(n) {
+function X(n) {
   const e = /* @__PURE__ */ new Set();
   let t = n;
   return {
@@ -1113,29 +1215,29 @@ function te(n) {
       return s(t), e.add(s), () => e.delete(s);
     },
     set(s) {
-      t = s, e.forEach((r) => r(t));
+      t = s, e.forEach((i) => i(t));
     },
     update(s) {
-      t = s(t), e.forEach((r) => r(t));
+      t = s(t), e.forEach((i) => i(t));
     }
   };
 }
-function I(n, e) {
+function _(n, e) {
   const t = Array.isArray(n) ? n : [n], s = /* @__PURE__ */ new Set();
-  let r, i = !1;
+  let i, r = !1;
   const o = [], a = () => {
     if (t.length === 1) {
-      const c = t[0].subscribe((h) => {
-        const d = e(h);
-        (!i || d !== r) && (r = d, i && s.forEach((u) => u(r)));
+      const c = t[0].subscribe((u) => {
+        const d = e(u);
+        (!r || d !== i) && (i = d, r && s.forEach((h) => h(i)));
       });
       o.length === 0 && o.push(c);
     }
   };
   return {
     subscribe(c) {
-      return i || (a(), i = !0), r !== void 0 && c(r), s.add(c), () => {
-        s.delete(c), s.size === 0 && (o.forEach((h) => h()), o.length = 0, i = !1);
+      return r || (a(), r = !0), i !== void 0 && c(i), s.add(c), () => {
+        s.delete(c), s.size === 0 && (o.forEach((u) => u()), o.length = 0, r = !1);
       };
     }
   };
@@ -1143,17 +1245,17 @@ function I(n, e) {
 function dt(n) {
   return {
     subscribe: n.subscribe.bind(n),
-    derive: (e) => I(n, e)
+    derive: (e) => _(n, e)
   };
 }
-class we {
+class me {
   constructor(e, t, s) {
     l(this, "_events");
     l(this, "_readIds", /* @__PURE__ */ new Set());
     l(this, "parent");
-    this.parent = e, this._events = I(e.events, (r) => {
-      let i = r;
-      return t && (i = i.filter(t)), s && (i = [...i].sort(s)), i;
+    this.parent = e, this._events = _(e.events, (i) => {
+      let r = i;
+      return t && (r = r.filter(t)), s && (r = [...r].sort(s)), r;
     });
   }
   // Readable interface
@@ -1174,16 +1276,16 @@ class we {
     return this.parent.loading;
   }
   get count() {
-    return I(this._events, (e) => e.length);
+    return _(this._events, (e) => e.length);
   }
   get latest() {
-    return I(this._events, (e) => e[0] || null);
+    return _(this._events, (e) => e[0] || null);
   }
   get hasMore() {
     return this.parent.hasMore;
   }
   get isEmpty() {
-    return I(this._events, (e) => e.length === 0);
+    return _(this._events, (e) => e.length === 0);
   }
   // Lifecycle methods (delegate to parent)
   async close() {
@@ -1202,7 +1304,7 @@ class we {
     return this.parent.updateOptions(e);
   }
   derive(e) {
-    return dt(I(this._events, e));
+    return dt(_(this._events, e));
   }
   async retry() {
     return this.parent.retry();
@@ -1233,27 +1335,27 @@ class we {
     return this.parent.removeEvent(e);
   }
   filter(e) {
-    return new we(this, e);
+    return new me(this, e);
   }
   sortBy(e) {
-    return new we(this, void 0, e);
+    return new me(this, void 0, e);
   }
   getReadStatus() {
     let e = [];
     this._events.subscribe((o) => {
       e = o;
     })();
-    const s = e.filter((o) => this._readIds.has(o.id)).length, r = e.length, i = r - s;
-    return { read: s, unread: i, total: r };
+    const s = e.filter((o) => this._readIds.has(o.id)).length, i = e.length, r = i - s;
+    return { read: s, unread: r, total: i };
   }
 }
-class je {
-  constructor(e, t, s = {}, r = {}) {
-    l(this, "_events", te([]));
-    l(this, "_status", te("connecting"));
-    l(this, "_error", te(null));
-    l(this, "_loading", te(!1));
-    l(this, "_count", te(0));
+class Ge {
+  constructor(e, t, s = {}, i = {}) {
+    l(this, "_events", X([]));
+    l(this, "_status", X("connecting"));
+    l(this, "_error", X(null));
+    l(this, "_loading", X(!1));
+    l(this, "_count", X(0));
     l(this, "_readIds", /* @__PURE__ */ new Set());
     l(this, "subscription");
     l(this, "subscriptionManager");
@@ -1263,7 +1365,7 @@ class je {
     l(this, "isLive");
     l(this, "eventPredicate");
     l(this, "eventComparator");
-    this.subscriptionManager = e, this.filters = t, this.options = s, this.maxEvents = r.maxEvents, this.isLive = r.live || !1, this.eventPredicate = r.predicate, this.eventComparator = r.comparator, this.initializeSubscription();
+    this.subscriptionManager = e, this.filters = t, this.options = s, this.maxEvents = i.maxEvents, this.isLive = i.live || !1, this.eventPredicate = i.predicate, this.eventComparator = i.comparator, this.initializeSubscription();
   }
   // Readable interface
   subscribe(e) {
@@ -1286,13 +1388,13 @@ class je {
     return this._count;
   }
   get latest() {
-    return I(this._events, (e) => e[0] || null);
+    return _(this._events, (e) => e[0] || null);
   }
   get hasMore() {
-    return I(this._events, () => !0);
+    return _(this._events, () => !0);
   }
   get isEmpty() {
-    return I(this._events, (e) => e.length === 0);
+    return _(this._events, (e) => e.length === 0);
   }
   // Lifecycle methods
   async close() {
@@ -1312,7 +1414,7 @@ class je {
     this.options = { ...this.options, ...e }, await this.refresh();
   }
   derive(e) {
-    return dt(I(this._events, e));
+    return dt(_(this._events, e));
   }
   async retry() {
     this._status.set("reconnecting"), this._error.set(null), await this.initializeSubscription();
@@ -1343,18 +1445,18 @@ class je {
     this._events.update((t) => t.filter((s) => s.id !== e)), this._count.update((t) => t - 1);
   }
   filter(e) {
-    return new we(this, e, this.eventComparator);
+    return new me(this, e, this.eventComparator);
   }
   sortBy(e) {
-    return new we(this, this.eventPredicate, e);
+    return new me(this, this.eventPredicate, e);
   }
   getReadStatus() {
     let e = [];
     this._events.subscribe((o) => {
       e = o;
     })();
-    const s = e.filter((o) => this._readIds.has(o.id)).length, r = e.length, i = r - s;
-    return { read: s, unread: i, total: r };
+    const s = e.filter((o) => this._readIds.has(o.id)).length, i = e.length, r = i - s;
+    return { read: s, unread: r, total: i };
   }
   // Test helper - simulate receiving an event
   _testInjectEvent(e) {
@@ -1376,13 +1478,13 @@ class je {
     try {
       const e = {
         ...this.options,
-        onEvent: (r) => {
-          this.handleEvent(r);
+        onEvent: (i) => {
+          this.handleEvent(i);
         },
-        onEose: (r) => {
+        onEose: (i) => {
           this._status.set("active"), this._loading.set(!1);
         },
-        onClose: (r) => {
+        onClose: (i) => {
           this._status.set("closed");
         }
       }, t = await this.subscriptionManager.getOrCreateSubscription(this.filters), s = t.addListener({
@@ -1413,14 +1515,14 @@ class je {
   }
   handleEvent(e) {
     this.eventPredicate && !this.eventPredicate(e) || (this._events.update((t) => {
-      if (t.some((r) => r.id === e.id))
+      if (t.some((i) => i.id === e.id))
         return t;
       const s = [...t, e];
-      return this.eventComparator ? s.sort(this.eventComparator) : s.sort((r, i) => i.created_at - r.created_at), this.maxEvents && s.length > this.maxEvents ? s.slice(0, this.maxEvents) : s;
+      return this.eventComparator ? s.sort(this.eventComparator) : s.sort((i, r) => r.created_at - i.created_at), this.maxEvents && s.length > this.maxEvents ? s.slice(0, this.maxEvents) : s;
     }), this._count.update((t) => t + 1));
   }
 }
-class rs {
+class is {
   constructor(e) {
     l(this, "filter", {});
     l(this, "options", {});
@@ -1450,7 +1552,7 @@ class rs {
   }
   build() {
     const e = [this.filter];
-    return new je(
+    return new Ge(
       this.subscriptionManager,
       e,
       this.options,
@@ -1459,40 +1561,40 @@ class rs {
   }
 }
 let ce;
-function Zs(n) {
+function ti(n) {
   ce = n;
 }
-function Js() {
+function si() {
   if (!ce)
     throw new Error("Default SubscriptionManager not set. Call setDefaultSubscriptionManager first.");
-  return new rs(ce);
+  return new is(ce);
 }
-function Qs(n) {
+function ii(n) {
   if (!ce)
     throw new Error("Default SubscriptionManager not set. Call setDefaultSubscriptionManager first.");
   const e = n.toFilter();
-  return new je(ce, e);
+  return new Ge(ce, e);
 }
-function er(n) {
+function ri(n) {
   if (!ce)
     throw new Error("Default SubscriptionManager not set. Call setDefaultSubscriptionManager first.");
-  return new je(ce, [n]);
+  return new Ge(ce, [n]);
 }
 class gt extends ht {
   constructor(e, t) {
-    super(), this.finished = !1, this.destroyed = !1, Ge(e);
+    super(), this.finished = !1, this.destroyed = !1, ze(e);
     const s = be(t);
     if (this.iHash = e.create(), typeof this.iHash.update != "function")
       throw new Error("Expected instance of class which extends utils.Hash");
     this.blockLen = this.iHash.blockLen, this.outputLen = this.iHash.outputLen;
-    const r = this.blockLen, i = new Uint8Array(r);
-    i.set(s.length > r ? e.create().update(s).digest() : s);
-    for (let o = 0; o < i.length; o++)
-      i[o] ^= 54;
-    this.iHash.update(i), this.oHash = e.create();
-    for (let o = 0; o < i.length; o++)
-      i[o] ^= 106;
-    this.oHash.update(i), ye(i);
+    const i = this.blockLen, r = new Uint8Array(i);
+    r.set(s.length > i ? e.create().update(s).digest() : s);
+    for (let o = 0; o < r.length; o++)
+      r[o] ^= 54;
+    this.iHash.update(r), this.oHash = e.create();
+    for (let o = 0; o < r.length; o++)
+      r[o] ^= 106;
+    this.oHash.update(r), ye(r);
   }
   update(e) {
     return Te(this), this.iHash.update(e), this;
@@ -1506,8 +1608,8 @@ class gt extends ht {
   }
   _cloneInto(e) {
     e || (e = Object.create(Object.getPrototypeOf(this), {}));
-    const { oHash: t, iHash: s, finished: r, destroyed: i, blockLen: o, outputLen: a } = this;
-    return e = e, e.finished = r, e.destroyed = i, e.blockLen = o, e.outputLen = a, e.oHash = t._cloneInto(e.oHash), e.iHash = s._cloneInto(e.iHash), e;
+    const { oHash: t, iHash: s, finished: i, destroyed: r, blockLen: o, outputLen: a } = this;
+    return e = e, e.finished = i, e.destroyed = r, e.blockLen = o, e.outputLen = a, e.oHash = t._cloneInto(e.oHash), e.iHash = s._cloneInto(e.iHash), e;
   }
   clone() {
     return this._cloneInto();
@@ -1516,30 +1618,30 @@ class gt extends ht {
     this.destroyed = !0, this.oHash.destroy(), this.iHash.destroy();
   }
 }
-const me = (n, e, t) => new gt(n, e).update(t).digest();
-me.create = (n, e) => new gt(n, e);
-function is(n, e, t) {
-  return Ge(n), t === void 0 && (t = new Uint8Array(n.outputLen)), me(n, be(t), be(e));
+const we = (n, e, t) => new gt(n, e).update(t).digest();
+we.create = (n, e) => new gt(n, e);
+function rs(n, e, t) {
+  return ze(n), t === void 0 && (t = new Uint8Array(n.outputLen)), we(n, be(t), be(e));
 }
-const Fe = /* @__PURE__ */ Uint8Array.from([0]), tt = /* @__PURE__ */ Uint8Array.of();
+const Le = /* @__PURE__ */ Uint8Array.from([0]), tt = /* @__PURE__ */ Uint8Array.of();
 function ns(n, e, t, s = 32) {
-  Ge(n), Ue(s);
-  const r = n.outputLen;
-  if (s > 255 * r)
+  ze(n), Be(s);
+  const i = n.outputLen;
+  if (s > 255 * i)
     throw new Error("Length should be <= 255*HashLen");
-  const i = Math.ceil(s / r);
+  const r = Math.ceil(s / i);
   t === void 0 && (t = tt);
-  const o = new Uint8Array(i * r), a = me.create(n, e), c = a._cloneInto(), h = new Uint8Array(a.outputLen);
-  for (let d = 0; d < i; d++)
-    Fe[0] = d + 1, c.update(d === 0 ? tt : h).update(t).update(Fe).digestInto(h), o.set(h, r * d), a._cloneInto(c);
-  return a.destroy(), c.destroy(), ye(h, Fe), o.slice(0, s);
+  const o = new Uint8Array(r * i), a = we.create(n, e), c = a._cloneInto(), u = new Uint8Array(a.outputLen);
+  for (let d = 0; d < r; d++)
+    Le[0] = d + 1, c.update(d === 0 ? tt : u).update(t).update(Le).digestInto(u), o.set(u, i * d), a._cloneInto(c);
+  return a.destroy(), c.destroy(), ye(u, Le), o.slice(0, s);
 }
-const st = (n, e, t, s, r) => ns(n, is(n, e, t), s, r);
+const st = (n, e, t, s, i) => ns(n, rs(n, e, t), s, i);
 /*! noble-ciphers - MIT License (c) 2023 Paul Miller (paulmillr.com) */
 function os(n) {
   return n instanceof Uint8Array || ArrayBuffer.isView(n) && n.constructor.name === "Uint8Array";
 }
-function rt(n) {
+function it(n) {
   if (typeof n != "boolean")
     throw new Error(`boolean expected, not ${n}`);
 }
@@ -1547,13 +1649,13 @@ function Oe(n) {
   if (!Number.isSafeInteger(n) || n < 0)
     throw new Error("positive integer expected, got " + n);
 }
-function ve(n, ...e) {
+function Ee(n, ...e) {
   if (!os(n))
     throw new Error("Uint8Array expected");
   if (e.length > 0 && !e.includes(n.length))
     throw new Error("Uint8Array expected of length " + e + ", got length=" + n.length);
 }
-function re(n) {
+function ie(n) {
   return new Uint32Array(n.buffer, n.byteOffset, Math.floor(n.byteLength / 4));
 }
 function as(...n) {
@@ -1565,80 +1667,80 @@ function cs(n, e) {
     throw new Error("options must be defined");
   return Object.assign(n, e);
 }
-function it(n) {
+function rt(n) {
   return Uint8Array.from(n);
 }
-const ft = (n) => Uint8Array.from(n.split("").map((e) => e.charCodeAt(0))), ls = ft("expand 16-byte k"), us = ft("expand 32-byte k"), hs = re(ls), ds = re(us);
+const ft = (n) => Uint8Array.from(n.split("").map((e) => e.charCodeAt(0))), ls = ft("expand 16-byte k"), us = ft("expand 32-byte k"), hs = ie(ls), ds = ie(us);
 function E(n, e) {
   return n << e | n >>> 32 - e;
 }
-function Be(n) {
+function Ue(n) {
   return n.byteOffset % 4 === 0;
 }
 const Se = 64, gs = 16, pt = 2 ** 32 - 1, nt = new Uint32Array();
-function fs(n, e, t, s, r, i, o, a) {
-  const c = r.length, h = new Uint8Array(Se), d = re(h), u = Be(r) && Be(i), g = u ? re(r) : nt, p = u ? re(i) : nt;
-  for (let f = 0; f < c; o++) {
+function fs(n, e, t, s, i, r, o, a) {
+  const c = i.length, u = new Uint8Array(Se), d = ie(u), h = Ue(i) && Ue(r), f = h ? ie(i) : nt, b = h ? ie(r) : nt;
+  for (let g = 0; g < c; o++) {
     if (n(e, t, s, d, o, a), o >= pt)
       throw new Error("arx: counter overflow");
-    const y = Math.min(Se, c - f);
-    if (u && y === Se) {
-      const S = f / 4;
-      if (f % 4 !== 0)
+    const p = Math.min(Se, c - g);
+    if (h && p === Se) {
+      const S = g / 4;
+      if (g % 4 !== 0)
         throw new Error("arx: invalid block position");
-      for (let m = 0, v; m < gs; m++)
-        v = S + m, p[v] = g[v] ^ d[m];
-      f += Se;
+      for (let y = 0, m; y < gs; y++)
+        m = S + y, b[m] = f[m] ^ d[y];
+      g += Se;
       continue;
     }
-    for (let S = 0, m; S < y; S++)
-      m = f + S, i[m] = r[m] ^ h[S];
-    f += y;
+    for (let S = 0, y; S < p; S++)
+      y = g + S, r[y] = i[y] ^ u[S];
+    g += p;
   }
 }
 function ps(n, e) {
-  const { allowShortKeys: t, extendNonceFn: s, counterLength: r, counterRight: i, rounds: o } = cs({ allowShortKeys: !1, counterLength: 8, counterRight: !1, rounds: 20 }, e);
+  const { allowShortKeys: t, extendNonceFn: s, counterLength: i, counterRight: r, rounds: o } = cs({ allowShortKeys: !1, counterLength: 8, counterRight: !1, rounds: 20 }, e);
   if (typeof n != "function")
     throw new Error("core must be a function");
-  return Oe(r), Oe(o), rt(i), rt(t), (a, c, h, d, u = 0) => {
-    ve(a), ve(c), ve(h);
-    const g = h.length;
-    if (d === void 0 && (d = new Uint8Array(g)), ve(d), Oe(u), u < 0 || u >= pt)
+  return Oe(i), Oe(o), it(r), it(t), (a, c, u, d, h = 0) => {
+    Ee(a), Ee(c), Ee(u);
+    const f = u.length;
+    if (d === void 0 && (d = new Uint8Array(f)), Ee(d), Oe(h), h < 0 || h >= pt)
       throw new Error("arx: counter overflow");
-    if (d.length < g)
-      throw new Error(`arx: output (${d.length}) is shorter than data (${g})`);
-    const p = [];
-    let f = a.length, y, S;
-    if (f === 32)
-      p.push(y = it(a)), S = ds;
-    else if (f === 16 && t)
-      y = new Uint8Array(32), y.set(a), y.set(a, 16), S = hs, p.push(y);
+    if (d.length < f)
+      throw new Error(`arx: output (${d.length}) is shorter than data (${f})`);
+    const b = [];
+    let g = a.length, p, S;
+    if (g === 32)
+      b.push(p = rt(a)), S = ds;
+    else if (g === 16 && t)
+      p = new Uint8Array(32), p.set(a), p.set(a, 16), S = hs, b.push(p);
     else
-      throw new Error(`arx: invalid 32-byte key, got length=${f}`);
-    Be(c) || p.push(c = it(c));
-    const m = re(y);
+      throw new Error(`arx: invalid 32-byte key, got length=${g}`);
+    Ue(c) || b.push(c = rt(c));
+    const y = ie(p);
     if (s) {
       if (c.length !== 24)
         throw new Error("arx: extended nonce must be 24 bytes");
-      s(S, m, re(c.subarray(0, 16)), m), c = c.subarray(16);
+      s(S, y, ie(c.subarray(0, 16)), y), c = c.subarray(16);
     }
-    const v = 16 - r;
-    if (v !== c.length)
-      throw new Error(`arx: nonce must be ${v} or 16 bytes`);
-    if (v !== 12) {
-      const J = new Uint8Array(12);
-      J.set(c, i ? 0 : 12 - c.length), c = J, p.push(c);
+    const m = 16 - i;
+    if (m !== c.length)
+      throw new Error(`arx: nonce must be ${m} or 16 bytes`);
+    if (m !== 12) {
+      const Q = new Uint8Array(12);
+      Q.set(c, r ? 0 : 12 - c.length), c = Q, b.push(c);
     }
-    const P = re(c);
-    return fs(n, S, m, P, h, d, u, o), as(...p), d;
+    const A = ie(c);
+    return fs(n, S, y, A, u, d, h, o), as(...b), d;
   };
 }
-function ys(n, e, t, s, r, i = 20) {
-  let o = n[0], a = n[1], c = n[2], h = n[3], d = e[0], u = e[1], g = e[2], p = e[3], f = e[4], y = e[5], S = e[6], m = e[7], v = r, P = t[0], J = t[1], le = t[2], M = o, D = a, x = c, L = h, F = d, O = u, $ = g, U = p, B = f, K = y, V = S, W = m, z = v, G = P, H = J, j = le;
-  for (let Ze = 0; Ze < i; Ze += 2)
-    M = M + F | 0, z = E(z ^ M, 16), B = B + z | 0, F = E(F ^ B, 12), M = M + F | 0, z = E(z ^ M, 8), B = B + z | 0, F = E(F ^ B, 7), D = D + O | 0, G = E(G ^ D, 16), K = K + G | 0, O = E(O ^ K, 12), D = D + O | 0, G = E(G ^ D, 8), K = K + G | 0, O = E(O ^ K, 7), x = x + $ | 0, H = E(H ^ x, 16), V = V + H | 0, $ = E($ ^ V, 12), x = x + $ | 0, H = E(H ^ x, 8), V = V + H | 0, $ = E($ ^ V, 7), L = L + U | 0, j = E(j ^ L, 16), W = W + j | 0, U = E(U ^ W, 12), L = L + U | 0, j = E(j ^ L, 8), W = W + j | 0, U = E(U ^ W, 7), M = M + O | 0, j = E(j ^ M, 16), V = V + j | 0, O = E(O ^ V, 12), M = M + O | 0, j = E(j ^ M, 8), V = V + j | 0, O = E(O ^ V, 7), D = D + $ | 0, z = E(z ^ D, 16), W = W + z | 0, $ = E($ ^ W, 12), D = D + $ | 0, z = E(z ^ D, 8), W = W + z | 0, $ = E($ ^ W, 7), x = x + U | 0, G = E(G ^ x, 16), B = B + G | 0, U = E(U ^ B, 12), x = x + U | 0, G = E(G ^ x, 8), B = B + G | 0, U = E(U ^ B, 7), L = L + F | 0, H = E(H ^ L, 16), K = K + H | 0, F = E(F ^ K, 12), L = L + F | 0, H = E(H ^ L, 8), K = K + H | 0, F = E(F ^ K, 7);
-  let k = 0;
-  s[k++] = o + M | 0, s[k++] = a + D | 0, s[k++] = c + x | 0, s[k++] = h + L | 0, s[k++] = d + F | 0, s[k++] = u + O | 0, s[k++] = g + $ | 0, s[k++] = p + U | 0, s[k++] = f + B | 0, s[k++] = y + K | 0, s[k++] = S + V | 0, s[k++] = m + W | 0, s[k++] = v + z | 0, s[k++] = P + G | 0, s[k++] = J + H | 0, s[k++] = le + j | 0;
+function ys(n, e, t, s, i, r = 20) {
+  let o = n[0], a = n[1], c = n[2], u = n[3], d = e[0], h = e[1], f = e[2], b = e[3], g = e[4], p = e[5], S = e[6], y = e[7], m = i, A = t[0], Q = t[1], le = t[2], M = o, C = a, D = c, F = u, L = d, O = h, $ = f, B = b, U = g, K = p, V = S, H = y, W = m, z = A, j = Q, G = le;
+  for (let Ze = 0; Ze < r; Ze += 2)
+    M = M + L | 0, W = E(W ^ M, 16), U = U + W | 0, L = E(L ^ U, 12), M = M + L | 0, W = E(W ^ M, 8), U = U + W | 0, L = E(L ^ U, 7), C = C + O | 0, z = E(z ^ C, 16), K = K + z | 0, O = E(O ^ K, 12), C = C + O | 0, z = E(z ^ C, 8), K = K + z | 0, O = E(O ^ K, 7), D = D + $ | 0, j = E(j ^ D, 16), V = V + j | 0, $ = E($ ^ V, 12), D = D + $ | 0, j = E(j ^ D, 8), V = V + j | 0, $ = E($ ^ V, 7), F = F + B | 0, G = E(G ^ F, 16), H = H + G | 0, B = E(B ^ H, 12), F = F + B | 0, G = E(G ^ F, 8), H = H + G | 0, B = E(B ^ H, 7), M = M + O | 0, G = E(G ^ M, 16), V = V + G | 0, O = E(O ^ V, 12), M = M + O | 0, G = E(G ^ M, 8), V = V + G | 0, O = E(O ^ V, 7), C = C + $ | 0, W = E(W ^ C, 16), H = H + W | 0, $ = E($ ^ H, 12), C = C + $ | 0, W = E(W ^ C, 8), H = H + W | 0, $ = E($ ^ H, 7), D = D + B | 0, z = E(z ^ D, 16), U = U + z | 0, B = E(B ^ U, 12), D = D + B | 0, z = E(z ^ D, 8), U = U + z | 0, B = E(B ^ U, 7), F = F + L | 0, j = E(j ^ F, 16), K = K + j | 0, L = E(L ^ K, 12), F = F + L | 0, j = E(j ^ F, 8), K = K + j | 0, L = E(L ^ K, 7);
+  let P = 0;
+  s[P++] = o + M | 0, s[P++] = a + C | 0, s[P++] = c + D | 0, s[P++] = u + F | 0, s[P++] = d + L | 0, s[P++] = h + O | 0, s[P++] = f + $ | 0, s[P++] = b + B | 0, s[P++] = g + U | 0, s[P++] = p + K | 0, s[P++] = S + V | 0, s[P++] = y + H | 0, s[P++] = m + W | 0, s[P++] = A + z | 0, s[P++] = Q + j | 0, s[P++] = le + G | 0;
 }
 const ot = /* @__PURE__ */ ps(ys, {
   counterRight: !1,
@@ -1652,33 +1754,33 @@ class T extends Error {
     super(e), this.code = t, this.details = s, this.name = "NIP44Error";
   }
 }
-var R = /* @__PURE__ */ ((n) => (n.INVALID_KEY = "INVALID_KEY", n.INVALID_NONCE = "INVALID_NONCE", n.INVALID_PAYLOAD = "INVALID_PAYLOAD", n.ENCRYPTION_FAILED = "ENCRYPTION_FAILED", n.DECRYPTION_FAILED = "DECRYPTION_FAILED", n.MAC_VERIFICATION_FAILED = "MAC_VERIFICATION_FAILED", n.INVALID_PLAINTEXT_LENGTH = "INVALID_PLAINTEXT_LENGTH", n.PADDING_ERROR = "PADDING_ERROR", n))(R || {});
-class _ {
+var x = /* @__PURE__ */ ((n) => (n.INVALID_KEY = "INVALID_KEY", n.INVALID_NONCE = "INVALID_NONCE", n.INVALID_PAYLOAD = "INVALID_PAYLOAD", n.ENCRYPTION_FAILED = "ENCRYPTION_FAILED", n.DECRYPTION_FAILED = "DECRYPTION_FAILED", n.MAC_VERIFICATION_FAILED = "MAC_VERIFICATION_FAILED", n.INVALID_PLAINTEXT_LENGTH = "INVALID_PLAINTEXT_LENGTH", n.PADDING_ERROR = "PADDING_ERROR", n))(x || {});
+class I {
   /**
    * Derive conversation key using secp256k1 ECDH + HKDF
    */
   static deriveConversationKey(e, t) {
     try {
       const s = e.replace(/^0x/, "");
-      let r = t.replace(/^0x/, "");
+      let i = t.replace(/^0x/, "");
       if (s.length !== 64)
         throw new T(
           "Invalid private key length",
-          R.INVALID_KEY
+          x.INVALID_KEY
         );
-      if (r.length === 64)
-        r = "02" + r;
-      else if (r.length !== 66 || !r.startsWith("02") && !r.startsWith("03"))
+      if (i.length === 64)
+        i = "02" + i;
+      else if (i.length !== 66 || !i.startsWith("02") && !i.startsWith("03"))
         throw new T(
           "Invalid public key format",
-          R.INVALID_KEY
+          x.INVALID_KEY
         );
-      const o = $t(s, r, !0).slice(1);
+      const o = $t(s, i, !0).slice(1);
       return st(oe, o, this.SALT, new Uint8Array(0), 32);
     } catch (s) {
       throw s instanceof T ? s : new T(
         `Key derivation failed: ${s.message}`,
-        R.INVALID_KEY,
+        x.INVALID_KEY,
         s
       );
     }
@@ -1691,12 +1793,12 @@ class _ {
       if (e.length !== 32)
         throw new T(
           "Invalid conversation key length",
-          R.INVALID_KEY
+          x.INVALID_KEY
         );
       if (t.length !== this.NONCE_SIZE)
         throw new T(
           "Invalid nonce length",
-          R.INVALID_NONCE
+          x.INVALID_NONCE
         );
       const s = st(oe, e, new Uint8Array(0), t, 76);
       return {
@@ -1710,7 +1812,7 @@ class _ {
     } catch (s) {
       throw new T(
         `Message key derivation failed: ${s.message}`,
-        R.ENCRYPTION_FAILED,
+        x.ENCRYPTION_FAILED,
         s
       );
     }
@@ -1723,7 +1825,7 @@ class _ {
     if (e < 0 || e > 65536)
       throw new T(
         "Invalid plaintext length",
-        R.INVALID_PLAINTEXT_LENGTH
+        x.INVALID_PLAINTEXT_LENGTH
       );
     if (e === 0 || e <= 32)
       return 32;
@@ -1736,8 +1838,8 @@ class _ {
    * [plaintext_length: u16][plaintext][zero_bytes]
    */
   static applyPadding(e) {
-    const t = e.length, s = this.calculatePaddedLength(t + 2), r = new Uint8Array(s);
-    return r[0] = t >>> 8 & 255, r[1] = t & 255, r.set(e, 2), r;
+    const t = e.length, s = this.calculatePaddedLength(t + 2), i = new Uint8Array(s);
+    return i[0] = t >>> 8 & 255, i[1] = t & 255, i.set(e, 2), i;
   }
   /**
    * Remove padding from decrypted data
@@ -1747,13 +1849,13 @@ class _ {
     if (e.length < 2)
       throw new T(
         "Invalid padded data length",
-        R.PADDING_ERROR
+        x.PADDING_ERROR
       );
     const t = e[0] << 8 | e[1];
     if (t > e.length - 2)
       throw new T(
         "Invalid plaintext length in padding",
-        R.PADDING_ERROR
+        x.PADDING_ERROR
       );
     return e.slice(2, 2 + t);
   }
@@ -1771,27 +1873,27 @@ class _ {
       if (e == null)
         throw new T(
           "Plaintext cannot be null or undefined",
-          R.INVALID_PLAINTEXT_LENGTH
+          x.INVALID_PLAINTEXT_LENGTH
         );
-      const r = new TextEncoder().encode(e), i = s || this.generateNonce(), o = this.deriveMessageKeys(t, i), a = this.applyPadding(r), c = ot(
+      const i = new TextEncoder().encode(e), r = s || this.generateNonce(), o = this.deriveMessageKeys(t, r), a = this.applyPadding(i), c = ot(
         o.chachaKey,
         o.chachaNonce,
         a
-      ), h = new Uint8Array(i.length + c.length);
-      h.set(i, 0), h.set(c, i.length);
-      const d = me(oe, o.hmacKey, h), u = new Uint8Array(
-        this.VERSION_SIZE + i.length + c.length + this.MAC_SIZE
+      ), u = new Uint8Array(r.length + c.length);
+      u.set(r, 0), u.set(c, r.length);
+      const d = we(oe, o.hmacKey, u), h = new Uint8Array(
+        this.VERSION_SIZE + r.length + c.length + this.MAC_SIZE
       );
-      let g = 0;
-      return u[g] = this.VERSION, g += this.VERSION_SIZE, u.set(i, g), g += i.length, u.set(c, g), g += c.length, u.set(d, g), {
-        payload: btoa(String.fromCharCode(...u)),
-        nonce: i
+      let f = 0;
+      return h[f] = this.VERSION, f += this.VERSION_SIZE, h.set(r, f), f += r.length, h.set(c, f), f += c.length, h.set(d, f), {
+        payload: btoa(String.fromCharCode(...h)),
+        nonce: r
       };
-    } catch (r) {
-      throw r instanceof T ? r : new T(
-        `Encryption failed: ${r.message}`,
-        R.ENCRYPTION_FAILED,
-        r
+    } catch (i) {
+      throw i instanceof T ? i : new T(
+        `Encryption failed: ${i.message}`,
+        x.ENCRYPTION_FAILED,
+        i
       );
     }
   }
@@ -1800,40 +1902,40 @@ class _ {
    */
   static decrypt(e, t) {
     try {
-      const s = atob(e), r = new Uint8Array(s.length);
-      for (let v = 0; v < s.length; v++)
-        r[v] = s.charCodeAt(v);
-      const i = this.VERSION_SIZE + this.NONCE_SIZE + this.MAC_SIZE;
-      if (r.length < i)
+      const s = atob(e), i = new Uint8Array(s.length);
+      for (let m = 0; m < s.length; m++)
+        i[m] = s.charCodeAt(m);
+      const r = this.VERSION_SIZE + this.NONCE_SIZE + this.MAC_SIZE;
+      if (i.length < r)
         throw new T(
           "Payload too short",
-          R.INVALID_PAYLOAD
+          x.INVALID_PAYLOAD
         );
       let o = 0;
-      const a = r[o];
+      const a = i[o];
       if (o += this.VERSION_SIZE, a !== this.VERSION)
         throw new T(
           `Unsupported version: ${a}`,
-          R.INVALID_PAYLOAD
+          x.INVALID_PAYLOAD
         );
-      const c = r.slice(o, o + this.NONCE_SIZE);
+      const c = i.slice(o, o + this.NONCE_SIZE);
       o += this.NONCE_SIZE;
-      const h = r.slice(o, -this.MAC_SIZE), d = r.slice(-this.MAC_SIZE), u = this.deriveMessageKeys(t, c), g = new Uint8Array(c.length + h.length);
-      g.set(c, 0), g.set(h, c.length);
-      const p = me(oe, u.hmacKey, g);
-      let f = !0;
-      for (let v = 0; v < this.MAC_SIZE; v++)
-        d[v] !== p[v] && (f = !1);
-      if (!f)
+      const u = i.slice(o, -this.MAC_SIZE), d = i.slice(-this.MAC_SIZE), h = this.deriveMessageKeys(t, c), f = new Uint8Array(c.length + u.length);
+      f.set(c, 0), f.set(u, c.length);
+      const b = we(oe, h.hmacKey, f);
+      let g = !0;
+      for (let m = 0; m < this.MAC_SIZE; m++)
+        d[m] !== b[m] && (g = !1);
+      if (!g)
         return {
           plaintext: "",
           isValid: !1
         };
-      const y = ot(
-        u.chachaKey,
-        u.chachaNonce,
-        h
-      ), S = this.removePadding(y);
+      const p = ot(
+        h.chachaKey,
+        h.chachaNonce,
+        u
+      ), S = this.removePadding(p);
       return {
         plaintext: new TextDecoder().decode(S),
         isValid: !0
@@ -1857,27 +1959,27 @@ class _ {
   static validatePayload(e) {
     try {
       const t = atob(e), s = new Uint8Array(t.length);
-      for (let i = 0; i < t.length; i++)
-        s[i] = t.charCodeAt(i);
-      const r = this.VERSION_SIZE + this.NONCE_SIZE + this.MAC_SIZE;
-      return !(s.length < r || s[0] !== this.VERSION);
+      for (let r = 0; r < t.length; r++)
+        s[r] = t.charCodeAt(r);
+      const i = this.VERSION_SIZE + this.NONCE_SIZE + this.MAC_SIZE;
+      return !(s.length < i || s[0] !== this.VERSION);
     } catch {
       return !1;
     }
   }
 }
-l(_, "VERSION", 2), l(_, "SALT", new TextEncoder().encode(bs.saltInfo)), l(_, "NONCE_SIZE", 32), l(_, "CHACHA_KEY_SIZE", 32), l(_, "CHACHA_NONCE_SIZE", 12), l(_, "HMAC_KEY_SIZE", 32), l(_, "MAC_SIZE", 32), l(_, "VERSION_SIZE", 1);
-const ws = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+l(I, "VERSION", 2), l(I, "SALT", new TextEncoder().encode(bs.saltInfo)), l(I, "NONCE_SIZE", 32), l(I, "CHACHA_KEY_SIZE", 32), l(I, "CHACHA_NONCE_SIZE", 12), l(I, "HMAC_KEY_SIZE", 32), l(I, "MAC_SIZE", 32), l(I, "VERSION_SIZE", 1);
+const ms = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  NIP44Crypto: _
+  NIP44Crypto: I
 }, Symbol.toStringTag, { value: "Module" }));
-class b extends Error {
+class w extends Error {
   constructor(e, t, s) {
     super(e), this.code = t, this.details = s, this.name = "NIP59Error";
   }
 }
-var w = /* @__PURE__ */ ((n) => (n.INVALID_RUMOR = "INVALID_RUMOR", n.SEAL_CREATION_FAILED = "SEAL_CREATION_FAILED", n.GIFT_WRAP_CREATION_FAILED = "GIFT_WRAP_CREATION_FAILED", n.EPHEMERAL_KEY_GENERATION_FAILED = "EPHEMERAL_KEY_GENERATION_FAILED", n.TIMESTAMP_RANDOMIZATION_FAILED = "TIMESTAMP_RANDOMIZATION_FAILED", n.DECRYPTION_FAILED = "DECRYPTION_FAILED", n.INVALID_GIFT_WRAP = "INVALID_GIFT_WRAP", n.INVALID_SEAL = "INVALID_SEAL", n.NO_RECIPIENTS = "NO_RECIPIENTS", n.INVALID_RECIPIENT = "INVALID_RECIPIENT", n.INVALID_PRIVATE_KEY = "INVALID_PRIVATE_KEY", n))(w || {});
-const q = {
+var v = /* @__PURE__ */ ((n) => (n.INVALID_RUMOR = "INVALID_RUMOR", n.SEAL_CREATION_FAILED = "SEAL_CREATION_FAILED", n.GIFT_WRAP_CREATION_FAILED = "GIFT_WRAP_CREATION_FAILED", n.EPHEMERAL_KEY_GENERATION_FAILED = "EPHEMERAL_KEY_GENERATION_FAILED", n.TIMESTAMP_RANDOMIZATION_FAILED = "TIMESTAMP_RANDOMIZATION_FAILED", n.DECRYPTION_FAILED = "DECRYPTION_FAILED", n.INVALID_GIFT_WRAP = "INVALID_GIFT_WRAP", n.INVALID_SEAL = "INVALID_SEAL", n.NO_RECIPIENTS = "NO_RECIPIENTS", n.INVALID_RECIPIENT = "INVALID_RECIPIENT", n.INVALID_PRIVATE_KEY = "INVALID_PRIVATE_KEY", n))(v || {});
+const Y = {
   SEAL_KIND: 13,
   GIFT_WRAP_KIND: 1059,
   MAX_TIMESTAMP_AGE_SECONDS: 2 * 24 * 60 * 60,
@@ -1893,31 +1995,31 @@ class pe {
   static async createSeal(e, t, s) {
     try {
       this.validateRumor(e), this.validatePrivateKey(t), this.validatePublicKey(s);
-      const r = JSON.stringify(e), i = _.deriveConversationKey(
+      const i = JSON.stringify(e), r = I.deriveConversationKey(
         t,
         s
-      ), o = _.encrypt(r, i), a = this.getPublicKeyFromPrivate(t), c = {
+      ), o = I.encrypt(i, r), a = this.getPublicKeyFromPrivate(t), c = {
         pubkey: a,
         created_at: Math.floor(Date.now() / 1e3),
-        kind: q.SEAL_KIND,
+        kind: Y.SEAL_KIND,
         tags: [],
         // Always empty for seals
         content: o.payload
-      }, h = this.calculateEventId(c), d = await this.signEvent(c, h, t);
+      }, u = this.calculateEventId(c), d = await this.signEvent(c, u, t);
       return {
-        id: h,
+        id: u,
         pubkey: a,
         created_at: c.created_at,
-        kind: q.SEAL_KIND,
+        kind: Y.SEAL_KIND,
         tags: [],
         content: o.payload,
         sig: d
       };
-    } catch (r) {
-      throw r instanceof b ? r : new b(
-        `Seal creation failed: ${r.message}`,
-        w.SEAL_CREATION_FAILED,
-        r
+    } catch (i) {
+      throw i instanceof w ? i : new w(
+        `Seal creation failed: ${i.message}`,
+        v.SEAL_CREATION_FAILED,
+        i
       );
     }
   }
@@ -1926,18 +2028,18 @@ class pe {
    */
   static decryptSeal(e, t) {
     try {
-      if (e.kind !== q.SEAL_KIND)
+      if (e.kind !== Y.SEAL_KIND)
         return { rumor: null, isValid: !1 };
       if (e.tags.length !== 0)
         return { rumor: null, isValid: !1 };
-      const s = _.deriveConversationKey(
+      const s = I.deriveConversationKey(
         t,
         e.pubkey
-      ), r = _.decrypt(e.content, s);
-      if (!r.isValid)
+      ), i = I.decrypt(e.content, s);
+      if (!i.isValid)
         return { rumor: null, isValid: !1 };
-      const i = JSON.parse(r.plaintext);
-      return this.isValidRumor(i) ? { rumor: i, isValid: !0 } : { rumor: null, isValid: !1 };
+      const r = JSON.parse(i.plaintext);
+      return this.isValidRumor(r) ? { rumor: r, isValid: !0 } : { rumor: null, isValid: !1 };
     } catch {
       return { rumor: null, isValid: !1 };
     }
@@ -1947,34 +2049,34 @@ class pe {
    */
   static validateRumor(e) {
     if (!e || typeof e != "object")
-      throw new b(
+      throw new w(
         "Rumor must be a valid object",
-        w.INVALID_RUMOR
+        v.INVALID_RUMOR
       );
     if (typeof e.pubkey != "string" || !/^[0-9a-f]{64}$/i.test(e.pubkey))
-      throw new b(
+      throw new w(
         "Rumor must have valid pubkey",
-        w.INVALID_RUMOR
+        v.INVALID_RUMOR
       );
     if (typeof e.created_at != "number" || e.created_at <= 0)
-      throw new b(
+      throw new w(
         "Rumor must have valid created_at timestamp",
-        w.INVALID_RUMOR
+        v.INVALID_RUMOR
       );
     if (typeof e.kind != "number" || e.kind < 0 || e.kind > 65535)
-      throw new b(
+      throw new w(
         "Rumor must have valid kind",
-        w.INVALID_RUMOR
+        v.INVALID_RUMOR
       );
     if (!Array.isArray(e.tags))
-      throw new b(
+      throw new w(
         "Rumor must have valid tags array",
-        w.INVALID_RUMOR
+        v.INVALID_RUMOR
       );
     if (typeof e.content != "string")
-      throw new b(
+      throw new w(
         "Rumor must have valid content string",
-        w.INVALID_RUMOR
+        v.INVALID_RUMOR
       );
   }
   /**
@@ -1988,9 +2090,9 @@ class pe {
    */
   static validatePrivateKey(e) {
     if (typeof e != "string" || !/^[0-9a-f]{64}$/i.test(e))
-      throw new b(
+      throw new w(
         "Invalid private key format",
-        w.SEAL_CREATION_FAILED
+        v.SEAL_CREATION_FAILED
       );
   }
   /**
@@ -1998,9 +2100,9 @@ class pe {
    */
   static validatePublicKey(e) {
     if (typeof e != "string" || !/^[0-9a-f]{64}$/i.test(e))
-      throw new b(
+      throw new w(
         "Invalid public key format",
-        w.SEAL_CREATION_FAILED
+        v.SEAL_CREATION_FAILED
       );
   }
   /**
@@ -2021,8 +2123,8 @@ class pe {
         type: t.constructor.name,
         first4: Array.from(t.slice(0, 4))
       });
-      const r = ne.getPublicKey(t, !1).slice(1, 33), i = Array.from(r).map((o) => o.toString(16).padStart(2, "0")).join("");
-      return console.log("✅ Successfully derived public key:", i.substring(0, 8) + "..."), i;
+      const i = ne.getPublicKey(t, !1).slice(1, 33), r = Array.from(i).map((o) => o.toString(16).padStart(2, "0")).join("");
+      return console.log("✅ Successfully derived public key:", r.substring(0, 8) + "..."), r;
     } catch (t) {
       throw console.error("❌ SealCreator getPublicKeyFromPrivate error:", {
         error: t,
@@ -2032,9 +2134,9 @@ class pe {
           type: typeof e,
           length: e == null ? void 0 : e.length
         }
-      }), new b(
+      }), new w(
         "Failed to derive public key from private key",
-        w.SEAL_CREATION_FAILED,
+        v.SEAL_CREATION_FAILED,
         t
       );
     }
@@ -2052,44 +2154,44 @@ class pe {
       e.tags,
       e.content
     ]), s = oe(new TextEncoder().encode(t));
-    return Array.from(s).map((r) => r.toString(16).padStart(2, "0")).join("");
+    return Array.from(s).map((i) => i.toString(16).padStart(2, "0")).join("");
   }
   /**
    * Sign event according to NIP-01 using Schnorr signatures
    */
   static async signEvent(e, t, s) {
     try {
-      const r = await ne.schnorr.sign(t, s);
-      return Array.from(r).map((i) => i.toString(16).padStart(2, "0")).join("");
-    } catch (r) {
-      throw new b(
+      const i = await ne.schnorr.sign(t, s);
+      return Array.from(i).map((r) => r.toString(16).padStart(2, "0")).join("");
+    } catch (i) {
+      throw new w(
         "Failed to sign seal event",
-        w.SEAL_CREATION_FAILED,
-        r
+        v.SEAL_CREATION_FAILED,
+        i
       );
     }
   }
 }
-const ms = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const ws = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   SealCreator: pe
 }, Symbol.toStringTag, { value: "Module" }));
-class Pe {
+class ke {
   /**
    * Generate a new ephemeral key pair for gift wrap creation
    * Each key pair is cryptographically random and should never be reused
    */
   static generateEphemeralKeyPair() {
     try {
-      const e = he(32), t = Array.from(e).map((o) => o.toString(16).padStart(2, "0")).join(""), r = ne.getPublicKey(t, !1).slice(1, 33), i = Array.from(r).map((o) => o.toString(16).padStart(2, "0")).join("");
+      const e = he(32), t = Array.from(e).map((o) => o.toString(16).padStart(2, "0")).join(""), i = ne.getPublicKey(t, !1).slice(1, 33), r = Array.from(i).map((o) => o.toString(16).padStart(2, "0")).join("");
       return {
         privateKey: t,
-        publicKey: i
+        publicKey: r
       };
     } catch (e) {
-      throw new b(
+      throw new w(
         `Ephemeral key generation failed: ${e.message}`,
-        w.EPHEMERAL_KEY_GENERATION_FAILED,
+        v.EPHEMERAL_KEY_GENERATION_FAILED,
         e
       );
     }
@@ -2100,9 +2202,9 @@ class Pe {
    */
   static generateMultipleEphemeralKeyPairs(e) {
     if (e <= 0)
-      throw new b(
+      throw new w(
         "Key pair count must be greater than 0",
-        w.EPHEMERAL_KEY_GENERATION_FAILED
+        v.EPHEMERAL_KEY_GENERATION_FAILED
       );
     const t = [];
     for (let s = 0; s < e; s++)
@@ -2116,8 +2218,8 @@ class Pe {
     try {
       if (!/^[0-9a-f]{64}$/i.test(e.privateKey) || !/^[0-9a-f]{64}$/i.test(e.publicKey))
         return !1;
-      const s = ne.getPublicKey(e.privateKey, !1).slice(1, 33), r = Array.from(s).map((i) => i.toString(16).padStart(2, "0")).join("");
-      return e.publicKey.toLowerCase() === r.toLowerCase();
+      const s = ne.getPublicKey(e.privateKey, !1).slice(1, 33), i = Array.from(s).map((r) => r.toString(16).padStart(2, "0")).join("");
+      return e.publicKey.toLowerCase() === i.toLowerCase();
     } catch {
       return !1;
     }
@@ -2129,7 +2231,7 @@ class Pe {
    */
   static clearEphemeralKeyPair(e) {
     try {
-      const t = he(32).reduce((s, r) => s + r.toString(16).padStart(2, "0"), "");
+      const t = he(32).reduce((s, i) => s + i.toString(16).padStart(2, "0"), "");
       e.privateKey = t, e.publicKey = t;
     } catch {
     }
@@ -2147,12 +2249,12 @@ class Ke {
    * Generate a randomized timestamp for gift wrap creation
    * The timestamp will be between current time and maxAgeSeconds in the past
    */
-  static generateRandomizedTimestamp(e = q.MAX_TIMESTAMP_AGE_SECONDS) {
+  static generateRandomizedTimestamp(e = Y.MAX_TIMESTAMP_AGE_SECONDS) {
     try {
       if (e < 0)
-        throw new b(
+        throw new w(
           "Max age seconds cannot be negative",
-          w.TIMESTAMP_RANDOMIZATION_FAILED
+          v.TIMESTAMP_RANDOMIZATION_FAILED
         );
       const t = Math.floor(Date.now() / 1e3);
       if (e === 0)
@@ -2160,9 +2262,9 @@ class Ke {
       const s = this.generateSecureRandomOffset(e);
       return t - s;
     } catch (t) {
-      throw t instanceof b ? t : new b(
+      throw t instanceof w ? t : new w(
         `Timestamp randomization failed: ${t.message}`,
-        w.TIMESTAMP_RANDOMIZATION_FAILED,
+        v.TIMESTAMP_RANDOMIZATION_FAILED,
         t
       );
     }
@@ -2178,24 +2280,24 @@ class Ke {
    * Generate multiple randomized timestamps for batch gift wrap creation
    * Each timestamp is independently randomized
    */
-  static generateMultipleRandomizedTimestamps(e, t = q.MAX_TIMESTAMP_AGE_SECONDS) {
+  static generateMultipleRandomizedTimestamps(e, t = Y.MAX_TIMESTAMP_AGE_SECONDS) {
     if (e <= 0)
-      throw new b(
+      throw new w(
         "Timestamp count must be greater than 0",
-        w.TIMESTAMP_RANDOMIZATION_FAILED
+        v.TIMESTAMP_RANDOMIZATION_FAILED
       );
     const s = [];
-    for (let r = 0; r < e; r++)
+    for (let i = 0; i < e; i++)
       s.push(this.generateRandomizedTimestamp(t));
     return s;
   }
   /**
    * Validate that a timestamp is within acceptable bounds for gift wraps
    */
-  static validateGiftWrapTimestamp(e, t = q.MAX_TIMESTAMP_AGE_SECONDS) {
+  static validateGiftWrapTimestamp(e, t = Y.MAX_TIMESTAMP_AGE_SECONDS) {
     try {
-      const s = Math.floor(Date.now() / 1e3), r = s - t, i = s + 60;
-      return e >= r && e <= i;
+      const s = Math.floor(Date.now() / 1e3), i = s - t, r = s + 60;
+      return e >= i && e <= r;
     } catch {
       return !1;
     }
@@ -2204,7 +2306,7 @@ class Ke {
    * Get the recommended timestamp randomization window for NIP-59
    */
   static getRecommendedMaxAge() {
-    return q.MAX_TIMESTAMP_AGE_SECONDS;
+    return Y.MAX_TIMESTAMP_AGE_SECONDS;
   }
   /**
    * Calculate entropy bits for timestamp randomization
@@ -2219,55 +2321,55 @@ class Ke {
    */
   static generateTimestampInWindow(e, t) {
     if (e >= t)
-      throw new b(
+      throw new w(
         "Window start must be before window end",
-        w.TIMESTAMP_RANDOMIZATION_FAILED
+        v.TIMESTAMP_RANDOMIZATION_FAILED
       );
-    const s = t - e, r = this.generateSecureRandomOffset(s);
-    return e + r;
+    const s = t - e, i = this.generateSecureRandomOffset(s);
+    return e + i;
   }
 }
 class Me {
   /**
    * Create a single gift wrap for one recipient
    */
-  static async createGiftWrap(e, t, s, r) {
+  static async createGiftWrap(e, t, s, i) {
     try {
       this.validateSeal(e), this.validateRecipient(t);
-      const i = s || Pe.generateEphemeralKeyPair();
-      if (!Pe.validateEphemeralKeyPair(i))
-        throw new b(
+      const r = s || ke.generateEphemeralKeyPair();
+      if (!ke.validateEphemeralKeyPair(r))
+        throw new w(
           "Invalid ephemeral key pair",
-          w.GIFT_WRAP_CREATION_FAILED
+          v.GIFT_WRAP_CREATION_FAILED
         );
-      const o = r || Ke.generateRandomizedTimestamp(), a = JSON.stringify(e), c = _.deriveConversationKey(
-        i.privateKey,
+      const o = i || Ke.generateRandomizedTimestamp(), a = JSON.stringify(e), c = I.deriveConversationKey(
+        r.privateKey,
         t.pubkey
-      ), h = _.encrypt(a, c), d = t.relayHint ? ["p", t.pubkey, t.relayHint] : ["p", t.pubkey], u = {
-        pubkey: i.publicKey,
+      ), u = I.encrypt(a, c), d = t.relayHint ? ["p", t.pubkey, t.relayHint] : ["p", t.pubkey], h = {
+        pubkey: r.publicKey,
         created_at: o,
-        kind: q.GIFT_WRAP_KIND,
+        kind: Y.GIFT_WRAP_KIND,
         tags: [d],
-        content: h.payload
-      }, g = this.calculateEventId(u), p = await this.signEvent(u, g, i.privateKey);
+        content: u.payload
+      }, f = this.calculateEventId(h), b = await this.signEvent(h, f, r.privateKey);
       return {
         giftWrap: {
-          id: g,
-          pubkey: i.publicKey,
+          id: f,
+          pubkey: r.publicKey,
           created_at: o,
-          kind: q.GIFT_WRAP_KIND,
+          kind: Y.GIFT_WRAP_KIND,
           tags: [d],
-          content: h.payload,
-          sig: p
+          content: u.payload,
+          sig: b
         },
-        ephemeralKeyPair: i,
+        ephemeralKeyPair: r,
         recipient: t.pubkey
       };
-    } catch (i) {
-      throw i instanceof b ? i : new b(
-        `Gift wrap creation failed: ${i.message}`,
-        w.GIFT_WRAP_CREATION_FAILED,
-        i
+    } catch (r) {
+      throw r instanceof w ? r : new w(
+        `Gift wrap creation failed: ${r.message}`,
+        v.GIFT_WRAP_CREATION_FAILED,
+        r
       );
     }
   }
@@ -2277,21 +2379,21 @@ class Me {
    */
   static async createMultipleGiftWraps(e, t) {
     if (!t || t.length === 0)
-      throw new b(
+      throw new w(
         "At least one recipient is required",
-        w.NO_RECIPIENTS
+        v.NO_RECIPIENTS
       );
-    const s = [], r = Pe.generateMultipleEphemeralKeyPairs(
+    const s = [], i = ke.generateMultipleEphemeralKeyPairs(
       t.length
-    ), i = Ke.generateMultipleRandomizedTimestamps(
+    ), r = Ke.generateMultipleRandomizedTimestamps(
       t.length
     );
     for (let o = 0; o < t.length; o++) {
       const a = await this.createGiftWrap(
         e,
         t[o],
-        r[o],
-        i[o]
+        i[o],
+        r[o]
       );
       s.push(a);
     }
@@ -2304,14 +2406,14 @@ class Me {
     try {
       if (!this.isValidGiftWrap(e))
         return { seal: null, isValid: !1 };
-      const s = _.deriveConversationKey(
+      const s = I.deriveConversationKey(
         t,
         e.pubkey
-      ), r = _.decrypt(e.content, s);
-      if (!r.isValid)
+      ), i = I.decrypt(e.content, s);
+      if (!i.isValid)
         return { seal: null, isValid: !1 };
-      const i = JSON.parse(r.plaintext);
-      return this.isValidSeal(i) ? { seal: i, isValid: !0 } : { seal: null, isValid: !1 };
+      const r = JSON.parse(i.plaintext);
+      return this.isValidSeal(r) ? { seal: r, isValid: !0 } : { seal: null, isValid: !1 };
     } catch {
       return { seal: null, isValid: !1 };
     }
@@ -2321,24 +2423,24 @@ class Me {
    */
   static validateSeal(e) {
     if (!e || typeof e != "object")
-      throw new b(
+      throw new w(
         "Seal must be a valid object",
-        w.INVALID_SEAL
+        v.INVALID_SEAL
       );
-    if (e.kind !== q.SEAL_KIND)
-      throw new b(
+    if (e.kind !== Y.SEAL_KIND)
+      throw new w(
         "Seal must have kind 13",
-        w.INVALID_SEAL
+        v.INVALID_SEAL
       );
     if (!Array.isArray(e.tags) || e.tags.length !== 0)
-      throw new b(
+      throw new w(
         "Seal must have empty tags array",
-        w.INVALID_SEAL
+        v.INVALID_SEAL
       );
     if (typeof e.content != "string")
-      throw new b(
+      throw new w(
         "Seal must have valid content string",
-        w.INVALID_SEAL
+        v.INVALID_SEAL
       );
   }
   /**
@@ -2346,32 +2448,32 @@ class Me {
    */
   static validateRecipient(e) {
     if (!e || typeof e != "object")
-      throw new b(
+      throw new w(
         "Recipient must be a valid object",
-        w.INVALID_RECIPIENT
+        v.INVALID_RECIPIENT
       );
     if (typeof e.pubkey != "string" || !/^[0-9a-f]{64}$/i.test(e.pubkey))
-      throw new b(
+      throw new w(
         "Recipient must have valid pubkey",
-        w.INVALID_RECIPIENT
+        v.INVALID_RECIPIENT
       );
     if (e.relayHint && typeof e.relayHint != "string")
-      throw new b(
+      throw new w(
         "Recipient relay hint must be a string if provided",
-        w.INVALID_RECIPIENT
+        v.INVALID_RECIPIENT
       );
   }
   /**
    * Check if an object is a valid gift wrap (for decryption)
    */
   static isValidGiftWrap(e) {
-    return e && typeof e == "object" && e.kind === q.GIFT_WRAP_KIND && typeof e.pubkey == "string" && typeof e.content == "string" && Array.isArray(e.tags) && e.tags.length > 0 && Array.isArray(e.tags[0]) && e.tags[0][0] === "p" && typeof e.tags[0][1] == "string";
+    return e && typeof e == "object" && e.kind === Y.GIFT_WRAP_KIND && typeof e.pubkey == "string" && typeof e.content == "string" && Array.isArray(e.tags) && e.tags.length > 0 && Array.isArray(e.tags[0]) && e.tags[0][0] === "p" && typeof e.tags[0][1] == "string";
   }
   /**
    * Check if an object is a valid seal (for decryption)
    */
   static isValidSeal(e) {
-    return e && typeof e == "object" && e.kind === q.SEAL_KIND && typeof e.pubkey == "string" && typeof e.content == "string" && Array.isArray(e.tags) && e.tags.length === 0;
+    return e && typeof e == "object" && e.kind === Y.SEAL_KIND && typeof e.pubkey == "string" && typeof e.content == "string" && Array.isArray(e.tags) && e.tags.length === 0;
   }
   /**
    * Calculate event ID according to NIP-01
@@ -2386,20 +2488,20 @@ class Me {
       e.tags,
       e.content
     ]), s = oe(new TextEncoder().encode(t));
-    return Array.from(s).map((r) => r.toString(16).padStart(2, "0")).join("");
+    return Array.from(s).map((i) => i.toString(16).padStart(2, "0")).join("");
   }
   /**
    * Sign event according to NIP-01 using Schnorr signatures
    */
   static async signEvent(e, t, s) {
     try {
-      const r = await ne.schnorr.sign(t, s);
-      return Array.from(r).map((i) => i.toString(16).padStart(2, "0")).join("");
-    } catch (r) {
-      throw new b(
+      const i = await ne.schnorr.sign(t, s);
+      return Array.from(i).map((r) => r.toString(16).padStart(2, "0")).join("");
+    } catch (i) {
+      throw new w(
         "Failed to sign gift wrap event",
-        w.GIFT_WRAP_CREATION_FAILED,
-        r
+        v.GIFT_WRAP_CREATION_FAILED,
+        i
       );
     }
   }
@@ -2424,22 +2526,22 @@ class Me {
     }
   }
 }
-class ie {
+class re {
   /**
    * Create gift-wrapped direct messages for multiple recipients
    * This is the main entry point for the NIP-59 protocol
    */
-  static async createGiftWrappedDM(e, t, s, r) {
+  static async createGiftWrappedDM(e, t, s, i) {
     try {
       this.validateCreateDMInputs(e, t, s);
-      const i = this.createRumor(e, t, r), o = [];
+      const r = this.createRumor(e, t, i), o = [];
       for (const c of s.recipients) {
-        const h = await pe.createSeal(
-          i,
+        const u = await pe.createSeal(
+          r,
           t,
           c.pubkey
         ), d = await Me.createGiftWrap(
-          h,
+          u,
           {
             pubkey: c.pubkey,
             relayHint: c.relayHint || s.relayHint
@@ -2448,21 +2550,21 @@ class ie {
         o.push(d);
       }
       const a = await pe.createSeal(
-        i,
+        r,
         t,
         s.recipients[0].pubkey
       );
       return {
-        rumor: i,
+        rumor: r,
         seal: a,
         giftWraps: o,
         senderPrivateKey: t
       };
-    } catch (i) {
-      throw i instanceof b ? i : new b(
-        `Gift wrap protocol failed: ${i.message}`,
-        w.GIFT_WRAP_CREATION_FAILED,
-        i
+    } catch (r) {
+      throw r instanceof w ? r : new w(
+        `Gift wrap protocol failed: ${r.message}`,
+        v.GIFT_WRAP_CREATION_FAILED,
+        r
       );
     }
   }
@@ -2483,20 +2585,20 @@ class ie {
           isValid: !1,
           senderPubkey: ""
         };
-      const r = s.seal, i = pe.decryptSeal(
-        r,
+      const i = s.seal, r = pe.decryptSeal(
+        i,
         t
       );
-      return i.isValid ? {
-        rumor: i.rumor,
-        seal: r,
+      return r.isValid ? {
+        rumor: r.rumor,
+        seal: i,
         isValid: !0,
-        senderPubkey: r.pubkey
+        senderPubkey: i.pubkey
       } : {
         rumor: null,
-        seal: r,
+        seal: i,
         isValid: !1,
-        senderPubkey: r.pubkey
+        senderPubkey: i.pubkey
         // We know the seal's pubkey even if rumor is invalid
       };
     } catch {
@@ -2512,13 +2614,13 @@ class ie {
    * Create a rumor (unsigned event) containing the message
    */
   static createRumor(e, t, s) {
-    const r = this.getPublicKeyFromPrivate(t), i = [];
-    return s && i.push(["subject", s]), {
-      pubkey: r,
+    const i = this.getPublicKeyFromPrivate(t), r = [];
+    return s && r.push(["subject", s]), {
+      pubkey: i,
       created_at: Math.floor(Date.now() / 1e3),
       kind: 14,
       // Chat message kind (NIP-17, not 4)
-      tags: i,
+      tags: r,
       content: e
     };
   }
@@ -2529,12 +2631,12 @@ class ie {
   static async createBatchGiftWraps(e) {
     const t = [];
     for (const s of e) {
-      const r = await this.createGiftWrappedDM(
+      const i = await this.createGiftWrappedDM(
         s.message,
         s.senderPrivateKey,
         s.config
       );
-      t.push(r);
+      t.push(i);
     }
     return t;
   }
@@ -2551,9 +2653,9 @@ class ie {
    */
   static async decryptMultipleGiftWraps(e, t) {
     const s = [];
-    for (const r of e) {
-      const i = await this.decryptGiftWrappedDM(r, t);
-      i.isValid && s.push(i);
+    for (const i of e) {
+      const r = await this.decryptGiftWrappedDM(i, t);
+      r.isValid && s.push(r);
     }
     return s;
   }
@@ -2562,25 +2664,25 @@ class ie {
    */
   static validateCreateDMInputs(e, t, s) {
     if (typeof e != "string")
-      throw new b(
+      throw new w(
         "Message must be a string",
-        w.INVALID_RUMOR
+        v.INVALID_RUMOR
       );
     if (typeof t != "string" || !/^[0-9a-f]{64}$/i.test(t))
-      throw new b(
+      throw new w(
         "Invalid sender private key format",
-        w.SEAL_CREATION_FAILED
+        v.SEAL_CREATION_FAILED
       );
     if (!s || !Array.isArray(s.recipients) || s.recipients.length === 0)
-      throw new b(
+      throw new w(
         "At least one recipient is required",
-        w.NO_RECIPIENTS
+        v.NO_RECIPIENTS
       );
-    for (const r of s.recipients)
-      if (!r || typeof r.pubkey != "string" || !/^[0-9a-f]{64}$/i.test(r.pubkey))
-        throw new b(
+    for (const i of s.recipients)
+      if (!i || typeof i.pubkey != "string" || !/^[0-9a-f]{64}$/i.test(i.pubkey))
+        throw new w(
           "Invalid recipient public key format",
-          w.INVALID_RECIPIENT
+          v.INVALID_RECIPIENT
         );
   }
   /**
@@ -2588,33 +2690,14 @@ class ie {
    */
   static getPublicKeyFromPrivate(e) {
     try {
-      console.log("🔍 GiftWrapProtocol.getPublicKeyFromPrivate called with:", {
-        privateKeyLength: e == null ? void 0 : e.length,
-        privateKeyType: typeof e,
-        privateKeyPrefix: (e == null ? void 0 : e.substring(0, 8)) + "..."
-      });
       const t = new Uint8Array(
         e.match(/.{1,2}/g).map((o) => parseInt(o, 16))
-      );
-      console.log("📊 privateKeyBytes:", {
-        length: t.length,
-        type: t.constructor.name,
-        first4: Array.from(t.slice(0, 4))
-      });
-      const r = ne.getPublicKey(t, !1).slice(1, 33), i = Array.from(r).map((o) => o.toString(16).padStart(2, "0")).join("");
-      return console.log("✅ Successfully derived public key:", i.substring(0, 8) + "..."), i;
+      ), i = ne.getPublicKey(t, !1).slice(1, 33);
+      return Array.from(i).map((o) => o.toString(16).padStart(2, "0")).join("");
     } catch (t) {
-      throw console.error("❌ GiftWrapProtocol getPublicKeyFromPrivate error:", {
-        error: t,
-        message: t.message,
-        stack: t.stack,
-        privateKeyInfo: {
-          type: typeof e,
-          length: e == null ? void 0 : e.length
-        }
-      }), new b(
+      throw new w(
         "Failed to derive public key from private key",
-        w.SEAL_CREATION_FAILED,
+        v.SEAL_CREATION_FAILED,
         t
       );
     }
@@ -2647,10 +2730,10 @@ class ie {
    * Get protocol statistics for monitoring and debugging
    */
   static getProtocolStats(e) {
-    const t = e.length, s = e.reduce((c, h) => c + h.giftWraps.length, 0), r = Math.floor(Date.now() / 1e3), i = e.flatMap(
-      (c) => c.giftWraps.map((h) => r - h.giftWrap.created_at)
-    ), o = i.length > 0 ? i.reduce((c, h) => c + h, 0) / i.length : 0, a = new Set(
-      e.flatMap((c) => c.giftWraps.map((h) => h.recipient))
+    const t = e.length, s = e.reduce((c, u) => c + u.giftWraps.length, 0), i = Math.floor(Date.now() / 1e3), r = e.flatMap(
+      (c) => c.giftWraps.map((u) => i - u.giftWrap.created_at)
+    ), o = r.length > 0 ? r.reduce((c, u) => c + u, 0) / r.length : 0, a = new Set(
+      e.flatMap((c) => c.giftWraps.map((u) => u.recipient))
     );
     return {
       totalMessages: t,
@@ -2669,37 +2752,41 @@ class ie {
       if (!e || e.kind !== 1059)
         return null;
       if (!/^[0-9a-f]{64}$/i.test(t))
-        throw new b(
+        throw new w(
           "Invalid recipient private key format",
-          w.INVALID_PRIVATE_KEY
+          v.INVALID_PRIVATE_KEY
         );
-      const { SealCreator: s } = await Promise.resolve().then(() => ms), { NIP44Crypto: r } = await Promise.resolve().then(() => ws), i = await r.decrypt(
-        e.content,
+      const { SealCreator: s } = await Promise.resolve().then(() => ws), { NIP44Crypto: i } = await Promise.resolve().then(() => ms), r = i.deriveConversationKey(
         t,
         e.pubkey
+      ), o = i.decrypt(
+        e.content,
+        r
       );
-      if (!i)
+      if (!o || !o.isValid)
         return null;
-      const o = JSON.parse(i);
-      if (!o || o.kind !== 13)
+      const a = JSON.parse(o.plaintext);
+      if (!a || a.kind !== 13)
         return null;
-      const a = await r.decrypt(
-        o.content,
+      const c = i.deriveConversationKey(
         t,
-        o.pubkey
+        a.pubkey
+      ), u = i.decrypt(
+        a.content,
+        c
       );
-      if (!a)
+      if (!u || !u.isValid)
         return null;
-      const c = JSON.parse(a);
-      return !c || typeof c.kind != "number" ? null : c;
+      const d = JSON.parse(u.plaintext);
+      return !d || typeof d.kind != "number" ? null : d;
     } catch (s) {
       return console.error("Failed to unwrap gift wrapped DM:", s), null;
     }
   }
 }
-const Es = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const vs = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  GiftWrapProtocol: ie
+  GiftWrapProtocol: re
 }, Symbol.toStringTag, { value: "Module" }));
 class yt {
   constructor(e) {
@@ -2712,20 +2799,20 @@ class yt {
     l(this, "latest");
     l(this, "error");
     l(this, "subject");
-    this.config = e, this._state = te({
+    this.config = e, this._state = X({
       messages: [],
       status: "connecting",
       latest: null,
       isTyping: !1,
       error: null,
       subject: e.subject
-    }), this.messages = I(this._state, (t) => t.messages), this.status = I(this._state, (t) => t.status), this.latest = I(this._state, (t) => t.latest), this.error = I(this._state, (t) => t.error), this.subject = I(this._state, (t) => t.subject), this.initializeSubscription();
+    }), this.messages = _(this._state, (t) => t.messages), this.status = _(this._state, (t) => t.status), this.latest = _(this._state, (t) => t.latest), this.error = _(this._state, (t) => t.error), this.subject = _(this._state, (t) => t.subject), this.initializeSubscription();
   }
   /**
    * Send an encrypted direct message
    */
   async send(e, t) {
-    var s, r;
+    var s, i;
     try {
       this.config.debug && console.log("📤 DMConversation.send called:", {
         content: e.substring(0, 20) + "...",
@@ -2734,8 +2821,8 @@ class yt {
         hasSenderPrivateKey: !!this.config.senderPrivateKey,
         senderPrivateKeyLength: (s = this.config.senderPrivateKey) == null ? void 0 : s.length
       }), this.updateStatus("active");
-      const i = this.generateMessageId(), o = Math.floor(Date.now() / 1e3), a = {
-        id: i,
+      const r = this.generateMessageId(), o = Math.floor(Date.now() / 1e3), a = {
+        id: r,
         content: e,
         senderPubkey: this.config.senderPubkey,
         recipientPubkey: this.config.recipientPubkey,
@@ -2745,45 +2832,45 @@ class yt {
         subject: t || this.getCurrentSubject()
       };
       this.addMessage(a);
-      const c = ie.createSimpleConfig(
+      const c = re.createSimpleConfig(
         this.config.recipientPubkey,
-        (r = this.config.relayHints) == null ? void 0 : r[0]
+        (i = this.config.relayHints) == null ? void 0 : i[0]
       );
       this.config.debug && console.log("🎁 Creating gift wrap with config:", c);
-      const h = await ie.createGiftWrappedDM(
+      const u = await re.createGiftWrappedDM(
         e,
         this.config.senderPrivateKey,
         c,
         t
       );
       this.config.debug && console.log("🎁 Gift wrap result:", {
-        hasRumor: !!h.rumor,
-        hasSeal: !!h.seal,
-        giftWrapCount: h.giftWraps.length
+        hasRumor: !!u.rumor,
+        hasSeal: !!u.seal,
+        giftWrapCount: u.giftWraps.length
       });
-      let d = !1, u;
-      for (const g of h.giftWraps)
+      let d = !1, h;
+      for (const f of u.giftWraps)
         try {
           this.config.debug && console.log("📡 Publishing gift wrap:", {
-            id: g.giftWrap.id,
-            kind: g.giftWrap.kind,
-            tags: g.giftWrap.tags
+            id: f.giftWrap.id,
+            kind: f.giftWrap.kind,
+            tags: f.giftWrap.tags
           });
-          const p = await this.config.relayManager.publishToAll(g.giftWrap);
-          this.config.debug && console.log("📡 Publish result:", p), p.some((y) => y.success) && (d = !0, a.eventId = g.giftWrap.id);
-        } catch (p) {
-          u = p instanceof Error ? p.message : "Publishing failed", this.config.debug && console.error("❌ Publish error:", p);
+          const b = await this.config.relayManager.publishToAll(f.giftWrap);
+          this.config.debug && console.log("📡 Publish result:", b), b.some((p) => p.success) && (d = !0, a.eventId = f.giftWrap.id);
+        } catch (b) {
+          h = b instanceof Error ? b.message : "Publishing failed", this.config.debug && console.error("❌ Publish error:", b);
         }
       if (d)
-        return this.updateMessageStatus(i, "sent"), this.config.debug && console.log(`✅ DM sent successfully: ${i}`), { success: !0, messageId: i };
+        return this.updateMessageStatus(r, "sent"), this.config.debug && console.log(`✅ DM sent successfully: ${r}`), { success: !0, messageId: r };
       {
-        this.updateMessageStatus(i, "failed");
-        const g = u || "Failed to publish to any relay";
-        return this.setError(g), this.config.debug && console.error(`❌ DM send failed: ${g}`), { success: !1, error: g, messageId: i };
+        this.updateMessageStatus(r, "failed");
+        const f = h || "Failed to publish to any relay";
+        return this.setError(f), this.config.debug && console.error(`❌ DM send failed: ${f}`), { success: !1, error: f, messageId: r };
       }
-    } catch (i) {
-      const o = i instanceof Error ? i.message : "Unknown error sending message";
-      return this.setError(o), this.config.debug && console.error("❌ Exception in send:", i), { success: !1, error: o };
+    } catch (r) {
+      const o = r instanceof Error ? r.message : "Unknown error sending message";
+      return this.setError(o), this.config.debug && console.error("❌ Exception in send:", r), { success: !1, error: o };
     }
   }
   /**
@@ -2823,8 +2910,8 @@ class yt {
    * Handle a decrypted event forwarded from the global inbox
    * This enables transparent caching and zero-config DX
    */
-  handleDecryptedEvent(e) {
-    this.config.debug && console.log("📨 Processing decrypted event in conversation:", e.id), this.handleInboxEvent(e);
+  async handleDecryptedEvent(e) {
+    this.config.debug && console.log("📨 Processing decrypted event in conversation:", e.id), await this.handleIncomingEvent(e);
   }
   // Private methods
   async initializeSubscription() {
@@ -2839,17 +2926,17 @@ class yt {
         limit: 100
         // Get recent messages
       }, s = {
-        onEvent: (r) => this.handleIncomingEvent(r),
+        onEvent: (i) => this.handleIncomingEvent(i),
         onEose: () => {
           this.updateStatus("active"), this.config.debug && console.log(`DM conversation subscription active for ${this.config.recipientPubkey}`);
         },
-        onClose: (r) => {
-          this.updateStatus("disconnected"), r && this.setError(`Subscription closed: ${r}`);
+        onClose: (i) => {
+          this.updateStatus("disconnected"), i && this.setError(`Subscription closed: ${i}`);
         }
       };
       if (this.subscription = await this.config.subscriptionManager.subscribe([t], s), !this.subscription.success) {
-        const r = ((e = this.subscription.error) == null ? void 0 : e.message) || "Failed to create subscription";
-        this.setError(r), this.updateStatus("error");
+        const i = ((e = this.subscription.error) == null ? void 0 : e.message) || "Failed to create subscription";
+        this.setError(i), this.updateStatus("error");
       }
     } catch (t) {
       const s = t instanceof Error ? t.message : "Failed to initialize subscription";
@@ -2860,7 +2947,7 @@ class yt {
     try {
       if (e.kind !== 1059)
         return;
-      const t = await ie.decryptGiftWrappedDM(
+      const t = await re.decryptGiftWrappedDM(
         e,
         this.config.senderPrivateKey
       );
@@ -2894,7 +2981,7 @@ class yt {
   addMessage(e) {
     this._state.update((t) => {
       const s = [...t.messages, e];
-      return s.sort((r, i) => r.timestamp - i.timestamp), {
+      return s.sort((i, r) => i.timestamp - r.timestamp), {
         ...t,
         messages: s,
         latest: s[s.length - 1] || null
@@ -2905,7 +2992,7 @@ class yt {
     this._state.update((s) => ({
       ...s,
       messages: s.messages.map(
-        (r) => r.id === e ? { ...r, status: t } : r
+        (i) => i.id === e ? { ...i, status: t } : i
       )
     }));
   }
@@ -2929,7 +3016,7 @@ class yt {
   }
   extractSubjectFromRumor(e) {
     var s;
-    const t = (s = e.tags) == null ? void 0 : s.find((r) => r[0] === "subject");
+    const t = (s = e.tags) == null ? void 0 : s.find((i) => i[0] === "subject");
     return t == null ? void 0 : t[1];
   }
   getCurrentMessages() {
@@ -2960,7 +3047,7 @@ class bt {
     l(this, "participants");
     l(this, "error");
     var t;
-    this.config = e, this.roomId = this.generateRoomId(), this._state = te({
+    this.config = e, this.roomId = this.generateRoomId(), this._state = X({
       messages: [],
       status: "connecting",
       latest: null,
@@ -2969,7 +3056,7 @@ class bt {
       // Include sender
       isTyping: !1,
       error: null
-    }), this.messages = I(this._state, (s) => s.messages), this.status = I(this._state, (s) => s.status), this.latest = I(this._state, (s) => s.latest), this.subject = I(this._state, (s) => s.subject), this.participants = I(this._state, (s) => s.participants), this.error = I(this._state, (s) => s.error), this.initializeSubscription();
+    }), this.messages = _(this._state, (s) => s.messages), this.status = _(this._state, (s) => s.status), this.latest = _(this._state, (s) => s.latest), this.subject = _(this._state, (s) => s.subject), this.participants = _(this._state, (s) => s.participants), this.error = _(this._state, (s) => s.error), this.initializeSubscription();
   }
   /**
    * Send an encrypted message to all room participants
@@ -2978,13 +3065,13 @@ class bt {
     var t, s;
     try {
       this.updateStatus("active");
-      const r = this.generateMessageId(), i = Math.floor(Date.now() / 1e3), o = this.getCurrentSubject(), a = this.getCurrentParticipants(), c = {
-        id: r,
+      const i = this.generateMessageId(), r = Math.floor(Date.now() / 1e3), o = this.getCurrentSubject(), a = this.getCurrentParticipants(), c = {
+        id: i,
         content: e,
         senderPubkey: this.config.senderPubkey,
         recipientPubkey: "",
         // Not applicable for rooms
-        timestamp: i,
+        timestamp: r,
         isFromMe: !0,
         status: "sending",
         subject: o,
@@ -2992,30 +3079,30 @@ class bt {
       };
       this.addMessage(c);
       const d = {
-        recipients: a.filter((f) => f !== this.config.senderPubkey).map((f) => ({ pubkey: f })),
+        recipients: a.filter((g) => g !== this.config.senderPubkey).map((g) => ({ pubkey: g })),
         relayHint: (s = (t = this.config.options) == null ? void 0 : t.relayHints) == null ? void 0 : s[0]
-      }, u = await ie.createGiftWrappedDM(
+      }, h = await re.createGiftWrappedDM(
         e,
         this.config.senderPrivateKey,
         d
       );
-      let g = !1, p;
-      for (const f of u.giftWraps)
+      let f = !1, b;
+      for (const g of h.giftWraps)
         try {
-          (await this.config.relayManager.publishToAll(f.giftWrap)).some((m) => m.success) && (g = !0, c.eventId = f.giftWrap.id);
-        } catch (y) {
-          p = y instanceof Error ? y.message : "Publishing failed";
+          (await this.config.relayManager.publishToAll(g.giftWrap)).some((y) => y.success) && (f = !0, c.eventId = g.giftWrap.id);
+        } catch (p) {
+          b = p instanceof Error ? p.message : "Publishing failed";
         }
-      if (g)
-        return this.updateMessageStatus(r, "sent"), this.config.debug && console.log(`Room message sent successfully: ${r}`), { success: !0, messageId: r };
+      if (f)
+        return this.updateMessageStatus(i, "sent"), this.config.debug && console.log(`Room message sent successfully: ${i}`), { success: !0, messageId: i };
       {
-        this.updateMessageStatus(r, "failed");
-        const f = p || "Failed to publish to any relay";
-        return this.setError(f), { success: !1, error: f, messageId: r };
+        this.updateMessageStatus(i, "failed");
+        const g = b || "Failed to publish to any relay";
+        return this.setError(g), { success: !1, error: g, messageId: i };
       }
-    } catch (r) {
-      const i = r instanceof Error ? r.message : "Unknown error sending message";
-      return this.setError(i), { success: !1, error: i };
+    } catch (i) {
+      const r = i instanceof Error ? i.message : "Unknown error sending message";
+      return this.setError(r), { success: !1, error: r };
     }
   }
   /**
@@ -3051,7 +3138,7 @@ class bt {
     try {
       return this.getCurrentParticipants().includes(e) ? e === this.config.senderPubkey ? { success: !1, error: "Cannot remove yourself from room" } : (this._state.update((s) => ({
         ...s,
-        participants: s.participants.filter((r) => r !== e)
+        participants: s.participants.filter((i) => i !== e)
       })), { success: !0 }) : { success: !1, error: "Participant not in room" };
     } catch (t) {
       return { success: !1, error: t instanceof Error ? t.message : "Failed to remove participant" };
@@ -3094,17 +3181,17 @@ class bt {
         limit: 100
         // Get recent messages
       }, s = {
-        onEvent: (r) => this.handleIncomingEvent(r),
+        onEvent: (i) => this.handleIncomingEvent(i),
         onEose: () => {
           this.updateStatus("active"), this.config.debug && console.log(`Room subscription active: ${this.roomId}`);
         },
-        onClose: (r) => {
-          this.updateStatus("disconnected"), r && this.setError(`Subscription closed: ${r}`);
+        onClose: (i) => {
+          this.updateStatus("disconnected"), i && this.setError(`Subscription closed: ${i}`);
         }
       };
       if (this.subscription = await this.config.subscriptionManager.subscribe([t], s), !this.subscription.success) {
-        const r = ((e = this.subscription.error) == null ? void 0 : e.message) || "Failed to create subscription";
-        this.setError(r), this.updateStatus("error");
+        const i = ((e = this.subscription.error) == null ? void 0 : e.message) || "Failed to create subscription";
+        this.setError(i), this.updateStatus("error");
       }
     } catch (t) {
       const s = t instanceof Error ? t.message : "Failed to initialize subscription";
@@ -3115,7 +3202,7 @@ class bt {
     try {
       if (e.kind !== 1059)
         return;
-      const t = await ie.decryptGiftWrappedDM(
+      const t = await re.decryptGiftWrappedDM(
         e,
         this.config.senderPrivateKey
       );
@@ -3128,7 +3215,7 @@ class bt {
         this.config.debug && console.log("Message not from room participant");
         return;
       }
-      const r = this.extractSubjectFromRumor(t.rumor), i = this.getCurrentSubject(), o = {
+      const i = this.extractSubjectFromRumor(t.rumor), r = this.getCurrentSubject(), o = {
         id: this.generateMessageId(),
         content: t.rumor.content,
         senderPubkey: t.senderPubkey,
@@ -3138,11 +3225,11 @@ class bt {
         isFromMe: !1,
         eventId: e.id,
         status: "received",
-        subject: r || i,
+        subject: i || r,
         participants: s
       };
       this.getCurrentMessages().some(
-        (h) => h.eventId === e.id || h.content === o.content && Math.abs(h.timestamp - o.timestamp) < 5
+        (u) => u.eventId === e.id || u.content === o.content && Math.abs(u.timestamp - o.timestamp) < 5
         // Within 5 seconds
       ) || (this.addMessage(o), this.config.debug && console.log(`Received room message from ${t.senderPubkey}: ${o.content}`));
     } catch (t) {
@@ -3152,7 +3239,7 @@ class bt {
   addMessage(e) {
     this._state.update((t) => {
       const s = [...t.messages, e];
-      return s.sort((r, i) => r.timestamp - i.timestamp), {
+      return s.sort((i, r) => i.timestamp - r.timestamp), {
         ...t,
         messages: s,
         latest: s[s.length - 1] || null
@@ -3163,7 +3250,7 @@ class bt {
     this._state.update((s) => ({
       ...s,
       messages: s.messages.map(
-        (r) => r.id === e ? { ...r, status: t } : r
+        (i) => i.id === e ? { ...i, status: t } : i
       )
     }));
   }
@@ -3199,7 +3286,7 @@ class bt {
   }
   extractSubjectFromRumor(e) {
     var s;
-    const t = (s = e.tags) == null ? void 0 : s.find((r) => r[0] === "subject");
+    const t = (s = e.tags) == null ? void 0 : s.find((i) => i[0] === "subject");
     return t == null ? void 0 : t[1];
   }
   generateRoomId() {
@@ -3214,7 +3301,7 @@ class bt {
     return this.messages.subscribe(e);
   }
 }
-class wt {
+class mt {
   constructor(e) {
     l(this, "conversations", /* @__PURE__ */ new Map());
     l(this, "rooms", /* @__PURE__ */ new Map());
@@ -3224,7 +3311,7 @@ class wt {
     l(this, "parentNostr");
     // Reference to NostrUnchained instance
     // Reactive stores
-    l(this, "_conversationList", te([]));
+    l(this, "_conversationList", X([]));
     l(this, "conversations$");
     this.config = e, this.parentNostr = e.parent, this.conversations$ = this._conversationList, this.config.signingProvider && this.initializeSender();
   }
@@ -3244,9 +3331,9 @@ class wt {
    * This is the main entry point: nostr.dm.room(['pubkey1', 'pubkey2'], { subject: 'Meeting' })
    */
   async room(e, t) {
-    const s = e.map((o) => this.normalizePubkey(o)), r = this.generateRoomId(s);
-    let i = this.rooms.get(r);
-    return i || (i = await this.createRoom(s, t), this.rooms.set(r, i), this.updateConversationList(), this.config.debug && console.log(`Created new DM room: ${r} with ${s.length} participants`)), i;
+    const s = e.map((o) => this.normalizePubkey(o)), i = this.generateRoomId(s);
+    let r = this.rooms.get(i);
+    return r || (r = await this.createRoom(s, t), this.rooms.set(i, r), this.updateConversationList(), this.config.debug && console.log(`Created new DM room: ${i} with ${s.length} participants`)), r;
   }
   /**
    * Get all active conversations as summaries
@@ -3338,13 +3425,13 @@ class wt {
       subscriptionManager: this.config.subscriptionManager,
       relayManager: this.config.relayManager,
       debug: this.config.debug
-    }, r = new yt(s);
-    return this.setupConversationReactivity(r), r;
+    }, i = new yt(s);
+    return this.setupConversationReactivity(i), i;
   }
   async createRoom(e, t) {
     if (!this._senderPubkey)
       throw new Error("Sender public key not available. Call nostr.publish() or another method first to initialize signing.");
-    const s = await this.getPrivateKeySecurely(), r = {
+    const s = await this.getPrivateKeySecurely(), i = {
       participants: e,
       senderPrivateKey: s,
       senderPubkey: this._senderPubkey,
@@ -3352,8 +3439,8 @@ class wt {
       relayManager: this.config.relayManager,
       options: t,
       debug: this.config.debug
-    }, i = new bt(r);
-    return this.setupRoomReactivity(i), i;
+    }, r = new bt(i);
+    return this.setupRoomReactivity(r), r;
   }
   setupConversationReactivity(e) {
     e.latest.subscribe(() => {
@@ -3374,39 +3461,39 @@ class wt {
   updateConversationList() {
     const e = [];
     this.conversations.forEach((t, s) => {
-      let r = null, i = "disconnected", o;
+      let i = null, r = "disconnected", o;
       const a = t.latest.subscribe((d) => {
-        r = d;
-      }), c = t.status.subscribe((d) => {
         i = d;
-      }), h = t.subject.subscribe((d) => {
+      }), c = t.status.subscribe((d) => {
+        r = d;
+      }), u = t.subject.subscribe((d) => {
         o = d;
       });
-      a(), c(), h(), e.push({
+      a(), c(), u(), e.push({
         pubkey: s,
-        latestMessage: r,
-        lastActivity: (r == null ? void 0 : r.timestamp) || 0,
-        isActive: i === "active" || i === "connecting",
+        latestMessage: i,
+        lastActivity: (i == null ? void 0 : i.timestamp) || 0,
+        isActive: r === "active" || r === "connecting",
         subject: o,
         type: "conversation"
       });
     }), this.rooms.forEach((t, s) => {
-      let r = null, i = "disconnected", o = "", a = [];
-      const c = t.latest.subscribe((g) => {
-        r = g;
-      }), h = t.status.subscribe((g) => {
-        i = g;
-      }), d = t.subject.subscribe((g) => {
-        o = g;
-      }), u = t.participants.subscribe((g) => {
-        a = g;
+      let i = null, r = "disconnected", o = "", a = [];
+      const c = t.latest.subscribe((f) => {
+        i = f;
+      }), u = t.status.subscribe((f) => {
+        r = f;
+      }), d = t.subject.subscribe((f) => {
+        o = f;
+      }), h = t.participants.subscribe((f) => {
+        a = f;
       });
-      c(), h(), d(), u(), e.push({
+      c(), u(), d(), h(), e.push({
         pubkey: s,
         // Use roomId as the identifier
-        latestMessage: r,
-        lastActivity: (r == null ? void 0 : r.timestamp) || 0,
-        isActive: i === "active" || i === "connecting",
+        latestMessage: i,
+        lastActivity: (i == null ? void 0 : i.timestamp) || 0,
+        isActive: r === "active" || r === "connecting",
         subject: o,
         participants: a,
         type: "room"
@@ -3416,14 +3503,14 @@ class wt {
   async handleGlobalInboxEvent(e) {
     this.config.debug && console.log("🎁 Processing gift wrap event:", e.id);
     try {
-      const { GiftWrapProtocol: t } = await Promise.resolve().then(() => Es), s = await this.getPrivateKeySecurely(), r = await t.unwrapGiftWrap(e, s);
-      if (r) {
-        const i = r.pubkey;
-        if (this.config.debug && console.log("✅ Decrypted event (kind " + r.kind + ") from:", i.substring(0, 8) + "..."), r.kind === 4 || r.kind === 14) {
-          let o = this.conversations.get(i);
-          o || (this.config.debug && console.log("🆕 Auto-creating conversation with:", i.substring(0, 8) + "..."), o = await this.with(i)), o && typeof o.handleDecryptedEvent == "function" && o.handleDecryptedEvent(r), this.updateConversationList(), this.config.debug && console.log("🔄 Updated conversations, total:", this.conversations.size);
+      const { GiftWrapProtocol: t } = await Promise.resolve().then(() => vs), s = await this.getPrivateKeySecurely(), i = await t.unwrapGiftWrap(e, s);
+      if (i) {
+        const r = i.pubkey;
+        if (this.config.debug && console.log("✅ Decrypted event (kind " + i.kind + ") from:", r.substring(0, 8) + "..."), i.kind === 4 || i.kind === 14) {
+          let o = this.conversations.get(r);
+          o || (this.config.debug && console.log("🆕 Auto-creating conversation with:", r.substring(0, 8) + "..."), o = await this.with(r)), o && typeof o.handleDecryptedEvent == "function" && o.handleDecryptedEvent(i), this.updateConversationList(), this.config.debug && console.log("🔄 Updated conversations, total:", this.conversations.size);
         } else
-          this.config.debug && console.log("🔮 Received encrypted event kind " + r.kind + " - not a DM, caching for future use");
+          this.config.debug && console.log("🔮 Received encrypted event kind " + i.kind + " - not a DM, caching for future use");
       }
     } catch (t) {
       this.config.debug && console.error("❌ Failed to process gift wrap event:", t);
@@ -3482,13 +3569,28 @@ class wt {
     return this.config.debug && console.log("🎯 Delegating to Universal DM Module (cache-based) for:", e.substring(0, 16) + "..."), t.with(e);
   }
 }
-class vs {
+class Es {
   constructor(e, t, s) {
     l(this, "store");
     l(this, "myPubkey");
     l(this, "otherPubkey");
     l(this, "nostr");
-    this.nostr = e, this.myPubkey = t, this.otherPubkey = s, this.store = this.nostr.query().kinds([14]).authors([this.myPubkey, this.otherPubkey]).tags("p", [this.myPubkey, this.otherPubkey]).execute();
+    // Legacy API compatibility: reactive stores
+    l(this, "_status", X("active"));
+    l(this, "_error", X(null));
+    l(this, "_subject", X(void 0));
+    l(this, "status");
+    l(this, "error");
+    l(this, "subject");
+    l(this, "latest");
+    this.nostr = e, this.myPubkey = t, this.otherPubkey = s, this.store = this.nostr.query().kinds([14]).authors([this.myPubkey, this.otherPubkey]).tags("p", [this.myPubkey, this.otherPubkey]).execute(), this.status = this._status, this.error = this._error, this.subject = this._subject, this.latest = _(this.store, (i) => {
+      const r = this.convertEventsToMessages(i);
+      return r.length > 0 ? r[r.length - 1] : null;
+    });
+  }
+  // Legacy API compatibility: messages as reactive store
+  get messages() {
+    return _(this.store, (e) => this.convertEventsToMessages(e));
   }
   // Svelte store interface - delegate to underlying store
   subscribe(e) {
@@ -3497,7 +3599,8 @@ class vs {
       e(s);
     });
   }
-  get messages() {
+  // Legacy API: current messages snapshot
+  get messagesSnapshot() {
     return this.convertEventsToMessages(this.store.current);
   }
   // Convenience method for sending
@@ -3516,14 +3619,27 @@ class vs {
         // Will be set during signing
         sig: ""
         // Will be set during signing
-      }, r = await this.nostr.publishEncrypted(s, [this.otherPubkey]);
-      return r.success ? { success: !0, messageId: s.id } : { success: !1, error: r.error };
+      }, i = await this.nostr.publishEncrypted(s, [this.otherPubkey]);
+      return i.success ? { success: !0, messageId: s.id } : { success: !1, error: i.error };
     } catch (s) {
       return {
         success: !1,
         error: s instanceof Error ? s.message : "Unknown error"
       };
     }
+  }
+  // Legacy API compatibility methods
+  updateSubject(e) {
+    this._subject.set(e);
+  }
+  clearHistory() {
+    console.warn("clearHistory() not implemented in cache-based system");
+  }
+  async close() {
+    this._status.set("disconnected");
+  }
+  async retry() {
+    this._error.set(null), this._status.set("connecting"), setTimeout(() => this._status.set("active"), 100);
   }
   convertEventsToMessages(e) {
     return e.filter((t) => t.kind === 14).map((t) => ({
@@ -3555,24 +3671,24 @@ class Ss {
   with(e) {
     return this.nostr.startUniversalGiftWrapSubscription().catch((t) => {
       console.warn("⚠️ Failed to start gift wrap subscription for DMs:", t);
-    }), new vs(this.nostr, this.myPubkey, e);
+    }), new Es(this.nostr, this.myPubkey, e);
   }
   // Room functionality - also just queries (with lazy gift wrap subscription)
   room(e, t) {
     return this.nostr.startUniversalGiftWrapSubscription().catch((s) => {
       console.warn("⚠️ Failed to start gift wrap subscription for DM room:", s);
-    }), new Is(this.nostr, this.myPubkey, e, t);
+    }), new _s(this.nostr, this.myPubkey, e, t);
   }
   // Get all conversations - query all kind 14 events I'm involved in
   get conversations() {
     return [];
   }
 }
-class Is {
+class _s {
   // TODO: Implement room store
-  constructor(e, t, s, r) {
+  constructor(e, t, s, i) {
     l(this, "store");
-    this.nostr = e, this.myPubkey = t, this.participants = s, this.options = r, this.store = this.nostr.query().kinds([14]).tags("p", [this.myPubkey, ...this.participants]).execute();
+    this.nostr = e, this.myPubkey = t, this.participants = s, this.options = i, this.store = this.nostr.query().kinds([14]).tags("p", [this.myPubkey, ...this.participants]).execute();
   }
   subscribe(e) {
     return this.store.subscribe(e);
@@ -3598,22 +3714,654 @@ class Is {
     return { success: !0 };
   }
 }
-class _s {
-  // ListModule;
+class As {
+  constructor(e, t) {
+    this.nostr = e, this.debug = t, this.debug && console.log("🎯 ReactionModule initialized with Clean Architecture");
+  }
+  /**
+   * Get reaction summary for an event (reactive)
+   * Returns aggregated reactions with counts and user's reaction
+   */
+  to(e) {
+    return this.startReactionSubscription(e), this.nostr.query().kinds([7]).tags("e", [e]).execute().map((t) => this.aggregateReactions(t, e));
+  }
+  /**
+   * Get my reaction to an event (reactive)
+   * Returns the current user's reaction content or null
+   */
+  myReaction(e) {
+    const t = this.nostr.me;
+    return t ? (this.startMyReactionSubscription(e, t), this.nostr.query().kinds([7]).authors([t]).tags("e", [e]).limit(1).execute().map((s) => {
+      var i;
+      return ((i = s[0]) == null ? void 0 : i.content) || null;
+    })) : this.createNullStore();
+  }
+  /**
+   * React to an event
+   * Creates a NIP-25 compliant reaction event
+   */
+  async react(e, t = "+") {
+    var s;
+    if (!this.nostr.me)
+      return { success: !1, error: "No signing provider available. Please initialize signing first." };
+    try {
+      const i = await this.getTargetEvent(e);
+      if (!i)
+        return { success: !1, error: "Target event not found" };
+      const r = await this.nostr.events.reaction(e, t).tag("p", i.pubkey).publish();
+      return this.debug && console.log(`ReactionModule: Published reaction "${t}" to event ${e.substring(0, 8)}...`), {
+        success: r.success,
+        eventId: r.eventId,
+        error: (s = r.error) == null ? void 0 : s.message
+      };
+    } catch (i) {
+      return {
+        success: !1,
+        error: i instanceof Error ? i.message : "Failed to publish reaction"
+      };
+    }
+  }
+  /**
+   * Remove my reaction to an event
+   * Publishes a deletion request for the reaction
+   */
+  async unreact(e) {
+    var t;
+    if (!this.nostr.me)
+      return { success: !1, error: "No signing provider available" };
+    try {
+      const s = this.myReaction(e), r = this.nostr.query().kinds([7]).authors([this.nostr.me]).tags("e", [e]).execute().current;
+      if (!r || r.length === 0)
+        return { success: !1, error: "No reaction found to remove" };
+      const o = r[0], a = await this.nostr.events.deletion(o.id, "User removed reaction").publish();
+      return this.debug && console.log(`ReactionModule: Deleted reaction to event ${e.substring(0, 8)}...`), {
+        success: a.success,
+        error: (t = a.error) == null ? void 0 : t.message
+      };
+    } catch (s) {
+      return {
+        success: !1,
+        error: s instanceof Error ? s.message : "Failed to remove reaction"
+      };
+    }
+  }
+  // Private helper methods
+  async startReactionSubscription(e) {
+    try {
+      await this.nostr.sub().kinds([7]).tags("e", [e]).execute();
+    } catch (t) {
+      this.debug && console.warn(`Failed to start reaction subscription for ${e}:`, t);
+    }
+  }
+  async startMyReactionSubscription(e, t) {
+    try {
+      await this.nostr.sub().kinds([7]).authors([t]).tags("e", [e]).limit(1).execute();
+    } catch (s) {
+      this.debug && console.warn(`Failed to start my reaction subscription for ${e}:`, s);
+    }
+  }
+  async getTargetEvent(e) {
+    await this.nostr.sub().ids([e]).limit(1).execute(), await new Promise((i) => setTimeout(i, 500));
+    const s = this.nostr.query().ids([e]).limit(1).execute().current;
+    return s && s.length > 0 ? s[0] : null;
+  }
+  aggregateReactions(e, t) {
+    const s = {};
+    let i = 0, r = !1, o;
+    const a = this.nostr.me;
+    return e.filter((c) => c && typeof c == "object").forEach((c) => {
+      if (c.kind !== 7) return;
+      const u = c.content || "+", d = c.pubkey;
+      s[u] || (s[u] = {
+        type: u,
+        count: 0,
+        authors: []
+      }), s[u].count++, s[u].authors.push(d), i++, a && d === a && (r = !0, o = u);
+    }), {
+      targetEventId: t,
+      totalCount: i,
+      reactions: s,
+      userReacted: r,
+      userReactionType: o
+    };
+  }
+  createNullStore() {
+    return this.nostr.query().kinds([7]).authors([""]).limit(1).execute().map(() => null);
+  }
+}
+class Is {
+  constructor(e, t) {
+    this.nostr = e, this.debug = t, this.debug && console.log("📝 ContentModule initialized with Clean Architecture");
+  }
+  /**
+   * Get text notes (NIP-01) from specific authors (reactive)
+   * Returns real-time stream of text notes
+   */
+  notes(e = {}) {
+    const t = {
+      kinds: [1],
+      // Text notes
+      limit: e.limit || 50,
+      ...e
+    };
+    this.startContentSubscription(t);
+    let s = this.nostr.query().kinds([1]);
+    return t.authors && (s = s.authors(t.authors)), t.since && (s = s.since(t.since)), t.until && (s = s.until(t.until)), t.limit && (s = s.limit(t.limit)), s.execute();
+  }
+  /**
+   * Get reposts (NIP-18) from specific authors (reactive)
+   * Returns real-time stream of repost events
+   */
+  reposts(e = {}) {
+    const t = {
+      kinds: [6],
+      // Reposts
+      limit: e.limit || 50,
+      ...e
+    };
+    this.startContentSubscription(t);
+    let s = this.nostr.query().kinds([6]);
+    return t.authors && (s = s.authors(t.authors)), t.since && (s = s.since(t.since)), t.until && (s = s.until(t.until)), t.limit && (s = s.limit(t.limit)), s.execute();
+  }
+  /**
+   * Get combined content feed (notes + reposts) (reactive)
+   * Returns chronologically sorted content from authors
+   */
+  feed(e = {}) {
+    const t = {
+      kinds: [1, 6],
+      // Notes and reposts
+      limit: e.limit || 50,
+      ...e
+    };
+    this.startContentSubscription(t);
+    let s = this.nostr.query().kinds([1, 6]);
+    return t.authors && (s = s.authors(t.authors)), t.since && (s = s.since(t.since)), t.until && (s = s.until(t.until)), t.limit && (s = s.limit(t.limit)), s.execute().map((i) => this.sortByCreatedAt(i));
+  }
+  /**
+   * Get content summary for authors (reactive)
+   * Returns aggregated statistics about content
+   */
+  summary(e) {
+    return this.startContentSubscription({ authors: e, kinds: [1, 6] }), this.nostr.query().kinds([1, 6]).authors(e).execute().map((t) => this.aggregateContentSummary(t));
+  }
+  /**
+   * Publish a text note (NIP-01)
+   */
+  async publishNote(e) {
+    var t;
+    if (!this.nostr.me)
+      return { success: !1, error: "No signing provider available. Please initialize signing first." };
+    try {
+      const s = await this.nostr.events.note(e).publish();
+      return this.debug && console.log(`ContentModule: Published note "${e.substring(0, 50)}..."`), {
+        success: s.success,
+        eventId: s.eventId,
+        error: (t = s.error) == null ? void 0 : t.message
+      };
+    } catch (s) {
+      return {
+        success: !1,
+        error: s instanceof Error ? s.message : "Failed to publish note"
+      };
+    }
+  }
+  /**
+   * Publish a repost (NIP-18)
+   */
+  async repost(e, t) {
+    var s;
+    if (!this.nostr.me)
+      return { success: !1, error: "No signing provider available. Please initialize signing first." };
+    try {
+      const i = await this.getEvent(e);
+      if (!i)
+        return { success: !1, error: "Original event not found" };
+      const r = await this.nostr.events.create().kind(6).content("").tag("e", e, t || "").tag("p", i.pubkey).publish();
+      return this.debug && console.log(`ContentModule: Reposted event ${e.substring(0, 8)}...`), {
+        success: r.success,
+        eventId: r.eventId,
+        error: (s = r.error) == null ? void 0 : s.message
+      };
+    } catch (i) {
+      return {
+        success: !1,
+        error: i instanceof Error ? i.message : "Failed to publish repost"
+      };
+    }
+  }
+  // Private helper methods
+  async startContentSubscription(e) {
+    try {
+      let t = this.nostr.sub();
+      e.kinds && (t = t.kinds(e.kinds)), e.authors && (t = t.authors(e.authors)), e.since && (t = t.since(e.since)), e.until && (t = t.until(e.until)), e.limit && (t = t.limit(e.limit)), await t.execute();
+    } catch (t) {
+      this.debug && console.warn("Failed to start content subscription:", t);
+    }
+  }
+  async getEvent(e) {
+    await this.nostr.sub().ids([e]).limit(1).execute(), await new Promise((i) => setTimeout(i, 500));
+    const s = this.nostr.query().ids([e]).limit(1).execute().current;
+    return s && s.length > 0 ? s[0] : null;
+  }
+  sortByCreatedAt(e) {
+    return [...e].sort((t, s) => s.created_at - t.created_at);
+  }
+  aggregateContentSummary(e) {
+    const t = e.filter((o) => o.kind === 1), s = e.filter((o) => o.kind === 6), i = this.sortByCreatedAt(t), r = this.sortByCreatedAt(s);
+    return {
+      totalNotes: t.length,
+      totalReposts: s.length,
+      latestNote: i[0],
+      latestRepost: r[0]
+    };
+  }
+}
+class ks {
+  constructor(e, t) {
+    this.nostr = e, this.debug = t, this.debug && console.log("🧵 ThreadModule initialized with Clean Architecture");
+  }
+  /**
+   * Get complete thread by root event ID (reactive)
+   * Returns all replies in chronological order with proper threading
+   */
+  thread(e, t = {}) {
+    this.startThreadSubscription(e, t);
+    let s = this.nostr.query().kinds([1]);
+    return s = s.tags("e", [e]), t.since && (s = s.since(t.since)), t.until && (s = s.until(t.until)), t.limit && (s = s.limit(t.limit)), s.execute().map((i) => this.buildThreadStructure(i, e));
+  }
+  /**
+   * Get thread summary with statistics (reactive)
+   */
+  summary(e) {
+    return this.startThreadSubscription(e), this.nostr.query().kinds([1]).tags("e", [e]).execute().map((t) => this.aggregateThreadSummary(t, e));
+  }
+  /**
+   * Get threads where user participated (reactive)
+   * Returns threads where the user has posted or replied
+   */
+  myThreads(e = {}) {
+    const t = this.nostr.me;
+    return t ? (this.startUserThreadsSubscription(t, e), this.nostr.query().kinds([1]).authors([t]).execute().map((s) => this.extractThreadSummaries(s))) : this.createEmptyStore();
+  }
+  /**
+   * Get recent threads from followed users (reactive)
+   * Requires user to be signed in and have a follow list
+   */
+  followingThreads(e = {}) {
+    const t = this.nostr.me;
+    return t ? this.nostr.query().kinds([3]).authors([t]).limit(1).execute().map((i) => {
+      if (!i || i.length === 0)
+        return [];
+      const o = i[0].tags.filter((a) => a[0] === "p").map((a) => a[1]);
+      return o.length === 0 ? [] : (this.startFollowingThreadsSubscription(o, e), []);
+    }) : this.createEmptyStore();
+  }
+  /**
+   * Reply to an event (creates a threaded reply)
+   */
+  async reply(e, t, s = []) {
+    var i;
+    if (!this.nostr.me)
+      return { success: !1, error: "No signing provider available. Please initialize signing first." };
+    try {
+      const r = await this.getEvent(e);
+      if (!r)
+        return { success: !1, error: "Target event not found" };
+      const { rootEventId: o, replyEventId: a } = this.determineThreadStructure(r);
+      let c = this.nostr.events.create().kind(1).content(t);
+      o && o !== e && (c = c.tag("e", o, "", "root")), c = c.tag("e", e, "", "reply"), c = c.tag("p", r.pubkey);
+      for (const d of s)
+        d !== r.pubkey && (c = c.tag("p", d));
+      const u = await c.publish();
+      return this.debug && console.log(`ThreadModule: Published reply to event ${e.substring(0, 8)}...`), {
+        success: u.success,
+        eventId: u.eventId,
+        error: (i = u.error) == null ? void 0 : i.message
+      };
+    } catch (r) {
+      return {
+        success: !1,
+        error: r instanceof Error ? r.message : "Failed to publish reply"
+      };
+    }
+  }
+  /**
+   * Create a new thread (root post)
+   */
+  async createThread(e, t = []) {
+    var s;
+    if (!this.nostr.me)
+      return { success: !1, error: "No signing provider available. Please initialize signing first." };
+    try {
+      let i = this.nostr.events.note(e);
+      for (const o of t)
+        i = i.tag("p", o);
+      const r = await i.publish();
+      return this.debug && console.log(`ThreadModule: Created new thread with content "${e.substring(0, 50)}..."`), {
+        success: r.success,
+        eventId: r.eventId,
+        error: (s = r.error) == null ? void 0 : s.message
+      };
+    } catch (i) {
+      return {
+        success: !1,
+        error: i instanceof Error ? i.message : "Failed to create thread"
+      };
+    }
+  }
+  // Private helper methods
+  async startThreadSubscription(e, t = {}) {
+    try {
+      let s = this.nostr.sub().kinds([1]).tags("e", [e]);
+      t.since && (s = s.since(t.since)), t.until && (s = s.until(t.until)), t.limit && (s = s.limit(t.limit)), await s.execute();
+    } catch (s) {
+      this.debug && console.warn(`Failed to start thread subscription for ${e}:`, s);
+    }
+  }
+  async startUserThreadsSubscription(e, t) {
+    try {
+      let s = this.nostr.sub().kinds([1]).authors([e]);
+      t.since && (s = s.since(t.since)), t.limit && (s = s.limit(t.limit)), await s.execute();
+    } catch (s) {
+      this.debug && console.warn(`Failed to start user threads subscription for ${e}:`, s);
+    }
+  }
+  async startFollowingThreadsSubscription(e, t) {
+    try {
+      let s = this.nostr.sub().kinds([1]).authors(e);
+      t.since && (s = s.since(t.since)), t.limit && (s = s.limit(t.limit)), await s.execute();
+    } catch (s) {
+      this.debug && console.warn("Failed to start following threads subscription:", s);
+    }
+  }
+  async getEvent(e) {
+    await this.nostr.sub().ids([e]).limit(1).execute(), await new Promise((i) => setTimeout(i, 500));
+    const s = this.nostr.query().ids([e]).limit(1).execute().current;
+    return s && s.length > 0 ? s[0] : null;
+  }
+  buildThreadStructure(e, t) {
+    const s = [];
+    for (const i of e) {
+      const r = this.analyzeThreadEvent(i, t);
+      s.push(r);
+    }
+    return s.sort((i, r) => i.created_at - r.created_at), s;
+  }
+  analyzeThreadEvent(e, t) {
+    const s = e.tags.filter((c) => c[0] === "e");
+    let i = 0, r = null, o = [], a = t;
+    if (s.length > 0) {
+      const c = s.find((d) => d[3] === "root"), u = s.find((d) => d[3] === "reply");
+      c && (a = c[1]), u && (r = u[1], i = 1), !u && s.length > 0 && (s.length === 1 ? (r = s[0][1], i = 1) : (a = s[0][1], r = s[s.length - 1][1], i = s.length - 1)), o = s.map((d) => d[1]);
+    }
+    return {
+      ...e,
+      depth: i,
+      rootEventId: a,
+      replyToEventId: r,
+      threadPath: o
+    };
+  }
+  determineThreadStructure(e) {
+    const t = e.tags.filter((i) => i[0] === "e");
+    if (t.length === 0)
+      return {
+        rootEventId: e.id,
+        replyEventId: e.id
+      };
+    const s = t.find((i) => i[3] === "root");
+    return s ? {
+      rootEventId: s[1],
+      replyEventId: e.id
+    } : t.length === 1 ? {
+      rootEventId: t[0][1],
+      replyEventId: e.id
+    } : {
+      rootEventId: t[0][1],
+      replyEventId: e.id
+    };
+  }
+  aggregateThreadSummary(e, t) {
+    let s = 0, i = 0;
+    const r = /* @__PURE__ */ new Set();
+    let o, a;
+    for (const c of e) {
+      const u = this.analyzeThreadEvent(c, t);
+      u.id === t ? a = u : (s++, (!o || u.created_at > o.created_at) && (o = u)), i = Math.max(i, u.depth), r.add(u.pubkey);
+    }
+    return {
+      rootEventId: t,
+      totalReplies: s,
+      maxDepth: i,
+      participants: Array.from(r),
+      latestReply: o,
+      rootEvent: a
+    };
+  }
+  extractThreadSummaries(e) {
+    const t = /* @__PURE__ */ new Map();
+    for (const i of e) {
+      const r = i.tags.filter((o) => o[0] === "e");
+      if (r.length === 0) {
+        const o = i.id;
+        t.has(o) || t.set(o, []), t.get(o).push(i);
+      } else {
+        const o = r.find((c) => c[3] === "root"), a = o ? o[1] : r[0][1];
+        t.has(a) || t.set(a, []), t.get(a).push(i);
+      }
+    }
+    const s = [];
+    for (const [i, r] of t) {
+      const o = this.aggregateThreadSummary(r, i);
+      s.push(o);
+    }
+    return s.sort((i, r) => {
+      var c, u, d, h;
+      const o = ((c = i.latestReply) == null ? void 0 : c.created_at) || ((u = i.rootEvent) == null ? void 0 : u.created_at) || 0;
+      return (((d = r.latestReply) == null ? void 0 : d.created_at) || ((h = r.rootEvent) == null ? void 0 : h.created_at) || 0) - o;
+    }), s;
+  }
+  createEmptyStore() {
+    return this.nostr.query().kinds([1]).authors([""]).limit(1).execute().map(() => []);
+  }
+}
+class Ms {
+  constructor(e, t) {
+    this.nostr = e, this.debug = t, this.debug && console.log("📰 FeedModule initialized with Clean Architecture");
+  }
+  /**
+   * Get global feed (all events from all kinds) (reactive)
+   * Returns chronologically sorted feed of all activity
+   */
+  global(e = {}) {
+    const t = {
+      kinds: [1, 6, 7],
+      // Notes, reposts, reactions
+      limit: 50,
+      includeReplies: !0,
+      includeReactions: !0,
+      includeReposts: !0,
+      ...e
+    };
+    this.startFeedSubscription(t);
+    let s = this.nostr.query().kinds(t.kinds);
+    return t.authors && (s = s.authors(t.authors)), t.since && (s = s.since(t.since)), t.until && (s = s.until(t.until)), t.limit && (s = s.limit(t.limit)), s.execute().map((i) => this.processFeedEvents(i, t));
+  }
+  /**
+   * Get following feed (events from followed users) (reactive)
+   * Requires user to be signed in and have a follow list
+   */
+  following(e = {}) {
+    const t = this.nostr.me;
+    return t ? this.nostr.query().kinds([3]).authors([t]).limit(1).execute().map((i) => {
+      if (!i || i.length === 0)
+        return [];
+      const o = i[0].tags.filter((c) => c[0] === "p").map((c) => c[1]);
+      if (o.length === 0)
+        return [];
+      const a = {
+        ...e,
+        authors: o,
+        kinds: e.kinds || [1, 6, 7],
+        limit: e.limit || 30
+      };
+      return this.startFeedSubscription(a), [];
+    }) : this.createEmptyStore();
+  }
+  /**
+   * Get user's own feed (all events from specific user) (reactive)
+   */
+  user(e, t = {}) {
+    const s = {
+      kinds: [1, 6, 7],
+      // Notes, reposts, reactions
+      limit: 50,
+      includeReplies: !0,
+      includeReactions: !0,
+      includeReposts: !0,
+      ...t,
+      authors: [e]
+    };
+    this.startFeedSubscription(s);
+    let i = this.nostr.query().kinds(s.kinds).authors([e]);
+    return s.since && (i = i.since(s.since)), s.until && (i = i.until(s.until)), s.limit && (i = i.limit(s.limit)), i.execute().map((r) => this.processFeedEvents(r, s));
+  }
+  /**
+   * Get trending feed (popular events with many reactions) (reactive)
+   * Returns events sorted by engagement metrics
+   */
+  trending(e = {}) {
+    const t = {
+      kinds: [1],
+      // Only notes for trending
+      limit: 20,
+      since: Math.floor(Date.now() / 1e3) - 86400,
+      // Last 24 hours
+      ...e
+    };
+    this.startFeedSubscription(t);
+    let s = this.nostr.query().kinds([1]);
+    return t.authors && (s = s.authors(t.authors)), t.since && (s = s.since(t.since)), t.until && (s = s.until(t.until)), t.limit && (s = s.limit(t.limit * 3)), s.execute().map((i) => this.processTrendingEvents(i, t));
+  }
+  /**
+   * Get feed statistics (reactive)
+   */
+  stats(e = {}) {
+    const t = {
+      kinds: [1, 6, 7],
+      limit: 100,
+      ...e
+    };
+    this.startFeedSubscription(t);
+    let s = this.nostr.query().kinds(t.kinds);
+    return t.authors && (s = s.authors(t.authors)), t.since && (s = s.since(t.since)), t.until && (s = s.until(t.until)), t.limit && (s = s.limit(t.limit)), s.execute().map((i) => this.calculateFeedStats(i));
+  }
+  /**
+   * Search feed by content (reactive)
+   * Returns events matching search criteria
+   */
+  search(e, t = {}) {
+    const s = {
+      kinds: [1],
+      // Only search in text notes
+      limit: 30,
+      ...t
+    };
+    this.startFeedSubscription(s);
+    let i = this.nostr.query().kinds(s.kinds);
+    return s.authors && (i = i.authors(s.authors)), s.since && (i = i.since(s.since)), s.until && (i = i.until(s.until)), s.limit && (i = i.limit(s.limit * 5)), i.execute().map((r) => this.filterEventsByContent(r, e, s));
+  }
+  // Private helper methods
+  async startFeedSubscription(e) {
+    try {
+      let t = this.nostr.sub();
+      e.kinds && (t = t.kinds(e.kinds)), e.authors && (t = t.authors(e.authors)), e.since && (t = t.since(e.since)), e.until && (t = t.until(e.until)), e.limit && (t = t.limit(e.limit)), await t.execute();
+    } catch (t) {
+      this.debug && console.warn("Failed to start feed subscription:", t);
+    }
+  }
+  processFeedEvents(e, t) {
+    let s = [];
+    for (const i of e) {
+      const r = this.convertToFeedEvent(i);
+      !t.includeReplies && r.feedType === "thread" && r.referencedEventId || !t.includeReactions && r.feedType === "reaction" || !t.includeReposts && r.feedType === "repost" || s.push(r);
+    }
+    return s.sort((i, r) => r.created_at - i.created_at), s;
+  }
+  processTrendingEvents(e, t) {
+    const s = e.map((i) => this.convertToFeedEvent(i));
+    return s.sort((i, r) => r.created_at - i.created_at), s.slice(0, t.limit || 20);
+  }
+  filterEventsByContent(e, t, s) {
+    const i = t.toLowerCase(), o = e.filter((a) => a.content ? a.content.toLowerCase().includes(i) : !1).map((a) => this.convertToFeedEvent(a));
+    return o.sort((a, c) => c.created_at - a.created_at), o.slice(0, s.limit || 30);
+  }
+  convertToFeedEvent(e) {
+    let t = "note", s, i;
+    if (e.kind === 6) {
+      t = "repost";
+      const r = e.tags.filter((o) => o[0] === "e");
+      r.length > 0 && (s = r[0][1]);
+    } else if (e.kind === 7) {
+      t = "reaction";
+      const r = e.tags.filter((o) => o[0] === "e");
+      r.length > 0 && (s = r[0][1]);
+    } else if (e.kind === 1) {
+      const r = e.tags.filter((o) => o[0] === "e");
+      if (r.length > 0) {
+        t = "thread";
+        const o = r.find((c) => c[3] === "root"), a = r.find((c) => c[3] === "reply");
+        o && (i = o[1]), a ? s = a[1] : r.length > 0 && (s = r[0][1]);
+      }
+    }
+    return {
+      ...e,
+      feedType: t,
+      referencedEventId: s,
+      threadRoot: i
+    };
+  }
+  calculateFeedStats(e) {
+    const t = {
+      totalEvents: e.length,
+      noteCount: 0,
+      repostCount: 0,
+      reactionCount: 0,
+      threadCount: 0,
+      uniqueAuthors: 0,
+      timeRange: {
+        oldest: 0,
+        newest: 0
+      }
+    };
+    if (e.length === 0)
+      return t;
+    const s = /* @__PURE__ */ new Set();
+    let i = e[0].created_at, r = e[0].created_at;
+    for (const o of e)
+      o.kind === 1 ? o.tags.filter((c) => c[0] === "e").length > 0 ? t.threadCount++ : t.noteCount++ : o.kind === 6 ? t.repostCount++ : o.kind === 7 && t.reactionCount++, s.add(o.pubkey), i = Math.min(i, o.created_at), r = Math.max(r, o.created_at);
+    return t.uniqueAuthors = s.size, t.timeRange.oldest = i, t.timeRange.newest = r, t;
+  }
+  createEmptyStore() {
+    return this.nostr.query().kinds([1]).authors([""]).limit(1).execute().map(() => []);
+  }
+}
+class Ps {
   constructor(e) {
     l(this, "config");
     // Lazy-loaded modules
     l(this, "_content");
-    // ContentModule;
     l(this, "_reactions");
-    // ReactionModule;
     l(this, "_threads");
-    // ThreadModule;
     l(this, "_feeds");
-    // FeedModule;
     l(this, "_communities");
     // CommunityModule;
     l(this, "_lists");
+    // ListModule;
+    // Cleanup synchronization
+    l(this, "closing", !1);
+    l(this, "closePromise");
     this.config = e, this.config.debug && console.log("🔥 SocialModule initialized with Clean Architecture");
   }
   /**
@@ -3621,36 +4369,28 @@ class _s {
    * Text notes, articles, reposts
    */
   get content() {
-    if (!this._content)
-      throw new Error("ContentModule not yet implemented - Coming in Phase 1");
-    return this._content;
+    return this._content || (this._content = new Is(this.config.nostr, this.config.debug)), this._content;
   }
   /**
    * Reaction operations (NIP-25)
    * Likes, dislikes, emoji reactions
    */
   get reactions() {
-    if (!this._reactions)
-      throw new Error("ReactionModule not yet implemented - Coming in Phase 1");
-    return this._reactions;
+    return this._reactions || (this._reactions = new As(this.config.nostr, this.config.debug)), this._reactions;
   }
   /**
    * Thread operations (NIP-10, NIP-22)
    * Threading, conversations, comments
    */
   get threads() {
-    if (!this._threads)
-      throw new Error("ThreadModule not yet implemented - Coming in Phase 1");
-    return this._threads;
+    return this._threads || (this._threads = new ks(this.config.nostr, this.config.debug)), this._threads;
   }
   /**
    * Feed operations
    * Timeline aggregation, social feeds
    */
   get feeds() {
-    if (!this._feeds)
-      throw new Error("FeedModule not yet implemented - Coming in Phase 1");
-    return this._feeds;
+    return this._feeds || (this._feeds = new Ms(this.config.nostr, this.config.debug)), this._feeds;
   }
   /**
    * Community operations (NIP-28, NIP-72)
@@ -3671,22 +4411,68 @@ class _s {
     return this._lists;
   }
   /**
-   * Clean up resources
+   * Update signing provider - delegates to core NostrUnchained instance
+   * Social modules access signing through the core instance, no separate update needed
+   */
+  async updateSigningProvider(e) {
+    this.config.debug && console.log("🔑 SocialModule.updateSigningProvider - delegating to core NostrUnchained"), this.config.nostr.updateSigningProvider && await this.config.nostr.updateSigningProvider(e);
+  }
+  /**
+   * Clean up resources with proper synchronization
    */
   async close() {
-    var e, t, s, r, i, o;
-    (e = this._content) != null && e.close && await this._content.close(), (t = this._reactions) != null && t.close && await this._reactions.close(), (s = this._threads) != null && s.close && await this._threads.close(), (r = this._feeds) != null && r.close && await this._feeds.close(), (i = this._communities) != null && i.close && await this._communities.close(), (o = this._lists) != null && o.close && await this._lists.close();
+    if (this.closing)
+      return this.closePromise ? this.closePromise : void 0;
+    this.closing = !0, this.closePromise = this.performCleanup();
+    try {
+      await this.closePromise, this.config.debug && console.log("🔥 SocialModule cleanup completed successfully");
+    } catch (e) {
+      throw this.config.debug && console.error("🔥 SocialModule cleanup error:", e), e;
+    }
+  }
+  async performCleanup() {
+    const e = [];
+    this._content && typeof this._content.close == "function" && e.push(
+      this._content.close().catch((t) => {
+        this.config.debug && console.warn("SocialModule: ContentModule cleanup error:", t);
+      })
+    ), this._reactions && typeof this._reactions.close == "function" && e.push(
+      this._reactions.close().catch((t) => {
+        this.config.debug && console.warn("SocialModule: ReactionModule cleanup error:", t);
+      })
+    ), this._threads && typeof this._threads.close == "function" && e.push(
+      this._threads.close().catch((t) => {
+        this.config.debug && console.warn("SocialModule: ThreadModule cleanup error:", t);
+      })
+    ), this._feeds && typeof this._feeds.close == "function" && e.push(
+      this._feeds.close().catch((t) => {
+        this.config.debug && console.warn("SocialModule: FeedModule cleanup error:", t);
+      })
+    ), this._communities && typeof this._communities.close == "function" && e.push(
+      this._communities.close().catch((t) => {
+        this.config.debug && console.warn("SocialModule: CommunityModule cleanup error:", t);
+      })
+    ), this._lists && typeof this._lists.close == "function" && e.push(
+      this._lists.close().catch((t) => {
+        this.config.debug && console.warn("SocialModule: ListModule cleanup error:", t);
+      })
+    ), e.length > 0 && await Promise.race([
+      Promise.all(e),
+      new Promise(
+        (t, s) => setTimeout(() => s(new Error("Module cleanup timeout after 10 seconds")), 1e4)
+      )
+    ]), this._content = void 0, this._reactions = void 0, this._threads = void 0, this._feeds = void 0, this._communities = void 0, this._lists = void 0;
   }
 }
-class As {
-  constructor(e, t, s, r = {}) {
+class Ts {
+  constructor(e, t, s, i = {}) {
     l(this, "listeners", /* @__PURE__ */ new Map());
     l(this, "subscriptionResult");
     l(this, "eventCount", 0);
     l(this, "createdAt", Date.now());
     l(this, "lastEventAt");
     l(this, "debug");
-    this.key = e, this.filters = t, this.relays = s, this.debug = r.debug || !1;
+    this.key = e, this.filters = t, this.relays = s, this.debug = i.debug || !1;
   }
   /**
    * Add a new listener to this shared subscription
@@ -3714,8 +4500,8 @@ class As {
     const t = [];
     for (const s of this.listeners.values())
       s.onEvent && t.push(
-        Promise.resolve(s.onEvent(e)).catch((r) => {
-          this.debug && console.error(`SharedSubscription: Listener ${s.id} onEvent error:`, r), s.onError && s.onError(r instanceof Error ? r : new Error(String(r)));
+        Promise.resolve(s.onEvent(e)).catch((i) => {
+          this.debug && console.error(`SharedSubscription: Listener ${s.id} onEvent error:`, i), s.onError && s.onError(i instanceof Error ? i : new Error(String(i)));
         })
       );
     await Promise.all(t);
@@ -3727,8 +4513,8 @@ class As {
     const t = [];
     for (const s of this.listeners.values())
       s.onEose && t.push(
-        Promise.resolve(s.onEose(e)).catch((r) => {
-          this.debug && console.error(`SharedSubscription: Listener ${s.id} onEose error:`, r), s.onError && s.onError(r instanceof Error ? r : new Error(String(r)));
+        Promise.resolve(s.onEose(e)).catch((i) => {
+          this.debug && console.error(`SharedSubscription: Listener ${s.id} onEose error:`, i), s.onError && s.onError(i instanceof Error ? i : new Error(String(i)));
         })
       );
     await Promise.all(t);
@@ -3740,8 +4526,8 @@ class As {
     const t = [];
     for (const s of this.listeners.values())
       s.onClose && t.push(
-        Promise.resolve(s.onClose(e)).catch((r) => {
-          this.debug && console.error(`SharedSubscription: Listener ${s.id} onClose error:`, r);
+        Promise.resolve(s.onClose(e)).catch((i) => {
+          this.debug && console.error(`SharedSubscription: Listener ${s.id} onClose error:`, i);
         })
       );
     await Promise.all(t);
@@ -3753,8 +4539,8 @@ class As {
     const t = [];
     for (const s of this.listeners.values())
       s.onError && t.push(
-        Promise.resolve(s.onError(e)).catch((r) => {
-          this.debug && console.error(`SharedSubscription: Listener ${s.id} onError handler error:`, r);
+        Promise.resolve(s.onError(e)).catch((i) => {
+          this.debug && console.error(`SharedSubscription: Listener ${s.id} onError handler error:`, i);
         })
       );
     await Promise.all(t);
@@ -3808,7 +4594,7 @@ class As {
     return `listener_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 }
-class Ps {
+class Rs {
   constructor(e) {
     l(this, "subscriptions", /* @__PURE__ */ new Map());
     l(this, "eventCallbacks", /* @__PURE__ */ new Map());
@@ -3821,27 +4607,27 @@ class Ps {
    * This is the new preferred method for subscription management
    */
   async getOrCreateSubscription(e, t) {
-    const s = t || this.relayManager.connectedRelays.length > 0 ? this.relayManager.connectedRelays : this.relayManager.relayUrls, r = this.generateFilterHash(e, s);
-    if (this.sharedSubscriptions.has(r)) {
-      const a = this.sharedSubscriptions.get(r);
+    const s = t || this.relayManager.connectedRelays.length > 0 ? this.relayManager.connectedRelays : this.relayManager.relayUrls, i = this.generateFilterHash(e, s);
+    if (this.sharedSubscriptions.has(i)) {
+      const a = this.sharedSubscriptions.get(i);
       if (this.debug) {
-        const c = a.getStats(), h = this.summarizeFilters(e);
-        console.log(`SubscriptionManager: Reusing shared subscription ${r} (${c.listenerCount} listeners) - Filters: ${h}`);
+        const c = a.getStats(), u = this.summarizeFilters(e);
+        console.log(`SubscriptionManager: Reusing shared subscription ${i} (${c.listenerCount} listeners) - Filters: ${u}`);
       }
       return a;
     }
-    const i = new As(r, e, s, { debug: this.debug }), o = await this.subscribe(e, {
+    const r = new Ts(i, e, s, { debug: this.debug }), o = await this.subscribe(e, {
       relays: s,
-      onEvent: (a) => i.broadcast(a),
-      onEose: (a) => i.notifyEose(a),
-      onClose: (a) => i.notifyClose(a),
-      onError: (a) => i.notifyError(a)
+      onEvent: (a) => r.broadcast(a),
+      onEose: (a) => r.notifyEose(a),
+      onClose: (a) => r.notifyClose(a),
+      onError: (a) => r.notifyError(a)
     });
-    if (i.setSubscriptionResult(o), o.success && (this.sharedSubscriptions.set(r, i), this.debug)) {
+    if (r.setSubscriptionResult(o), o.success && (this.sharedSubscriptions.set(i, r), this.debug)) {
       const a = this.summarizeFilters(e);
-      console.log(`SubscriptionManager: Created new shared subscription ${r} - Filters: ${a}`);
+      console.log(`SubscriptionManager: Created new shared subscription ${i} - Filters: ${a}`);
     }
-    return i;
+    return r;
   }
   /**
    * Create a human-readable summary of filters for debugging
@@ -3850,32 +4636,64 @@ class Ps {
     return e.map((t) => {
       const s = [];
       if (t.kinds && s.push(`kinds:[${t.kinds.join(",")}]`), t.authors) {
-        const r = t.authors.length > 1 ? `${t.authors.length} authors` : `author:${t.authors[0].substring(0, 8)}...`;
-        s.push(r);
+        const i = t.authors.length > 1 ? `${t.authors.length} authors` : `author:${t.authors[0].substring(0, 8)}...`;
+        s.push(i);
       }
       if (t.ids) {
-        const r = t.ids.length > 1 ? `${t.ids.length} ids` : `id:${t.ids[0].substring(0, 8)}...`;
-        s.push(r);
+        const i = t.ids.length > 1 ? `${t.ids.length} ids` : `id:${t.ids[0].substring(0, 8)}...`;
+        s.push(i);
       }
       return t["#p"] && s.push(`#p:${t["#p"].length} mentions`), t["#e"] && s.push(`#e:${t["#e"].length} events`), t["#t"] && s.push(`#t:${t["#t"].join(",")}`), t.since && s.push(`since:${new Date(t.since * 1e3).toISOString().substring(11, 19)}`), t.until && s.push(`until:${new Date(t.until * 1e3).toISOString().substring(11, 19)}`), t.limit && s.push(`limit:${t.limit}`), `{${s.join(", ")}}`;
     }).join(" + ");
   }
   /**
-   * Generate a hash key for filter deduplication
+   * Generate a cryptographically secure hash key for filter deduplication
+   * Prevents hash collisions that could cause subscription mixing
    */
   generateFilterHash(e, t) {
-    const s = JSON.stringify(e.map((a) => {
+    const s = e.map((a) => {
       const c = {};
-      return Object.keys(a).sort().forEach((h) => {
-        c[h] = a[h];
+      return Object.keys(a).sort().forEach((u) => {
+        const d = a[u];
+        Array.isArray(d) && d.every((h) => typeof h == "string") ? c[u] = [...d].sort() : c[u] = d;
       }), c;
-    })), r = t.slice().sort().join(","), i = `${s}:${r}`;
-    let o = 0;
-    for (let a = 0; a < i.length; a++) {
-      const c = i.charCodeAt(a);
-      o = (o << 5) - o + c, o = o & o;
-    }
-    return Math.abs(o).toString(16).padStart(16, "0").substring(0, 16);
+    }), i = JSON.stringify(s), r = t.slice().sort().join(","), o = `${i}:${r}`;
+    return typeof crypto < "u" && crypto.subtle ? this.generateSHA256HashSync(o) : this.generateSecureHash(o);
+  }
+  /**
+   * Generate SHA-256 hash synchronously (fallback implementation)
+   */
+  generateSHA256HashSync(e) {
+    const s = new TextEncoder().encode(e);
+    let i = 2166136261;
+    for (let r = 0; r < s.length; r++)
+      i ^= s[r], i = Math.imul(i, 16777619);
+    return i ^= i >>> 16, i = Math.imul(i, 2246822507), i ^= i >>> 13, i = Math.imul(i, 3266489909), i ^= i >>> 16, (i >>> 0).toString(16).padStart(8, "0");
+  }
+  /**
+   * Enhanced hash function with better collision resistance
+   */
+  generateSecureHash(e) {
+    const t = this.djb2Hash(e), s = this.sdbmHash(e), i = this.fnvHash(e);
+    return ((t ^ s ^ i) >>> 0).toString(16).padStart(8, "0");
+  }
+  djb2Hash(e) {
+    let t = 5381;
+    for (let s = 0; s < e.length; s++)
+      t = (t << 5) + t + e.charCodeAt(s);
+    return t;
+  }
+  sdbmHash(e) {
+    let t = 0;
+    for (let s = 0; s < e.length; s++)
+      t = e.charCodeAt(s) + (t << 6) + (t << 16) - t;
+    return t;
+  }
+  fnvHash(e) {
+    let t = 2166136261;
+    for (let s = 0; s < e.length; s++)
+      t ^= e.charCodeAt(s), t = Math.imul(t, 16777619);
+    return t;
   }
   /**
    * Clean up shared subscriptions with no listeners
@@ -3885,8 +4703,8 @@ class Ps {
     for (const [t, s] of this.sharedSubscriptions.entries())
       if (!s.hasListeners()) {
         e.push(t);
-        const r = s.getSubscriptionId();
-        r && await this.close(r, "No more listeners");
+        const i = s.getSubscriptionId();
+        i && await this.close(i, "No more listeners");
       }
     for (const t of e)
       this.sharedSubscriptions.delete(t), this.debug && console.log(`SubscriptionManager: Removed orphaned shared subscription ${t}`);
@@ -3897,8 +4715,8 @@ class Ps {
   getSubscriptionAnalytics() {
     let e = 0, t = 0;
     for (const s of this.sharedSubscriptions.values()) {
-      const r = s.getStats();
-      e += r.listenerCount, r.listenerCount > 1 && (t += r.listenerCount - 1);
+      const i = s.getStats();
+      e += i.listenerCount, i.listenerCount > 1 && (t += i.listenerCount - 1);
     }
     return {
       totalSubscriptions: this.subscriptions.size,
@@ -3912,7 +4730,7 @@ class Ps {
    * Performance requirement: <100ms subscription creation
    */
   async subscribe(e, t = {}) {
-    var s, r, i, o;
+    var s, i, r, o;
     try {
       const a = this.validateFilters(e);
       if (a)
@@ -3922,12 +4740,12 @@ class Ps {
           relayResults: [],
           error: a
         };
-      const c = this.generateSubscriptionId(), h = Date.now(), d = t.relays || this.relayManager.connectedRelays.length > 0 ? this.relayManager.connectedRelays : this.relayManager.relayUrls, u = {
+      const c = this.generateSubscriptionId(), u = Date.now(), d = t.relays || this.relayManager.connectedRelays.length > 0 ? this.relayManager.connectedRelays : this.relayManager.relayUrls, h = {
         id: c,
         filters: e,
         relays: d,
         state: "pending",
-        createdAt: h,
+        createdAt: u,
         eventCount: 0,
         onEvent: t.onEvent,
         onEose: t.onEose,
@@ -3936,61 +4754,61 @@ class Ps {
         eoseRelays: /* @__PURE__ */ new Set(),
         receivedEventIds: /* @__PURE__ */ new Set()
       };
-      if (d.forEach((m) => {
-        u.relayStates[m] = "active";
-      }), t.timeout && (u.timeoutId = setTimeout(() => {
+      if (d.forEach((y) => {
+        h.relayStates[y] = "active";
+      }), t.timeout && (h.timeoutId = setTimeout(() => {
         this.handleSubscriptionTimeout(c);
-      }, t.timeout)), this.subscriptions.set(c, u), this.debug) {
-        const m = this.summarizeFilters(e);
-        console.log(`Creating subscription ${c} with ${e.length} filters: ${m}`);
+      }, t.timeout)), this.subscriptions.set(c, h), this.debug) {
+        const y = this.summarizeFilters(e);
+        console.log(`Creating subscription ${c} with ${e.length} filters: ${y}`);
       }
-      const g = t.retryAttempts || 1, p = t.retryDelay || 1e3;
-      let f = [], y;
-      for (let m = 0; m < g; m++)
+      const f = t.retryAttempts || 1, b = t.retryDelay || 1e3;
+      let g = [], p;
+      for (let y = 0; y < f; y++)
         try {
-          const v = ["REQ", c, ...e];
+          const m = ["REQ", c, ...e];
           try {
-            await ((r = (s = this.relayManager).sendToAll) == null ? void 0 : r.call(s, v)), f = d.map((P) => ({
-              relay: P,
+            await ((i = (s = this.relayManager).sendToAll) == null ? void 0 : i.call(s, m)), g = d.map((A) => ({
+              relay: A,
               success: !0,
               error: void 0
             }));
             break;
-          } catch (P) {
-            f = [];
-            let J = !1;
+          } catch (A) {
+            g = [];
+            let Q = !1;
             for (const le of d)
               try {
-                await ((o = (i = this.relayManager).sendToRelays) == null ? void 0 : o.call(i, [le], v)), f.push({
+                await ((o = (r = this.relayManager).sendToRelays) == null ? void 0 : o.call(r, [le], m)), g.push({
                   relay: le,
                   success: !0,
                   error: void 0
-                }), J = !0;
+                }), Q = !0;
               } catch (M) {
-                f.push({
+                g.push({
                   relay: le,
                   success: !1,
                   error: M instanceof Error ? M : new Error("Unknown error")
                 });
               }
-            if (J)
+            if (Q)
               break;
-            y = P instanceof Error ? P : new Error("All relays failed");
+            p = A instanceof Error ? A : new Error("All relays failed");
           }
-        } catch (v) {
-          y = v instanceof Error ? v : new Error("Unknown error"), f = d.map((P) => ({
-            relay: P,
+        } catch (m) {
+          p = m instanceof Error ? m : new Error("Unknown error"), g = d.map((A) => ({
+            relay: A,
             success: !1,
-            error: y
-          })), m < g - 1 && await new Promise((P) => setTimeout(P, p));
+            error: p
+          })), y < f - 1 && await new Promise((A) => setTimeout(A, b));
         }
-      const S = f.length > 0 && f.some((m) => m.success);
-      return S || (this.subscriptions.delete(c), u.timeoutId && clearTimeout(u.timeoutId)), {
-        subscription: S ? this.externalizeSubscription(u) : {},
+      const S = g.length > 0 && g.some((y) => y.success);
+      return S || (this.subscriptions.delete(c), h.timeoutId && clearTimeout(h.timeoutId)), {
+        subscription: S ? this.externalizeSubscription(h) : {},
         success: S,
-        relayResults: f,
+        relayResults: g,
         error: S ? void 0 : {
-          message: y ? y.message : f.length === 0 ? "No relays available" : "All relays failed",
+          message: p ? p.message : g.length === 0 ? "No relays available" : "All relays failed",
           retryable: !0
         }
       };
@@ -4010,14 +4828,14 @@ class Ps {
    * Activate a pending subscription by sending REQ messages
    */
   async activate(e) {
-    var s, r, i, o;
+    var s, i, r, o;
     const t = this.subscriptions.get(e);
     if (!t)
       throw new Error(`Subscription ${e} not found`);
     t.state = "active";
     try {
       const a = ["REQ", e, ...t.filters], c = this.relayManager.connectedRelays;
-      t.relays.length !== c.length || !t.relays.every((d) => c.includes(d)) ? await ((r = (s = this.relayManager).sendToRelays) == null ? void 0 : r.call(s, t.relays, a)) : await ((o = (i = this.relayManager).sendToAll) == null ? void 0 : o.call(i, a));
+      t.relays.length !== c.length || !t.relays.every((d) => c.includes(d)) ? await ((i = (s = this.relayManager).sendToRelays) == null ? void 0 : i.call(s, t.relays, a)) : await ((o = (r = this.relayManager).sendToAll) == null ? void 0 : o.call(r, a));
     } catch (a) {
       throw t.state = "error", a;
     }
@@ -4033,13 +4851,13 @@ class Ps {
    * Close a subscription
    */
   async close(e, t) {
-    var r, i;
+    var i, r;
     const s = this.subscriptions.get(e);
     if (s) {
       s.state = "closed", s.timeoutId && (clearTimeout(s.timeoutId), s.timeoutId = void 0);
       try {
         const o = ["CLOSE", e];
-        await ((i = (r = this.relayManager).sendToAll) == null ? void 0 : i.call(r, o));
+        await ((r = (i = this.relayManager).sendToAll) == null ? void 0 : r.call(i, o));
       } catch (o) {
         this.debug && console.error(`Error sending CLOSE for ${e}:`, o);
       }
@@ -4080,12 +4898,12 @@ class Ps {
   async handleEventBatch(e, t) {
     const s = this.subscriptions.get(e);
     if (!s) return;
-    const r = [];
-    for (const i of t)
-      s.receivedEventIds.has(i.id) || (s.receivedEventIds.add(i.id), r.push(i));
-    if (s.eventCount += r.length, s.lastEventAt = Date.now(), s.onEvent && r.length > 0)
-      for (const i of r)
-        s.onEvent(i);
+    const i = [];
+    for (const r of t)
+      s.receivedEventIds.has(r.id) || (s.receivedEventIds.add(r.id), i.push(r));
+    if (s.eventCount += i.length, s.lastEventAt = Date.now(), s.onEvent && i.length > 0)
+      for (const r of i)
+        s.onEvent(r);
   }
   /**
    * Handle relay event message
@@ -4097,17 +4915,17 @@ class Ps {
    * Handle incoming relay message
    */
   async handleRelayMessage(e, t) {
-    const [s, r, ...i] = t;
+    const [s, i, ...r] = t;
     switch (s) {
       case "EVENT":
-        const o = i[0];
-        await this.handleRelayEvent(e, r, o);
+        const o = r[0];
+        await this.handleRelayEvent(e, i, o);
         break;
       case "EOSE":
-        await this.markEose(r, e);
+        await this.markEose(i, e);
         break;
       case "NOTICE":
-        this.debug && console.log(`Notice from ${e}:`, i[0]);
+        this.debug && console.log(`Notice from ${e}:`, r[0]);
         break;
     }
   }
@@ -4189,18 +5007,18 @@ class Ps {
     return null;
   }
   async sendSubscriptionToRelays(e, t) {
-    const s = [], r = ["REQ", e.id, ...e.filters];
+    const s = [], i = ["REQ", e.id, ...e.filters];
     if (this.relayManager.sendToRelays)
-      for (const i of e.relays)
+      for (const r of e.relays)
         try {
-          await this.relayManager.sendToRelays([i], r), s.push({
-            relay: i,
+          await this.relayManager.sendToRelays([r], i), s.push({
+            relay: r,
             success: !0,
             subscriptionId: e.id
           });
         } catch (o) {
           s.push({
-            relay: i,
+            relay: r,
             success: !1,
             error: o instanceof Error ? o.message : "Unknown error",
             subscriptionId: e.id
@@ -4208,25 +5026,25 @@ class Ps {
         }
     else
       try {
-        this.relayManager.sendToAll ? (await this.relayManager.sendToAll(r), e.relays.forEach((i) => {
+        this.relayManager.sendToAll ? (await this.relayManager.sendToAll(i), e.relays.forEach((r) => {
           s.push({
-            relay: i,
+            relay: r,
             success: !0,
             subscriptionId: e.id
           });
-        })) : e.relays.forEach((i) => {
+        })) : e.relays.forEach((r) => {
           s.push({
-            relay: i,
+            relay: r,
             success: !0,
             subscriptionId: e.id
           });
         });
-      } catch (i) {
+      } catch (r) {
         e.relays.forEach((o) => {
           s.push({
             relay: o,
             success: !1,
-            error: i instanceof Error ? i.message : "Unknown error",
+            error: r instanceof Error ? r.message : "Unknown error",
             subscriptionId: e.id
           });
         });
@@ -4243,8 +5061,8 @@ class Ps {
         if (!(s === "timeoutId" || s === "relayStates" || s === "eoseRelays" || s === "receivedEventIds"))
           return t[s];
       },
-      set(t, s, r) {
-        return s === "eventCount" || s === "lastEventAt" || s === "state" ? (t[s] = r, !0) : !1;
+      set(t, s, i) {
+        return s === "eventCount" || s === "lastEventAt" || s === "state" ? (t[s] = i, !0) : !1;
       }
     });
   }
@@ -4254,7 +5072,7 @@ class Ps {
     });
   }
 }
-class Ie {
+class _e {
   constructor(e, t = {}) {
     l(this, "events", /* @__PURE__ */ new Map());
     // ALL events (decrypted)
@@ -4267,9 +5085,10 @@ class Ie {
     l(this, "subscribers", /* @__PURE__ */ new Set());
     l(this, "privateKey");
     l(this, "config");
-    // LRU tracking
-    l(this, "accessOrder", []);
-    l(this, "lastAccess", /* @__PURE__ */ new Map());
+    // Efficient LRU tracking with doubly-linked list - O(1) operations
+    l(this, "lruNodes", /* @__PURE__ */ new Map());
+    l(this, "lruHead", null);
+    l(this, "lruTail", null);
     // Statistics tracking
     l(this, "stats", {
       queryCount: 0,
@@ -4297,15 +5116,15 @@ class Ie {
   }
   query(e) {
     const t = performance.now(), s = this.getMatchingEvents(e);
-    s.forEach((i) => this.updateAccessTracking(i.id));
-    const r = performance.now() - t;
-    return this.stats.queryCount++, this.stats.totalQueryTime += r, s;
+    s.forEach((r) => this.updateAccessTracking(r.id));
+    const i = performance.now() - t;
+    return this.stats.queryCount++, this.stats.totalQueryTime += i, s;
   }
   subscribe(e) {
     return this.subscribers.add(e), () => this.subscribers.delete(e);
   }
   clear() {
-    this.events.clear(), this.eventsByKind.clear(), this.eventsByAuthor.clear(), this.eventsByTag.clear(), this.accessOrder = [], this.lastAccess.clear();
+    this.events.clear(), this.eventsByKind.clear(), this.eventsByAuthor.clear(), this.eventsByTag.clear(), this.lruNodes.clear(), this.lruHead = null, this.lruTail = null;
   }
   get size() {
     return this.events.size;
@@ -4340,38 +5159,38 @@ class Ie {
     };
   }
   async unwrapGiftWrap(e) {
-    return await ie.unwrapGiftWrap(e, this.privateKey);
+    return await re.unwrapGiftWrap(e, this.privateKey);
   }
   updateIndexes(e) {
     this.eventsByKind.has(e.kind) || this.eventsByKind.set(e.kind, /* @__PURE__ */ new Set()), this.eventsByKind.get(e.kind).add(e.id), this.eventsByAuthor.has(e.pubkey) || this.eventsByAuthor.set(e.pubkey, /* @__PURE__ */ new Set()), this.eventsByAuthor.get(e.pubkey).add(e.id), e.tags.forEach((t) => {
-      const [s, r] = t;
-      if (!r) return;
+      const [s, i] = t;
+      if (!i) return;
       this.eventsByTag.has(s) || this.eventsByTag.set(s, /* @__PURE__ */ new Map());
-      const i = this.eventsByTag.get(s);
-      i.has(r) || i.set(r, /* @__PURE__ */ new Set()), i.get(r).add(e.id);
+      const r = this.eventsByTag.get(s);
+      r.has(i) || r.set(i, /* @__PURE__ */ new Set()), r.get(i).add(e.id);
     });
   }
   getMatchingEvents(e) {
     let t;
     if (e.kinds && e.kinds.length > 0) {
-      const r = e.kinds.map((i) => this.eventsByKind.get(i) || /* @__PURE__ */ new Set());
-      t = this.unionSets(r);
+      const i = e.kinds.map((r) => this.eventsByKind.get(r) || /* @__PURE__ */ new Set());
+      t = this.unionSets(i);
     }
     if (e.authors && e.authors.length > 0) {
-      const r = e.authors.map((o) => this.eventsByAuthor.get(o) || /* @__PURE__ */ new Set()), i = this.unionSets(r);
-      t = t ? this.intersectSets([t, i]) : i;
+      const i = e.authors.map((o) => this.eventsByAuthor.get(o) || /* @__PURE__ */ new Set()), r = this.unionSets(i);
+      t = t ? this.intersectSets([t, r]) : r;
     }
-    Object.entries(e).forEach(([r, i]) => {
-      if (r.startsWith("#") && Array.isArray(i) && i.length > 0) {
-        const o = r.slice(1), a = this.eventsByTag.get(o);
+    Object.entries(e).forEach(([i, r]) => {
+      if (i.startsWith("#") && Array.isArray(r) && r.length > 0) {
+        const o = i.slice(1), a = this.eventsByTag.get(o);
         if (a) {
-          const c = i.map((d) => a.get(d) || /* @__PURE__ */ new Set()), h = this.unionSets(c);
-          t = t ? this.intersectSets([t, h]) : h;
+          const c = r.map((d) => a.get(d) || /* @__PURE__ */ new Set()), u = this.unionSets(c);
+          t = t ? this.intersectSets([t, u]) : u;
         } else
           t = /* @__PURE__ */ new Set();
       }
     });
-    const s = Array.from(t || this.events.keys()).map((r) => this.events.get(r)).filter((r) => r && this.matchesFilter(r, e)).sort((r, i) => i.created_at - r.created_at);
+    const s = Array.from(t || this.events.keys()).map((i) => this.events.get(i)).filter((i) => i && this.matchesFilter(i, e)).sort((i, r) => r.created_at - i.created_at);
     return e.limit && e.limit > 0 ? s.slice(0, e.limit) : s;
   }
   matchesFilter(e, t) {
@@ -4380,15 +5199,15 @@ class Ie {
   unionSets(e) {
     const t = /* @__PURE__ */ new Set();
     return e.forEach((s) => {
-      s.forEach((r) => t.add(r));
+      s.forEach((i) => t.add(i));
     }), t;
   }
   intersectSets(e) {
     if (e.length === 0) return /* @__PURE__ */ new Set();
     if (e.length === 1) return e[0];
     const t = /* @__PURE__ */ new Set();
-    return e[0].forEach((r) => {
-      e.every((i) => i.has(r)) && t.add(r);
+    return e[0].forEach((i) => {
+      e.every((r) => r.has(i)) && t.add(i);
     }), t;
   }
   notifySubscribers(e) {
@@ -4403,9 +5222,23 @@ class Ie {
   updateAccessTracking(e) {
     if (this.config.evictionPolicy !== "lru") return;
     const t = Date.now();
-    this.lastAccess.set(e, t);
-    const s = this.accessOrder.indexOf(e);
-    s > -1 && this.accessOrder.splice(s, 1), this.accessOrder.push(e);
+    let s = this.lruNodes.get(e);
+    s ? (this.moveToHead(s), s.timestamp = t) : (s = {
+      eventId: e,
+      prev: null,
+      next: null,
+      timestamp: t
+    }, this.lruNodes.set(e, s), this.addToHead(s));
+  }
+  // O(1) LRU operations using doubly-linked list
+  addToHead(e) {
+    e.prev = null, e.next = this.lruHead, this.lruHead && (this.lruHead.prev = e), this.lruHead = e, this.lruTail || (this.lruTail = e);
+  }
+  removeNode(e) {
+    e.prev ? e.prev.next = e.next : this.lruHead = e.next, e.next ? e.next.prev = e.prev : this.lruTail = e.prev;
+  }
+  moveToHead(e) {
+    this.removeNode(e), this.addToHead(e);
   }
   enforceCapacityLimits() {
     if (this.events.size >= this.config.maxEvents && this.evictOldest(), this.estimateMemoryUsage() > this.config.maxMemoryMB)
@@ -4414,22 +5247,25 @@ class Ie {
   }
   evictOldest() {
     let e;
-    this.config.evictionPolicy === "lru" ? e = this.accessOrder.shift() : e = this.events.keys().next().value, e && this.removeEvent(e);
+    this.config.evictionPolicy === "lru" ? this.lruTail && (e = this.lruTail.eventId) : e = this.events.keys().next().value, e && this.removeEvent(e);
   }
   removeEvent(e) {
-    var s, r;
+    var i, r;
     const t = this.events.get(e);
-    t && (this.stats.evictedCount++, this.events.delete(e), (s = this.eventsByKind.get(t.kind)) == null || s.delete(e), (r = this.eventsByAuthor.get(t.pubkey)) == null || r.delete(e), t.tags.forEach((i) => {
-      var c, h;
-      const [o, a] = i;
-      a && ((h = (c = this.eventsByTag.get(o)) == null ? void 0 : c.get(a)) == null || h.delete(e));
-    }), this.lastAccess.delete(e));
+    if (!t) return;
+    this.stats.evictedCount++, this.events.delete(e), (i = this.eventsByKind.get(t.kind)) == null || i.delete(e), (r = this.eventsByAuthor.get(t.pubkey)) == null || r.delete(e), t.tags.forEach((o) => {
+      var u, d;
+      const [a, c] = o;
+      c && ((d = (u = this.eventsByTag.get(a)) == null ? void 0 : u.get(c)) == null || d.delete(e));
+    });
+    const s = this.lruNodes.get(e);
+    s && (this.removeNode(s), this.lruNodes.delete(e));
   }
   estimateMemoryUsage() {
     return this.events.size * 1024 / (1024 * 1024);
   }
 }
-class mt {
+class wt {
   constructor() {
     l(this, "filter", {});
   }
@@ -4471,7 +5307,7 @@ class mt {
     return this.kinds([6]);
   }
 }
-class Et {
+class vt {
   constructor(e, t) {
     l(this, "cache");
     l(this, "filter");
@@ -4496,7 +5332,7 @@ class Et {
    * Returns a new store with transformed data
    */
   map(e) {
-    return new Ms(this, e);
+    return new xs(this, e);
   }
   updateData() {
     this._data = this.cache.query(this.filter), this.notifySubscribers();
@@ -4508,14 +5344,14 @@ class Et {
     return !(t.kinds && !t.kinds.includes(e.kind) || t.authors && !t.authors.includes(e.pubkey) || t.ids && !t.ids.includes(e.id));
   }
 }
-class Ms {
+class xs {
   constructor(e, t) {
     l(this, "_data");
     l(this, "subscribers", /* @__PURE__ */ new Set());
     l(this, "sourceUnsubscriber");
     this.sourceStore = e, this.transform = t, this._data = this.transform(this.sourceStore.current), this.sourceUnsubscriber = this.sourceStore.subscribe((s) => {
-      const r = this.transform(s);
-      this._data !== r && (this._data = r, this.notifySubscribers());
+      const i = this.transform(s);
+      this._data !== i && (this._data = i, this.notifySubscribers());
     });
   }
   // Svelte store interface
@@ -4531,15 +5367,15 @@ class Ms {
     this.subscribers.forEach((e) => e(this._data));
   }
 }
-class ks extends mt {
+class Ns extends wt {
   constructor(e) {
     super(), this.cache = e;
   }
   execute() {
-    return new Et(this.cache, this.filter);
+    return new vt(this.cache, this.filter);
   }
 }
-class Ts extends mt {
+class Cs extends wt {
   constructor(t, s) {
     super();
     l(this, "relayUrls", []);
@@ -4557,22 +5393,22 @@ class Ts extends mt {
    * USES SMART DEDUPLICATION to prevent subscription overload
    */
   async execute() {
-    const t = this.relayUrls.length > 0 ? this.relayUrls : void 0, s = await this.subscriptionManager.getOrCreateSubscription([this.filter], t), r = s.addListener({
+    const t = this.relayUrls.length > 0 ? this.relayUrls : void 0, s = await this.subscriptionManager.getOrCreateSubscription([this.filter], t), i = s.addListener({
       onEvent: (o) => {
         this.cache.addEvent(o);
       }
-    }), i = new Et(this.cache, this.filter);
+    }), r = new vt(this.cache, this.filter);
     return {
       id: s.key,
-      store: i,
+      store: r,
       stop: async () => {
-        s.removeListener(r);
+        s.removeListener(i);
       },
       isActive: () => s.isActive()
     };
   }
 }
-class vt {
+class Et {
   constructor(e) {
     l(this, "config");
     l(this, "updates", {});
@@ -4662,10 +5498,10 @@ class vt {
       tags: [],
       created_at: Math.floor(Date.now() / 1e3),
       pubkey: t
-    }, r = A.addEventId(s), i = await this.config.signingProvider.signEvent(s);
+    }, i = k.addEventId(s), r = await this.config.signingProvider.signEvent(s);
     return {
-      ...r,
-      sig: i
+      ...i,
+      sig: r
     };
   }
   /**
@@ -4681,18 +5517,18 @@ class vt {
         tags: [],
         created_at: Math.floor(Date.now() / 1e3),
         pubkey: t
-      }, r = A.addEventId(s), i = await this.config.signingProvider.signEvent(s), o = {
-        ...r,
-        sig: i
+      }, i = k.addEventId(s), r = await this.config.signingProvider.signEvent(s), o = {
+        ...i,
+        sig: r
       }, c = (await Promise.allSettled(
         this.config.relayManager.relayUrls.map(async (d) => {
           try {
             return await this.config.relayManager.sendToRelay(d, ["EVENT", o]), { success: !0, relay: d };
-          } catch (u) {
+          } catch (h) {
             return {
               success: !1,
               relay: d,
-              error: u instanceof Error ? u.message : "Unknown error"
+              error: h instanceof Error ? h.message : "Unknown error"
             };
           }
         })
@@ -4730,31 +5566,31 @@ class vt {
     try {
       const e = await this.config.signingProvider.getPublicKey(), t = this.config.nostr.query().kinds([0]).authors([e]).limit(1).execute(), s = t.current;
       if (s && s.length > 0) {
-        const i = s[0];
+        const r = s[0];
         try {
-          const o = JSON.parse(i.content);
+          const o = JSON.parse(r.content);
           return {
-            pubkey: i.pubkey,
+            pubkey: r.pubkey,
             metadata: o,
-            lastUpdated: i.created_at,
-            eventId: i.id,
+            lastUpdated: r.created_at,
+            eventId: r.id,
             isOwn: !0
           };
         } catch {
           return null;
         }
       }
-      await this.config.nostr.sub().kinds([0]).authors([e]).limit(1).execute(), await new Promise((i) => setTimeout(i, 1e3));
-      const r = t.current;
-      if (r && r.length > 0) {
-        const i = r[0];
+      await this.config.nostr.sub().kinds([0]).authors([e]).limit(1).execute(), await new Promise((r) => setTimeout(r, 1e3));
+      const i = t.current;
+      if (i && i.length > 0) {
+        const r = i[0];
         try {
-          const o = JSON.parse(i.content);
+          const o = JSON.parse(r.content);
           return {
-            pubkey: i.pubkey,
+            pubkey: r.pubkey,
             metadata: o,
-            lastUpdated: i.created_at,
-            eventId: i.id,
+            lastUpdated: r.created_at,
+            eventId: r.id,
             isOwn: !0
           };
         } catch {
@@ -4793,51 +5629,51 @@ class St {
       };
     this.config.debug && console.log(`ProfileBatchBuilder: Fetching ${this.pubkeys.length} profiles using base layer`);
     try {
-      const e = this.config.nostr.query().kinds([0]).authors(this.pubkeys).limit(this.pubkeys.length).execute(), t = e.current, s = /* @__PURE__ */ new Map(), r = /* @__PURE__ */ new Map();
+      const e = this.config.nostr.query().kinds([0]).authors(this.pubkeys).limit(this.pubkeys.length).execute(), t = e.current, s = /* @__PURE__ */ new Map(), i = /* @__PURE__ */ new Map();
       this.pubkeys.forEach((a) => {
         s.set(a, null);
       });
-      let i = 0;
+      let r = 0;
       return t.forEach((a) => {
         if (a.kind === 0 && this.pubkeys.includes(a.pubkey))
           try {
-            const c = JSON.parse(a.content), h = {
+            const c = JSON.parse(a.content), u = {
               pubkey: a.pubkey,
               metadata: c,
               lastUpdated: a.created_at,
               eventId: a.id,
               isOwn: !1
             };
-            s.set(a.pubkey, h), i++;
+            s.set(a.pubkey, u), r++;
           } catch {
-            r.set(a.pubkey, "Failed to parse profile metadata");
+            i.set(a.pubkey, "Failed to parse profile metadata");
           }
-      }), this.config.debug && console.log(`ProfileBatchBuilder: Found ${i}/${this.pubkeys.length} profiles in cache`), i === this.pubkeys.length ? {
+      }), this.config.debug && console.log(`ProfileBatchBuilder: Found ${r}/${this.pubkeys.length} profiles in cache`), r === this.pubkeys.length ? {
         profiles: s,
         success: !0,
-        errors: r,
+        errors: i,
         totalRequested: this.pubkeys.length,
-        totalFound: i
+        totalFound: r
       } : (await this.config.nostr.sub().kinds([0]).authors(this.pubkeys).limit(this.pubkeys.length).execute(), await new Promise((a) => setTimeout(a, 2e3)), e.current.forEach((a) => {
         if (a.kind === 0 && this.pubkeys.includes(a.pubkey) && !s.get(a.pubkey))
           try {
-            const c = JSON.parse(a.content), h = {
+            const c = JSON.parse(a.content), u = {
               pubkey: a.pubkey,
               metadata: c,
               lastUpdated: a.created_at,
               eventId: a.id,
               isOwn: !1
             };
-            s.set(a.pubkey, h), i++;
+            s.set(a.pubkey, u), r++;
           } catch {
-            r.set(a.pubkey, "Failed to parse profile metadata");
+            i.set(a.pubkey, "Failed to parse profile metadata");
           }
-      }), this.config.debug && console.log(`ProfileBatchBuilder: Final result - found ${i}/${this.pubkeys.length} profiles`), {
+      }), this.config.debug && console.log(`ProfileBatchBuilder: Final result - found ${r}/${this.pubkeys.length} profiles`), {
         profiles: s,
         success: !0,
-        errors: r,
+        errors: i,
         totalRequested: this.pubkeys.length,
-        totalFound: i
+        totalFound: r
       });
     } catch (e) {
       return {
@@ -4858,10 +5694,10 @@ class St {
       return this.pubkeys.forEach((s) => t.set(s, null)), e.forEach((s) => {
         if (s.kind === 0 && this.pubkeys.includes(s.pubkey))
           try {
-            const r = JSON.parse(s.content);
+            const i = JSON.parse(s.content);
             t.set(s.pubkey, {
               pubkey: s.pubkey,
-              metadata: r,
+              metadata: i,
               lastUpdated: s.created_at,
               eventId: s.id,
               isOwn: !1
@@ -4880,7 +5716,7 @@ class St {
     }), this.executeReactive();
   }
 }
-class It {
+class _t {
   constructor(e) {
     l(this, "config");
     l(this, "criteria", {});
@@ -4927,33 +5763,33 @@ class It {
         limit: this.criteria.limit || 50
         // Default limit
       }, t = [], s = /* @__PURE__ */ new Set();
-      return new Promise((r) => {
-        let i = !1;
+      return new Promise((i) => {
+        let r = !1;
         const o = setTimeout(() => {
-          i || (i = !0, this.finalizeResults(t, r));
+          r || (r = !0, this.finalizeResults(t, i));
         }, 1e4);
         (async () => {
-          const c = await this.config.subscriptionManager.getOrCreateSubscription([e]), h = c.addListener({
+          const c = await this.config.subscriptionManager.getOrCreateSubscription([e]), u = c.addListener({
             onEvent: async (d) => {
               if (d.kind === 0 && !s.has(d.pubkey)) {
                 s.add(d.pubkey);
                 try {
-                  const u = await this.parseProfileEvent(d), g = await this.evaluateProfile(u);
-                  g && (t.push(g), this.config.debug && console.log(`ProfileDiscoveryBuilder: Found match - ${u.metadata.name || "unnamed"} (score: ${g.relevanceScore})`), this.criteria.limit && t.length >= this.criteria.limit && (i || (i = !0, clearTimeout(o), c.removeListener(h), this.finalizeResults(t, r))));
-                } catch (u) {
-                  this.config.debug && console.error("ProfileDiscoveryBuilder: Error processing profile:", u);
+                  const h = await this.parseProfileEvent(d), f = await this.evaluateProfile(h);
+                  f && (t.push(f), this.config.debug && console.log(`ProfileDiscoveryBuilder: Found match - ${h.metadata.name || "unnamed"} (score: ${f.relevanceScore})`), this.criteria.limit && t.length >= this.criteria.limit && (r || (r = !0, clearTimeout(o), c.removeListener(u), this.finalizeResults(t, i))));
+                } catch (h) {
+                  this.config.debug && console.error("ProfileDiscoveryBuilder: Error processing profile:", h);
                 }
               }
             },
             onEose: () => {
-              i || (i = !0, clearTimeout(o), c.removeListener(h), this.finalizeResults(t, r));
+              r || (r = !0, clearTimeout(o), c.removeListener(u), this.finalizeResults(t, i));
             },
             onError: (d) => {
-              i || (i = !0, clearTimeout(o), c.removeListener(h), this.config.debug && console.error("ProfileDiscoveryBuilder: Search error:", d), r(t));
+              r || (r = !0, clearTimeout(o), c.removeListener(u), this.config.debug && console.error("ProfileDiscoveryBuilder: Search error:", d), i(t));
             }
           });
         })().catch((c) => {
-          i || (i = !0, clearTimeout(o), this.config.debug && console.error("ProfileDiscoveryBuilder: Failed to start search:", c), r(t));
+          r || (r = !0, clearTimeout(o), this.config.debug && console.error("ProfileDiscoveryBuilder: Failed to start search:", c), i(t));
         });
       });
     } catch (e) {
@@ -4978,41 +5814,41 @@ class It {
   async evaluateProfile(e) {
     var a, c;
     const t = [];
-    let s = 0, r = 0, i = 0;
+    let s = 0, i = 0, r = 0;
     if (this.criteria.nameQuery) {
-      i++;
-      const h = ((a = e.metadata.name) == null ? void 0 : a.toLowerCase()) || "";
-      if (h.includes(this.criteria.nameQuery))
-        t.push("name"), r++, h === this.criteria.nameQuery ? s += 1 : h.startsWith(this.criteria.nameQuery) ? s += 0.8 : s += 0.5;
+      r++;
+      const u = ((a = e.metadata.name) == null ? void 0 : a.toLowerCase()) || "";
+      if (u.includes(this.criteria.nameQuery))
+        t.push("name"), i++, u === this.criteria.nameQuery ? s += 1 : u.startsWith(this.criteria.nameQuery) ? s += 0.8 : s += 0.5;
       else
         return null;
     }
     if (this.criteria.nip05Query) {
-      i++;
-      const h = ((c = e.metadata.nip05) == null ? void 0 : c.toLowerCase()) || "";
-      if (h.includes(this.criteria.nip05Query))
-        t.push("nip05"), r++, s += h === this.criteria.nip05Query ? 1 : 0.7;
+      r++;
+      const u = ((c = e.metadata.nip05) == null ? void 0 : c.toLowerCase()) || "";
+      if (u.includes(this.criteria.nip05Query))
+        t.push("nip05"), i++, s += u === this.criteria.nip05Query ? 1 : 0.7;
       else
         return null;
     }
     if (this.criteria.metadataFilters && this.criteria.metadataFilters.size > 0)
-      for (const [h, d] of this.criteria.metadataFilters) {
-        i++;
-        const u = e.metadata[h];
-        u !== void 0 && (d === void 0 ? (t.push(h), r++, s += 0.3) : typeof u == "string" && typeof d == "string" ? u.toLowerCase().includes(d.toLowerCase()) && (t.push(h), r++, s += u.toLowerCase() === d.toLowerCase() ? 0.8 : 0.5) : u === d && (t.push(h), r++, s += 0.8));
+      for (const [u, d] of this.criteria.metadataFilters) {
+        r++;
+        const h = e.metadata[u];
+        h !== void 0 && (d === void 0 ? (t.push(u), i++, s += 0.3) : typeof h == "string" && typeof d == "string" ? h.toLowerCase().includes(d.toLowerCase()) && (t.push(u), i++, s += h.toLowerCase() === d.toLowerCase() ? 0.8 : 0.5) : h === d && (t.push(u), i++, s += 0.8));
       }
     if (this.criteria.verifiedOnly) {
-      if (i++, e.metadata.nip05) {
+      if (r++, e.metadata.nip05) {
         if (await this.checkNip05Verification(e))
-          t.push("verified"), r++, s += 0.5;
+          t.push("verified"), i++, s += 0.5;
         else if (this.criteria.verifiedOnly)
           return null;
       } else if (this.criteria.verifiedOnly)
         return null;
     }
-    if (i === 0 && (s = 0.1, r = 1, i = 1), i > 0 && r === 0)
+    if (r === 0 && (s = 0.1, i = 1, r = 1), r > 0 && i === 0)
       return null;
-    const o = Math.min(1, s / Math.max(i, 1));
+    const o = Math.min(1, s / Math.max(r, 1));
     return {
       profile: e,
       matchedFields: t,
@@ -5023,10 +5859,10 @@ class It {
     var t;
     if (!e.metadata.nip05) return !1;
     try {
-      const [s, r] = e.metadata.nip05.split("@");
-      if (!s || !r) return !1;
-      const i = new AbortController(), o = setTimeout(() => i.abort(), 5e3), a = await fetch(`https://${r}/.well-known/nostr.json?name=${s}`, {
-        signal: i.signal
+      const [s, i] = e.metadata.nip05.split("@");
+      if (!s || !i) return !1;
+      const r = new AbortController(), o = setTimeout(() => r.abort(), 5e3), a = await fetch(`https://${i}/.well-known/nostr.json?name=${s}`, {
+        signal: r.signal
       });
       return clearTimeout(o), a.ok ? ((t = (await a.json()).names) == null ? void 0 : t[s]) === e.pubkey : !1;
     } catch (s) {
@@ -5034,12 +5870,12 @@ class It {
     }
   }
   finalizeResults(e, t) {
-    e.sort((r, i) => i.relevanceScore - r.relevanceScore);
+    e.sort((i, r) => r.relevanceScore - i.relevanceScore);
     const s = this.criteria.limit ? e.slice(0, this.criteria.limit) : e;
     this.config.debug && console.log(`ProfileDiscoveryBuilder: Discovery complete - found ${s.length} matches`), t(s);
   }
 }
-class _t {
+class At {
   constructor(e, t) {
     l(this, "config");
     l(this, "targetPubkey");
@@ -5067,12 +5903,12 @@ class _t {
       const e = await this.config.signingProvider.getPublicKey();
       this.config.debug && console.log("FollowBuilder: Adding follow for", this.targetPubkey.substring(0, 16) + "...");
       const t = await this.getCurrentFollows();
-      if (t.some((f) => f.pubkey === this.targetPubkey))
+      if (t.some((g) => g.pubkey === this.targetPubkey))
         return this.config.debug && console.log("FollowBuilder: Already following", this.targetPubkey.substring(0, 16) + "..."), {
           success: !1,
           error: "Already following this user"
         };
-      const r = {
+      const i = {
         pubkey: this.targetPubkey,
         relayUrl: this.relayUrl,
         petname: this.petnameValue
@@ -5080,31 +5916,31 @@ class _t {
         kind: 3,
         content: "",
         // Follow lists typically have empty content
-        tags: [...t, r].map((f) => {
-          const y = ["p", f.pubkey];
-          return f.relayUrl && y.push(f.relayUrl), f.petname && y.push(f.petname), y;
+        tags: [...t, i].map((g) => {
+          const p = ["p", g.pubkey];
+          return g.relayUrl && p.push(g.relayUrl), g.petname && p.push(g.petname), p;
         }),
         created_at: Math.floor(Date.now() / 1e3),
         pubkey: e
-      }, c = A.addEventId(a), h = await this.config.signingProvider.signEvent(a), d = {
+      }, c = k.addEventId(a), u = await this.config.signingProvider.signEvent(a), d = {
         ...c,
-        sig: h
-      }, g = (await Promise.allSettled(
-        this.config.relayManager.relayUrls.map(async (f) => {
+        sig: u
+      }, f = (await Promise.allSettled(
+        this.config.relayManager.relayUrls.map(async (g) => {
           try {
-            return await this.config.relayManager.sendToRelay(f, ["EVENT", d]), { success: !0, relay: f };
-          } catch (y) {
+            return await this.config.relayManager.sendToRelay(g, ["EVENT", d]), { success: !0, relay: g };
+          } catch (p) {
             return {
               success: !1,
-              relay: f,
-              error: y instanceof Error ? y.message : "Unknown error"
+              relay: g,
+              error: p instanceof Error ? p.message : "Unknown error"
             };
           }
         })
       )).filter(
-        (f) => f.status === "fulfilled" && f.value.success
-      ).map((f) => f.value.relay);
-      return g.length > 0 ? (this.config.debug && console.log(`FollowBuilder: Published follow list to ${g.length} relays`), {
+        (g) => g.status === "fulfilled" && g.value.success
+      ).map((g) => g.value.relay);
+      return f.length > 0 ? (this.config.debug && console.log(`FollowBuilder: Published follow list to ${f.length} relays`), {
         success: !0,
         eventId: d.id
       }) : {
@@ -5123,14 +5959,14 @@ class _t {
     try {
       const e = await this.config.signingProvider.getPublicKey(), t = this.config.nostr.query().kinds([3]).authors([e]).limit(1).execute(), s = t.current;
       if (s && s.length > 0) {
-        const i = this.parseFollowListEvent(s[0]);
-        return this.config.debug && console.log("FollowBuilder: Using cached follow list with", i.length, "follows"), i;
+        const r = this.parseFollowListEvent(s[0]);
+        return this.config.debug && console.log("FollowBuilder: Using cached follow list with", r.length, "follows"), r;
       }
-      this.config.debug && console.log("FollowBuilder: No cached follow list, querying relays..."), await this.config.nostr.sub().kinds([3]).authors([e]).limit(1).execute(), await new Promise((i) => setTimeout(i, 1e3));
-      const r = t.current;
-      if (r && r.length > 0) {
-        const i = this.parseFollowListEvent(r[0]);
-        return this.config.debug && console.log("FollowBuilder: Found follow list from relay with", i.length, "follows"), i;
+      this.config.debug && console.log("FollowBuilder: No cached follow list, querying relays..."), await this.config.nostr.sub().kinds([3]).authors([e]).limit(1).execute(), await new Promise((r) => setTimeout(r, 1e3));
+      const i = t.current;
+      if (i && i.length > 0) {
+        const r = this.parseFollowListEvent(i[0]);
+        return this.config.debug && console.log("FollowBuilder: Found follow list from relay with", r.length, "follows"), r;
       }
       return this.config.debug && console.log("FollowBuilder: No follow list found, using empty array"), [];
     } catch {
@@ -5142,10 +5978,10 @@ class _t {
     try {
       for (const s of e.tags)
         if (s[0] === "p" && s[1]) {
-          const r = {
+          const i = {
             pubkey: s[1]
           };
-          s[2] && (r.relayUrl = s[2]), s[3] && (r.petname = s[3]), t.push(r);
+          s[2] && (i.relayUrl = s[2]), s[3] && (i.petname = s[3]), t.push(i);
         }
       return t;
     } catch (s) {
@@ -5153,11 +5989,14 @@ class _t {
     }
   }
 }
-class At {
+class It {
   constructor(e) {
     l(this, "config");
     l(this, "toAdd", []);
     l(this, "toRemove", []);
+    l(this, "baseEventId");
+    // For optimistic locking
+    l(this, "baseCreatedAt");
     this.config = e;
   }
   /**
@@ -5173,7 +6012,7 @@ class At {
     return this.toRemove.push(...e), this;
   }
   /**
-   * Publish the batch follow list update
+   * Publish the batch follow list update with optimistic locking
    */
   async publish() {
     if (this.toAdd.length === 0 && this.toRemove.length === 0)
@@ -5181,95 +6020,125 @@ class At {
         success: !1,
         error: "No follow operations specified"
       };
-    try {
-      const e = await this.config.signingProvider.getPublicKey();
-      this.config.debug && console.log(`FollowBatchBuilder: Batch operation - adding ${this.toAdd.length}, removing ${this.toRemove.length}`);
-      let s = [...await this.getCurrentFollows()];
-      if (this.toRemove.length > 0 && (s = s.filter(
-        (g) => !this.toRemove.includes(g.pubkey)
-      ), this.config.debug && console.log(`FollowBatchBuilder: Removed ${this.toRemove.length} follows`)), this.toAdd.length > 0) {
-        const g = this.toAdd.filter((p) => !s.some((f) => f.pubkey === p)).map((p) => ({ pubkey: p }));
-        s.push(...g), this.config.debug && console.log(`FollowBatchBuilder: Added ${g.length} new follows (${this.toAdd.length - g.length} were duplicates)`);
+    const e = 3;
+    let t = "";
+    for (let s = 0; s < e; s++)
+      try {
+        const i = await this.config.signingProvider.getPublicKey();
+        this.config.debug && console.log(`FollowBatchBuilder: Batch operation attempt ${s + 1}/${e} - adding ${this.toAdd.length}, removing ${this.toRemove.length}`);
+        const { follows: r, eventId: o, createdAt: a } = await this.getCurrentFollowsWithMetadata();
+        if (this.baseEventId && this.baseEventId !== o) {
+          this.config.debug && console.log(`FollowBatchBuilder: Detected concurrent update (base: ${this.baseEventId}, current: ${o}), retrying...`), this.baseEventId = o, this.baseCreatedAt = a;
+          continue;
+        }
+        this.baseEventId = o, this.baseCreatedAt = a;
+        let c = [...r];
+        if (this.toRemove.length > 0 && (c = c.filter(
+          (y) => !this.toRemove.includes(y.pubkey)
+        ), this.config.debug && console.log(`FollowBatchBuilder: Removed ${this.toRemove.length} follows`)), this.toAdd.length > 0) {
+          const y = this.toAdd.filter((m) => !c.some((A) => A.pubkey === m)).map((m) => ({ pubkey: m }));
+          c.push(...y), this.config.debug && console.log(`FollowBatchBuilder: Added ${y.length} new follows (${this.toAdd.length - y.length} were duplicates)`);
+        }
+        const d = {
+          kind: 3,
+          content: "",
+          // Follow lists typically have empty content
+          tags: c.map((y) => {
+            const m = ["p", y.pubkey];
+            return y.relayUrl && m.push(y.relayUrl), y.petname && m.push(y.petname), m;
+          }),
+          created_at: Math.floor(Date.now() / 1e3),
+          pubkey: i
+        }, h = k.addEventId(d), f = await this.config.signingProvider.signEvent(d), b = {
+          ...h,
+          sig: f
+        }, p = (await Promise.allSettled(
+          this.config.relayManager.relayUrls.map(async (y) => {
+            try {
+              return await this.config.relayManager.sendToRelay(y, ["EVENT", b]), { success: !0, relay: y };
+            } catch (m) {
+              return {
+                success: !1,
+                relay: y,
+                error: m instanceof Error ? m.message : "Unknown error"
+              };
+            }
+          })
+        )).filter(
+          (y) => y.status === "fulfilled" && y.value.success
+        ).map((y) => y.value.relay);
+        if (p.length > 0)
+          return this.config.debug && (console.log(`FollowBatchBuilder: Published batch update to ${p.length} relays on attempt ${s + 1}`), console.log(`FollowBatchBuilder: Final follow list has ${c.length} follows`), console.log("FollowBatchBuilder: Event will be received via subscription and cached properly")), {
+            success: !0,
+            eventId: b.id
+          };
+        if (t = "Failed to publish to any relay", s === e - 1)
+          return {
+            success: !1,
+            error: t
+          };
+      } catch (i) {
+        if (t = i instanceof Error ? i.message : "Failed to publish batch update", this.config.debug && console.warn(`FollowBatchBuilder: Attempt ${s + 1} failed:`, t), s === e - 1)
+          return {
+            success: !1,
+            error: t
+          };
+        await new Promise((r) => setTimeout(r, 100 * (s + 1)));
       }
-      const i = {
-        kind: 3,
-        content: "",
-        // Follow lists typically have empty content
-        tags: s.map((g) => {
-          const p = ["p", g.pubkey];
-          return g.relayUrl && p.push(g.relayUrl), g.petname && p.push(g.petname), p;
-        }),
-        created_at: Math.floor(Date.now() / 1e3),
-        pubkey: e
-      }, o = A.addEventId(i), a = await this.config.signingProvider.signEvent(i), c = {
-        ...o,
-        sig: a
-      }, d = (await Promise.allSettled(
-        this.config.relayManager.relayUrls.map(async (g) => {
-          try {
-            return await this.config.relayManager.sendToRelay(g, ["EVENT", c]), { success: !0, relay: g };
-          } catch (p) {
-            return {
-              success: !1,
-              relay: g,
-              error: p instanceof Error ? p.message : "Unknown error"
-            };
-          }
-        })
-      )).filter(
-        (g) => g.status === "fulfilled" && g.value.success
-      ).map((g) => g.value.relay);
-      return d.length > 0 ? (this.config.debug && (console.log(`FollowBatchBuilder: Published batch update to ${d.length} relays`), console.log(`FollowBatchBuilder: Final follow list has ${s.length} follows`), console.log("FollowBatchBuilder: Event will be received via subscription and cached properly")), {
-        success: !0,
-        eventId: c.id
-      }) : {
-        success: !1,
-        error: "Failed to publish to any relay"
-      };
-    } catch (e) {
-      return {
-        success: !1,
-        error: e instanceof Error ? e.message : "Failed to publish batch update"
-      };
-    }
+    return {
+      success: !1,
+      error: t || "Max retries exceeded"
+    };
   }
   // Private helper methods
-  async getCurrentFollows() {
+  async getCurrentFollowsWithMetadata() {
     try {
       const e = await this.config.signingProvider.getPublicKey(), t = this.config.nostr.query().kinds([3]).authors([e]).limit(1).execute(), s = t.current;
       if (this.config.debug && (console.log("FollowBatchBuilder: Cache query returned", s.length, "events"), s.length > 0)) {
-        const i = s[0];
+        const r = s[0];
         console.log("FollowBatchBuilder: Latest cached event:", {
-          id: i == null ? void 0 : i.id,
-          created_at: i == null ? void 0 : i.created_at,
-          tags: i == null ? void 0 : i.tags.filter((o) => o[0] === "p")
+          id: r == null ? void 0 : r.id,
+          created_at: r == null ? void 0 : r.created_at,
+          tags: r == null ? void 0 : r.tags.filter((o) => o[0] === "p")
         });
       }
       if (s.length > 0) {
-        const i = s[0];
-        if (i && this.config.debug && console.log("FollowBatchBuilder: Using cached follow list with", i.tags.filter((o) => o[0] === "p").length, "follows"), i)
-          return this.parseFollowListEvent(i);
+        const r = s[0];
+        if (r && this.config.debug && console.log("FollowBatchBuilder: Using cached follow list with", r.tags.filter((o) => o[0] === "p").length, "follows"), r)
+          return {
+            follows: this.parseFollowListEvent(r),
+            eventId: r.id,
+            createdAt: r.created_at
+          };
       }
-      this.config.debug && console.log("FollowBatchBuilder: No cached follow list found, querying relays..."), await this.config.nostr.sub().kinds([3]).authors([e]).limit(1).execute(), await new Promise((i) => setTimeout(i, 1e3));
-      const r = t.current;
-      if (r && r.length > 0) {
-        const i = this.parseFollowListEvent(r[0]);
-        return this.config.debug && console.log("FollowBatchBuilder: Found follow list from relay with", i.length, "follows"), i;
+      this.config.debug && console.log("FollowBatchBuilder: No cached follow list found, querying relays..."), await this.config.nostr.sub().kinds([3]).authors([e]).limit(1).execute(), await new Promise((r) => setTimeout(r, 1e3));
+      const i = t.current;
+      if (i && i.length > 0) {
+        const r = i[0], o = this.parseFollowListEvent(r);
+        return this.config.debug && console.log("FollowBatchBuilder: Found follow list from relay with", o.length, "follows"), {
+          follows: o,
+          eventId: r.id,
+          createdAt: r.created_at
+        };
       }
-      return this.config.debug && console.log("FollowBatchBuilder: No follow list found on relays, using empty array"), [];
+      return this.config.debug && console.log("FollowBatchBuilder: No follow list found on relays, using empty array"), { follows: [] };
     } catch (e) {
-      return this.config.debug && console.error("FollowBatchBuilder: Error getting current follows:", e), [];
+      return this.config.debug && console.error("FollowBatchBuilder: Error getting current follows:", e), { follows: [] };
     }
+  }
+  async getCurrentFollows() {
+    const { follows: e } = await this.getCurrentFollowsWithMetadata();
+    return e;
   }
   parseFollowListEvent(e) {
     const t = [];
     try {
       for (const s of e.tags)
         if (s[0] === "p" && s[1]) {
-          const r = {
+          const i = {
             pubkey: s[1]
           };
-          s[2] && (r.relayUrl = s[2]), s[3] && (r.petname = s[3]), t.push(r);
+          s[2] && (i.relayUrl = s[2]), s[3] && (i.petname = s[3]), t.push(i);
         }
       return t;
     } catch (s) {
@@ -5277,13 +6146,13 @@ class At {
     }
   }
 }
-class Ns {
+class Ds {
   // Frontend expects this
   constructor(e) {
     l(this, "baseStore");
     l(this, "count");
     l(this, "follows");
-    this.baseStore = e, this.count = new Pt(e), this.follows = e;
+    this.baseStore = e, this.count = new kt(e), this.follows = e;
   }
   // Delegate to base store (for direct usage)
   subscribe(e, t) {
@@ -5293,15 +6162,15 @@ class Ns {
     return this.baseStore.current;
   }
 }
-class Pt {
+class kt {
   constructor(e) {
     l(this, "sourceStore");
     l(this, "_count", 0);
     l(this, "subscribers", /* @__PURE__ */ new Set());
     var t;
     this.sourceStore = e, this._count = ((t = e.current) == null ? void 0 : t.length) || 0, e.subscribe((s) => {
-      const r = (s == null ? void 0 : s.length) || 0;
-      r !== this._count && (this._count = r, this.notifySubscribers());
+      const i = (s == null ? void 0 : s.length) || 0;
+      i !== this._count && (this._count = i, this.notifySubscribers());
     });
   }
   subscribe(e) {
@@ -5341,7 +6210,7 @@ class Mt {
       this.config.debug && console.warn("Failed to start follow list subscription:", s);
     });
     const t = this.config.nostr.query().kinds([3]).authors([e]).limit(1).execute().map((s) => this.parseFollowListEvents(s));
-    return new Ns(t);
+    return new Ds(t);
   }
   /**
    * Get followers for any pubkey - WHO FOLLOWS THIS USER
@@ -5352,14 +6221,14 @@ class Mt {
       this.config.debug && console.warn("Failed to start followers subscription:", s);
     });
     const t = this.config.nostr.query().kinds([3]).tags("p", [e]).limit(100).execute().map((s) => {
-      const r = /* @__PURE__ */ new Set();
-      return s.forEach((i) => {
-        i.kind === 3 && i.tags.some(
+      const i = /* @__PURE__ */ new Set();
+      return s.forEach((r) => {
+        r.kind === 3 && r.tags.some(
           (a) => a[0] === "p" && a[1] === e
-        ) && r.add(i.pubkey);
-      }), Array.from(r);
+        ) && i.add(r.pubkey);
+      }), Array.from(i);
     });
-    return new Pt(t);
+    return new kt(t);
   }
   /**
    * Phase 4: Add a user to follow list
@@ -5368,7 +6237,7 @@ class Mt {
   add(e) {
     if (!this.config.signingProvider)
       throw new Error("Cannot add follow: No signing provider available. Initialize signing first.");
-    return new _t({
+    return new At({
       relayManager: this.config.relayManager,
       signingProvider: this.config.signingProvider,
       debug: this.config.debug ?? !1,
@@ -5385,7 +6254,7 @@ class Mt {
       const t = await this.config.signingProvider.getPublicKey();
       this.config.debug && console.log("FollowsModule: Removing follow for", e.substring(0, 16) + "...");
       const s = await this.getCurrentFollows();
-      if (!s.some((f) => f.pubkey === e))
+      if (!s.some((g) => g.pubkey === e))
         return this.config.debug && console.log("FollowsModule: Not following", e.substring(0, 16) + "..."), {
           success: !1,
           error: "Not following this user"
@@ -5394,31 +6263,31 @@ class Mt {
         kind: 3,
         content: "",
         // Follow lists typically have empty content
-        tags: s.filter((f) => f.pubkey !== e).map((f) => {
-          const y = ["p", f.pubkey];
-          return f.relayUrl && y.push(f.relayUrl), f.petname && y.push(f.petname), y;
+        tags: s.filter((g) => g.pubkey !== e).map((g) => {
+          const p = ["p", g.pubkey];
+          return g.relayUrl && p.push(g.relayUrl), g.petname && p.push(g.petname), p;
         }),
         created_at: Math.floor(Date.now() / 1e3),
         pubkey: t
-      }, c = A.addEventId(a), h = await this.config.signingProvider.signEvent(a), d = {
+      }, c = k.addEventId(a), u = await this.config.signingProvider.signEvent(a), d = {
         ...c,
-        sig: h
-      }, g = (await Promise.allSettled(
-        this.config.relayManager.relayUrls.map(async (f) => {
+        sig: u
+      }, f = (await Promise.allSettled(
+        this.config.relayManager.relayUrls.map(async (g) => {
           try {
-            return await this.config.relayManager.sendToRelay(f, ["EVENT", d]), { success: !0, relay: f };
-          } catch (y) {
+            return await this.config.relayManager.sendToRelay(g, ["EVENT", d]), { success: !0, relay: g };
+          } catch (p) {
             return {
               success: !1,
-              relay: f,
-              error: y instanceof Error ? y.message : "Unknown error"
+              relay: g,
+              error: p instanceof Error ? p.message : "Unknown error"
             };
           }
         })
       )).filter(
-        (f) => f.status === "fulfilled" && f.value.success
-      ).map((f) => f.value.relay);
-      return g.length > 0 ? (this.config.debug && console.log(`FollowsModule: Published updated follow list to ${g.length} relays`), {
+        (g) => g.status === "fulfilled" && g.value.success
+      ).map((g) => g.value.relay);
+      return f.length > 0 ? (this.config.debug && console.log(`FollowsModule: Published updated follow list to ${f.length} relays`), {
         success: !0,
         eventId: d.id
       }) : {
@@ -5439,7 +6308,7 @@ class Mt {
   batch() {
     if (!this.config.signingProvider)
       throw new Error("Cannot batch follow operations: No signing provider available. Initialize signing first.");
-    return new At({
+    return new It({
       subscriptionManager: this.config.subscriptionManager,
       relayManager: this.config.relayManager,
       signingProvider: this.config.signingProvider,
@@ -5483,14 +6352,14 @@ class Mt {
     try {
       const e = await this.config.signingProvider.getPublicKey(), t = this.config.nostr.query().kinds([3]).authors([e]).limit(1).execute(), s = t.current;
       if (s && s.length > 0) {
-        const i = this.parseFollowListEvent(s[0]);
-        return this.config.debug && console.log("FollowsModule: Using cached follow list with", i.length, "follows"), i;
+        const r = this.parseFollowListEvent(s[0]);
+        return this.config.debug && console.log("FollowsModule: Using cached follow list with", r.length, "follows"), r;
       }
-      this.config.debug && console.log("FollowsModule: No cached follow list found, querying relays..."), await this.config.nostr.sub().kinds([3]).authors([e]).limit(1).execute(), await new Promise((i) => setTimeout(i, 1e3));
-      const r = t.current;
-      if (r && r.length > 0) {
-        const i = this.parseFollowListEvent(r[0]);
-        return this.config.debug && console.log("FollowsModule: Found follow list from relay with", i.length, "follows"), i;
+      this.config.debug && console.log("FollowsModule: No cached follow list found, querying relays..."), await this.config.nostr.sub().kinds([3]).authors([e]).limit(1).execute(), await new Promise((r) => setTimeout(r, 1e3));
+      const i = t.current;
+      if (i && i.length > 0) {
+        const r = this.parseFollowListEvent(i[0]);
+        return this.config.debug && console.log("FollowsModule: Found follow list from relay with", r.length, "follows"), r;
       }
       return this.config.debug && console.log("FollowsModule: No follow list found on relays, using empty array"), [];
     } catch (e) {
@@ -5502,10 +6371,10 @@ class Mt {
     try {
       for (const s of e.tags)
         if (s[0] === "p" && s[1]) {
-          const r = {
+          const i = {
             pubkey: s[1]
           };
-          s[2] && (r.relayUrl = s[2]), s[3] && (r.petname = s[3]), t.push(r);
+          s[2] && (i.relayUrl = s[2]), s[3] && (i.petname = s[3]), t.push(i);
         }
       return t;
     } catch (s) {
@@ -5513,7 +6382,7 @@ class Mt {
     }
   }
 }
-class kt {
+class Pt {
   constructor(e) {
     l(this, "config");
     l(this, "_follows");
@@ -5548,17 +6417,17 @@ class kt {
     if (s.kind !== 0 || s.pubkey !== t)
       return null;
     try {
-      const r = JSON.parse(s.content);
+      const i = JSON.parse(s.content);
       return {
         pubkey: s.pubkey,
-        metadata: r,
+        metadata: i,
         lastUpdated: s.created_at,
         eventId: s.id,
         isOwn: !1
         // Will be determined by caller if needed
       };
-    } catch (r) {
-      return this.config.debug && console.warn(`Failed to parse profile event for ${t}:`, r), null;
+    } catch (i) {
+      return this.config.debug && console.warn(`Failed to parse profile event for ${t}:`, i), null;
     }
   }
   /**
@@ -5568,7 +6437,7 @@ class kt {
   edit() {
     if (!this.config.signingProvider)
       throw new Error("Cannot edit profile: No signing provider available. Initialize signing first.");
-    return new vt({
+    return new Et({
       relayManager: this.config.relayManager,
       signingProvider: this.config.signingProvider,
       debug: this.config.debug,
@@ -5610,7 +6479,7 @@ class kt {
    * Creates a ProfileDiscoveryBuilder for profile search operations
    */
   discover() {
-    return new It({
+    return new _t({
       subscriptionManager: this.config.subscriptionManager,
       debug: this.config.debug
     });
@@ -5628,7 +6497,7 @@ class kt {
     this._follows && await this._follows.close();
   }
 }
-class tr {
+class ni {
   constructor(e = {}) {
     l(this, "relayManager");
     l(this, "subscriptionManager");
@@ -5657,15 +6526,15 @@ class tr {
       signingProvider: e.signingProvider
     }, this.relayManager = new es(this.config.relays, {
       debug: this.config.debug
-    }), this.subscriptionManager = new Ps(this.relayManager), this.events = new ss(this), e.signingProvider ? (this.signingProvider = e.signingProvider, this.signingMethod = e.signingProvider.constructor.name.includes("Extension") ? "extension" : "temporary", this.cache = new Ie("", {}), this._initializeCache().catch((t) => {
+    }), this.subscriptionManager = new Rs(this.relayManager), this.events = new ss(this), e.signingProvider ? (this.signingProvider = e.signingProvider, this.signingMethod = e.signingProvider.constructor.name.includes("Extension") ? "extension" : "temporary", this.cache = new _e("", {}), this._initializeCache().catch((t) => {
       this.config.debug && console.log("⚠️ Cache initialization with private key failed:", t);
-    }), this.config.debug && console.log("🎯 NostrUnchained initialized with PROVIDED signing provider - Everything ready!")) : (this.cache = new Ie("", {}), this.config.debug && console.log("🚨 NostrUnchained initialized WITHOUT signing provider - will auto-detect later")), this.dm = new wt({
+    }), this.config.debug && console.log("🎯 NostrUnchained initialized with PROVIDED signing provider - Everything ready!")) : (this.cache = new _e("", {}), this.config.debug && console.log("🚨 NostrUnchained initialized WITHOUT signing provider - will auto-detect later")), this.dm = new mt({
       subscriptionManager: this.subscriptionManager,
       relayManager: this.relayManager,
       signingProvider: this.signingProvider,
       debug: this.config.debug,
       parent: this
-    }), this.social = new _s({
+    }), this.social = new Ps({
       nostr: this,
       debug: this.config.debug
     }), this.config.debug && console.log("NostrUnchained initialized with relays:", this.config.relays);
@@ -5677,22 +6546,22 @@ class tr {
     if (this.signingProvider)
       try {
         const e = await this.signingProvider.getPrivateKeyForEncryption();
-        this.cache = new Ie(e, {});
+        this.cache = new _e(e, {});
         const t = await this.signingProvider.getPublicKey();
         this.universalDM = new Ss(this, t), this.config.debug && console.log("🎯 Universal Cache and Universal DM Module initialized");
       } catch {
-        this.cache = new Ie("", {}), this.config.debug && console.log("⚠️ Could not get private key for cache, using empty key (no gift wrap decryption)");
+        this.cache = new _e("", {}), this.config.debug && console.log("⚠️ Could not get private key for cache, using empty key (no gift wrap decryption)");
       }
   }
   /**
    * Get enhanced profile module (PERFECT DX - always works!)
    */
   get profile() {
-    return this._profile || (this._profile = new kt({
+    return this._profile || (this._profile = new Pt({
       relayManager: this.relayManager,
       subscriptionManager: this.subscriptionManager,
       signingProvider: this.signingProvider,
-      eventBuilder: new A(),
+      eventBuilder: new k(),
       cache: this.cache,
       debug: this.config.debug,
       // REQUIRED: Pass NostrUnchained instance for clean architecture
@@ -5741,7 +6610,7 @@ class tr {
         console.log("Relay connection stats:", e);
       }
     } catch (e) {
-      throw N.handleConnectionError("relays", e);
+      throw R.handleConnectionError("relays", e);
     }
   }
   /**
@@ -5766,8 +6635,8 @@ class tr {
         limit: 100
         // Get recent messages
       }], this.config.relays)).addListener({
-        onEvent: async (r) => {
-          this.config.debug && console.log(`🎁 Received gift wrap event: ${r.id.substring(0, 8)}...`);
+        onEvent: async (i) => {
+          this.config.debug && console.log(`🎁 Received gift wrap event: ${i.id.substring(0, 8)}...`);
         },
         onEose: () => {
           this.config.debug && console.log("🎁 Gift wrap initial sync completed");
@@ -5790,18 +6659,18 @@ class tr {
   async publishToRelays(e, t) {
     if (!this.signingProvider)
       throw new Error("No signing provider available. Call initializeSigning() first.");
-    const s = A.validateEvent(e);
+    const s = k.validateEvent(e);
     if (!s.valid)
       throw new Error(`Invalid event: ${s.errors.join(", ")}`);
-    const r = A.calculateEventId(e), i = {
+    const i = k.calculateEventId(e), r = {
       ...e,
-      id: r,
-      sig: await this.signingProvider.signEvent({ ...e, id: r })
-    }, o = await this.relayManager.publishToRelays(i, t), a = o.some((c) => c.success);
+      id: i,
+      sig: await this.signingProvider.signEvent({ ...e, id: i })
+    }, o = await this.relayManager.publishToRelays(r, t), a = o.some((c) => c.success);
     return {
       success: a,
-      eventId: a ? i.id : void 0,
-      event: a ? i : void 0,
+      eventId: a ? r.id : void 0,
+      event: a ? r : void 0,
       relayResults: o,
       timestamp: Date.now(),
       error: a ? void 0 : {
@@ -5817,19 +6686,19 @@ class tr {
   async publish(e) {
     if (!this.signingProvider)
       throw new Error("No signing provider available. Call initializeSigning() first.");
-    const t = A.validateEvent(e);
+    const t = k.validateEvent(e);
     if (!t.valid)
       throw new Error(`Invalid event: ${t.errors.join(", ")}`);
-    const s = A.calculateEventId(e), r = {
+    const s = k.calculateEventId(e), i = {
       ...e,
       id: s,
       sig: await this.signingProvider.signEvent({ ...e, id: s })
-    }, i = await this.relayManager.publishToAll(r), o = i.some((a) => a.success);
+    }, r = await this.relayManager.publishToAll(i), o = r.some((a) => a.success);
     return {
       success: o,
-      eventId: o ? r.id : void 0,
-      event: o ? r : void 0,
-      relayResults: i,
+      eventId: o ? i.id : void 0,
+      event: o ? i : void 0,
+      relayResults: r,
       timestamp: Date.now(),
       error: o ? void 0 : {
         message: "Failed to publish to any relay",
@@ -5874,13 +6743,13 @@ class tr {
    * Create a query builder for complex queries
    */
   query() {
-    return new ks(this.cache);
+    return new Ns(this.cache);
   }
   /**
    * Create a subscription builder
    */
   sub() {
-    return new Ts(this.cache, this.subscriptionManager);
+    return new Cs(this.cache, this.subscriptionManager);
   }
   /**
    * Get the Universal Event Cache for advanced usage
@@ -5926,45 +6795,45 @@ class tr {
     };
   }
 }
-const sr = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const oi = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   DMConversation: yt,
-  DMModule: wt,
+  DMModule: mt,
   DMRoom: bt,
-  EphemeralKeyManager: Pe,
+  EphemeralKeyManager: ke,
   GiftWrapCreator: Me,
-  GiftWrapProtocol: ie,
-  NIP44Crypto: _,
+  GiftWrapProtocol: re,
+  NIP44Crypto: I,
   SealCreator: pe,
   TimestampRandomizer: Ke
-}, Symbol.toStringTag, { value: "Module" })), rr = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+}, Symbol.toStringTag, { value: "Module" })), ai = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  FollowBatchBuilder: At,
-  FollowBuilder: _t,
+  FollowBatchBuilder: It,
+  FollowBuilder: At,
   FollowsModule: Mt,
   ProfileBatchBuilder: St,
-  ProfileBuilder: vt,
-  ProfileDiscoveryBuilder: It,
-  ProfileModule: kt
+  ProfileBuilder: Et,
+  ProfileDiscoveryBuilder: _t,
+  ProfileModule: Pt
 }, Symbol.toStringTag, { value: "Module" }));
 /*! scure-base - MIT License (c) 2022 Paul Miller (paulmillr.com) */
 function Tt(n) {
   return n instanceof Uint8Array || ArrayBuffer.isView(n) && n.constructor.name === "Uint8Array";
 }
-function Nt(n, e) {
+function Rt(n, e) {
   return Array.isArray(e) ? e.length === 0 ? !0 : n ? e.every((t) => typeof t == "string") : e.every((t) => Number.isSafeInteger(t)) : !1;
 }
-function Rs(n) {
+function Fs(n) {
   if (typeof n != "function")
     throw new Error("function expected");
   return !0;
 }
-function Ee(n, e) {
+function ve(n, e) {
   if (typeof e != "string")
     throw new Error(`${n}: string expected`);
   return !0;
 }
-function Rt(n) {
+function xt(n) {
   if (!Number.isSafeInteger(n))
     throw new Error(`invalid integer: ${n}`);
 }
@@ -5972,103 +6841,103 @@ function Ve(n) {
   if (!Array.isArray(n))
     throw new Error("array expected");
 }
-function Ct(n, e) {
-  if (!Nt(!0, e))
+function Nt(n, e) {
+  if (!Rt(!0, e))
     throw new Error(`${n}: array of strings expected`);
 }
-function Dt(n, e) {
-  if (!Nt(!1, e))
+function Ct(n, e) {
+  if (!Rt(!1, e))
     throw new Error(`${n}: array of numbers expected`);
 }
 // @__NO_SIDE_EFFECTS__
-function Cs(...n) {
-  const e = (i) => i, t = (i, o) => (a) => i(o(a)), s = n.map((i) => i.encode).reduceRight(t, e), r = n.map((i) => i.decode).reduce(t, e);
-  return { encode: s, decode: r };
+function Ls(...n) {
+  const e = (r) => r, t = (r, o) => (a) => r(o(a)), s = n.map((r) => r.encode).reduceRight(t, e), i = n.map((r) => r.decode).reduce(t, e);
+  return { encode: s, decode: i };
 }
 // @__NO_SIDE_EFFECTS__
-function Ds(n) {
+function Os(n) {
   const e = typeof n == "string" ? n.split("") : n, t = e.length;
-  Ct("alphabet", e);
-  const s = new Map(e.map((r, i) => [r, i]));
+  Nt("alphabet", e);
+  const s = new Map(e.map((i, r) => [i, r]));
   return {
-    encode: (r) => (Ve(r), r.map((i) => {
-      if (!Number.isSafeInteger(i) || i < 0 || i >= t)
-        throw new Error(`alphabet.encode: digit index outside alphabet "${i}". Allowed: ${n}`);
-      return e[i];
+    encode: (i) => (Ve(i), i.map((r) => {
+      if (!Number.isSafeInteger(r) || r < 0 || r >= t)
+        throw new Error(`alphabet.encode: digit index outside alphabet "${r}". Allowed: ${n}`);
+      return e[r];
     })),
-    decode: (r) => (Ve(r), r.map((i) => {
-      Ee("alphabet.decode", i);
-      const o = s.get(i);
+    decode: (i) => (Ve(i), i.map((r) => {
+      ve("alphabet.decode", r);
+      const o = s.get(r);
       if (o === void 0)
-        throw new Error(`Unknown letter: "${i}". Allowed: ${n}`);
+        throw new Error(`Unknown letter: "${r}". Allowed: ${n}`);
       return o;
     }))
   };
 }
 // @__NO_SIDE_EFFECTS__
-function xs(n = "") {
-  return Ee("join", n), {
-    encode: (e) => (Ct("join.decode", e), e.join(n)),
-    decode: (e) => (Ee("join.decode", e), e.split(n))
+function $s(n = "") {
+  return ve("join", n), {
+    encode: (e) => (Nt("join.decode", e), e.join(n)),
+    decode: (e) => (ve("join.decode", e), e.split(n))
   };
 }
-const xt = (n, e) => e === 0 ? n : xt(e, n % e), Ne = /* @__NO_SIDE_EFFECTS__ */ (n, e) => n + (e - xt(n, e)), ke = /* @__PURE__ */ (() => {
+const Dt = (n, e) => e === 0 ? n : Dt(e, n % e), Re = /* @__NO_SIDE_EFFECTS__ */ (n, e) => n + (e - Dt(n, e)), Pe = /* @__PURE__ */ (() => {
   let n = [];
   for (let e = 0; e < 40; e++)
     n.push(2 ** e);
   return n;
 })();
-function We(n, e, t, s) {
+function He(n, e, t, s) {
   if (Ve(n), e <= 0 || e > 32)
     throw new Error(`convertRadix2: wrong from=${e}`);
   if (t <= 0 || t > 32)
     throw new Error(`convertRadix2: wrong to=${t}`);
-  if (/* @__PURE__ */ Ne(e, t) > 32)
-    throw new Error(`convertRadix2: carry overflow from=${e} to=${t} carryBits=${/* @__PURE__ */ Ne(e, t)}`);
-  let r = 0, i = 0;
-  const o = ke[e], a = ke[t] - 1, c = [];
-  for (const h of n) {
-    if (Rt(h), h >= o)
-      throw new Error(`convertRadix2: invalid data word=${h} from=${e}`);
-    if (r = r << e | h, i + e > 32)
-      throw new Error(`convertRadix2: carry overflow pos=${i} from=${e}`);
-    for (i += e; i >= t; i -= t)
-      c.push((r >> i - t & a) >>> 0);
-    const d = ke[i];
+  if (/* @__PURE__ */ Re(e, t) > 32)
+    throw new Error(`convertRadix2: carry overflow from=${e} to=${t} carryBits=${/* @__PURE__ */ Re(e, t)}`);
+  let i = 0, r = 0;
+  const o = Pe[e], a = Pe[t] - 1, c = [];
+  for (const u of n) {
+    if (xt(u), u >= o)
+      throw new Error(`convertRadix2: invalid data word=${u} from=${e}`);
+    if (i = i << e | u, r + e > 32)
+      throw new Error(`convertRadix2: carry overflow pos=${r} from=${e}`);
+    for (r += e; r >= t; r -= t)
+      c.push((i >> r - t & a) >>> 0);
+    const d = Pe[r];
     if (d === void 0)
       throw new Error("invalid carry");
-    r &= d - 1;
+    i &= d - 1;
   }
-  if (r = r << t - i & a, !s && i >= e)
+  if (i = i << t - r & a, !s && r >= e)
     throw new Error("Excess padding");
-  if (!s && r > 0)
-    throw new Error(`Non-zero padding: ${r}`);
-  return s && i > 0 && c.push(r >>> 0), c;
+  if (!s && i > 0)
+    throw new Error(`Non-zero padding: ${i}`);
+  return s && r > 0 && c.push(i >>> 0), c;
 }
 // @__NO_SIDE_EFFECTS__
-function Ls(n, e = !1) {
-  if (Rt(n), n <= 0 || n > 32)
+function Bs(n, e = !1) {
+  if (xt(n), n <= 0 || n > 32)
     throw new Error("radix2: bits should be in (0..32]");
-  if (/* @__PURE__ */ Ne(8, n) > 32 || /* @__PURE__ */ Ne(n, 8) > 32)
+  if (/* @__PURE__ */ Re(8, n) > 32 || /* @__PURE__ */ Re(n, 8) > 32)
     throw new Error("radix2: carry overflow");
   return {
     encode: (t) => {
       if (!Tt(t))
         throw new Error("radix2.encode input should be Uint8Array");
-      return We(Array.from(t), 8, n, !e);
+      return He(Array.from(t), 8, n, !e);
     },
-    decode: (t) => (Dt("radix2.decode", t), Uint8Array.from(We(t, n, 8, e)))
+    decode: (t) => (Ct("radix2.decode", t), Uint8Array.from(He(t, n, 8, e)))
   };
 }
 function at(n) {
-  return Rs(n), function(...e) {
+  return Fs(n), function(...e) {
     try {
       return n.apply(null, e);
     } catch {
     }
   };
 }
-const ze = /* @__PURE__ */ Cs(/* @__PURE__ */ Ds("qpzry9x8gf2tvdw0s3jn54khce6mua7l"), /* @__PURE__ */ xs("")), ct = [996825010, 642813549, 513874426, 1027748829, 705979059];
+const We = /* @__PURE__ */ Ls(/* @__PURE__ */ Os("qpzry9x8gf2tvdw0s3jn54khce6mua7l"), /* @__PURE__ */ $s("")), ct = [996825010, 642813549, 513874426, 1027748829, 705979059];
 function fe(n) {
   const e = n >> 25;
   let t = (n & 33554431) << 5;
@@ -6078,76 +6947,76 @@ function fe(n) {
 }
 function lt(n, e, t = 1) {
   const s = n.length;
-  let r = 1;
-  for (let i = 0; i < s; i++) {
-    const o = n.charCodeAt(i);
+  let i = 1;
+  for (let r = 0; r < s; r++) {
+    const o = n.charCodeAt(r);
     if (o < 33 || o > 126)
       throw new Error(`Invalid prefix (${n})`);
-    r = fe(r) ^ o >> 5;
+    i = fe(i) ^ o >> 5;
   }
-  r = fe(r);
-  for (let i = 0; i < s; i++)
-    r = fe(r) ^ n.charCodeAt(i) & 31;
-  for (let i of e)
-    r = fe(r) ^ i;
-  for (let i = 0; i < 6; i++)
-    r = fe(r);
-  return r ^= t, ze.encode(We([r % ke[30]], 30, 5, !1));
+  i = fe(i);
+  for (let r = 0; r < s; r++)
+    i = fe(i) ^ n.charCodeAt(r) & 31;
+  for (let r of e)
+    i = fe(i) ^ r;
+  for (let r = 0; r < 6; r++)
+    i = fe(i);
+  return i ^= t, We.encode(He([i % Pe[30]], 30, 5, !1));
 }
 // @__NO_SIDE_EFFECTS__
-function Fs(n) {
-  const e = n === "bech32" ? 1 : 734539939, t = /* @__PURE__ */ Ls(5), s = t.decode, r = t.encode, i = at(s);
-  function o(u, g, p = 90) {
-    Ee("bech32.encode prefix", u), Tt(g) && (g = Array.from(g)), Dt("bech32.encode", g);
-    const f = u.length;
-    if (f === 0)
-      throw new TypeError(`Invalid prefix length ${f}`);
-    const y = f + 7 + g.length;
-    if (p !== !1 && y > p)
-      throw new TypeError(`Length ${y} exceeds limit ${p}`);
-    const S = u.toLowerCase(), m = lt(S, g, e);
-    return `${S}1${ze.encode(g)}${m}`;
+function Us(n) {
+  const e = n === "bech32" ? 1 : 734539939, t = /* @__PURE__ */ Bs(5), s = t.decode, i = t.encode, r = at(s);
+  function o(h, f, b = 90) {
+    ve("bech32.encode prefix", h), Tt(f) && (f = Array.from(f)), Ct("bech32.encode", f);
+    const g = h.length;
+    if (g === 0)
+      throw new TypeError(`Invalid prefix length ${g}`);
+    const p = g + 7 + f.length;
+    if (b !== !1 && p > b)
+      throw new TypeError(`Length ${p} exceeds limit ${b}`);
+    const S = h.toLowerCase(), y = lt(S, f, e);
+    return `${S}1${We.encode(f)}${y}`;
   }
-  function a(u, g = 90) {
-    Ee("bech32.decode input", u);
-    const p = u.length;
-    if (p < 8 || g !== !1 && p > g)
-      throw new TypeError(`invalid string length: ${p} (${u}). Expected (8..${g})`);
-    const f = u.toLowerCase();
-    if (u !== f && u !== u.toUpperCase())
+  function a(h, f = 90) {
+    ve("bech32.decode input", h);
+    const b = h.length;
+    if (b < 8 || f !== !1 && b > f)
+      throw new TypeError(`invalid string length: ${b} (${h}). Expected (8..${f})`);
+    const g = h.toLowerCase();
+    if (h !== g && h !== h.toUpperCase())
       throw new Error("String must be lowercase or uppercase");
-    const y = f.lastIndexOf("1");
-    if (y === 0 || y === -1)
+    const p = g.lastIndexOf("1");
+    if (p === 0 || p === -1)
       throw new Error('Letter "1" must be present between prefix and data only');
-    const S = f.slice(0, y), m = f.slice(y + 1);
-    if (m.length < 6)
+    const S = g.slice(0, p), y = g.slice(p + 1);
+    if (y.length < 6)
       throw new Error("Data must be at least 6 characters long");
-    const v = ze.decode(m).slice(0, -6), P = lt(S, v, e);
-    if (!m.endsWith(P))
-      throw new Error(`Invalid checksum in ${u}: expected "${P}"`);
-    return { prefix: S, words: v };
+    const m = We.decode(y).slice(0, -6), A = lt(S, m, e);
+    if (!y.endsWith(A))
+      throw new Error(`Invalid checksum in ${h}: expected "${A}"`);
+    return { prefix: S, words: m };
   }
   const c = at(a);
-  function h(u) {
-    const { prefix: g, words: p } = a(u, !1);
-    return { prefix: g, words: p, bytes: s(p) };
+  function u(h) {
+    const { prefix: f, words: b } = a(h, !1);
+    return { prefix: f, words: b, bytes: s(b) };
   }
-  function d(u, g) {
-    return o(u, r(g));
+  function d(h, f) {
+    return o(h, i(f));
   }
   return {
     encode: o,
     decode: a,
     encodeFromBytes: d,
-    decodeToBytes: h,
+    decodeToBytes: u,
     decodeUnsafe: c,
     fromWords: s,
-    fromWordsUnsafe: i,
-    toWords: r
+    fromWordsUnsafe: r,
+    toWords: i
   };
 }
-const Re = /* @__PURE__ */ Fs("bech32"), Lt = 5e3, Ce = new TextEncoder(), _e = new TextDecoder();
-function Os(n) {
+const xe = /* @__PURE__ */ Us("bech32"), Ft = 5e3, Ne = new TextEncoder(), Ae = new TextDecoder();
+function Ks(n) {
   const e = new Uint8Array(4);
   return e[0] = n >> 24 & 255, e[1] = n >> 16 & 255, e[2] = n >> 8 & 255, e[3] = n & 255, e;
 }
@@ -6155,75 +7024,75 @@ function $e(n) {
   const e = {};
   let t = n;
   for (; t.length > 0 && !(t.length < 2); ) {
-    const s = t[0], r = t[1];
-    if (t.length < 2 + r) break;
-    const i = t.slice(2, 2 + r);
-    t = t.slice(2 + r), e[s] = e[s] || [], e[s].push(i);
+    const s = t[0], i = t[1];
+    if (t.length < 2 + i) break;
+    const r = t.slice(2, 2 + i);
+    t = t.slice(2 + i), e[s] = e[s] || [], e[s].push(r);
   }
   return e;
 }
-function Ye(n) {
+function qe(n) {
   const e = [];
   return Object.entries(n).reverse().forEach(([t, s]) => {
-    s.forEach((r) => {
-      const i = new Uint8Array(r.length + 2);
-      i.set([parseInt(t)], 0), i.set([r.length], 1), i.set(r, 2), e.push(i);
+    s.forEach((i) => {
+      const r = new Uint8Array(i.length + 2);
+      r.set([parseInt(t)], 0), r.set([i.length], 1), r.set(i, 2), e.push(r);
     });
-  }), Wt(...e);
+  }), Ht(...e);
 }
-function De(n, e) {
-  const t = Re.toWords(e);
-  return Re.encode(n, t, Lt);
+function Ce(n, e) {
+  const t = xe.toWords(e);
+  return xe.encode(n, t, Ft);
 }
-function qe(n, e) {
-  return De(n, e);
+function Ye(n, e) {
+  return Ce(n, e);
 }
 function Xe(n) {
-  var r, i, o, a, c, h, d;
-  const { prefix: e, words: t } = Re.decode(n, Lt), s = new Uint8Array(Re.fromWords(t));
+  var i, r, o, a, c, u, d;
+  const { prefix: e, words: t } = xe.decode(n, Ft), s = new Uint8Array(xe.fromWords(t));
   switch (e) {
     case "nprofile": {
-      const u = $e(s);
-      if (!((r = u[0]) != null && r[0])) throw new Error("missing TLV 0 for nprofile");
-      if (u[0][0].length !== 32) throw new Error("TLV 0 should be 32 bytes");
+      const h = $e(s);
+      if (!((i = h[0]) != null && i[0])) throw new Error("missing TLV 0 for nprofile");
+      if (h[0][0].length !== 32) throw new Error("TLV 0 should be 32 bytes");
       return {
         type: "nprofile",
         data: {
-          pubkey: Y(u[0][0]),
-          relays: u[1] ? u[1].map((g) => _e.decode(g)) : []
+          pubkey: q(h[0][0]),
+          relays: h[1] ? h[1].map((f) => Ae.decode(f)) : []
         }
       };
     }
     case "nevent": {
-      const u = $e(s);
-      if (!((i = u[0]) != null && i[0])) throw new Error("missing TLV 0 for nevent");
-      if (u[0][0].length !== 32) throw new Error("TLV 0 should be 32 bytes");
-      if (u[2] && u[2][0] && u[2][0].length !== 32) throw new Error("TLV 2 should be 32 bytes");
-      if (u[3] && u[3][0] && u[3][0].length !== 4) throw new Error("TLV 3 should be 4 bytes");
+      const h = $e(s);
+      if (!((r = h[0]) != null && r[0])) throw new Error("missing TLV 0 for nevent");
+      if (h[0][0].length !== 32) throw new Error("TLV 0 should be 32 bytes");
+      if (h[2] && h[2][0] && h[2][0].length !== 32) throw new Error("TLV 2 should be 32 bytes");
+      if (h[3] && h[3][0] && h[3][0].length !== 4) throw new Error("TLV 3 should be 4 bytes");
       return {
         type: "nevent",
         data: {
-          id: Y(u[0][0]),
-          relays: u[1] ? u[1].map((g) => _e.decode(g)) : [],
-          author: (o = u[2]) != null && o[0] ? Y(u[2][0]) : void 0,
-          kind: (a = u[3]) != null && a[0] ? parseInt(Y(u[3][0]), 16) : void 0
+          id: q(h[0][0]),
+          relays: h[1] ? h[1].map((f) => Ae.decode(f)) : [],
+          author: (o = h[2]) != null && o[0] ? q(h[2][0]) : void 0,
+          kind: (a = h[3]) != null && a[0] ? parseInt(q(h[3][0]), 16) : void 0
         }
       };
     }
     case "naddr": {
-      const u = $e(s);
-      if (!((c = u[0]) != null && c[0])) throw new Error("missing TLV 0 for naddr");
-      if (!((h = u[2]) != null && h[0])) throw new Error("missing TLV 2 for naddr");
-      if (u[2][0].length !== 32) throw new Error("TLV 2 should be 32 bytes");
-      if (!((d = u[3]) != null && d[0])) throw new Error("missing TLV 3 for naddr");
-      if (u[3][0].length !== 4) throw new Error("TLV 3 should be 4 bytes");
+      const h = $e(s);
+      if (!((c = h[0]) != null && c[0])) throw new Error("missing TLV 0 for naddr");
+      if (!((u = h[2]) != null && u[0])) throw new Error("missing TLV 2 for naddr");
+      if (h[2][0].length !== 32) throw new Error("TLV 2 should be 32 bytes");
+      if (!((d = h[3]) != null && d[0])) throw new Error("missing TLV 3 for naddr");
+      if (h[3][0].length !== 4) throw new Error("TLV 3 should be 4 bytes");
       return {
         type: "naddr",
         data: {
-          identifier: _e.decode(u[0][0]),
-          pubkey: Y(u[2][0]),
-          kind: parseInt(Y(u[3][0]), 16),
-          relays: u[1] ? u[1].map((g) => _e.decode(g)) : []
+          identifier: Ae.decode(h[0][0]),
+          pubkey: q(h[2][0]),
+          kind: parseInt(q(h[3][0]), 16),
+          relays: h[1] ? h[1].map((f) => Ae.decode(f)) : []
         }
       };
     }
@@ -6231,68 +7100,68 @@ function Xe(n) {
       return { type: e, data: s };
     case "npub":
     case "note":
-      return { type: e, data: Y(s) };
+      return { type: e, data: q(s) };
     default:
       throw new Error(`Unknown prefix ${e}`);
   }
 }
-function $s(n) {
-  return qe("nsec", n);
-}
-function Us(n) {
-  return qe("npub", ae(n));
-}
-function Bs(n) {
-  return qe("note", ae(n));
-}
-function Ks(n) {
-  const e = Ye({
-    0: [ae(n.pubkey)],
-    1: (n.relays || []).map((t) => Ce.encode(t))
-  });
-  return De("nprofile", e);
-}
 function Vs(n) {
+  return Ye("nsec", n);
+}
+function Hs(n) {
+  return Ye("npub", ae(n));
+}
+function Ws(n) {
+  return Ye("note", ae(n));
+}
+function zs(n) {
+  const e = qe({
+    0: [ae(n.pubkey)],
+    1: (n.relays || []).map((t) => Ne.encode(t))
+  });
+  return Ce("nprofile", e);
+}
+function js(n) {
   let e;
-  n.kind !== void 0 && (e = Os(n.kind));
-  const t = Ye({
+  n.kind !== void 0 && (e = Ks(n.kind));
+  const t = qe({
     0: [ae(n.id)],
-    1: (n.relays || []).map((s) => Ce.encode(s)),
+    1: (n.relays || []).map((s) => Ne.encode(s)),
     2: n.author ? [ae(n.author)] : [],
     3: e ? [new Uint8Array(e)] : []
   });
-  return De("nevent", t);
+  return Ce("nevent", t);
 }
-function Ws(n) {
+function Gs(n) {
   const e = new ArrayBuffer(4);
   new DataView(e).setUint32(0, n.kind, !1);
-  const t = Ye({
-    0: [Ce.encode(n.identifier)],
-    1: (n.relays || []).map((s) => Ce.encode(s)),
+  const t = qe({
+    0: [Ne.encode(n.identifier)],
+    1: (n.relays || []).map((s) => Ne.encode(s)),
     2: [ae(n.pubkey)],
     3: [new Uint8Array(e)]
   });
-  return De("naddr", t);
+  return Ce("naddr", t);
 }
-function ir(n) {
+function ci(n) {
   const e = n.startsWith("0x") ? n.slice(2) : n;
   if (!/^[0-9a-fA-F]{64}$/.test(e))
     throw new Error("Invalid hex pubkey: must be 64 hex characters");
-  return Us(e);
+  return Hs(e);
 }
-function nr(n) {
+function li(n) {
   const e = n.startsWith("0x") ? n.slice(2) : n;
   if (!/^[0-9a-fA-F]{64}$/.test(e))
     throw new Error("Invalid hex privkey: must be 64 hex characters");
-  return $s(ae(e));
+  return Vs(ae(e));
 }
-function or(n) {
+function ui(n) {
   const e = n.startsWith("0x") ? n.slice(2) : n;
   if (!/^[0-9a-fA-F]{64}$/.test(e))
     throw new Error("Invalid hex event id: must be 64 hex characters");
-  return Bs(e);
+  return Ws(e);
 }
-function zs(n) {
+function qs(n) {
   if (!n.startsWith("npub1"))
     throw new Error('Invalid npub: must start with "npub1"');
   const e = Xe(n);
@@ -6300,15 +7169,15 @@ function zs(n) {
     throw new Error('Invalid npub: decoded type is not "npub"');
   return e.data;
 }
-function Gs(n) {
+function Ys(n) {
   if (!n.startsWith("nsec1"))
     throw new Error('Invalid nsec: must start with "nsec1"');
   const e = Xe(n);
   if (e.type !== "nsec")
     throw new Error('Invalid nsec: decoded type is not "nsec"');
-  return Y(e.data);
+  return q(e.data);
 }
-function Hs(n) {
+function Xs(n) {
   if (!n.startsWith("note1"))
     throw new Error('Invalid note: must start with "note1"');
   const e = Xe(n);
@@ -6316,116 +7185,116 @@ function Hs(n) {
     throw new Error('Invalid note: decoded type is not "note"');
   return e.data;
 }
-function ar(n, e) {
+function hi(n, e) {
   const t = n.startsWith("0x") ? n.slice(2) : n;
   if (!/^[0-9a-fA-F]{64}$/.test(t))
     throw new Error("Invalid hex pubkey: must be 64 hex characters");
-  return Ks({ pubkey: t, relays: e });
+  return zs({ pubkey: t, relays: e });
 }
-function cr(n, e, t, s) {
-  const r = n.startsWith("0x") ? n.slice(2) : n;
-  if (!/^[0-9a-fA-F]{64}$/.test(r))
+function di(n, e, t, s) {
+  const i = n.startsWith("0x") ? n.slice(2) : n;
+  if (!/^[0-9a-fA-F]{64}$/.test(i))
     throw new Error("Invalid hex event id: must be 64 hex characters");
-  let i;
-  if (t && (i = t.startsWith("0x") ? t.slice(2) : t, !/^[0-9a-fA-F]{64}$/.test(i)))
+  let r;
+  if (t && (r = t.startsWith("0x") ? t.slice(2) : t, !/^[0-9a-fA-F]{64}$/.test(r)))
     throw new Error("Invalid hex author pubkey: must be 64 hex characters");
-  return Vs({
-    id: r,
+  return js({
+    id: i,
     relays: e,
-    author: i,
+    author: r,
     kind: s
   });
 }
-function lr(n, e, t, s) {
-  const r = e.startsWith("0x") ? e.slice(2) : e;
-  if (!/^[0-9a-fA-F]{64}$/.test(r))
+function gi(n, e, t, s) {
+  const i = e.startsWith("0x") ? e.slice(2) : e;
+  if (!/^[0-9a-fA-F]{64}$/.test(i))
     throw new Error("Invalid hex pubkey: must be 64 hex characters");
-  return Ws({
+  return Gs({
     identifier: n,
-    pubkey: r,
+    pubkey: i,
     kind: t,
     relays: s
   });
 }
-function ur(n) {
+function fi(n) {
   if (!n || typeof n != "string")
     return !1;
   const e = n.startsWith("0x") ? n.slice(2) : n;
   return /^[0-9a-fA-F]{64}$/.test(e);
 }
-function hr(n) {
+function pi(n) {
   if (!n || typeof n != "string" || !n.startsWith("npub1"))
     return !1;
   try {
-    return zs(n), !0;
+    return qs(n), !0;
   } catch {
     return !1;
   }
 }
-function dr(n) {
+function yi(n) {
   if (!n || typeof n != "string" || !n.startsWith("nsec1"))
     return !1;
   try {
-    return Gs(n), !0;
+    return Ys(n), !0;
   } catch {
     return !1;
   }
 }
-function gr(n) {
+function bi(n) {
   if (!n || typeof n != "string" || !n.startsWith("note1"))
     return !1;
   try {
-    return Hs(n), !0;
+    return Xs(n), !0;
   } catch {
     return !1;
   }
 }
-const fr = "0.1.0";
+const mi = "0.1.0";
 export {
   Jt as DEFAULT_RELAYS,
-  sr as DM,
+  oi as DM,
   Qe as EVENT_KINDS,
-  N as ErrorHandler,
-  A as EventBuilder,
+  R as ErrorHandler,
+  k as EventBuilder,
   ss as EventsModule,
   et as ExtensionSigner,
-  je as FeedStoreImpl,
-  Le as FluentEventBuilder,
-  He as LocalKeySigner,
-  tr as NostrUnchained,
-  rr as Profile,
-  ks as QueryBuilder,
-  qs as QuickSigner,
+  Ge as FeedStoreImpl,
+  Fe as FluentEventBuilder,
+  je as LocalKeySigner,
+  ni as NostrUnchained,
+  ai as Profile,
+  Ns as QueryBuilder,
+  Qs as QuickSigner,
   es as RelayManager,
   ts as SigningProviderFactory,
-  Ts as SubBuilder,
-  Ps as SubscriptionManager,
-  Xs as TemporarySigner,
-  fr as VERSION,
-  Js as createFeed,
-  er as createFeedFromFilter,
-  Qs as createFeedFromQuery,
-  lr as createNaddr,
-  cr as createNevent,
-  ar as createNprofile,
+  Cs as SubBuilder,
+  Rs as SubscriptionManager,
+  ei as TemporarySigner,
+  mi as VERSION,
+  si as createFeed,
+  ri as createFeedFromFilter,
+  ii as createFeedFromQuery,
+  gi as createNaddr,
+  di as createNevent,
+  hi as createNprofile,
   Xe as decode,
-  I as derived,
-  or as hexToNote,
-  ir as hexToNpub,
-  nr as hexToNsec,
-  ur as isValidHexKey,
-  gr as isValidNote,
-  hr as isValidNpub,
-  dr as isValidNsec,
-  Ws as naddrEncode,
-  Vs as neventEncode,
-  Bs as noteEncode,
-  Hs as noteToHex,
-  Ks as nprofileEncode,
-  Us as npubEncode,
-  zs as npubToHex,
-  $s as nsecEncode,
-  Gs as nsecToHex,
-  Zs as setDefaultSubscriptionManager,
-  te as writable
+  _ as derived,
+  ui as hexToNote,
+  ci as hexToNpub,
+  li as hexToNsec,
+  fi as isValidHexKey,
+  bi as isValidNote,
+  pi as isValidNpub,
+  yi as isValidNsec,
+  Gs as naddrEncode,
+  js as neventEncode,
+  Ws as noteEncode,
+  Xs as noteToHex,
+  zs as nprofileEncode,
+  Hs as npubEncode,
+  qs as npubToHex,
+  Vs as nsecEncode,
+  Ys as nsecToHex,
+  ti as setDefaultSubscriptionManager,
+  X as writable
 };

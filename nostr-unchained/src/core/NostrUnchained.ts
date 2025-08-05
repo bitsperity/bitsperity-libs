@@ -363,6 +363,8 @@ export class NostrUnchained {
    * Publish an event
    */
   async publish(event: UnsignedEvent): Promise<PublishResult> {
+    const startTime = Date.now();
+    
     if (!this.signingProvider) {
       throw new Error('No signing provider available. Call initializeSigning() first.');
     }
@@ -386,9 +388,11 @@ export class NostrUnchained {
     // Publish to all connected relays
     const relayResults = await this.relayManager.publishToAll(signedEvent);
     
+    const totalTime = Date.now() - startTime;
+    
     // Return standard PublishResult format
     const success = relayResults.some(r => r.success);
-    return {
+    const result: PublishResult = {
       success,
       eventId: success ? signedEvent.id : undefined,
       event: success ? signedEvent : undefined,
@@ -397,9 +401,22 @@ export class NostrUnchained {
       error: success ? undefined : {
         message: 'Failed to publish to any relay',
         code: 'PUBLISH_FAILED',
-        retryable: true
+        retryable: true,
+        suggestion: 'Check relay connectivity or try different relays'
       }
     };
+    
+    // Add debug info if debug mode is enabled
+    if (this.config.debug) {
+      result.debug = {
+        connectionAttempts: this.relayManager.connectedRelays.length,
+        relayLatencies: relayResults.map(r => ({ relay: r.relay, latency: 0 })), // Simplified
+        totalTime,
+        signingMethod: this.signingMethod || 'unknown'
+      };
+    }
+    
+    return result;
   }
 
   /**
