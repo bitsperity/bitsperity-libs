@@ -137,13 +137,13 @@ describe('Phase 4: Follow Management Tests', () => {
       // Get follow list store
       const followList = await nostr.profile.follows.mine();
       
-      // Track follow list changes
+      // Track follow list changes - using the actual API that returns Follow[]
       const states: any[] = [];
-      const unsubscribe = followList.subscribe(state => {
+      const unsubscribe = followList.subscribe(follows => {
         states.push({
-          followCount: state.follows.length,
-          loading: state.loading,
-          hasTarget: state.follows.some(f => f.pubkey === targetPubkey)
+          followCount: follows.length,
+          loading: false, // Simple: not tracking loading state
+          hasTarget: follows.some(f => f.pubkey === targetPubkey)
         });
         console.log('📊 Follow list state:', states[states.length - 1]);
       });
