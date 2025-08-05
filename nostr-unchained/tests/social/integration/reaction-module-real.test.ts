@@ -204,8 +204,8 @@ describe('ReactionModule Integration Tests - Real Relay', () => {
 
   describe('Error Handling', () => {
     it('should handle reaction to non-existent event', async () => {
-      const fakeEventId = '0'.repeat(64);
-      const result = await reactionModule.react(fakeEventId, '+');
+      const nonExistentEventId = 'a'.repeat(64);
+      const result = await reactionModule.react(nonExistentEventId, '+');
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Target event not found');

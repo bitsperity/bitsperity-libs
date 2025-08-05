@@ -281,22 +281,10 @@ export class GiftWrapProtocol {
    */
   private static getPublicKeyFromPrivate(privateKey: string): string {
     try {
-      console.log('🔍 GiftWrapProtocol.getPublicKeyFromPrivate called with:', {
-        privateKeyLength: privateKey?.length,
-        privateKeyType: typeof privateKey,
-        privateKeyPrefix: privateKey?.substring(0, 8) + '...'
-      });
-      
       // Convert hex private key to bytes for secp256k1
       const privateKeyBytes = new Uint8Array(
         privateKey.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16))
       );
-      
-      console.log('📊 privateKeyBytes:', {
-        length: privateKeyBytes.length,
-        type: privateKeyBytes.constructor.name,
-        first4: Array.from(privateKeyBytes.slice(0, 4))
-      });
       
       const publicKeyBytes = secp256k1.getPublicKey(privateKeyBytes, false);
       // Convert bytes to hex without using Buffer (browser-compatible)
@@ -305,19 +293,8 @@ export class GiftWrapProtocol {
         .map(b => b.toString(16).padStart(2, '0'))
         .join('');
       
-      console.log('✅ Successfully derived public key:', result.substring(0, 8) + '...');
-      
       return result;
     } catch (error) {
-      console.error('❌ GiftWrapProtocol getPublicKeyFromPrivate error:', {
-        error,
-        message: error.message,
-        stack: error.stack,
-        privateKeyInfo: {
-          type: typeof privateKey,
-          length: privateKey?.length
-        }
-      });
       throw new NIP59Error(
         'Failed to derive public key from private key',
         NIP59ErrorCode.SEAL_CREATION_FAILED,

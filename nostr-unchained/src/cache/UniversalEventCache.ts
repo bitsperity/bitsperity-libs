@@ -49,6 +49,14 @@ export interface CacheStatistics {
   cacheAge: number; // Time since cache was created
 }
 
+// LRU Node for doubly-linked list
+interface LRUNode {
+  eventId: string;
+  prev: LRUNode | null;
+  next: LRUNode | null;
+  timestamp: number;
+}
+
 export class UniversalEventCache {
   private events = new Map<string, NostrEvent>(); // ALL events (decrypted)
   private eventsByKind = new Map<number, Set<string>>(); // Fast lookup by kind
@@ -58,9 +66,10 @@ export class UniversalEventCache {
   private privateKey: string;
   private config: Required<CacheConfig>;
   
-  // LRU tracking
-  private accessOrder: string[] = [];
-  private lastAccess = new Map<string, number>();
+  // Efficient LRU tracking with doubly-linked list - O(1) operations
+  private lruNodes = new Map<string, LRUNode>();
+  private lruHead: LRUNode | null = null;
+  private lruTail: LRUNode | null = null;
   
   // Statistics tracking
   private stats = {
@@ -129,8 +138,9 @@ export class UniversalEventCache {
     this.eventsByKind.clear();
     this.eventsByAuthor.clear();
     this.eventsByTag.clear();
-    this.accessOrder = [];
-    this.lastAccess.clear();
+    this.lruNodes.clear();
+    this.lruHead = null;
+    this.lruTail = null;
   }
   
   get size(): number {
@@ -304,16 +314,57 @@ export class UniversalEventCache {
     if (this.config.evictionPolicy !== 'lru') return;
     
     const now = Date.now();
-    this.lastAccess.set(eventId, now);
+    let node = this.lruNodes.get(eventId);
     
-    // Remove from old position
-    const index = this.accessOrder.indexOf(eventId);
-    if (index > -1) {
-      this.accessOrder.splice(index, 1);
+    if (node) {
+      // Move existing node to head (most recently used)
+      this.moveToHead(node);
+      node.timestamp = now;
+    } else {
+      // Create new node at head
+      node = {
+        eventId,
+        prev: null,
+        next: null,
+        timestamp: now
+      };
+      this.lruNodes.set(eventId, node);
+      this.addToHead(node);
+    }
+  }
+  
+  // O(1) LRU operations using doubly-linked list
+  private addToHead(node: LRUNode): void {
+    node.prev = null;
+    node.next = this.lruHead;
+    
+    if (this.lruHead) {
+      this.lruHead.prev = node;
+    }
+    this.lruHead = node;
+    
+    if (!this.lruTail) {
+      this.lruTail = node;
+    }
+  }
+  
+  private removeNode(node: LRUNode): void {
+    if (node.prev) {
+      node.prev.next = node.next;
+    } else {
+      this.lruHead = node.next;
     }
     
-    // Add to end (most recently used)
-    this.accessOrder.push(eventId);
+    if (node.next) {
+      node.next.prev = node.prev;
+    } else {
+      this.lruTail = node.prev;
+    }
+  }
+  
+  private moveToHead(node: LRUNode): void {
+    this.removeNode(node);
+    this.addToHead(node);
   }
   
   private enforceCapacityLimits(): void {
@@ -336,8 +387,10 @@ export class UniversalEventCache {
     let eventIdToEvict: string | undefined;
     
     if (this.config.evictionPolicy === 'lru') {
-      // Evict least recently used
-      eventIdToEvict = this.accessOrder.shift();
+      // Evict least recently used - O(1) with doubly-linked list
+      if (this.lruTail) {
+        eventIdToEvict = this.lruTail.eventId;
+      }
     } else {
       // FIFO: evict oldest by insertion order
       const firstKey = this.events.keys().next().value;
@@ -370,8 +423,12 @@ export class UniversalEventCache {
       }
     });
     
-    // Remove from access tracking
-    this.lastAccess.delete(eventId);
+    // Remove from LRU tracking - O(1) with doubly-linked list
+    const node = this.lruNodes.get(eventId);
+    if (node) {
+      this.removeNode(node);
+      this.lruNodes.delete(eventId);
+    }
   }
   
   private estimateMemoryUsage(): number {

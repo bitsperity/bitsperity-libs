@@ -216,10 +216,27 @@ export class ThreadModule {
    * Create a new thread (root post)
    */
   async createThread(
-    content: string,
+    params: { content: string; mentions?: string[] } | string,
     mentionedPubkeys: string[] = []
   ): Promise<{ success: boolean; eventId?: string; error?: string }> {
-    if (!this.nostr.me) {
+    // Handle both old and new API
+    let content: string;
+    let mentions: string[];
+    
+    if (typeof params === 'string') {
+      // Old API: createThread(content, mentionedPubkeys)
+      content = params;
+      mentions = mentionedPubkeys;
+    } else {
+      // New API: createThread({content, mentions})
+      content = params.content;
+      mentions = params.mentions || [];
+    }
+    // Check if signing is available through the events builder
+    try {
+      // The events builder will throw if no signing provider is available
+      this.nostr.events;
+    } catch (error) {
       return { success: false, error: 'No signing provider available. Please initialize signing first.' };
     }
 
@@ -229,7 +246,7 @@ export class ThreadModule {
         .note(content);
 
       // Add p-tags for mentioned users
-      for (const mentionedPubkey of mentionedPubkeys) {
+      for (const mentionedPubkey of mentions) {
         eventBuilder = eventBuilder.tag('p', mentionedPubkey);
       }
 
@@ -239,10 +256,27 @@ export class ThreadModule {
         console.log(`ThreadModule: Created new thread with content "${content.substring(0, 50)}..."`);
       }
 
+      // Get the current user's pubkey for the message
+      let authorPubkey = '';
+      try {
+        const myPubkey = await this.nostr.getMyPubkey();
+        authorPubkey = myPubkey || '';
+      } catch (error) {
+        // Fall back to result.pubkey if available
+        authorPubkey = result.pubkey || '';
+      }
+
       return { 
         success: result.success, 
         eventId: result.eventId,
-        error: result.error?.message 
+        error: result.error?.message,
+        message: result.success ? {
+          id: result.eventId || '',
+          content,
+          authorPubkey,
+          timestamp: Math.floor(Date.now() / 1000),
+          isOwn: true
+        } : undefined
       };
     } catch (error) {
       return { 

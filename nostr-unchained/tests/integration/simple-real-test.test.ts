@@ -21,14 +21,16 @@ describe('Simple REAL Threading Test', () => {
     
     console.log('Test pubkey:', pubkey);
     
-    // Initialize NostrUnchained
+    // Initialize NostrUnchained with signing provider directly
     nostr = new NostrUnchained({ 
       relays: [testRelay], 
-      debug: true
+      debug: true,
+      signingProvider: signer
     });
     
-    // Set signing provider
-    await nostr.social.updateSigningProvider(signer);
+    // Wait for connection
+    await nostr.connect();
+    await nostr.initializeSigning();
     
     // Wait for connection
     await new Promise(resolve => setTimeout(resolve, 3000));

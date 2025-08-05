@@ -47,16 +47,28 @@ export class UniversalDMConversation {
       .execute();
   }
   
+  // Messages as reactive store
+  get messages(): UniversalNostrStore<DMMessage[]> {
+    // Create a derived store that converts events to messages
+    return {
+      subscribe: (callback: (messages: DMMessage[]) => void) => {
+        return this.store.subscribe(events => {
+          const messages = this.convertEventsToMessages(events);
+          callback(messages);
+        });
+      },
+      get current(): DMMessage[] {
+        return this.convertEventsToMessages(this.store.current);
+      }
+    } as UniversalNostrStore<DMMessage[]>;
+  }
+  
   // Svelte store interface - delegate to underlying store
   subscribe(callback: (messages: DMMessage[]) => void): () => void {
     return this.store.subscribe(events => {
       const messages = this.convertEventsToMessages(events);
       callback(messages);
     });
-  }
-  
-  get messages(): DMMessage[] {
-    return this.convertEventsToMessages(this.store.current);
   }
   
   // Convenience method for sending

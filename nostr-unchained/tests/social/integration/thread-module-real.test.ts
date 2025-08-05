@@ -273,8 +273,8 @@ describe('ThreadModule Integration Tests - Real Relay', () => {
 
   describe('Error Handling', () => {
     it('should handle reply to non-existent event', async () => {
-      const fakeEventId = '0'.repeat(64);
-      const result = await threadModule.reply(fakeEventId, 'Reply to fake event');
+      const nonExistentEventId = 'a'.repeat(64);
+      const result = await threadModule.reply(nonExistentEventId, 'Reply to non-existent event');
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Target event not found');

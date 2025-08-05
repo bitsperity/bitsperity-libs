@@ -268,13 +268,13 @@ export class DMConversation {
    * Handle a decrypted event forwarded from the global inbox
    * This enables transparent caching and zero-config DX
    */
-  handleDecryptedEvent(decryptedEvent: NostrEvent): void {
+  async handleDecryptedEvent(decryptedEvent: NostrEvent): Promise<void> {
     if (this.config.debug) {
       console.log('📨 Processing decrypted event in conversation:', decryptedEvent.id);
     }
     
     // Process the event using our existing handler
-    this.handleInboxEvent(decryptedEvent);
+    await this.handleIncomingEvent(decryptedEvent);
   }
 
   // Private methods

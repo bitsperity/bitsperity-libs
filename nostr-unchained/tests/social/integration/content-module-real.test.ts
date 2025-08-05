@@ -309,8 +309,8 @@ describe('ContentModule Integration Tests - Real Relay', () => {
 
   describe('Error Handling', () => {
     it('should handle repost of non-existent event', async () => {
-      const fakeEventId = '0'.repeat(64);
-      const result = await contentModule.repost(fakeEventId);
+      const nonExistentEventId = 'a'.repeat(64);
+      const result = await contentModule.repost(nonExistentEventId);
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Original event not found');

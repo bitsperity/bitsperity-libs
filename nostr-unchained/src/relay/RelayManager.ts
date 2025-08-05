@@ -44,12 +44,21 @@ export interface RelayConnection {
   state: 'disconnected' | 'connecting' | 'connected' | 'error';
   lastConnected?: number;
   error?: string;
+  reconnectAttempts?: number;
+  reconnectTimeout?: NodeJS.Timeout;
+  lastReconnectAttempt?: number;
 }
 
 export class RelayManager {
   private connections = new Map<string, RelayConnection>();
   private debug: boolean;
   private messageHandler?: (relayUrl: string, message: RelayMessage) => void;
+  
+  // Reconnection configuration
+  private maxReconnectAttempts = 5;
+  private baseReconnectDelay = 1000; // 1 second
+  private maxReconnectDelay = 30000; // 30 seconds
+  private reconnectEnabled = true;
 
   constructor(relayUrls: string[], options: { debug?: boolean } = {}) {
     this.debug = options.debug ?? false;
@@ -153,12 +162,17 @@ export class RelayManager {
           reject(new Error(`Failed to connect to ${url}: WebSocket error`));
         };
 
-        ws.onclose = () => {
+        ws.onclose = (event) => {
           connection.state = 'disconnected';
           connection.ws = undefined;
           
           if (this.debug) {
-            console.log(`Disconnected from relay: ${url}`);
+            console.log(`Disconnected from relay: ${url}`, event.code, event.reason);
+          }
+          
+          // Trigger reconnection if enabled and not manually closed
+          if (this.reconnectEnabled && event.code !== 1000) { // 1000 = normal closure
+            this.scheduleReconnection(url);
           }
         };
 
@@ -483,5 +497,180 @@ export class RelayManager {
     });
 
     return stats;
+  }
+  
+  /**
+   * Schedule reconnection with exponential backoff
+   */
+  private scheduleReconnection(url: string): void {
+    const connection = this.connections.get(url);
+    if (!connection) return;
+    
+    // Clear any existing reconnection timeout
+    if (connection.reconnectTimeout) {
+      clearTimeout(connection.reconnectTimeout);
+      connection.reconnectTimeout = undefined;
+    }
+    
+    // Initialize reconnect attempts if not set
+    if (connection.reconnectAttempts === undefined) {
+      connection.reconnectAttempts = 0;
+    }
+    
+    // Check if we've exceeded max attempts
+    if (connection.reconnectAttempts >= this.maxReconnectAttempts) {
+      if (this.debug) {
+        console.warn(`Max reconnection attempts reached for relay: ${url}`);
+      }
+      connection.state = 'error';
+      connection.error = `Max reconnection attempts (${this.maxReconnectAttempts}) exceeded`;
+      return;
+    }
+    
+    // Calculate exponential backoff delay
+    const delay = Math.min(
+      this.baseReconnectDelay * Math.pow(2, connection.reconnectAttempts),
+      this.maxReconnectDelay
+    );
+    
+    // Add jitter to prevent thundering herd
+    const jitteredDelay = delay + Math.random() * 1000;
+    
+    if (this.debug) {
+      console.log(`Scheduling reconnection to ${url} in ${Math.round(jitteredDelay)}ms (attempt ${connection.reconnectAttempts + 1}/${this.maxReconnectAttempts})`);
+    }
+    
+    connection.reconnectTimeout = setTimeout(() => {
+      this.attemptReconnection(url);
+    }, jitteredDelay);
+  }
+  
+  /**
+   * Attempt to reconnect to a relay
+   */
+  private async attemptReconnection(url: string): Promise<void> {
+    const connection = this.connections.get(url);
+    if (!connection) return;
+    
+    connection.reconnectAttempts = (connection.reconnectAttempts || 0) + 1;
+    connection.lastReconnectAttempt = Date.now();
+    
+    if (this.debug) {
+      console.log(`Attempting reconnection to ${url} (attempt ${connection.reconnectAttempts})`);
+    }
+    
+    try {
+      const success = await this.connectToRelay(url);
+      if (success) {
+        // Reset reconnection state on successful connection
+        connection.reconnectAttempts = 0;
+        connection.reconnectTimeout = undefined;
+        
+        if (this.debug) {
+          console.log(`Successfully reconnected to relay: ${url}`);
+        }
+      }
+    } catch (error) {
+      if (this.debug) {
+        console.warn(`Reconnection attempt failed for ${url}:`, error);
+      }
+      
+      // Schedule next reconnection attempt if we haven't exceeded max attempts
+      if (connection.reconnectAttempts < this.maxReconnectAttempts) {
+        this.scheduleReconnection(url);
+      } else {
+        connection.state = 'error';
+        connection.error = `Reconnection failed after ${this.maxReconnectAttempts} attempts`;
+      }
+    }
+  }
+  
+  /**
+   * Enable or disable automatic reconnection
+   */
+  setReconnectionEnabled(enabled: boolean): void {
+    this.reconnectEnabled = enabled;
+    
+    if (!enabled) {
+      // Clear all pending reconnection timeouts
+      for (const connection of this.connections.values()) {
+        if (connection.reconnectTimeout) {
+          clearTimeout(connection.reconnectTimeout);
+          connection.reconnectTimeout = undefined;
+        }
+      }
+    }
+  }
+  
+  /**
+   * Configure reconnection parameters
+   */
+  configureReconnection(options: {
+    maxAttempts?: number;
+    baseDelay?: number;
+    maxDelay?: number;
+  }): void {
+    if (options.maxAttempts !== undefined) {
+      this.maxReconnectAttempts = Math.max(1, options.maxAttempts);
+    }
+    if (options.baseDelay !== undefined) {
+      this.baseReconnectDelay = Math.max(100, options.baseDelay);
+    }
+    if (options.maxDelay !== undefined) {
+      this.maxReconnectDelay = Math.max(this.baseReconnectDelay, options.maxDelay);
+    }
+  }
+  
+  /**
+   * Manually trigger reconnection for a specific relay
+   */
+  async reconnectRelay(url: string): Promise<boolean> {
+    const connection = this.connections.get(url);
+    if (!connection) {
+      throw new Error(`Relay ${url} not configured`);
+    }
+    
+    // Clear any pending reconnection
+    if (connection.reconnectTimeout) {
+      clearTimeout(connection.reconnectTimeout);
+      connection.reconnectTimeout = undefined;
+    }
+    
+    // Reset reconnection state
+    connection.reconnectAttempts = 0;
+    
+    return this.connectToRelay(url);
+  }
+  
+  /**
+   * Get reconnection status for all relays
+   */
+  getReconnectionStatus(): Record<string, {
+    attempts: number;
+    nextAttemptIn?: number;
+    lastAttempt?: number;
+  }> {
+    const status: Record<string, any> = {};
+    
+    for (const [url, connection] of this.connections.entries()) {
+      status[url] = {
+        attempts: connection.reconnectAttempts || 0,
+        lastAttempt: connection.lastReconnectAttempt
+      };
+      
+      if (connection.reconnectTimeout) {
+        // Calculate approximate time until next attempt
+        const now = Date.now();
+        const lastAttempt = connection.lastReconnectAttempt || now;
+        const expectedDelay = Math.min(
+          this.baseReconnectDelay * Math.pow(2, (connection.reconnectAttempts || 0) - 1),
+          this.maxReconnectDelay
+        );
+        const nextAttemptTime = lastAttempt + expectedDelay;
+        status[url].nextAttemptIn = Math.max(0, nextAttemptTime - now);
+      }
+    }
+    
+    return status;
   }
 }

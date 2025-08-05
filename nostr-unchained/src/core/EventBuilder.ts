@@ -160,7 +160,7 @@ export class EventBuilder {
       5,    // NIP-09: Event deletion (may have empty content)
       6,    // NIP-18: Repost (requires empty content)
       7,    // NIP-25: Reaction (may have empty content for simple reactions)
-      1059, // NIP-59: Gift wraps (content is encrypted, may appear empty)
+      // NOTE: 1059 (Gift wraps) removed - they MUST have encrypted content per NIP-44
       1984  // NIP-56: Reporting (may have empty content with just tags)
     ];
     

@@ -26,6 +26,8 @@ export class FollowBatchBuilder {
   private config: FollowBatchBuilderConfig;
   private toAdd: string[] = [];
   private toRemove: string[] = [];
+  private baseEventId?: string; // For optimistic locking
+  private baseCreatedAt?: number;
 
   constructor(config: FollowBatchBuilderConfig) {
     this.config = config;
@@ -48,7 +50,7 @@ export class FollowBatchBuilder {
   }
 
   /**
-   * Publish the batch follow list update
+   * Publish the batch follow list update with optimistic locking
    */
   async publish(): Promise<PublishResult> {
     if (this.toAdd.length === 0 && this.toRemove.length === 0) {
@@ -58,18 +60,38 @@ export class FollowBatchBuilder {
       };
     }
 
-    try {
-      const myPubkey = await this.config.signingProvider.getPublicKey();
-      
-      if (this.config.debug) {
-        console.log(`FollowBatchBuilder: Batch operation - adding ${this.toAdd.length}, removing ${this.toRemove.length}`);
-      }
+    // Retry logic for race condition handling
+    const maxRetries = 3;
+    let lastError: string = '';
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const myPubkey = await this.config.signingProvider.getPublicKey();
+        
+        if (this.config.debug) {
+          console.log(`FollowBatchBuilder: Batch operation attempt ${attempt + 1}/${maxRetries} - adding ${this.toAdd.length}, removing ${this.toRemove.length}`);
+        }
 
-      // Get current follow list
-      const currentFollows = await this.getCurrentFollows();
-      
-      // Apply batch operations
-      let updatedFollows = [...currentFollows];
+        // Get current follow list with optimistic locking info
+        const { follows: currentFollows, eventId: currentEventId, createdAt: currentCreatedAt } = await this.getCurrentFollowsWithMetadata();
+        
+        // Check for concurrent updates if we have a base event
+        if (this.baseEventId && this.baseEventId !== currentEventId) {
+          if (this.config.debug) {
+            console.log(`FollowBatchBuilder: Detected concurrent update (base: ${this.baseEventId}, current: ${currentEventId}), retrying...`);
+          }
+          // Update our base and retry
+          this.baseEventId = currentEventId;
+          this.baseCreatedAt = currentCreatedAt;
+          continue;
+        }
+        
+        // Store current state for conflict detection
+        this.baseEventId = currentEventId;
+        this.baseCreatedAt = currentCreatedAt;
+        
+        // Apply batch operations
+        let updatedFollows = [...currentFollows];
       
       // Remove first (to handle add+remove of same pubkey correctly)
       if (this.toRemove.length > 0) {
@@ -146,34 +168,55 @@ export class FollowBatchBuilder {
 
       const success = successfulRelays.length > 0;
 
-      if (success) {
-        if (this.config.debug) {
-          console.log(`FollowBatchBuilder: Published batch update to ${successfulRelays.length} relays`);
-          console.log(`FollowBatchBuilder: Final follow list has ${updatedFollows.length} follows`);
-          console.log(`FollowBatchBuilder: Event will be received via subscription and cached properly`);
+        if (success) {
+          if (this.config.debug) {
+            console.log(`FollowBatchBuilder: Published batch update to ${successfulRelays.length} relays on attempt ${attempt + 1}`);
+            console.log(`FollowBatchBuilder: Final follow list has ${updatedFollows.length} follows`);
+            console.log(`FollowBatchBuilder: Event will be received via subscription and cached properly`);
+          }
+          return {
+            success: true,
+            eventId: signedEvent.id
+          };
+        } else {
+          lastError = 'Failed to publish to any relay';
+          if (attempt === maxRetries - 1) {
+            return {
+              success: false,
+              error: lastError
+            };
+          }
         }
-        return {
-          success: true,
-          eventId: signedEvent.id
-        };
-      } else {
-        return {
-          success: false,
-          error: 'Failed to publish to any relay'
-        };
-      }
 
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to publish batch update'
-      };
+      } catch (error) {
+        lastError = error instanceof Error ? error.message : 'Failed to publish batch update';
+        if (this.config.debug) {
+          console.warn(`FollowBatchBuilder: Attempt ${attempt + 1} failed:`, lastError);
+        }
+        if (attempt === maxRetries - 1) {
+          return {
+            success: false,
+            error: lastError
+          };
+        }
+        // Brief delay before retry
+        await new Promise(resolve => setTimeout(resolve, 100 * (attempt + 1)));
+      }
     }
+    
+    return {
+      success: false,
+      error: lastError || 'Max retries exceeded'
+    };
   }
 
   // Private helper methods
 
-  private async getCurrentFollows(): Promise<Follow[]> {
+  private async getCurrentFollowsWithMetadata(): Promise<{
+    follows: Follow[];
+    eventId?: string;
+    createdAt?: number;
+  }> {
     try {
       const myPubkey = await this.config.signingProvider.getPublicKey();
       
@@ -203,7 +246,11 @@ export class FollowBatchBuilder {
           console.log('FollowBatchBuilder: Using cached follow list with', latestEvent.tags.filter((t: any[]) => t[0] === 'p').length, 'follows');
         }
         if (latestEvent) {
-          return this.parseFollowListEvent(latestEvent);
+          return {
+            follows: this.parseFollowListEvent(latestEvent),
+            eventId: latestEvent.id,
+            createdAt: latestEvent.created_at
+          };
         }
       }
 
@@ -224,24 +271,34 @@ export class FollowBatchBuilder {
       // Check cache again
       const updatedFollowList = followStore.current;
       if (updatedFollowList && updatedFollowList.length > 0) {
-        const follows = this.parseFollowListEvent(updatedFollowList[0]);
+        const latestEvent = updatedFollowList[0];
+        const follows = this.parseFollowListEvent(latestEvent);
         if (this.config.debug) {
           console.log('FollowBatchBuilder: Found follow list from relay with', follows.length, 'follows');
         }
-        return follows;
+        return {
+          follows,
+          eventId: latestEvent.id,
+          createdAt: latestEvent.created_at
+        };
       }
 
       if (this.config.debug) {
         console.log('FollowBatchBuilder: No follow list found on relays, using empty array');
       }
-      return [];
+      return { follows: [] };
       
     } catch (error) {
       if (this.config.debug) {
         console.error('FollowBatchBuilder: Error getting current follows:', error);
       }
-      return []; // Return empty array on error
+      return { follows: [] }; // Return empty array on error
     }
+  }
+
+  private async getCurrentFollows(): Promise<Follow[]> {
+    const { follows } = await this.getCurrentFollowsWithMetadata();
+    return follows;
   }
 
   private parseFollowListEvent(event: NostrEvent): Follow[] {

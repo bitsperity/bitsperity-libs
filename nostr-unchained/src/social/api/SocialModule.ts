@@ -29,6 +29,10 @@ export class SocialModule {
   private _feeds?: FeedModule;
   private _communities?: any; // CommunityModule;
   private _lists?: any; // ListModule;
+  
+  // Cleanup synchronization
+  private closing = false;
+  private closePromise?: Promise<void>;
 
   constructor(config: SocialModuleConfig) {
     this.config = config;
@@ -107,15 +111,135 @@ export class SocialModule {
   }
 
   /**
-   * Clean up resources
+   * Update signing provider - simply store reference (modules access via core instance)
+   * Social modules access signing through the core NostrUnchained instance, no separate update needed
+   */
+  async updateSigningProvider(signingProvider: any): Promise<void> {
+    if (this.config.debug) {
+      console.log('🔑 SocialModule.updateSigningProvider - storing reference');
+    }
+    
+    // The social modules get their signing capability through the core NostrUnchained instance
+    // No need to update individual modules since they use nostr.query() and nostr.sub()
+    // which internally handle signing via the core instance
+    
+    // Just acknowledge the update - the core instance will handle actual signing
+    // Note: We don't call this.config.nostr.updateSigningProvider() to avoid infinite loop
+  }
+
+  /**
+   * Clean up resources with proper synchronization
    */
   async close(): Promise<void> {
-    // Close all initialized modules
-    if (this._content?.close) await this._content.close();
-    if (this._reactions?.close) await this._reactions.close();
-    if (this._threads?.close) await this._threads.close();
-    if (this._feeds?.close) await this._feeds.close();
-    if (this._communities?.close) await this._communities.close();
-    if (this._lists?.close) await this._lists.close();
+    // Prevent multiple close() calls
+    if (this.closing) {
+      if (this.closePromise) {
+        return this.closePromise;
+      }
+      return; // Already closed
+    }
+    
+    this.closing = true;
+    
+    // Create cleanup promise to prevent race conditions
+    this.closePromise = this.performCleanup();
+    
+    try {
+      await this.closePromise;
+      if (this.config.debug) {
+        console.log('🔥 SocialModule cleanup completed successfully');
+      }
+    } catch (error) {
+      if (this.config.debug) {
+        console.error('🔥 SocialModule cleanup error:', error);
+      }
+      throw error;
+    }
+  }
+  
+  private async performCleanup(): Promise<void> {
+    const cleanupTasks: Promise<void>[] = [];
+    
+    // Collect all cleanup tasks
+    // Note: Current social modules don't have close() methods yet
+    // They use Clean Architecture pattern with core NostrUnchained instance
+    
+    if (this._content && typeof (this._content as any).close === 'function') {
+      cleanupTasks.push(
+        (this._content as any).close().catch((error: any) => {
+          if (this.config.debug) {
+            console.warn('SocialModule: ContentModule cleanup error:', error);
+          }
+        })
+      );
+    }
+    
+    if (this._reactions && typeof (this._reactions as any).close === 'function') {
+      cleanupTasks.push(
+        (this._reactions as any).close().catch((error: any) => {
+          if (this.config.debug) {
+            console.warn('SocialModule: ReactionModule cleanup error:', error);
+          }
+        })
+      );
+    }
+    
+    if (this._threads && typeof (this._threads as any).close === 'function') {
+      cleanupTasks.push(
+        (this._threads as any).close().catch((error: any) => {
+          if (this.config.debug) {
+            console.warn('SocialModule: ThreadModule cleanup error:', error);
+          }
+        })
+      );
+    }
+    
+    if (this._feeds && typeof (this._feeds as any).close === 'function') {
+      cleanupTasks.push(
+        (this._feeds as any).close().catch((error: any) => {
+          if (this.config.debug) {
+            console.warn('SocialModule: FeedModule cleanup error:', error);
+          }
+        })
+      );
+    }
+    
+    if (this._communities && typeof (this._communities as any).close === 'function') {
+      cleanupTasks.push(
+        (this._communities as any).close().catch((error: any) => {
+          if (this.config.debug) {
+            console.warn('SocialModule: CommunityModule cleanup error:', error);
+          }
+        })
+      );
+    }
+    
+    if (this._lists && typeof (this._lists as any).close === 'function') {
+      cleanupTasks.push(
+        (this._lists as any).close().catch((error: any) => {
+          if (this.config.debug) {
+            console.warn('SocialModule: ListModule cleanup error:', error);
+          }
+        })
+      );
+    }
+    
+    // Execute all cleanup tasks in parallel with timeout protection
+    if (cleanupTasks.length > 0) {
+      await Promise.race([
+        Promise.all(cleanupTasks),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Module cleanup timeout after 10 seconds')), 10000)
+        )
+      ]);
+    }
+    
+    // Clear module references to prevent memory leaks
+    this._content = undefined as any;
+    this._reactions = undefined as any;
+    this._threads = undefined as any;
+    this._feeds = undefined as any;
+    this._communities = undefined as any;
+    this._lists = undefined as any;
   }
 }

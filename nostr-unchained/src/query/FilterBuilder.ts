@@ -10,39 +10,48 @@ import type { Filter } from '../core/types.js';
 export abstract class FilterBuilder {
   protected filter: Filter = {};
   
+  // Abstract method to create new instance - subclasses must implement
+  protected abstract clone(newFilter: Filter): this;
+  
   kinds(kinds: number[]): this {
-    this.filter.kinds = kinds;
-    return this;
+    const newFilter = { ...this.filter, kinds };
+    return this.clone(newFilter);
   }
   
   authors(authors: string[]): this {
-    this.filter.authors = authors;
-    return this;
+    const newFilter = { ...this.filter, authors };
+    return this.clone(newFilter);
   }
   
-  tags(tagName: string, values: string[]): this {
-    this.filter[`#${tagName}`] = values;
-    return this;
+  tags(tagName: string, values?: string[]): this {
+    const newFilter = { ...this.filter };
+    if (values) {
+      newFilter[`#${tagName}`] = values;
+    } else {
+      // If no values provided, just check for existence of the tag
+      newFilter[`#${tagName}`] = [];
+    }
+    return this.clone(newFilter);
   }
   
   since(timestamp: number): this {
-    this.filter.since = timestamp;
-    return this;
+    const newFilter = { ...this.filter, since: timestamp };
+    return this.clone(newFilter);
   }
   
   until(timestamp: number): this {
-    this.filter.until = timestamp;
-    return this;
+    const newFilter = { ...this.filter, until: timestamp };
+    return this.clone(newFilter);
   }
   
   limit(count: number): this {
-    this.filter.limit = count;
-    return this;
+    const newFilter = { ...this.filter, limit: count };
+    return this.clone(newFilter);
   }
   
   ids(ids: string[]): this {
-    this.filter.ids = ids;
-    return this;
+    const newFilter = { ...this.filter, ids };
+    return this.clone(newFilter);
   }
   
   // Convenience methods for common patterns

@@ -15,6 +15,12 @@ export class QueryBuilder extends FilterBuilder {
     super();
   }
   
+  protected clone(newFilter: Filter): this {
+    const cloned = new QueryBuilder(this.cache) as this;
+    cloned.filter = newFilter;
+    return cloned;
+  }
+  
   execute(): UniversalNostrStore<NostrEvent[]> {
     // Immediate cache lookup
     return new UniversalNostrStore(this.cache, this.filter);
@@ -41,14 +47,23 @@ export class SubBuilder extends FilterBuilder {
     super();
   }
   
+  protected clone(newFilter: Filter): this {
+    const cloned = new SubBuilder(this.cache, this.subscriptionManager) as this;
+    cloned.filter = newFilter;
+    cloned.relayUrls = [...this.relayUrls];
+    return cloned;
+  }
+  
   relay(url: string): this {
-    this.relayUrls = [url];
-    return this;
+    const cloned = this.clone(this.filter);
+    cloned.relayUrls = [url];
+    return cloned;
   }
   
   relays(urls: string[]): this {
-    this.relayUrls = urls;
-    return this;
+    const cloned = this.clone(this.filter);
+    cloned.relayUrls = urls;
+    return cloned;
   }
   
   /**

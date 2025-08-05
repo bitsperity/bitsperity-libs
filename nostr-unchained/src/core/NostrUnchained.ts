@@ -495,6 +495,31 @@ export class NostrUnchained {
   }
 
   /**
+   * Update the signing provider for this instance and all modules
+   */
+  async updateSigningProvider(signingProvider: SigningProvider): Promise<void> {
+    this.signingProvider = signingProvider;
+    this.signingMethod = 'temporary'; // Assume temporary for now
+    
+    // Update all modules that need signing capability
+    if (this.dm) {
+      await this.dm.updateSigningProvider(signingProvider);
+    }
+    
+    if (this.social) {
+      await this.social.updateSigningProvider(signingProvider);
+    }
+    
+    if (this._profile) {
+      await this._profile.updateSigningProvider(signingProvider);
+    }
+    
+    if (this.config.debug) {
+      console.log('🔑 NostrUnchained signing provider updated');
+    }
+  }
+
+  /**
    * Get debug info
    */
   getDebugInfo(): DebugInfo {
