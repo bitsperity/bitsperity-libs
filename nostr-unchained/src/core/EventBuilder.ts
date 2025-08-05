@@ -83,8 +83,8 @@ export class EventBuilder {
       errors.push('Invalid signature format (must be 128-character hex string)');
     }
 
-    // Content validation
-    if (event.content === '') {
+    // Content validation - allow empty content for specific kinds
+    if (event.content === '' && !this.isEmptyContentAllowed(event.kind)) {
       errors.push(ERROR_MESSAGES.EMPTY_CONTENT);
     }
 
@@ -131,10 +131,10 @@ export class EventBuilder {
   /**
    * Validate content before event creation
    */
-  static validateContent(content: string): ValidationResult {
+  static validateContent(content: string, kind?: number): ValidationResult {
     const errors: string[] = [];
 
-    if (content === '') {
+    if (content === '' && !this.isEmptyContentAllowed(kind)) {
       errors.push(ERROR_MESSAGES.EMPTY_CONTENT);
     }
 
@@ -146,6 +146,24 @@ export class EventBuilder {
       valid: errors.length === 0,
       errors
     };
+  }
+
+  /**
+   * Check if empty content is allowed for specific event kinds
+   */
+  private static isEmptyContentAllowed(kind?: number): boolean {
+    if (!kind) return false;
+    
+    // Event kinds that explicitly allow or require empty content
+    const emptyContentKinds = [
+      5,    // NIP-09: Event deletion (may have empty content)
+      6,    // NIP-18: Repost (requires empty content)
+      7,    // NIP-25: Reaction (may have empty content for simple reactions)
+      1059, // NIP-59: Gift wraps (content is encrypted, may appear empty)
+      1984  // NIP-56: Reporting (may have empty content with just tags)
+    ];
+    
+    return emptyContentKinds.includes(kind);
   }
 
   /**
@@ -175,8 +193,8 @@ export class EventBuilder {
       created_at?: number;
     } = {}
   ): Promise<UnsignedEvent> {
-    // Validate content first
-    const contentValidation = EventBuilder.validateContent(content);
+    // Validate content first (pass kind for empty content validation)
+    const contentValidation = EventBuilder.validateContent(content, options.kind);
     if (!contentValidation.valid) {
       throw new Error(`Invalid content: ${contentValidation.errors.join(', ')}`);
     }

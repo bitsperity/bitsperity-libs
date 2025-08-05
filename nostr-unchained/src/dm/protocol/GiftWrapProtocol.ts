@@ -414,36 +414,44 @@ export class GiftWrapProtocol {
       const { NIP44Crypto } = await import('../crypto/NIP44Crypto.js');
 
       // First, unwrap the gift wrap to get the seal
-      const unwrappedSeal = await NIP44Crypto.decrypt(
-        giftWrapEvent.content,
+      const conversationKey = NIP44Crypto.deriveConversationKey(
         recipientPrivateKey,
         giftWrapEvent.pubkey
       );
+      
+      const unwrappedSealResult = NIP44Crypto.decrypt(
+        giftWrapEvent.content,
+        conversationKey
+      );
 
-      if (!unwrappedSeal) {
+      if (!unwrappedSealResult || !unwrappedSealResult.isValid) {
         return null;
       }
 
       // Parse the seal event
-      const sealEvent = JSON.parse(unwrappedSeal);
+      const sealEvent = JSON.parse(unwrappedSealResult.plaintext);
       
       if (!sealEvent || sealEvent.kind !== 13) {
         return null;
       }
 
       // Now unwrap the seal to get the actual rumor (DM)
-      const rumorContent = await NIP44Crypto.decrypt(
-        sealEvent.content,
+      const sealConversationKey = NIP44Crypto.deriveConversationKey(
         recipientPrivateKey,
         sealEvent.pubkey
       );
+      
+      const rumorContentResult = NIP44Crypto.decrypt(
+        sealEvent.content,
+        sealConversationKey
+      );
 
-      if (!rumorContent) {
+      if (!rumorContentResult || !rumorContentResult.isValid) {
         return null;
       }
 
       // Parse the rumor (actual encrypted content - can be ANY event kind!)
-      const rumorEvent = JSON.parse(rumorContent);
+      const rumorEvent = JSON.parse(rumorContentResult.plaintext);
       
       // Validate it's a valid event structure (no kind restrictions - this is the power!)
       if (!rumorEvent || typeof rumorEvent.kind !== 'number') {
