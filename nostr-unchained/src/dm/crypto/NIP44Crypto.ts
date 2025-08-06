@@ -75,8 +75,9 @@ export class NIP44Crypto {
       // Extract x-coordinate (skip first byte which is compression flag)
       const sharedX = sharedPoint.slice(1);
 
-      // HKDF-Extract with fixed salt  
-      const conversationKey = hkdf(sha256, sharedX, this.SALT, new Uint8Array(0), 32);
+      // HKDF with proper salt and info per NIP-44 spec
+      // salt should be empty, info should be 'nip44-v2'
+      const conversationKey = hkdf(sha256, sharedX, new Uint8Array(0), this.SALT, 32);
 
       return conversationKey;
       
