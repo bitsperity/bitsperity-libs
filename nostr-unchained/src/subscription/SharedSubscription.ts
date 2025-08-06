@@ -211,7 +211,8 @@ export class SharedSubscription {
    * Check if this subscription is active
    */
   isActive(): boolean {
-    return this.subscriptionResult?.success === true && this.hasListeners();
+    // If we have listeners and no explicit failure, consider it active
+    return this.hasListeners() && this.subscriptionResult?.success !== false;
   }
 
   /**

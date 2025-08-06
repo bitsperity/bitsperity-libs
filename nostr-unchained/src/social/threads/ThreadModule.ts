@@ -213,6 +213,34 @@ export class ThreadModule {
   }
 
   /**
+   * Get thread by ID (alias for thread method for API compatibility)
+   */
+  get(rootEventId: string, options?: { useCache?: boolean; timeout?: number }): Promise<ThreadEvent[]> {
+    return new Promise((resolve) => {
+      const store = this.thread(rootEventId);
+      const unsubscribe = store.subscribe(events => {
+        unsubscribe();
+        resolve(events);
+      });
+    });
+  }
+
+  /**
+   * Watch thread for real-time updates (returns subscription status)
+   */
+  async watch(rootEventId: string): Promise<boolean> {
+    try {
+      await this.startThreadSubscription(rootEventId);
+      return true;
+    } catch (error) {
+      if (this.debug) {
+        console.warn(`Failed to watch thread ${rootEventId}:`, error);
+      }
+      return false;
+    }
+  }
+
+  /**
    * Create a new thread (root post)
    */
   async createThread(
@@ -259,8 +287,12 @@ export class ThreadModule {
       // Get the current user's pubkey for the message
       let authorPubkey = '';
       try {
-        const myPubkey = await this.nostr.getMyPubkey();
-        authorPubkey = myPubkey || '';
+        // Try multiple ways to get the pubkey
+        authorPubkey = this.nostr.me || result.pubkey || '';
+        if (!authorPubkey && this.nostr.getMyPubkey) {
+          const myPubkey = await this.nostr.getMyPubkey();
+          authorPubkey = myPubkey || '';
+        }
       } catch (error) {
         // Fall back to result.pubkey if available
         authorPubkey = result.pubkey || '';

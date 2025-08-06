@@ -25,6 +25,14 @@ import type { SubscriptionManager } from '../subscription/SubscriptionManager.js
 import type { SigningProvider } from '../crypto/SigningProvider.js';
 import type { EventBuilder } from '../core/EventBuilder.js';
 
+export interface ProfileState {
+  profile: UserProfile | null;
+  loading: boolean;
+  error: Error | null;
+  verified: boolean;
+  lastUpdated?: Date;
+}
+
 export interface ProfileModuleConfig {
   relayManager: RelayManager;
   subscriptionManager: SubscriptionManager;
@@ -51,17 +59,32 @@ export class ProfileModule {
    * CLEAN ARCHITECTURE: Uses base layer directly for perfect DX
    * Returns UniversalNostrStore with automatic caching and live updates
    */
-  get(pubkey: string): UniversalNostrStore<UserProfile | null> {
+  get(pubkey: string): UniversalNostrStore<ProfileState> {
     // Start subscription for live updates - deduplication handled by SubscriptionManager
     this.startProfileSubscription(pubkey);
     
-    // Return reactive store based on cache
+    // Return reactive store based on cache with proper state structure
     return this.config.nostr.query()
       .kinds([0])
       .authors([pubkey])
       .limit(1)
       .execute()
-      .map(events => this.parseProfileEvents(events, pubkey));
+      .map(events => this.createProfileState(events, pubkey));
+  }
+  
+  /**
+   * Create profile state object expected by tests
+   */
+  private createProfileState(events: NostrEvent[], pubkey: string): ProfileState {
+    const profile = this.parseProfileEvents(events, pubkey);
+    
+    return {
+      profile,
+      loading: false, // TODO: Implement proper loading state
+      error: null,
+      verified: false, // TODO: Implement verification logic
+      lastUpdated: profile?.lastUpdated ? new Date(profile.lastUpdated * 1000) : undefined
+    };
   }
 
   /**

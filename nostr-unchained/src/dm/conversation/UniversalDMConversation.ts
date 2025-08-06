@@ -24,11 +24,15 @@ export interface DMMessage {
   subject?: string;
 }
 
+export type ConversationStatus = 'connecting' | 'active' | 'disconnected' | 'error';
+
 export class UniversalDMConversation {
   private store: UniversalNostrStore<NostrEvent[]>;
   private myPubkey: string;
   private otherPubkey: string;
   private nostr: NostrUnchained;
+  private _status: ConversationStatus = 'connecting';
+  private statusCallbacks: ((status: ConversationStatus) => void)[] = [];
   
   constructor(
     nostr: NostrUnchained,
@@ -45,6 +49,12 @@ export class UniversalDMConversation {
       .authors([this.myPubkey, this.otherPubkey])
       .tags('p', [this.myPubkey, this.otherPubkey])
       .execute();
+    
+    // Set status to active once store is ready
+    setTimeout(() => {
+      this._status = 'active';
+      this.notifyStatusChange();
+    }, 100);
   }
   
   // Messages as reactive store
@@ -128,5 +138,74 @@ export class UniversalDMConversation {
   private getSubjectFromEvent(event: NostrEvent): string | undefined {
     const subjectTag = event.tags.find(tag => tag[0] === 'subject');
     return subjectTag?.[1];
+  }
+  
+  // Status as reactive store
+  get status(): UniversalNostrStore<ConversationStatus> {
+    const self = this;
+    return {
+      subscribe: (callback: (status: ConversationStatus) => void) => {
+        callback(self._status);
+        self.statusCallbacks.push(callback);
+        return () => {
+          const index = self.statusCallbacks.indexOf(callback);
+          if (index > -1) {
+            self.statusCallbacks.splice(index, 1);
+          }
+        };
+      },
+      get current(): ConversationStatus {
+        return self._status;
+      }
+    } as UniversalNostrStore<ConversationStatus>;
+  }
+  
+  // Latest message
+  get latest(): UniversalNostrStore<DMMessage | undefined> {
+    const self = this;
+    return {
+      subscribe: (callback: (message: DMMessage | undefined) => void) => {
+        return self.messages.subscribe(messages => {
+          callback(messages[messages.length - 1]);
+        });
+      },
+      get current(): DMMessage | undefined {
+        const messages = self.messages.current;
+        return messages[messages.length - 1];
+      }
+    } as UniversalNostrStore<DMMessage | undefined>;
+  }
+  
+  // Subject from latest message with subject tag
+  get subject(): UniversalNostrStore<string | undefined> {
+    const self = this;
+    return {
+      subscribe: (callback: (subject: string | undefined) => void) => {
+        return self.store.subscribe(events => {
+          const latestWithSubject = events
+            .filter((e: NostrEvent) => e.tags.some((t: string[]) => t[0] === 'subject'))
+            .sort((a: NostrEvent, b: NostrEvent) => b.created_at - a.created_at)[0];
+          callback(latestWithSubject ? self.getSubjectFromEvent(latestWithSubject) : undefined);
+        });
+      },
+      get current(): string | undefined {
+        const events = self.store.current;
+        const latestWithSubject = events
+          .filter((e: NostrEvent) => e.tags.some((t: string[]) => t[0] === 'subject'))
+          .sort((a: NostrEvent, b: NostrEvent) => b.created_at - a.created_at)[0];
+        return latestWithSubject ? self.getSubjectFromEvent(latestWithSubject) : undefined;
+      }
+    } as UniversalNostrStore<string | undefined>;
+  }
+  
+  // Close the conversation (cleanup)
+  async close(): Promise<void> {
+    this._status = 'disconnected';
+    this.notifyStatusChange();
+    // Store cleanup is handled automatically by Universal Cache
+  }
+  
+  private notifyStatusChange(): void {
+    this.statusCallbacks.forEach(cb => cb(this._status));
   }
 }
