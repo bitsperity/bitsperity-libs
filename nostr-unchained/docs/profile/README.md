@@ -1,17 +1,34 @@
-# Profile Management API
+# 👤 Profile Management API
 
-The **Profile Management API** provides a comprehensive, reactive system for handling Nostr profiles and follow lists with intelligent caching and optimal performance. Built on **NIP-01** (profiles) and **NIP-02** (follow lists) with **NIP-05** DNS-based identity verification support.
+Die **Profile Management API** bietet ein umfassendes, reaktives System zur Verwaltung von Nostr-Profilen und Follow-Listen mit intelligenter Cache-Optimierung und <10ms Response-Zeiten.
 
-## Key Features
+Basiert auf **NIP-01** (Profile), **NIP-02** (Follow Lists) und **NIP-05** (DNS-basierte Identitäts-Verifikation).
 
-- 🔄 **Reactive Profile Stores** - Real-time updates with Svelte-compatible stores
-- ⚡ **Intelligent Caching** - Cache-first loading with <10ms response times
-- 🛠️ **Fluent Builder APIs** - Intuitive, chainable profile and follow operations
-- 🎯 **Optimistic Updates** - Instant UI updates with async relay confirmation
-- 🔍 **Advanced Discovery** - Search profiles by name, NIP-05, metadata with relevance scoring
-- 📦 **Batch Operations** - Efficient bulk profile fetching and follow management
-- 🔐 **NIP-05 Verification** - Automatic DNS-based identity verification
-- 🚀 **High Performance** - Leverages UniversalEventCache for O(log n) queries
+## 🎯 Kernfeatures
+
+### ⚡ Cache-First Performance
+- **<10ms Response-Zeiten** für gecachte Profile
+- **O(log n) Queries** durch UniversalEventCache-Indexierung
+- **Intelligente LRU-Eviction** für optimale Speichernutzung
+- **Shared Subscriptions** reduzieren Netzwerk-Traffic
+
+### 🔄 Reaktive Datenflüsse  
+- **Svelte Store Integration** mit automatischen UI-Updates
+- **Real-Time Updates** bei Profil-Änderungen
+- **Optimistic Updates** für sofortiges UI-Feedback
+- **Framework-agnostisch** (React, Vue, Vanilla JS)
+
+### 🛠️ Developer Experience Excellence
+- **Fluent Builder APIs** mit Method Chaining
+- **TypeScript-First** mit vollständiger Typsicherheit
+- **Zero-Config Setup** funktioniert sofort
+- **Batch Operations** für effiziente Bulk-Verarbeitung
+
+### 🔍 Advanced Profile Discovery
+- **Multi-Kriterien-Suche** (Name, NIP-05, Metadata)
+- **Relevance Scoring** für beste Suchergebnisse
+- **NIP-05 Verification** mit DNS-basierter Validierung
+- **Pagination Support** für große Ergebnismengen
 
 ## Quick Start
 

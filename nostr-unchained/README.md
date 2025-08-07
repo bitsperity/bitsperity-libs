@@ -5,10 +5,20 @@
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Test Coverage](https://img.shields.io/badge/Coverage-90%25-brightgreen)](#testing)
 
-> **Universal Cache Architecture for decentralized social protocols.**  
-> Zero-config Nostr with lazy loading, user control, and reactive data flows.
+> **Universal Cache Architecture für dezentrale soziale Protokolle.**  
+> Zero-Config Nostr mit intelligenter Cache-First Performance, Lazy Loading und reaktiven Datenflüssen.
 
-**Nostr Unchained** is a TypeScript-first Nostr library built on the **Universal Cache Architecture** - a sophisticated 4-layer system that combines instant cache access with live relay subscriptions. Perfect for developers who want powerful Nostr applications without complexity.
+**Nostr Unchained** ist eine hochmoderne TypeScript-First Nostr-Bibliothek, die auf der **Universal Cache Architecture** basiert - einem raffinierten 4-Schichten-System, das blitzschnellen Cache-Zugriff mit Live-Relay-Subscriptions kombiniert. Perfekt für Entwickler, die mächtige Nostr-Anwendungen ohne Komplexität erstellen wollen.
+
+## 🚀 Kernmerkmale
+
+- **🏗️ Universal Cache Architecture** - Intelligente 4-Layer-Architektur mit automatischer Gift-Wrap-Behandlung
+- **⚡ Cache-First Performance** - <10ms Antwortzeiten für gecachte Daten
+- **🔄 Identische APIs** - `nostr.query()` und `nostr.sub()` funktionieren identisch
+- **🎛️ Benutzer-Kontrolle** - Lazy Loading, explizite Signing-Provider-Wahl
+- **📊 Reaktive Stores** - Svelte Store Integration für automatische UI-Updates
+- **🔐 End-to-End Verschlüsselung** - NIP-17/NIP-44 mit Perfect Forward Secrecy
+- **🎁 Transparente Gift-Wrap-Behandlung** - Automatische Kind 1059 → 14 Entschlüsselung
 
 ---
 
@@ -35,51 +45,85 @@ Understand how **reactive Svelte stores** provide automatic UI updates across al
 ### 📝 **Build:** [Event Publishing](./docs/events/README.md)
 Master zero-config publishing with **user-controlled signing** providers and fluent event builders.
 
+### 🏗️ **Architecture:** [Universal Cache Architecture](./docs/architecture/README.md)
+Erfahre die innovative 4-Schichten-Architektur im Detail.
+
 ### 👥 **Scale:** [Social Media Core](./docs/social/README.md)
 Build complete social apps with profiles, contacts, threading, reactions, and feeds.
 
 ---
 
-## ✨ Core Philosophy
+## ✨ Design-Philosophie
 
-**Universal, Reactive, User-Controlled**
+**Universal, Reaktiv, Benutzer-Kontrolliert**
 
-- 🏗️ **Universal Cache Architecture** - 4-layer system: Cache → Query/Sub → APIs → Zero-Config DX
-- 🔄 **Identical APIs** - Same fluent interface for cache queries and live subscriptions
-- ⚡ **Lazy Loading** - Features activate only when needed (like DM gift wrap subscriptions)
-- 🎛️ **User Control** - Full control over signing providers and subscriptions
-- 📊 **Reactive Everything** - Svelte stores everywhere for automatic UI updates
+Nostr Unchained folgt einer klaren Design-Philosophie, die auf drei Säulen basiert:
+
+### 🏗️ Universal Cache Architecture
+Elegante 4-Schichten-Architektur, die Komplexität abstrahiert:
+```
+┌─────────────────────────────────────────┐
+│  Schicht 4: Zero-Config Developer API  │ ← Du arbeitest hier
+├─────────────────────────────────────────┤
+│  Schicht 3: Spezialisierte APIs (DM)   │ ← Basiert auf Queries
+├─────────────────────────────────────────┤
+│  Schicht 2: Query/Sub Engine           │ ← Identische APIs
+├─────────────────────────────────────────┤
+│  Schicht 1: Universal Event Cache      │ ← Auto Gift-Wrap-Handling
+└─────────────────────────────────────────┘
+```
+
+### ⚡ Performance-First Design
+- **Cache-First**: Sofortige Antworten mit Live-Updates im Hintergrund
+- **O(log n) Queries**: Effiziente Indexierung nach Kind, Autor und Tags
+- **Intelligente Deduplication**: Keine doppelten Events in Stores
+- **LRU-Eviction**: Optimale Speicherverwaltung
+
+### 🎛️ Benutzer-Kontrolle
+- **Lazy Loading**: Features aktivieren sich nur bei Bedarf
+- **Explizite Signing-Provider-Wahl**: Keine versteckten Überraschungen
+- **Privacy by Design**: DM-Subscriptions nur bei expliziter Nutzung
 
 ```typescript
-// This is all you need for a complete Nostr app
+// Das ist alles, was du für eine vollständige Nostr-App brauchst
 import { NostrUnchained } from 'nostr-unchained';
 
 const nostr = new NostrUnchained();
 await nostr.connect();
 
-// 📝 Publishing
-await nostr.publish("Hello, decentralized world! 🌍");
+// 📝 Publishing - Zero Config
+await nostr.publish("Hallo, dezentrale Welt! 🌍");
 
-// 🔍 Queries (instant cache access)
+// 🔍 Cache Queries - Sofortiger Zugriff (<10ms)
 const cachedPosts = nostr.query().kinds([1]).execute();
+console.log(`${cachedPosts.current.length} Posts aus Cache`);
 
-// 📡 Subscriptions (live relay updates)  
+// 📡 Live Subscriptions - Identische API!
 const livePosts = nostr.sub().kinds([1]).execute();
+livePosts.subscribe(posts => console.log(`Live: ${posts.length} Posts`));
 
-// 💬 Direct Messages (lazy-loaded gift wrap subscriptions)
+// 💬 Direct Messages - Lazy Loading mit End-to-End Verschlüsselung
 const chat = nostr.dm.with('recipient-pubkey');
-await chat.send('Encrypted message!');
+await chat.send('Verschlüsselte Nachricht! 🔐');
+chat.subscribe(messages => console.log(`${messages.length} Nachrichten`));
 
-// 👤 Profile Management (cache-first with <10ms response)
+// 👤 Profile Management - Cache-First mit <10ms Response
 const profile = nostr.profile.get('npub1...');
-await nostr.profile.edit().name('Alice').about('Nostr dev').publish();
-await nostr.profile.follows.add('npub1...').petname('Bob').publish();
+await nostr.profile.edit()
+  .name('Alice Cooper')
+  .about('Bitcoin & Nostr Enthusiast')
+  .nip05('alice@domain.com')
+  .publish();
 
-// 🏪 All return reactive Svelte stores
-cachedPosts.subscribe(posts => console.log('Cache:', posts.length));
-livePosts.subscribe(posts => console.log('Live:', posts.length));
-chat.subscribe(messages => console.log('DMs:', messages.length));
-profile.subscribe(state => console.log('Profile:', state.profile?.metadata?.name));
+// 🔗 Follow Management - Fluent Builder APIs
+await nostr.profile.follows.add('npub1...')
+  .petname('Bob')
+  .relay('wss://relay.example.com')
+  .publish();
+
+// 📊 Alle APIs returnieren reaktive Svelte Stores
+cachedPosts.subscribe(posts => updateUI(posts));
+profile.subscribe(state => displayProfile(state.profile));
 ```
 
 ## 🚀 Quick Start
@@ -152,28 +196,47 @@ const results = await nostr.profile.discover()
 
 > **Next Step:** Read the [Query & Subscription Guide](./docs/query/README.md) to understand the core architecture.
 
-## 🏗️ Universal Cache Architecture Overview
+## 🏗️ Universal Cache Architecture im Detail
 
-Nostr Unchained is built around a sophisticated **4-layer architecture**:
+Nostr Unchained implementiert eine innovative **4-Schichten-Architektur**, die Komplexität vollständig abstrahiert:
 
+### Architektur-Überblick
 ```
 ┌─────────────────────────────────────────┐
-│  Layer 4: Zero-Config Developer API     │ ← You work here
+│  Schicht 4: Zero-Config Developer API  │ ← Hier entwickelst du
 ├─────────────────────────────────────────┤
-│  Layer 3: Specialized APIs (DM, Social) │ ← Built on queries
+│  Schicht 3: Spezialisierte APIs        │ ← DM, Profile, Social
 ├─────────────────────────────────────────┤
-│  Layer 2: Query/Sub Engine              │ ← Identical APIs  
+│  Schicht 2: Query/Subscription Engine  │ ← Identische APIs
 ├─────────────────────────────────────────┤
-│  Layer 1: Universal Event Cache         │ ← Auto gift wrap handling
+│  Schicht 1: Universal Event Cache      │ ← Intelligente Speicherung
 └─────────────────────────────────────────┘
 ```
 
-**Key Benefits:**
-- 🔄 **Identical APIs**: `nostr.query()` and `nostr.sub()` work the same way
-- ⚡ **Cache-First**: Instant results with live updates
-- 🎁 **Auto Gift Wraps**: Kind 1059 → 14 transparent unwrapping
-- 📊 **Reactive**: Svelte stores everywhere
-- 🔐 **User Control**: Choose signing providers and lazy loading
+### Kernvorteile der Architektur
+
+#### ⚡ Performance Excellence
+- **<10ms Cache-Zugriffe** durch O(log n) Indexierung
+- **Intelligente LRU-Eviction** für optimale Speichernutzung
+- **Automatische Deduplication** verhindert doppelte Events
+- **Shared Subscriptions** reduzieren Netzwerk-Traffic
+
+#### 🔄 API-Konsistenz
+```typescript
+// IDENTISCHE APIs für Cache und Live-Daten
+const cached = nostr.query().kinds([1]).authors(['alice']).execute();
+const live = nostr.sub().kinds([1]).authors(['alice']).execute();
+
+// Beide returnieren reaktive Stores mit identischer API
+cached.subscribe(posts => console.log('Cache:', posts.length));
+live.subscribe(posts => console.log('Live:', posts.length));
+```
+
+#### 🎁 Transparente Verschlüsselung
+- **Automatische Gift-Wrap-Behandlung**: Kind 1059 → 14 Transformation
+- **NIP-44 v2 Verschlüsselung** mit ChaCha20-Poly1305
+- **Perfect Forward Secrecy** durch Ephemeral Keys
+- **Zero-Config Encryption**: Verschlüsselung funktioniert transparent
 
 > **Deep Dive:** Read the [Query & Subscription Engine](./docs/query/README.md) guide to understand how this elegant architecture works.
 
@@ -252,6 +315,13 @@ Scale to **full social applications**:
 - ❤️ **Reactions**: Like, emoji, custom reactions
 - 📰 **Feeds**: Global and following timelines
 
+#### 🏗️ **Deep Dive:** [Universal Cache Architecture](./docs/architecture/README.md)
+Verstehe die **innovative 4-Schichten-Architektur** im Detail:
+- 🎯 **Schicht-für-Schicht-Analyse** der Universal Cache Architecture
+- ⚡ **Performance-Optimierungen** und O(log n) Implementierungen
+- 🔐 **Kryptographische Details** der Gift-Wrap-Behandlung
+- 📊 **Architektur-Testing** mit Real-Relay-Validierung
+
 ---
 
 ## 🎯 Why Choose Nostr Unchained?
@@ -274,56 +344,161 @@ Scale to **full social applications**:
 - ✅ **Secure**: End-to-end encryption with perfect forward secrecy
 - ✅ **Fast**: Instant cache access with background updates
 
-## ⭐ Key Features
+## 🎯 Technische Highlights
 
-### 🏗️ **Universal Cache Architecture**
-- **4-Layer Design** - Clean separation: Cache → Query/Sub → APIs → DX
-- **Auto Gift Wrap Handling** - Kind 1059 → 14 transformation transparent
-- **Reactive Updates** - All stores update when cache changes
-- **Framework Agnostic** - Works with Svelte, React, Vue, vanilla JS
+### 🏗️ **Universal Cache Architecture Excellence**
 
-### 🎛️ **User Control & Lazy Loading**
-- **Signing Provider Control** - Users choose extension, local, or custom signers
-- **Lazy Gift Wrap Subscriptions** - DM features activate only when used
-- **Performance Optimized** - No unnecessary subscriptions or network traffic
-- **Privacy Focused** - Users control when DM activity becomes visible
+**Intelligente 4-Schichten-Trennung:**
+- **Schicht 1 (Cache)**: O(log n) Performance mit LRU-Eviction und automatischer Gift-Wrap-Entschlüsselung
+- **Schicht 2 (Query/Sub)**: Identische APIs für Cache-Zugriff und Live-Subscriptions
+- **Schicht 3 (APIs)**: Spezialisierte Module (DM, Profile, Social) basierend auf Query-Engine
+- **Schicht 4 (DX)**: Zero-Config Developer Experience ohne technische Details
 
-### 🔐 **Protocol Support**
-- **NIP-01** - Basic protocol flow (events, signatures)
-- **NIP-17** - Private Direct Messages with gift wrap protocol
-- **NIP-44** - Versioned Encryption (ChaCha20-Poly1305)
-- **NIP-59** - Gift Wrap Protocol (automatic unwrapping)
-- **NIP-25** - Reactions (extensible for custom emoji)
+**Performance-Optimierungen:**
+```typescript
+// Cache-Performance: <10ms für gecachte Daten
+const profile = nostr.profile.get(pubkey); // Sofortiger Cache-Zugriff
+console.log(profile.current?.name); // Synchroner Zugriff möglich
 
-### 💻 **Developer Experience**
-- **TypeScript First** - Complete type safety with intelligent inference
-- **Svelte Stores** - Reactive data everywhere with `$store` syntax
-- **Identical APIs** - Same fluent interface for queries and subscriptions
-- **Rich Error Handling** - Detailed error messages with debugging context
-
-## 🧪 Testing
-
-We maintain high-quality standards with comprehensive testing:
-
-```bash
-# Run all tests
-npm test
-
-# Run integration tests against real relays
-npm run test:integration
-
-# Run with coverage
-npm run test:coverage
-
-# Watch mode for development
-npm run test:watch
+// Intelligente Deduplication
+const sub1 = nostr.sub().kinds([1]).execute(); // Startet Subscription
+const sub2 = nostr.sub().kinds([1]).execute(); // Nutzt dieselbe Subscription!
 ```
 
-**Test Philosophy:**
-- **Real Relay Testing** - No mocks, authentic Nostr protocol validation
-- **Universal Architecture** - All layers tested in integration
-- **User Control Scenarios** - Lazy loading and signing provider switching
-- **Multi-participant DMs** - End-to-end encryption testing
+### 🎛️ **Benutzer-Kontrolle & Privacy by Design**
+
+**Explizite Signing-Provider-Wahl:**
+```typescript
+// Benutzer entscheidet bewusst
+await nostr.useExtensionSigner();  // Browser Extension (empfohlen)
+await nostr.useLocalKeySigner();   // Lokale Keys (Development)
+await nostr.useCustomSigner(customSigner); // Custom Provider
+
+// Transparenter Status
+const info = nostr.getSigningInfo();
+console.log(`Aktiv: ${info.method}, Pubkey: ${info.pubkey}`);
+```
+
+**Lazy Loading für maximale Privacy:**
+```typescript
+// Phase 1: Verbindung ohne DM-Overhead
+await nostr.connect(); // Nur Relay-Verbindungen
+
+// Phase 2: Normale Nutzung ohne DM-Subscriptions
+await nostr.publish('Hallo Welt!'); // Funktioniert ohne DMs
+const posts = nostr.query().kinds([1]).execute();
+
+// Phase 3: Erste DM-Nutzung startet Gift-Wrap-Subscription
+const chat = nostr.dm.with(pubkey); // JETZT startet DM-Subscription
+```
+
+### 🔐 **Kryptographische Exzellenz**
+
+**Multi-Layer-Verschlüsselung (NIP-17/NIP-44/NIP-59):**
+- **3-Layer-Verschlüsselung**: Rumor → Seal → Gift Wrap
+- **NIP-44 v2**: ChaCha20-Poly1305 mit HKDF-Schlüsselableitung
+- **Perfect Forward Secrecy**: Ephemeral Keys für jede Nachricht
+- **Noble.js Integration**: Industriestandard-Kryptographie
+
+**Automatische Gift-Wrap-Behandlung:**
+```typescript
+// User sieht nur die einfache API
+const chat = nostr.dm.with(pubkey);
+await chat.send('Geheime Nachricht');
+
+// Cache behandelt automatisch:
+// 1. Verschlüsselung (NIP-44)
+// 2. Seal Creation (NIP-59)
+// 3. Gift Wrap Creation (Kind 1059)
+// 4. Entschlüsselung eingehender Gift Wraps
+// 5. Kind 1059 → Kind 14 Transformation
+```
+
+### 💻 **Developer Experience der Spitzenklasse**
+
+**TypeScript-First mit intelligenter Typisierung:**
+```typescript
+// Vollständige Typsicherheit
+const posts: UniversalNostrStore<NostrEvent[]> = nostr.query().kinds([1]).execute();
+const profile: UniversalNostrStore<UserProfile | null> = nostr.profile.get(pubkey);
+
+// Fluent Builders mit Autocompletion
+const result = await nostr.profile.edit()
+  .name('Alice') // string
+  .about('Bio')  // string
+  .nip05('alice@domain.com') // validierte Email
+  .publish(); // PublishResult
+```
+
+**Framework-agnostische Reaktivität:**
+```svelte
+<!-- Svelte (native) -->
+<script>
+  const posts = nostr.query().kinds([1]).execute();
+</script>
+{#each $posts as post}
+  <div>{post.content}</div>
+{/each}
+```
+
+```tsx
+// React Hook Pattern
+function useNostrStore(store) {
+  const [data, setData] = useState(store.current);
+  useEffect(() => store.subscribe(setData), [store]);
+  return data;
+}
+```
+
+## 🧪 Qualitätssicherung
+
+Nostr Unchained setzt auf **No-Mock Testing** mit echten Relays für authentische Protokoll-Validierung:
+
+### Test-Philosophie
+
+**Real Relay Testing Excellence:**
+- **42+ Test-Dateien** mit umfassender Abdeckung
+- **Keine Mocks**: Authentische Nostr-Protokoll-Validierung
+- **Live-Relay-Integration**: Tests gegen echte Relay-Server
+- **End-to-End Verschlüsselung**: Multi-Teilnehmer-DM-Flows
+
+**Test-Kategorien:**
+```
+tests-old-backup/
+├── infrastructure/     # Vitest Setup & Relay Health
+├── unit/              # Einzelmodule (Crypto, Builder, etc.)
+├── integration/       # Vollständige Protokoll-Flows
+└── social/           # Soziale Features mit echten Relays
+```
+
+**Beispiel für Test-Qualität:**
+```typescript
+// Echte Signer, echte Relay-Verbindungen
+const alice = new NostrUnchained({ relays: [LIVE_RELAY_URL] });
+const bob = new NostrUnchained({ relays: [LIVE_RELAY_URL] });
+
+// End-to-End DM Test
+const aliceChat = alice.dm.with(bobPubkey);
+const bobChat = bob.dm.with(alicePubkey);
+
+await aliceChat.send('Hallo Bob! 🔐');
+const messages = await bobChat.messages.waitFor(1);
+assert(messages[0].content === 'Hallo Bob! 🔐');
+```
+
+### Architektur-Tests
+
+**4-Schichten-Architektur Testing:**
+- **Layer 1**: UniversalEventCache mit O(log n) Performance-Tests
+- **Layer 2**: Query/Sub Engine mit identischen APIs
+- **Layer 3**: DM/Profile/Social Module Integration
+- **Layer 4**: Zero-Config Developer Experience
+
+**Performance & Security Testing:**
+- **Cache Performance**: >100 Events/Sekunde Verarbeitung
+- **Memory Management**: LRU-Eviction und Memory-Leak-Tests
+- **Kryptographie**: NIP-44 Official Test Vectors Compliance
+- **Gift Wrap Handling**: Automatische 1059 → 14 Transformation
 
 ## ⚙️ Configuration
 
@@ -445,7 +620,7 @@ MIT License - see [LICENSE](./LICENSE) file for details.
 
 ### 📖 **Complete Documentation Guide**
 
-[🔍 Query Engine](./docs/query/README.md) • [💬 Direct Messages](./docs/dm/README.md) • [🏪 Stores](./docs/stores/README.md) • [📝 Events](./docs/events/README.md) • [👥 Social](./docs/social/README.md)
+[🔍 Query Engine](./docs/query/README.md) • [💬 Direct Messages](./docs/dm/README.md) • [🏪 Stores](./docs/stores/README.md) • [📝 Events](./docs/events/README.md) • [👥 Social](./docs/social/README.md) • [🏗️ Architecture](./docs/architecture/README.md)
 
 **Start with [Query & Subscription Engine](./docs/query/README.md) to understand the foundation!**
 

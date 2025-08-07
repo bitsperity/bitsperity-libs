@@ -1,8 +1,15 @@
 # 💬 Direct Messages Module
 
-The DM module provides end-to-end encrypted private messaging using NIP-17 (Private Direct Messages) and NIP-44 (Versioned Encryption) with the Gift Wrap Protocol (NIP-59).
+Das DM-Modul bietet Ende-zu-Ende-verschlüsselte private Nachrichten mit **NIP-17** (Private Direct Messages), **NIP-44** (Versioned Encryption) und **NIP-59** (Gift Wrap Protocol).
 
-Built on the **Universal Cache Architecture** for maximum performance and reliability.
+Basiert auf der **Universal Cache Architecture** für maximale Performance und Zuverlässigkeit.
+
+## 🔐 Kryptographische Excellence
+
+- **3-Layer-Verschlüsselung**: Rumor → Seal → Gift Wrap (NIP-59)
+- **NIP-44 v2**: ChaCha20-Poly1305 mit HKDF-Schlüsselableitung  
+- **Perfect Forward Secrecy**: Ephemeral Keys für jede Nachricht
+- **Automatische Gift-Wrap-Behandlung**: Kind 1059 → 14 transparent
 
 ## Table of Contents
 

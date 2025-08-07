@@ -1,6 +1,8 @@
 # 🔍 Universal Query & Subscription Engine
 
-The Universal Query Engine provides **identical APIs** for cache queries and live subscriptions, built on the powerful Universal Cache Architecture.
+Die **Universal Query Engine** stellt **identische APIs** für Cache-Queries und Live-Subscriptions bereit, basierend auf der mächtigen Universal Cache Architecture.
+
+> **Kernkonzept**: Eine API für Cache und Live-Daten - lerne einmal, nutze überall.
 
 ## Table of Contents
 
