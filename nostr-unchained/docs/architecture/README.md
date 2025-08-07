@@ -1,32 +1,32 @@
-# 🏗️ Universal Cache Architecture
+# 🏗️ Universal Cache Architecture (SOLID)
 
-Die **Universal Cache Architecture** ist das Herzstück von Nostr Unchained - eine innovative 4-Schichten-Architektur, die Komplexität abstrahiert und außergewöhnliche Performance mit eleganter Developer Experience kombiniert.
+Die **Universal Cache Architecture** ist das Herzstück von Nostr Unchained - eine SOLID-implementierte 3-Schichten-Architektur mit subscription-basiertem Caching, die Komplexität abstrahiert und außergewöhnliche Performance mit eleganter Developer Experience kombiniert.
 
 ## 📖 Architektur-Überblick
 
-### Die 4 Schichten im Detail
+### Die 3 SOLID-Schichten im Detail
 
 ```
 ┌─────────────────────────────────────────┐
-│  Schicht 4: Zero-Config Developer API  │ ← Du entwickelst hier
+│  Schicht 2: High-Level APIs            │ ← DM, Profile, Social Modules
 ├─────────────────────────────────────────┤
-│  Schicht 3: Spezialisierte APIs        │ ← DM, Profile, Social  
+│  Schicht 1: Core Layer                 │ ← pub/sub/query/delete/publishSigned  
 ├─────────────────────────────────────────┤
-│  Schicht 2: Query/Subscription Engine  │ ← Identische APIs
-├─────────────────────────────────────────┤
-│  Schicht 1: Universal Event Cache      │ ← Intelligente Speicherung
+│  Schicht 0: Universal Event Cache      │ ← Subscription-First Storage
 └─────────────────────────────────────────┘
 ```
 
-## 🎯 Schicht 1: Universal Event Cache
+**Kernprinzip**: "Im Cache landen nur Sachen die subscribed werden"
+
+## 🗃️ Schicht 0: Universal Event Cache (Subscription-First)
 
 **Kernkomponenten:**
-- `UniversalEventCache.ts` (438 Zeilen) - Hauptcache-Engine
-- **O(log n) Performance** durch effiziente Indexierung
-- **Automatische Gift-Wrap-Behandlung** (Kind 1059 → 14)
-- **LRU-Eviction** mit doppelt verketteten Listen
+- `UniversalEventCache.ts` (446 Zeilen) - Hauptcache-Engine  
+- **Subscription-First**: "Im Cache landen nur Sachen die subscribed werden"
+- **Gift Wrap Storage**: Events unabhängig von Decryption Success
+- **Tag-basierte Filterung**: Vollständige #p, #e, #t Implementation
 
-### Cache-Optimierungen
+### Cache-Optimierungen (Recent Critical Fixes)
 
 ```typescript
 // Effiziente Indexierung
@@ -34,28 +34,45 @@ private eventsByKind = new Map<number, Set<string>>();
 private eventsByAuthor = new Map<string, Set<string>>();
 private eventsByTag = new Map<string, Map<string, Set<string>>>();
 
-// Automatische Gift-Wrap-Entschlüsselung
+// CRITICAL FIX: Gift Wrap Storage unabhängig von Decryption
 async addEvent(event: NostrEvent): Promise<void> {
   if (event.kind === 1059) {
-    const decrypted = await this.unwrapGiftWrap(event);
-    if (decrypted) {
-      await this.addEvent(decrypted); // Rekursiv: entschlüsselter Inhalt
+    // Store the Gift Wrap event itself in cache
+    this.events.set(event.id, event);
+    this.updateIndexes(event);
+    this.notifySubscribers(event);
+    
+    // Additionally, try to decrypt and store decrypted content if possible
+    try {
+      const decrypted = await this.unwrapGiftWrap(event);
+      if (decrypted) {
+        await this.addEvent(decrypted); // Recursive: add unwrapped content
+      }
+    } catch (error) {
+      // Failed to decrypt - that's fine, we still stored the Gift Wrap
+      console.debug('Failed to unwrap gift wrap (stored anyway):', error);
     }
-    return; // Gift Wrap selbst wird NICHT gespeichert
+    return;
   }
   // Alle anderen Events direkt in Cache
 }
 ```
 
-**Performance-Metriken:**
-- **<10ms** Cache-Zugriffe
+**Performance-Metriken (Post-Fixes):**
+- **<10ms** Cache-Zugriffe mit vollständiger Tag-Filterung
 - **>10.000** Events Standard-Kapazität
 - **O(1)** LRU-Operationen
-- **Zero** Duplikate durch intelligente Deduplication
+- **100%** Gift Wrap Storage Success (unabhängig von Decryption)
+- **Auto-Subscribe** verhindert verlorene Message Conversions
 
-## 🔍 Schicht 2: Query/Subscription Engine  
+## 🛠️ Schicht 1: Core Layer (pub/sub/query/delete)
 
-**Kernkonzept**: Identische APIs für Cache-Queries und Live-Subscriptions
+**Kernkomponenten:**
+- **publish()**: Standard Event Publishing mit automatischem Signing
+- **publishSigned()**: Spezielle Methode für pre-signed Events (Gift Wraps)
+- **sub()**: Live Subscriptions die den Cache füllen
+- **query()**: Sofortige Cache-Abfragen
+- **delete()**: Event-Deletion mit Broadcast
 
 ### API-Symmetrie
 
@@ -89,22 +106,27 @@ const liveSubscription = nostr.sub()
   .execute();
 ```
 
-## 🛠️ Schicht 3: Spezialisierte APIs
+## 🎨 Schicht 2: High-Level APIs (DM, Profile, Social)
 
-APIs sind **Query-Wrapper** ohne direkte Netzwerk-Zugriffe:
+APIs sind **SOLID-implementierte Module** die den Core Layer verwenden:
 
-### DM Module - Query-basierte Implementierung
+### DM Module - Subscription-First Implementation (Fixed)
 
 ```typescript
-// DM Conversation = Cache Query für Kind 14 Events
-const conversation = nostr.query()
-  .kinds([14])
-  .authors([myPubkey, alicePubkey])
-  .tags('p', [myPubkey, alicePubkey])
+// UniversalDMConversation mit Auto-Subscribe (NEW!)
+const chat = nostr.getDM()?.with(bobPubkey);
+// AUTOMATIC:
+// 1. Startet Gift Wrap Subscription (.sub().kinds([1059]).tags('p', [myPubkey]))
+// 2. Erstellt Cache Query (.query().kinds([1059]).tags('p', [myPubkey]))
+// 3. Auto-Subscribe im Constructor für Message Conversion
+
+// OLD WAY (Manual):
+const giftWrapSub = nostr.sub()
+  .kinds([1059])
+  .tags('p', [myPubkey])  // NOW WORKS with tag filtering!
   .execute();
 
-// Gift Wrap Subscription läuft parallel
-const giftWrapSub = nostr.sub()
+const dmQuery = nostr.query()
   .kinds([1059])
   .tags('p', [myPubkey])
   .execute();

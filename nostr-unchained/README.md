@@ -5,20 +5,21 @@
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Test Coverage](https://img.shields.io/badge/Coverage-90%25-brightgreen)](#testing)
 
-> **Universal Cache Architecture für dezentrale soziale Protokolle.**  
-> Zero-Config Nostr mit intelligenter Cache-First Performance, Lazy Loading und reaktiven Datenflüssen.
+> **SOLID Universal Cache Architecture für das Nostr-Protokoll.**  
+> Subscription-First Caching, 100% NIP-Compliance, Zero-Config DX mit reaktiven Datenflüssen.
 
-**Nostr Unchained** ist eine hochmoderne TypeScript-First Nostr-Bibliothek, die auf der **Universal Cache Architecture** basiert - einem raffinierten 4-Schichten-System, das blitzschnellen Cache-Zugriff mit Live-Relay-Subscriptions kombiniert. Perfekt für Entwickler, die mächtige Nostr-Anwendungen ohne Komplexität erstellen wollen.
+**Nostr Unchained** ist eine SOLID-implementierte TypeScript-First Nostr-Bibliothek, die auf der **Universal Cache Architecture** basiert - einem eleganten 3-Schichten-System (Cache, Core, High-Level APIs), das subscription-basiertes Caching mit Live-Relay-Synchronisation kombiniert. Perfekt für Entwickler, die robuste Nostr-Anwendungen mit exzellenter DX erstellen wollen.
 
 ## 🚀 Kernmerkmale
 
-- **🏗️ Universal Cache Architecture** - Intelligente 4-Layer-Architektur mit automatischer Gift-Wrap-Behandlung
-- **⚡ Cache-First Performance** - <10ms Antwortzeiten für gecachte Daten
-- **🔄 Identische APIs** - `nostr.query()` und `nostr.sub()` funktionieren identisch
-- **🎛️ Benutzer-Kontrolle** - Lazy Loading, explizite Signing-Provider-Wahl
-- **📊 Reaktive Stores** - Svelte Store Integration für automatische UI-Updates
-- **🔐 End-to-End Verschlüsselung** - NIP-17/NIP-44 mit Perfect Forward Secrecy
-- **🎁 Transparente Gift-Wrap-Behandlung** - Automatische Kind 1059 → 14 Entschlüsselung
+- **🏗️ Universal Cache Architecture** - Subscription-First 3-Schichten-System (Cache, Core, High-Level)
+- **⚡ SOLID Implementation** - Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion
+- **🔄 Subscription-First Caching** - "Im Cache landen nur Sachen die subscribed werden"
+- **🎛️ Excellent DX** - Zero-Config mit intuitiven APIs und reaktiven Stores
+- **📊 100% Protocol Compliance** - Vollständige NIP-17/NIP-44/NIP-59 Implementierung
+- **🔐 Advanced Cryptography** - ChaCha20-Poly1305, HKDF, Perfect Forward Secrecy
+- **🎁 Pre-Signed Event Support** - `publishSigned()` für Gift Wrap Events ohne Re-Signing
+- **🧪 Real Relay Testing** - Keine Mocks, nur echte Protokoll-Validierung
 
 ---
 
@@ -59,19 +60,19 @@ Build complete social apps with profiles, contacts, threading, reactions, and fe
 
 Nostr Unchained folgt einer klaren Design-Philosophie, die auf drei Säulen basiert:
 
-### 🏗️ Universal Cache Architecture
-Elegante 4-Schichten-Architektur, die Komplexität abstrahiert:
+### 🏗️ Universal Cache Architecture (3-Schichten-System)
+SOLID-implementierte Architektur mit klarer Trennung:
 ```
 ┌─────────────────────────────────────────┐
-│  Schicht 4: Zero-Config Developer API  │ ← Du arbeitest hier
+│  Schicht 2: High-Level APIs            │ ← DM, Profile, Social Modules
 ├─────────────────────────────────────────┤
-│  Schicht 3: Spezialisierte APIs (DM)   │ ← Basiert auf Queries
+│  Schicht 1: Core (pub/sub/query/delete)│ ← NostrUnchained Core Layer
 ├─────────────────────────────────────────┤
-│  Schicht 2: Query/Sub Engine           │ ← Identische APIs
-├─────────────────────────────────────────┤
-│  Schicht 1: Universal Event Cache      │ ← Auto Gift-Wrap-Handling
+│  Schicht 0: Universal Event Cache      │ ← Subscription-First Caching
 └─────────────────────────────────────────┘
 ```
+
+**Wichtiges Prinzip**: "Im Cache landen nur Sachen die subscribed werden" - keine automatischen Subscriptions, volle User-Kontrolle.
 
 ### ⚡ Performance-First Design
 - **Cache-First**: Sofortige Antworten mit Live-Updates im Hintergrund
@@ -102,9 +103,9 @@ console.log(`${cachedPosts.current.length} Posts aus Cache`);
 const livePosts = nostr.sub().kinds([1]).execute();
 livePosts.subscribe(posts => console.log(`Live: ${posts.length} Posts`));
 
-// 💬 Direct Messages - Lazy Loading mit End-to-End Verschlüsselung
-const chat = nostr.dm.with('recipient-pubkey');
-await chat.send('Verschlüsselte Nachricht! 🔐');
+// 💬 Direct Messages - NIP-44 Encryption mit Gift Wrap Protocol
+const chat = nostr.getDM().with('recipient-pubkey');
+await chat.send('Verschlüsselte Nachricht! 🔐'); // Automatisch Gift-Wrapped
 chat.subscribe(messages => console.log(`${messages.length} Nachrichten`));
 
 // 👤 Profile Management - Cache-First mit <10ms Response
@@ -166,9 +167,9 @@ console.log(`Found ${posts.current.length} cached posts`);
 const liveData = nostr.sub().kinds([1]).execute();
 liveData.subscribe(events => console.log(`Live: ${events.length}`));
 
-// 💬 Send encrypted DMs
-const chat = nostr.dm.with('recipient-pubkey');
-await chat.send('Hello! 🔐');
+// 💬 Send encrypted DMs (NIP-44 compliant)
+const chat = nostr.getDM()?.with('recipient-pubkey');
+await chat.send('Hello! 🔐'); // Auto Gift-Wrapped mit publishSigned()
 chat.subscribe(messages => console.log(`${messages.length} messages`));
 
 // 👤 Profile & Follow Management
@@ -198,28 +199,28 @@ const results = await nostr.profile.discover()
 
 ## 🏗️ Universal Cache Architecture im Detail
 
-Nostr Unchained implementiert eine innovative **4-Schichten-Architektur**, die Komplexität vollständig abstrahiert:
+Nostr Unchained implementiert eine **SOLID 3-Schichten-Architektur** mit subscription-basiertem Caching:
 
 ### Architektur-Überblick
 ```
 ┌─────────────────────────────────────────┐
-│  Schicht 4: Zero-Config Developer API  │ ← Hier entwickelst du
+│  Schicht 2: High-Level APIs            │ ← DM, Profile, Social Modules
 ├─────────────────────────────────────────┤
-│  Schicht 3: Spezialisierte APIs        │ ← DM, Profile, Social
+│  Schicht 1: Core Layer                 │ ← pub/sub/query/delete + publishSigned()
 ├─────────────────────────────────────────┤
-│  Schicht 2: Query/Subscription Engine  │ ← Identische APIs
-├─────────────────────────────────────────┤
-│  Schicht 1: Universal Event Cache      │ ← Intelligente Speicherung
+│  Schicht 0: Universal Event Cache      │ ← Subscription-First Storage
 └─────────────────────────────────────────┘
 ```
+
+**Kernprinzip**: Subscription-First Caching - Events landen nur im Cache wenn sie subscribed werden!
 
 ### Kernvorteile der Architektur
 
 #### ⚡ Performance Excellence
 - **<10ms Cache-Zugriffe** durch O(log n) Indexierung
-- **Intelligente LRU-Eviction** für optimale Speichernutzung
-- **Automatische Deduplication** verhindert doppelte Events
-- **Shared Subscriptions** reduzieren Netzwerk-Traffic
+- **Tag-Filter Support** - Vollständige #p, #e, #t Tag-Filterung
+- **Gift Wrap Storage** - Events werden unabhängig von Decryption gespeichert
+- **Auto-Subscribe DM** - Automatische Message-Conversion ohne manuelle Subscription
 
 #### 🔄 API-Konsistenz
 ```typescript
@@ -232,11 +233,12 @@ cached.subscribe(posts => console.log('Cache:', posts.length));
 live.subscribe(posts => console.log('Live:', posts.length));
 ```
 
-#### 🎁 Transparente Verschlüsselung
-- **Automatische Gift-Wrap-Behandlung**: Kind 1059 → 14 Transformation
-- **NIP-44 v2 Verschlüsselung** mit ChaCha20-Poly1305
-- **Perfect Forward Secrecy** durch Ephemeral Keys
-- **Zero-Config Encryption**: Verschlüsselung funktioniert transparent
+#### 🎁 100% NIP-Compliant Encryption
+- **NIP-44 v2**: ChaCha20-Poly1305 mit HKDF Key Derivation
+- **NIP-59 Gift Wrap**: 3-Layer Encryption (Rumor → Seal → Gift Wrap)
+- **NIP-17 Private DMs**: Vollständige Protokoll-Compliance
+- **publishSigned()**: Spezielle Methode für pre-signed Gift Wrap Events
+- **bytesToHex() Fix**: Korrekte Hex-Conversion für Ephemeral Keys
 
 > **Deep Dive:** Read the [Query & Subscription Engine](./docs/query/README.md) guide to understand how this elegant architecture works.
 
@@ -450,25 +452,49 @@ function useNostrStore(store) {
 }
 ```
 
-## 🧪 Qualitätssicherung
+## 🔧 Recent Critical Fixes (v2.0+)
 
-Nostr Unchained setzt auf **No-Mock Testing** mit echten Relays für authentische Protokoll-Validierung:
+### Gift Wrap Protocol Compliance
+- **publishSigned() Method**: Neue Methode für pre-signed Events (Gift Wraps)
+  - Problem: `publish()` hat Gift Wrap Events re-signed und damit invalidiert
+  - Lösung: `publishSigned()` behält Original-Signatur mit Ephemeral Keys
+- **Tag Filter Implementation**: Vollständige #p, #e, #t Tag-Filterung
+  - Problem: `matchesFilter()` hatte KEINE Tag-Filterung implementiert  
+  - Lösung: Komplette Tag-Filter-Logik für alle Standard-Tags
+- **Gift Wrap Caching**: Events werden unabhängig von Decryption gespeichert
+  - Problem: Gift Wraps wurden verworfen wenn Decryption fehlschlug
+  - Lösung: Alle Gift Wraps landen im Cache, Decryption ist optional
+- **Auto-Subscribe Fix**: DMConversation subscribed automatisch
+  - Problem: `convertEventsToMessages()` wurde nie aufgerufen
+  - Lösung: Auto-Subscribe im Constructor für Message-Conversion
+
+### API Improvements
+- **DMMessage.sender**: Neues Alias-Property für bessere Kompatibilität
+- **getDM() Method**: Explizite Getter-Methode statt direkter Property
+- **Hex Conversion Fix**: `bytesToHex()` statt manueller Conversion
+
+## 🧪 Testing Philosophy: Real Relay Validation
+
+Nostr Unchained verwendet **KEINE MOCKS** - nur echte Relay-Tests für authentische Protokoll-Validierung:
 
 ### Test-Philosophie
 
-**Real Relay Testing Excellence:**
-- **42+ Test-Dateien** mit umfassender Abdeckung
-- **Keine Mocks**: Authentische Nostr-Protokoll-Validierung
-- **Live-Relay-Integration**: Tests gegen echte Relay-Server
-- **End-to-End Verschlüsselung**: Multi-Teilnehmer-DM-Flows
+**Mock-First ist FALSCH für Protokoll-Libraries!**
+- **Real Relay Testing**: Alle Tests laufen gegen echte Nostr-Relays
+- **Container-Based Relays**: Ephemeral Test-Relays ohne Persistenz
+- **Protocol Compliance**: Offizielle NIP Test Vectors (NIP-44 v2)
+- **End-to-End Validation**: Multi-User DM Flows mit echter Kryptographie
+- **Subscription-First**: Tests validieren Cache-Population durch Subscriptions
 
-**Test-Kategorien:**
+**Test-Struktur (v2):**
 ```
-tests-old-backup/
-├── infrastructure/     # Vitest Setup & Relay Health
-├── unit/              # Einzelmodule (Crypto, Builder, etc.)
-├── integration/       # Vollständige Protokoll-Flows
-└── social/           # Soziale Features mit echten Relays
+tests-v2/
+├── 00-infrastructure/   # Relay Health, Container Setup
+├── 01-core/            # Cache, Pub/Sub, Query Tests
+├── 02-high-level/      # DM, Profile, Social Module Tests  
+├── 03-integration/     # Multi-User End-to-End Flows
+├── 04-protocol-compliance/ # NIP-44, NIP-59 Official Vectors
+└── debug/              # Deep Debugging Tests
 ```
 
 **Beispiel für Test-Qualität:**

@@ -1,15 +1,16 @@
 # 💬 Direct Messages Module
 
-Das DM-Modul bietet Ende-zu-Ende-verschlüsselte private Nachrichten mit **NIP-17** (Private Direct Messages), **NIP-44** (Versioned Encryption) und **NIP-59** (Gift Wrap Protocol).
+Das DM-Modul bietet 100% protokoll-konforme Ende-zu-Ende-verschlüsselte Nachrichten mit **NIP-17** (Private Direct Messages), **NIP-44 v2** (ChaCha20-Poly1305 Encryption) und **NIP-59** (Gift Wrap Protocol).
 
-Basiert auf der **Universal Cache Architecture** für maximale Performance und Zuverlässigkeit.
+Basiert auf der **Subscription-First Universal Cache Architecture** mit SOLID-Prinzipien.
 
-## 🔐 Kryptographische Excellence
+## 🔐 Kryptographische Excellence (100% NIP-Compliant)
 
 - **3-Layer-Verschlüsselung**: Rumor → Seal → Gift Wrap (NIP-59)
-- **NIP-44 v2**: ChaCha20-Poly1305 mit HKDF-Schlüsselableitung  
-- **Perfect Forward Secrecy**: Ephemeral Keys für jede Nachricht
-- **Automatische Gift-Wrap-Behandlung**: Kind 1059 → 14 transparent
+- **NIP-44 v2 Compliance**: ChaCha20-Poly1305 mit HKDF Key Derivation
+- **Perfect Forward Secrecy**: Ephemeral Keys mit publishSigned() Support
+- **Gift Wrap Handling**: Automatische Kind 1059 Verarbeitung
+- **Tag Filtering**: Vollständige #p Tag-Filterung für targeted Messages
 
 ## Table of Contents
 
@@ -47,42 +48,40 @@ chat.subscribe(messages => {
 });
 ```
 
-## Universal Cache Architecture
+## Subscription-First Cache Architecture
 
-The DM system is built on a sophisticated 4-layer architecture:
+Das DM-System basiert auf der SOLID-implementierten 3-Schichten-Architektur:
 
-### Layer 1: Universal Event Cache
-- **Auto-unwraps gift wraps**: Kind 1059 → Kind 14 automatically
-- **Encrypted storage**: All events encrypted at rest
-- **Smart deduplication**: No duplicate messages
+### Schicht 0: Universal Event Cache
+- **Subscription-First**: "Im Cache landen nur Sachen die subscribed werden"
+- **Gift Wrap Storage**: Events werden unabhängig von Decryption Success gespeichert
+- **Tag-basierte Filterung**: Vollständige #p, #e, #t Filter-Implementation
 
-### Layer 2: Query/Sub Engine
-- **Identical APIs**: `nostr.query()` and `nostr.sub()` have same interface
-- **Cache integration**: Queries hit cache first, subscriptions fill cache
-- **Reactive updates**: Cache changes trigger store updates
+### Schicht 1: Core Layer (pub/sub/query/delete)
+- **publish()**: Standard Event Publishing mit automatischem Signing
+- **publishSigned()**: Spezielle Methode für pre-signed Gift Wrap Events
+- **sub()**: Live Subscriptions die den Cache füllen
+- **query()**: Sofortige Cache-Abfragen
 
-### Layer 3: Specialized APIs
-- **DM as query wrapper**: `dm.with()` creates reactive cache queries
-- **Room support**: Multi-participant encrypted groups
-- **Zero configuration**: Everything works automatically
-
-### Layer 4: Zero-Config Developer API
-- **No technical details**: Users never see kind 1059, gift wraps, etc.
-- **Educative design**: APIs are self-explanatory
-- **Advanced access**: Power users can access lower layers
+### Schicht 2: High-Level DM Module
+- **UniversalDMConversation**: Auto-Subscribe für Message Conversion
+- **GiftWrapProtocol**: 3-Layer Encryption mit Ephemeral Keys
+- **DMMessage Interface**: Einheitliche Message-Struktur mit sender Alias
 
 ```typescript
-// Layer 4: Zero-Config DX
-const chat = nostr.dm.with(pubkey); // Simple & intuitive
+// Schicht 2: High-Level DM API
+const chat = nostr.getDM()?.with(pubkey); // SOLID DM Module
 
-// Layer 3: Specialized DM API  
-const messages = chat.messages; // Reactive store
+// Automatische Features:
+// 1. Gift Wrap Subscription wird gestartet
+// 2. Auto-Subscribe für Message Conversion
+// 3. publishSigned() für Gift Wrap Events
 
-// Layer 2: Query Engine (if needed)
-const dmEvents = nostr.query().kinds([14]).execute();
+// Schicht 1: Core Layer (wenn benötigt)
+const giftWraps = nostr.query().kinds([1059]).execute();
 
-// Layer 1: Universal Cache (if needed)
-const cache = nostr.getCache(); // Advanced usage
+// Schicht 0: Cache Access (Advanced)
+const cache = nostr.getCache(); // Direkte Cache-Manipulation
 ```
 
 ## Lazy Loading & User Control
@@ -123,8 +122,8 @@ Everything happens automatically in the background.
 ### Simple Messages
 
 ```typescript
-// Get conversation (starts gift wrap subscription if needed)
-const chat = nostr.dm.with('pubkey-here');
+// Get conversation (auto-subscribes for message conversion)
+const chat = nostr.getDM()?.with('pubkey-here');
 
 // Send encrypted message
 await chat.send('Hello there! 👋');
@@ -283,14 +282,14 @@ Gift wraps hide message metadata:
 ### Main DM Interface
 
 ```typescript
-// Start conversation (lazy loads gift wrap subscription)
-nostr.dm.with(pubkey: string): UniversalDMConversation
+// Get DM Module (SOLID pattern)
+nostr.getDM(): UniversalDMModule | undefined
+
+// Start conversation (auto-subscribes)
+nostr.getDM()?.with(pubkey: string): UniversalDMConversation
 
 // Create multi-participant room
-nostr.dm.room(participants: string[], options?: RoomOptions): UniversalDMRoom
-
-// Get all active conversations
-nostr.dm.conversations: UniversalDMConversation[]
+nostr.getDM()?.room(participants: string[], options?: RoomOptions): UniversalDMRoom
 ```
 
 ### UniversalDMConversation
@@ -340,7 +339,10 @@ interface DMMessage {
   isFromMe: boolean;
   subject?: string;
   eventId: string;
-  pubkey: string;
+  senderPubkey: string;      // Original sender pubkey
+  recipientPubkey: string;   // Recipient pubkey
+  sender: string;            // Alias for senderPubkey (compatibility)
+  status: 'sent' | 'sending' | 'failed' | 'received';
 }
 
 interface MessageOptions {
@@ -374,6 +376,64 @@ interface SendResult {
 - ✅ **Metadata Protection** - Message patterns hidden via gift wraps
 - ✅ **Automatic Key Management** - No manual key handling required
 - ✅ **Quantum Resistant** - Uses Curve25519 + ChaCha20-Poly1305
+
+## 🔧 Troubleshooting Guide
+
+### Common Issues and Solutions
+
+#### Gift Wrap Events Not Arriving
+**Problem**: Bob receives 0 messages while Alice sends successfully
+**Root Causes**:
+1. **Missing Tag Filters**: Check if `matchesFilter()` implements #p tag filtering
+2. **Cache Storage**: Verify Gift Wraps are stored regardless of decryption
+3. **Auto-Subscribe**: Ensure DMConversation auto-subscribes for conversion
+
+**Solution**:
+```typescript
+// Verify subscription is active
+const chat = nostr.getDM()?.with(bobPubkey);
+// Auto-subscribe happens in constructor now!
+```
+
+#### Invalid Signature on Gift Wraps
+**Problem**: "Event invalid signature" errors
+**Root Cause**: `publish()` re-signs already signed Gift Wrap events
+**Solution**: Use `publishSigned()` for pre-signed events:
+```typescript
+// WRONG - will re-sign and invalidate
+await nostr.publish(giftWrapEvent);
+
+// CORRECT - preserves ephemeral key signature
+await nostr.publishSigned(giftWrapEvent);
+```
+
+#### Messages Not Converting
+**Problem**: Events in cache but `messages` array empty
+**Root Cause**: `convertEventsToMessages()` not being called
+**Solution**: Fixed with auto-subscribe in DMConversation constructor
+
+#### Hex Conversion Errors
+**Problem**: Invalid ephemeral keys or corrupted encryption
+**Root Cause**: Manual hex conversion instead of `bytesToHex()`
+**Solution**: Always use noble library functions for crypto operations
+
+### Debug Tools
+
+```typescript
+// Check Gift Wrap reception
+const giftWraps = nostr.query().kinds([1059]).tags('p', [myPubkey]).execute();
+console.log('Gift Wraps in cache:', giftWraps.current.length);
+
+// Verify subscription
+const sub = await nostr.sub().kinds([1059]).tags('p', [myPubkey]).execute();
+sub.store.subscribe(events => console.log('Live Gift Wraps:', events.length));
+
+// Test decryption manually
+import { GiftWrapProtocol } from 'nostr-unchained';
+const privateKey = await nostr.getPrivateKeyForEncryption();
+const decrypted = await GiftWrapProtocol.decryptGiftWrappedDM(giftWrap, privateKey);
+console.log('Decryption valid:', decrypted.isValid);
+```
 
 ---
 
