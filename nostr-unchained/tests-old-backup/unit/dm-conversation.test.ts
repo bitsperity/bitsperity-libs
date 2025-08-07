@@ -87,6 +87,15 @@ describe('Clean UniversalDMConversation Tests', () => {
     it('should initialize conversation with clean API', async () => {
       const conversation = alice.dm.with(bobPublicKey);
       
+      console.log('🧪 Test conversation debug:', {
+        conversation: !!conversation,
+        messages: !!conversation?.messages,
+        subscribe: typeof conversation?.subscribe,
+        send: typeof conversation?.send,
+        constructor: conversation?.constructor?.name,
+        keys: Object.keys(conversation || {})
+      });
+      
       expect(conversation).toBeDefined();
       expect(conversation.messages).toBeDefined();
       expect(typeof conversation.subscribe).toBe('function');
@@ -125,6 +134,8 @@ describe('Clean UniversalDMConversation Tests', () => {
       // Alice sends message to Bob
       const testMessage = `Clean API test ${Date.now()}`;
       const sendResult = await aliceConversation.send(testMessage);
+      
+      console.log('🧪 Send result debug:', sendResult);
       
       expect(sendResult.success).toBe(true);
       expect(sendResult.messageId).toBeDefined();

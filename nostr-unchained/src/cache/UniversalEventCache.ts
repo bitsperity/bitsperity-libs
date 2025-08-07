@@ -13,6 +13,9 @@
 
 import type { NostrEvent, Filter } from '../core/types.js';
 import { GiftWrapProtocol } from '../dm/protocol/GiftWrapProtocol.js';
+import { EventBuilder } from '../core/EventBuilder.js';
+import { isValidHexKey, nsecToHex } from '../utils/encoding-utils.js';
+import type { SigningProvider } from '../core/types.js';
 
 export interface CacheConfig {
   maxEvents?: number; // Default: 10,000
@@ -80,12 +83,79 @@ export class UniversalEventCache {
   };
   
   constructor(privateKey: string, config: CacheConfig = {}) {
-    this.privateKey = privateKey;
+    // Enforce hex-only invariant internally
+    this.privateKey = '';
+    this.setPrivateKey(privateKey);
     this.config = {
       maxEvents: config.maxEvents || 10000,
       maxMemoryMB: config.maxMemoryMB || 50,
       evictionPolicy: config.evictionPolicy || 'lru'
     };
+  }
+
+  // Optional decryptor to use extension-based NIP-44 when available
+  private decryptor: Pick<SigningProvider, 'nip44Decrypt'> | null = null;
+  setDecryptor(provider?: Pick<SigningProvider, 'nip44Decrypt'> | null) {
+    this.decryptor = provider ?? null;
+  }
+  
+  /**
+   * Update the private key used for unwrapping gift wraps without replacing the cache instance.
+   * This avoids losing previously cached events and subscribers.
+   */
+  setPrivateKey(privateKey: string): void {
+    if (!privateKey || typeof privateKey !== 'string') {
+      this.privateKey = '';
+      return;
+    }
+
+    let normalized = privateKey.trim();
+    // Accept bech32 (nsec) at boundary but normalize to hex internally
+    if (normalized.startsWith('nsec1')) {
+      try {
+        normalized = nsecToHex(normalized);
+      } catch {
+        // fall through to invalid handling
+      }
+    }
+    if (normalized.startsWith('0x')) {
+      normalized = normalized.slice(2);
+    }
+    if (!isValidHexKey(normalized)) {
+      console.warn('UniversalEventCache: invalid private key provided (expected 64-hex). Disabling unwrap.');
+      this.privateKey = '';
+      return;
+    }
+    this.privateKey = normalized.toLowerCase();
+  }
+  
+  /**
+   * Re-process all stored gift wrap (kind 1059) events using the current private key.
+   * Useful after the private key becomes available to decrypt previously seen wraps.
+   */
+  async reprocessGiftWraps(): Promise<void> {
+    const wraps: NostrEvent[] = [];
+    for (const event of this.events.values()) {
+      if (event.kind === 1059) {
+        wraps.push(event);
+      }
+    }
+    for (const wrap of wraps) {
+      try {
+        const decrypted = await this.unwrapGiftWrap(wrap);
+        if (decrypted && decrypted.kind !== 1059) {
+          // Directly index decrypted rumor without recursion to avoid re-adding wrap
+          if (!this.events.has(decrypted.id)) {
+            this.events.set(decrypted.id, decrypted);
+            this.updateIndexes(decrypted);
+            this.updateAccessTracking(decrypted.id);
+            this.notifySubscribers(decrypted);
+          }
+        }
+      } catch {
+        // Ignore failures; we will try again if needed later
+      }
+    }
   }
   
   async addEvent(event: NostrEvent): Promise<void> {
@@ -193,8 +263,54 @@ export class UniversalEventCache {
   }
   
   private async unwrapGiftWrap(giftWrap: NostrEvent): Promise<NostrEvent | null> {
-    const decryptionResult = await GiftWrapProtocol.unwrapGiftWrap(giftWrap, this.privateKey);
-    return decryptionResult;
+    // Prefer decryptor (extension) if available; fallback to local hex key
+    if (this.decryptor && typeof this.decryptor.nip44Decrypt === 'function') {
+      try {
+        // Use giftwrap pubkey for conversation key (sender of wrap)
+        const sealResult = await this.decryptor.nip44Decrypt(giftWrap.pubkey, giftWrap.content);
+        if (!sealResult) return null;
+        const sealEvent = JSON.parse(sealResult);
+        const rumorContent = await this.decryptor.nip44Decrypt(sealEvent.pubkey, sealEvent.content);
+        if (!rumorContent) return null;
+        const rumorEvent = JSON.parse(rumorContent);
+        return this.normalizeRumorFromWrap(giftWrap, rumorEvent);
+      } catch {
+        // fall back to local key below
+      }
+    }
+
+    // Fallback: local unwrap using hex private key
+    const rumorEvent = await GiftWrapProtocol.unwrapGiftWrap(giftWrap, this.privateKey);
+    if (!rumorEvent) return null;
+    return this.normalizeRumorFromWrap(giftWrap, rumorEvent);
+  }
+
+  private normalizeRumorFromWrap(giftWrap: NostrEvent, rumorEvent: any): NostrEvent | null {
+    try {
+      // Preserve recipient context from the gift wrap's p-tag
+      const pTag = giftWrap.tags.find((t): t is [string, string, ...string[]] => Array.isArray(t) && typeof t[0] === 'string');
+      const recipientPubkey: string = pTag && typeof pTag[1] === 'string' ? (pTag[1] as string) : '';
+
+      const originalTags: string[][] = Array.isArray(rumorEvent?.tags) ? rumorEvent.tags : [];
+      const hasRecipientTag = originalTags.some((t) => Array.isArray(t) && t[0] === 'p');
+      const mergedTags = hasRecipientTag || !recipientPubkey
+        ? originalTags
+        : [...originalTags, ['p', recipientPubkey]];
+
+      const normalized: NostrEvent = {
+        id: '',
+        pubkey: rumorEvent.pubkey,
+        created_at: rumorEvent.created_at,
+        kind: rumorEvent.kind,
+        tags: mergedTags,
+        content: rumorEvent.content,
+        sig: ''
+      } as unknown as NostrEvent;
+      (normalized as any).id = EventBuilder.calculateEventId(normalized as any);
+      return normalized;
+    } catch {
+      return null;
+    }
   }
   
   private updateIndexes(event: NostrEvent): void {
@@ -211,19 +327,20 @@ export class UniversalEventCache {
     this.eventsByAuthor.get(event.pubkey)!.add(event.id);
     
     // Tag indexes
-    event.tags.forEach(tag => {
-      const [tagName, tagValue] = tag;
-      if (!tagValue) return;
-      
+    event.tags.forEach((tag: string[]) => {
+      const tagName = (tag[0] || '') as string;
+      const tagVal = (tag[1] || '') as string;
+      if (!tagName || !tagVal) return;
+
       if (!this.eventsByTag.has(tagName)) {
-        this.eventsByTag.set(tagName, new Map());
+        this.eventsByTag.set(tagName, new Map<string, Set<string>>());
       }
       const tagMap = this.eventsByTag.get(tagName)!;
-      
-      if (!tagMap.has(tagValue)) {
-        tagMap.set(tagValue, new Set());
+
+      if (!tagMap.has(tagVal)) {
+        tagMap.set(tagVal, new Set<string>());
       }
-      tagMap.get(tagValue)!.add(event.id);
+      tagMap.get(tagVal)!.add(event.id);
     });
   }
   
@@ -231,24 +348,24 @@ export class UniversalEventCache {
     let candidateIds: Set<string> | undefined;
     
     // Use indexes for efficient filtering
-    if (filter.kinds && filter.kinds.length > 0) {
-      const kindSets = filter.kinds.map(k => this.eventsByKind.get(k) || new Set());
+    if (filter.kinds && (filter.kinds as number[]).length > 0) {
+      const kindSets: Set<string>[] = (filter.kinds as number[]).map((k: number) => this.eventsByKind.get(k) || new Set<string>());
       candidateIds = this.unionSets(kindSets);
     }
     
-    if (filter.authors && filter.authors.length > 0) {
-      const authorSets = filter.authors.map(a => this.eventsByAuthor.get(a) || new Set());
+    if (filter.authors && (filter.authors as string[]).length > 0) {
+      const authorSets: Set<string>[] = (filter.authors as string[]).map((a: string) => this.eventsByAuthor.get(a) || new Set<string>());
       const authorIds = this.unionSets(authorSets);
       candidateIds = candidateIds ? this.intersectSets([candidateIds, authorIds]) : authorIds;
     }
     
     // Tag filtering
     Object.entries(filter).forEach(([key, values]) => {
-      if (key.startsWith('#') && Array.isArray(values) && values.length > 0) {
+      if (key.startsWith('#') && Array.isArray(values) && (values as string[]).length > 0) {
         const tagName = key.slice(1);
         const tagMap = this.eventsByTag.get(tagName);
         if (tagMap) {
-          const tagSets = values.map(v => tagMap.get(v) || new Set());
+          const tagSets: Set<string>[] = (values as string[]).map((v: string) => tagMap.get(v) || new Set<string>());
           const tagIds = this.unionSets(tagSets);
           candidateIds = candidateIds ? this.intersectSets([candidateIds, tagIds]) : tagIds;
         } else {
@@ -259,7 +376,7 @@ export class UniversalEventCache {
     });
     
     // Convert to events and apply remaining filters
-    const events = Array.from(candidateIds || this.events.keys())
+    const events = Array.from(candidateIds ?? new Set<string>(Array.from(this.events.keys())))
       .map(id => this.events.get(id)!)
       .filter(event => event && this.matchesFilter(event, filter))
       .sort((a, b) => b.created_at - a.created_at); // Most recent first
@@ -294,10 +411,10 @@ export class UniversalEventCache {
   
   private intersectSets(sets: Set<string>[]): Set<string> {
     if (sets.length === 0) return new Set();
-    if (sets.length === 1) return sets[0];
+    if (sets.length === 1) return (sets[0] as Set<string>) || new Set<string>();
     
     const result = new Set<string>();
-    const firstSet = sets[0];
+    const firstSet = sets[0] as Set<string>;
     
     firstSet.forEach(item => {
       if (sets.every(set => set.has(item))) {
@@ -424,11 +541,11 @@ export class UniversalEventCache {
     this.eventsByKind.get(event.kind)?.delete(eventId);
     this.eventsByAuthor.get(event.pubkey)?.delete(eventId);
     
-    event.tags.forEach(tag => {
-      const [tagName, tagValue] = tag;
-      if (tagValue) {
-        this.eventsByTag.get(tagName)?.get(tagValue)?.delete(eventId);
-      }
+    event.tags.forEach((tag: string[]) => {
+      const tagName = (tag[0] || '') as string;
+      const tagVal = (tag[1] || '') as string;
+      if (!tagName || !tagVal) return;
+      this.eventsByTag.get(tagName)?.get(tagVal)?.delete(eventId);
     });
     
     // Remove from LRU tracking - O(1) with doubly-linked list

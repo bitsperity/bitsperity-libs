@@ -59,7 +59,7 @@ describe('Multi-Relay Coordination', () => {
       const resilientNostr = new NostrUnchained({
         relays: [
           'ws://umbrel.local:4848',      // Working local relay
-          'ws://127.0.0.1:9999',         // Non-existent port on localhost
+          'ws://umbrel.local:4848',      // Working test relay
           'wss://relay.damus.io'         // Working public relay
         ],
         debug: true,

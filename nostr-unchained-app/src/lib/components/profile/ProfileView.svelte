@@ -7,11 +7,13 @@
  * Max 200 lines - Zero Monolith Policy
  */
 
+import { onDestroy } from 'svelte';
 import type { NostrUnchained } from 'nostr-unchained';
 import type { ProfileViewProps } from '../../types/profile.js';
 import ProfileHeader from './ProfileHeader.svelte';
 import ProfileInfo from './ProfileInfo.svelte';
 import ProfileActions from './ProfileActions.svelte';
+import { getProfileStore, unsubscribeFromProfile } from '../../utils/ProfileSubscriptionManager.js';
 
 // =============================================================================
 // Props
@@ -24,7 +26,8 @@ const {
 	initialData,
 	showActions = true,
 	compact = false,
-	className = ''
+	className = '',
+	onDMClick
 }: ProfileViewProps = $props();
 
 // =============================================================================
@@ -40,15 +43,51 @@ let profilePubkey = $derived(pubkey || nostr.me || '');
 let isOwnProfile = $derived(profilePubkey === nostr.me);
 let viewMode = $state<'display' | 'edit' | 'create'>('display');
 
-// PERFECT DX: Direct reactive store access - no manual subscribe needed!
-let profileStore = $derived(profilePubkey && nostr ? nostr.profile.get(profilePubkey) : null);
+// Use ProfileSubscriptionManager for optimized profile loading
+let profile = $state(null);
+let profileUnsubscribe: (() => void) | null = null;
+const subscriberId = `profile-view-${Math.random().toString(36).substring(7)}`;
 
-// PERFECT DX: Direct reactive store access - Pure UniversalNostrStore
-let profile = $derived(profileStore ? $profileStore : null);
+// Reactive profile loading using aggregated subscription manager
+$effect(() => {
+  if (profilePubkey && nostr) {
+    try {
+      // Use ProfileSubscriptionManager for optimized subscriptions
+      const profileStore = getProfileStore(profilePubkey, subscriberId);
+      
+      profileUnsubscribe = profileStore.subscribe((profileData: any) => {
+        profile = profileData;
+      });
+      
+      return () => {
+        if (profileUnsubscribe) {
+          profileUnsubscribe();
+          profileUnsubscribe = null;
+        }
+        unsubscribeFromProfile(profilePubkey, subscriberId);
+      };
+    } catch (err) {
+      console.error('Failed to load profile:', err);
+      profile = null;
+    }
+  } else {
+    profile = null;
+  }
+});
+
+// Cleanup on component destroy
+onDestroy(() => {
+  if (profileUnsubscribe) {
+    profileUnsubscribe();
+  }
+  if (profilePubkey) {
+    unsubscribeFromProfile(profilePubkey, subscriberId);
+  }
+});
 
 
 // Loading state - true until we have profile data or confirmed null
-let isLoading = $derived(!profileStore || (profileStore && $profileStore === undefined));
+let isLoading = $derived(profile === undefined);
 
 // CLEAN ARCHITECTURE: No error state needed (base layer handles errors gracefully)
 let error = $derived<string | null>(null);
@@ -201,6 +240,7 @@ const shortPubkey = $derived(
 					pubkey={profilePubkey}
 					onEditClick={handleEditClick}
 					onCreateClick={handleCreateClick}
+					{onDMClick}
 					className="main-profile-actions"
 				/>
 			{/if}

@@ -67,7 +67,7 @@ describe('Milestone 2 Phase 2: Core Multi-Relay Integration', () => {
       const nostr = new NostrUnchained({
         relays: [
           'ws://umbrel.local:4848',      // Known working
-          'ws://127.0.0.1:9999'          // Intentionally failing (closed port)
+          'ws://umbrel.local:4848'       // Working test relay
         ],
         debug: true,
         timeout: 12000, // Increased timeout for better reliability

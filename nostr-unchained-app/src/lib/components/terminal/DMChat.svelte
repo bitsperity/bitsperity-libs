@@ -7,10 +7,7 @@
 
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { getService } from '../../services/ServiceContainer.js';
-	import { createContextLogger } from '../../utils/Logger.js';
-	import KeyDisplay from '../ui/KeyDisplay.svelte';
-	import type { NostrService } from '../../services/NostrService.js';
+    import { createContextLogger } from '../../utils/Logger.js';
 	import type { AuthState } from '../../types/app.js';
 	
 	let { authState, nostr }: { authState: AuthState; nostr: any } = $props();
@@ -26,6 +23,10 @@
 	let isLoading = $state(false);
 	let newMessage = $state('');
 	let chatContainer = $state<HTMLElement>();
+	let inboxStore: any = null; // Store for decrypted kind 14 events addressed to me
+	let wrapStore: any = null; // Store for gift wraps (1059) addressed to me
+	let lastWrapCount = 0;
+	let liveWrapHandle: any = null; // live sub to ensure cache filling
 	
 	const logger = createContextLogger('DMChat');
 	
@@ -38,37 +39,162 @@
 		// Gift wrap subscription starts automatically when first DM is accessed
 		logger.info('🎯 DM module ready - lazy loading gift wrap subscriptions on demand!');
 		
-		// No need to manually start subscriptions - nostr-unchained handles this elegantly!
+		// Sicherstellen, dass die GiftWrap-Inbox-Subscription aktiv ist
+		try {
+			// Warten bis PublicKey vorhanden ist (Signer fertig), dann verbinden und Sub starten
+			if (!authState?.publicKey) {
+				await new Promise(resolve => setTimeout(resolve, 50));
+			}
+			try { await nostr.connect(); } catch {}
+			await nostr.startUniversalGiftWrapSubscription();
+			console.log('🎁 Gift wrap subscription already active - skipping');
+		} catch {}
 		
-		await loadConversations();
+		// No need to manually decrypt – UniversalEventCache liefert bereits entpackte Rumors (kind 14)
+		await initializeInboxDiscovery();
+		await initializeWrapMonitor();
+		await debugSnapshot('after-initialize');
+		
+		// Listen for custom events to auto-open conversations
+        const dmChatElement = document.querySelector('.dm-chat');
+        if (dmChatElement) {
+            (dmChatElement as any).addEventListener('openConversation', (event: any) => {
+                const { pubkey } = event?.detail || {};
+				if (pubkey) {
+					console.log('🎯 Auto-opening conversation with:', pubkey);
+					// Add to conversations if not already there
+					if (!conversations.find(c => c.partnerId === pubkey)) {
+						conversations.unshift({
+							partnerId: pubkey,
+							partnerName: pubkey === authState.publicKey ? 'Me (Self-Chat)' : pubkey.substring(0, 8) + '...',
+							lastMessage: 'New conversation',
+							lastTime: Math.floor(Date.now() / 1000),
+							unread: 0,
+							isActive: false
+						});
+					}
+					openConversation(pubkey);
+				}
+			});
+		}
 	});
 	
-	async function loadConversations() {
+	async function initializeInboxDiscovery() {
 		isLoading = true;
 		try {
-			const nostrService = await getService<NostrService>('nostr');
-			
-			// Use the Library's DM API instead of manual parsing
-			// This handles NIP-17 decryption and proper conversation grouping
-			const conversationSummaries = nostrService.nostr.dm.getConversations();
-			
-			// Convert Library format to App format
-			conversations = conversationSummaries.map(summary => ({
-				partnerId: summary.pubkey,
-				partnerName: summary.pubkey === authState.publicKey 
-					? 'Me (Self-Chat)' 
-					: summary.pubkey.substring(0, 8) + '...',
-				lastMessage: summary.latestMessage?.content || 'No messages yet',
-				lastTime: summary.lastActivity || 0,
-				unread: 0,
-				isActive: summary.isActive
-			})).sort((a, b) => b.lastTime - a.lastTime);
-			
-			logger.info('Loaded conversations', { count: conversations.length });
-		} catch (error) {
-			logger.error('Failed to load conversations', { error });
+			if (!nostr || !authState?.publicKey) {
+				conversations = [];
+				return;
+			}
+			// Alle entschlüsselten DMs (kind 14) an mich lesen und live verfolgen
+			inboxStore = nostr
+				.query()
+				.kinds([14])
+				.tags('p', [authState.publicKey])
+				.execute();
+
+			// Initiale Füllung aus Cache
+			updateConversationsFromEvents(inboxStore.current || []);
+			console.log('📥 Inbox (kind14) initial:', inboxStore.current?.length || 0);
+
+			// Live-Updates
+			inboxStore.subscribe((events: any[]) => {
+				console.log('📨 Inbox (kind14) update:', events?.length || 0);
+				updateConversationsFromEvents(events);
+			});
+        } catch (error) {
+			logger.error('Failed to initialize inbox discovery', undefined, String(error));
 		} finally {
 			isLoading = false;
+		}
+	}
+
+	async function debugSnapshot(label: string) {
+		try {
+			if (!nostr || !authState?.publicKey) return;
+			const wraps = nostr.query().kinds([1059]).tags('p', [authState.publicKey]).limit(50).execute().current || [];
+			const dms = nostr.query().kinds([14]).tags('p', [authState.publicKey]).limit(50).execute().current || [];
+			console.log(`[DMChat ${label}] cache snapshot for ${authState.publicKey.slice(0,8)}..`);
+			console.log(`  giftwraps(1059)->me: ${wraps.length}`);
+			if (wraps.length) {
+				const w = wraps.slice(-3);
+				w.forEach((e: any, i: number) => console.log(`   • wrap#${wraps.length-3+i+1}: ${String(e.id).slice(0,8)}.. from ${String(e.pubkey).slice(0,8)}..`));
+			}
+			console.log(`  dms(14)->me: ${dms.length}`);
+			if (dms.length) {
+				const last = dms[dms.length-1];
+				console.log(`   • last dm: kind=${last.kind} from=${String(last.pubkey).slice(0,8)}.. at=${last.created_at} content="${String(last.content).slice(0,60)}${String(last.content).length>60?'…':''}"`);
+			}
+		} catch {}
+	}
+
+	async function initializeWrapMonitor() {
+		try {
+			if (!nostr || !authState?.publicKey) return;
+			wrapStore = nostr
+				.query()
+				.kinds([1059])
+				.tags('p', [authState.publicKey])
+				.execute();
+			lastWrapCount = wrapStore.current?.length || 0;
+			console.log('📥 GiftWraps (1059) initial:', lastWrapCount);
+			wrapStore.subscribe((events: any[]) => {
+				const count = events?.length || 0;
+				if (count !== lastWrapCount) {
+					const recent = (events || []).slice(-3);
+					console.log('📨 GiftWraps (1059) update:', count);
+					recent.forEach((e: any, i: number) => console.log(`   • wrap#${count-3+i+1}: ${String(e.id).slice(0,8)}.. from ${String(e.pubkey).slice(0,8)}..`));
+					lastWrapCount = count;
+				}
+			});
+
+			// Start a live subscription to ensure relay → cache flow even if universal sub laggt
+			try {
+				liveWrapHandle = await nostr
+					.sub()
+					.kinds([1059])
+					.tags('p', [authState.publicKey])
+					.limit(100)
+					.execute();
+				console.log('📡 Live 1059 sub (component) started');
+			} catch (e) {
+				console.warn('Live 1059 sub failed:', e);
+			}
+		} catch (error) {
+			console.warn('Wrap monitor init failed:', error);
+		}
+	}
+
+	function updateConversationsFromEvents(events: any[]) {
+		// Gruppiere nach Absender (event.pubkey) und erzeuge Zusammenfassung
+		const bySender = new Map<string, any[]>();
+		for (const ev of events) {
+			if (!ev || typeof ev !== 'object') continue;
+			const sender = ev.pubkey;
+			if (!sender) continue;
+			if (!bySender.has(sender)) bySender.set(sender, []);
+			bySender.get(sender)!.push(ev);
+		}
+
+		const convs = Array.from(bySender.entries()).map(([sender, evs]) => {
+			const sorted = evs.slice().sort((a, b) => b.created_at - a.created_at);
+			const latest = sorted[0];
+			return {
+				partnerId: sender,
+				partnerName: sender === authState.publicKey ? 'Me (Self-Chat)' : sender.substring(0, 8) + '...',
+				lastMessage: latest?.content || '',
+				lastTime: latest?.created_at || Math.floor(Date.now() / 1000),
+				unread: 0,
+				isActive: activeConversation === sender
+			};
+		});
+
+		// Sortiere Gespräche nach letzter Aktivität
+		conversations = convs.sort((a, b) => b.lastTime - a.lastTime);
+
+		// Optional: Falls keine aktive Konversation gesetzt ist, erste automatisch öffnen
+		if (!activeConversation && conversations.length > 0) {
+			openConversation(conversations[0].partnerId);
 		}
 	}
 	
@@ -78,24 +204,30 @@
 		try {
 			// 🎁 SHOWCASE: Lazy Loading Magic! 
 			// This is when gift wrap subscription starts!
-			console.log('🎁 Triggering lazy gift wrap subscription with dm.with()');
+			console.log('🎁 Triggering lazy gift wrap subscription with getDM().with()');
 			
-			const conversation = nostr.dm.with(partnerId);
+			// Use the correct API: getDM() returns DMModule or undefined
+			const dmModule = nostr.getDM();
+			if (!dmModule) {
+				throw new Error('DM module not available');
+			}
+			
+			const conversation = dmModule.with(partnerId);
 			activeConversationInstance = conversation;
 			
 			// Subscribe to the reactive conversation store  
-			if (conversation && conversation.messages) {
-				conversation.messages.subscribe((conversationMessages: any[]) => {
+			if (conversation) {
+				conversation.subscribe((conversationMessages: any[]) => {
 					console.log('💬 Reactive DM messages:', conversationMessages.length);
 					
 					// Convert DMMessage format to our UI format
 					messages = conversationMessages.map((msg: any) => ({
-						id: msg.id,
+						id: msg.eventId || msg.id,
 						content: msg.content,
 						fromMe: msg.isFromMe,
 						timestamp: msg.timestamp,
-						pubkey: msg.senderPubkey,
-						status: msg.status
+						pubkey: msg.senderPubkey || msg.sender,
+						status: msg.status || 'received'
 					}));
 					
 					// Auto-scroll to bottom when new messages arrive
@@ -106,114 +238,42 @@
 					}, 50);
 				});
 				
-				logger.info('🚀 Lazy loading DM subscription active!', { partnerId });
+                logger.info('🚀 Lazy loading DM subscription active!', undefined, { partnerId });
 			}
 		} catch (error) {
-			logger.error('Failed to open conversation', { error });
+            logger.error('Failed to open conversation', undefined, String(error));
 		}
 	}
 	
-	async function loadMessages(partnerId: string) {
-		isLoading = true;
-		try {
-			const nostrService = await getService<NostrService>('nostr');
-			
-			// For DMs, we need to look for both encrypted messages (kind 4) and gift-wrapped messages (kind 1059)
-			const messageEvents = await nostrService.query()
-				.kinds([4, 1059]) // Include both legacy DMs and NIP-17 gift-wrapped messages
-				.authors([authState.publicKey!, partnerId])
-				.limit(100)
-				.execute();
-			
-			// Filter and format messages
-			messages = messageEvents
-				?.filter(event => {
-					// Check if message involves both parties
-					const pTag = event.tags.find((t: any) => t[0] === 'p')?.[1];
-					
-					// Special case: self-messages (sender and recipient are the same)
-					if (authState.publicKey === partnerId) {
-						return event.pubkey === authState.publicKey && pTag === authState.publicKey;
-					}
-					
-					// Normal case: messages between two different parties
-					return (
-						(event.pubkey === authState.publicKey && pTag === partnerId) ||
-						(event.pubkey === partnerId && pTag === authState.publicKey)
-					);
-				})
-				.map(event => ({
-					id: event.id,
-					content: event.content,
-					fromMe: event.pubkey === authState.publicKey,
-					timestamp: event.created_at,
-					pubkey: event.pubkey
-				}))
-				.sort((a, b) => a.timestamp - b.timestamp) || [];
-			
-			// Scroll to bottom
-			setTimeout(() => {
-				if (chatContainer) {
-					chatContainer.scrollTop = chatContainer.scrollHeight;
-				}
-			}, 100);
-			
-		} catch (error) {
-			logger.error('Failed to load messages', { error });
-		} finally {
-			isLoading = false;
-		}
-	}
+	// This function is no longer needed since we use reactive subscriptions
 	
 	async function sendMessage() {
-		if (!newMessage.trim() || !activeConversation) return;
+		if (!newMessage.trim() || !activeConversation || !activeConversationInstance) return;
 		
 		try {
-			// Add detailed debugging for the browser environment
 			console.log('🔍 DMChat sendMessage debug:', {
 				hasActiveConversation: !!activeConversationInstance,
 				hasSendMethod: !!(activeConversationInstance?.send),
-				conversationType: typeof activeConversationInstance,
 				messageToSend: newMessage.trim()
 			});
 			
 			// Use the reactive conversation instance to send message
-			if (activeConversationInstance && activeConversationInstance.send) {
-				console.log('🚀 Attempting to send via conversation instance...');
-				const result = await activeConversationInstance.send(newMessage.trim());
-				
-				console.log('📤 Send result:', result);
-				
-				if (result.success) {
-					newMessage = '';
-					logger.info('Message sent via reactive conversation', { messageId: result.messageId });
-					// Messages will automatically appear via the reactive subscription
-				} else {
-					throw new Error(result.error || 'Failed to send message');
-				}
+			console.log('🚀 Sending message via conversation instance...');
+			const result = await activeConversationInstance.send(newMessage.trim());
+			
+			console.log('📤 Send result:', result);
+			
+			if (result && result.success) {
+				newMessage = '';
+				logger.info('Message sent successfully');
+				// Messages will automatically appear via the reactive subscription
 			} else {
-				// Fallback to service method
-				console.log('🔄 Using service fallback...');
-				const nostrService = await getService<NostrService>('nostr');
-				const result = await nostrService.publishDM(activeConversation, newMessage.trim());
-				
-				if (result.success) {
-					newMessage = '';
-					logger.info('Message sent via service fallback');
-				} else {
-					throw new Error('Failed to send message via service');
-				}
+				throw new Error(result?.error || 'Failed to send message');
 			}
-		} catch (error) {
-			console.error('❌ Detailed error in sendMessage:', {
-				error: error,
-				message: error.message,
-				stack: error.stack,
-				activeConversation,
-				activeConversationInstanceType: typeof activeConversationInstance
-			});
-			logger.error('Failed to send message', { error });
-			alert('Fehler beim Senden der Nachricht: ' + (error.message || 'Unbekannter Fehler'));
+        } catch (error) {
+            console.error('❌ Error sending message:', error);
+            logger.error('Failed to send message', undefined, String(error));
+            alert('Error sending message: ' + ((error as any)?.message || 'Unknown error'));
 		}
 	}
 	
@@ -237,18 +297,32 @@
 
 	function startNewConversation() {
 		// For now, show a simple prompt - in a real app this would be a proper modal
-		const recipientPubkey = prompt('Gib die npub oder pubkey des Empfängers ein (leer lassen für Self-Chat):');
+		const recipientPubkey = prompt('Enter recipient pubkey or npub (leave empty for self-chat):');
 		if (recipientPubkey !== null) {
 			// If empty, use own pubkey for self-chat
-			let pubkey = recipientPubkey.trim() || authState.publicKey!;
+			let input = recipientPubkey.trim();
+			let pubkey: string;
 			
-			if (pubkey.startsWith('npub')) {
-				// TODO: Convert npub to hex pubkey
-				alert('npub-Konvertierung noch nicht implementiert. Bitte verwende die hex pubkey.');
-				return;
+			if (!input) {
+				pubkey = authState.publicKey!;
+			} else if (input.startsWith('npub')) {
+				try {
+					// Convert npub to hex using nostr-unchained utility
+                    pubkey = (nostr.utils?.npubToHex?.(input) as string) || '';
+					if (!pubkey) {
+						// Fallback: manual bech32 decode if utils not available
+                    pubkey = npubToHex(input);
+					}
+				} catch (error) {
+					alert('Invalid npub format. Please check the npub and try again.');
+					return;
+				}
+			} else {
+				pubkey = input;
 			}
 			
-			if (pubkey.length === 64 && /^[0-9a-fA-F]+$/.test(pubkey)) {
+			// Validate hex pubkey format
+			if (pubkey.length === 64 && /^[0-9a-fA-F]+$/i.test(pubkey)) {
 				// Add to conversations if not already there
 				if (!conversations.find(c => c.partnerId === pubkey)) {
 					conversations.unshift({
@@ -256,13 +330,71 @@
 						partnerName: pubkey === authState.publicKey ? 'Me (Self-Chat)' : pubkey.substring(0, 8) + '...',
 						lastMessage: 'New conversation',
 						lastTime: Math.floor(Date.now() / 1000),
-						unread: 0
+						unread: 0,
+						isActive: false
 					});
 				}
 				openConversation(pubkey);
 			} else {
-				alert('Ungültige pubkey. Muss 64 Zeichen hex format sein.');
+                alert('Invalid pubkey format. Must be 64 character hex format or valid npub.');
 			}
+		}
+	}
+	
+	// Simple npub to hex conversion using bech32 decode
+	function npubToHex(npub: string): string {
+		try {
+			// Basic bech32 decode for npub
+			// This is a simplified implementation - for better support use @scure/base
+			
+			const CHARSET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
+            // (generator constants omitted)
+			
+			function bech32Decode(bech: string) {
+				const pos = bech.lastIndexOf('1');
+				if (pos < 1 || pos > bech.length - 7) {
+					throw new Error('Invalid bech32 string');
+				}
+				
+				const hrp = bech.slice(0, pos);
+				const data = bech.slice(pos + 1);
+				
+				if (hrp !== 'npub') {
+					throw new Error('Not a valid npub');
+				}
+				
+				const decoded = [];
+				for (let i = 0; i < data.length; i++) {
+					const char = data[i];
+					const index = CHARSET.indexOf(char);
+					if (index === -1) {
+						throw new Error('Invalid character in bech32 string');
+					}
+					decoded.push(index);
+				}
+				
+				// Convert from 5-bit to 8-bit groups
+				const payload = [];
+				let acc = 0;
+				let bits = 0;
+				
+				for (let i = 0; i < decoded.length - 6; i++) {
+					acc = (acc << 5) | decoded[i];
+					bits += 5;
+					
+					if (bits >= 8) {
+						bits -= 8;
+						payload.push((acc >> bits) & 255);
+					}
+				}
+				
+				// Convert to hex
+				return payload.map(b => b.toString(16).padStart(2, '0')).join('');
+			}
+			
+            return bech32Decode(npub ?? '');
+		} catch (error) {
+            throw new Error('Could not convert npub to hex: ' + (error as any)?.message);
 		}
 	}
 </script>

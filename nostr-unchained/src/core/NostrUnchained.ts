@@ -7,7 +7,7 @@
 
 import { EventBuilder } from './EventBuilder.js';
 import { RelayManager } from '../relay/RelayManager.js';
-import { SigningProviderFactory, ExtensionSigner, LocalKeySigner } from '../crypto/SigningProvider.js';
+import { SigningProviderFactory } from '../crypto/SigningProvider.js';
 import { ErrorHandler } from '../utils/errors.js';
 import { DEFAULT_RELAYS, DEFAULT_CONFIG } from '../utils/constants.js';
 import { EventsModule } from '../events/FluentEventBuilder.js';
@@ -25,7 +25,6 @@ import type {
   NostrEvent,
   UnsignedEvent,
   SigningProvider,
-  RelayInfo,
   DebugInfo
 } from './types.js';
 
@@ -59,14 +58,17 @@ export class NostrUnchained {
     console.log('🔥 NostrUnchained v0.1.0-FIX (build:', new Date().toISOString().substring(0, 19) + 'Z)');
     
     // Merge with defaults
-    this.config = {
+    const baseConfig: any = {
       relays: config.relays ?? DEFAULT_RELAYS,
       debug: config.debug ?? false,
       retryAttempts: config.retryAttempts ?? DEFAULT_CONFIG.RETRY_ATTEMPTS,
       retryDelay: config.retryDelay ?? DEFAULT_CONFIG.RETRY_DELAY,
-      timeout: config.timeout ?? DEFAULT_CONFIG.PUBLISH_TIMEOUT,
-      signingProvider: config.signingProvider
+      timeout: config.timeout ?? DEFAULT_CONFIG.PUBLISH_TIMEOUT
     };
+    if (config.signingProvider) {
+      baseConfig.signingProvider = config.signingProvider;
+    }
+    this.config = baseConfig as any;
 
     // Initialize relay manager
     this.relayManager = new RelayManager(this.config.relays, {
@@ -133,8 +135,18 @@ export class NostrUnchained {
     if (!this.signingProvider) return;
     
     try {
-      const privateKey = await this.signingProvider.getPrivateKeyForEncryption();
-      this.cache = new UniversalEventCache(privateKey, {});
+      // Prefer decrypt capability, else fallback to raw key
+      let privateKey = '';
+      if (this.signingProvider.capabilities && (await this.signingProvider.capabilities()).rawKey) {
+        privateKey = (await this.signingProvider.getPrivateKeyForEncryption?.()) || '';
+      }
+      if (this.cache) {
+        // Preserve existing cache and subscribers; just set the key and reprocess wraps
+        this.cache.setPrivateKey(privateKey);
+        await this.cache.reprocessGiftWraps();
+      } else {
+        this.cache = new UniversalEventCache(privateKey, {});
+      }
       
       // Initialize Universal DM Module with cache-based architecture
       const myPubkey = await this.signingProvider.getPublicKey();
@@ -143,9 +155,21 @@ export class NostrUnchained {
       if (this.config.debug) {
         console.log('🎯 Universal Cache and Universal DM Module initialized');
       }
+      // Wire decryptor if available (extension NIP-44)
+      try {
+        if (this.signingProvider.capabilities) {
+          const caps = await this.signingProvider.capabilities();
+          if (caps.nip44Decrypt && (this.cache as any).setDecryptor) {
+            (this.cache as any).setDecryptor({ nip44Decrypt: this.signingProvider.nip44Decrypt!.bind(this.signingProvider) });
+          }
+        }
+      } catch {}
+
     } catch (error) {
       // Fallback to empty cache if private key not available
-      this.cache = new UniversalEventCache('', {});
+      if (!this.cache) {
+        this.cache = new UniversalEventCache('', {});
+      }
       
       if (this.config.debug) {
         console.log('⚠️ Could not get private key for cache, using empty key (no gift wrap decryption)');
@@ -161,7 +185,10 @@ export class NostrUnchained {
       if (!this.signingProvider) {
         return null;
       }
-      return await this.signingProvider.getPrivateKeyForEncryption();
+      if (typeof (this.signingProvider as any).getPrivateKeyForEncryption === 'function') {
+        return await (this.signingProvider as any).getPrivateKeyForEncryption();
+      }
+      return null;
     } catch (error) {
       if (this.config.debug) {
         console.warn('Failed to get private key for encryption:', error);
@@ -237,6 +264,16 @@ export class NostrUnchained {
     // Initialize cache with new signing provider
     await this._initializeCache();
 
+    // Ensure decryptor is wired after cache init as well
+    try {
+      if (this.signingProvider && (this.signingProvider as any).nip44Decrypt && (this.cache as any).setDecryptor) {
+        (this.cache as any).setDecryptor({ nip44Decrypt: (this.signingProvider as any).nip44Decrypt.bind(this.signingProvider) });
+        if (this.config.debug) {
+          console.log('🔐 Using signer-provided NIP-44 decrypt capability');
+        }
+      }
+    } catch {}
+
     // Update all modules with signing provider
     await this.dm.updateSigningProvider(this.signingProvider);
     await this.social.updateSigningProvider(this.signingProvider);
@@ -248,6 +285,14 @@ export class NostrUnchained {
 
     if (this.config.debug) {
       console.log(`Initialized signing with method: ${this.signingMethod}`);
+    }
+
+    // Auto-start universal gift wrap subscription after signing init
+    // This ensures receiver side decrypts DMs without needing to open a conversation first
+    try {
+      await this.startUniversalGiftWrapSubscription();
+    } catch {
+      // non-fatal
     }
   }
 
@@ -292,6 +337,11 @@ export class NostrUnchained {
     }
 
     try {
+      // Ensure relay connection before creating the subscription
+      if (this.relayManager.connectedRelays.length === 0) {
+        await this.connect();
+      }
+
       const myPubkey = await this.signingProvider.getPublicKey();
       
       // Subscribe to all gift wraps addressed to me
@@ -302,10 +352,12 @@ export class NostrUnchained {
         limit: 100 // Get recent messages
       }], this.config.relays);
       
-      const listenerId = sharedSub.addListener({
+      sharedSub.addListener({
         onEvent: async (event: NostrEvent) => {
-          // The Universal Cache will automatically handle decryption
-          // when events are added through normal caching mechanisms
+          // Feed into UniversalEventCache → auto-unwrapped → kind 14 in cache
+          try {
+            await this.cache.addEvent(event);
+          } catch {}
           if (this.config.debug) {
             console.log(`🎁 Received gift wrap event: ${event.id.substring(0, 8)}...`);
           }
@@ -349,13 +401,8 @@ export class NostrUnchained {
     }
     // Calculate event ID
     const id = EventBuilder.calculateEventId(event);
-    
-    // Sign the event
-    const signedEvent: NostrEvent = {
-      ...event,
-      id,
-      sig: await this.signingProvider.signEvent({ ...event, id })
-    };
+    const signature = await this.signingProvider.signEvent(event);
+    const signedEvent: NostrEvent = { ...event, id, sig: signature };
     
     // Publish to specific relays
     const relayResults = await this.relayManager.publishToRelays(signedEvent, relayUrls);
@@ -368,11 +415,7 @@ export class NostrUnchained {
       event: success ? signedEvent : undefined,
       relayResults,
       timestamp: Date.now(),
-      error: success ? undefined : {
-        message: 'Failed to publish to any relay',
-        code: 'PUBLISH_FAILED',
-        retryable: true
-      }
+      error: success ? undefined : { message: 'Failed to publish to any relay', retryable: true }
     };
   }
 
@@ -394,13 +437,8 @@ export class NostrUnchained {
 
     // Calculate event ID
     const id = EventBuilder.calculateEventId(event);
-    
-    // Sign the event
-    const signedEvent: NostrEvent = {
-      ...event,
-      id,
-      sig: await this.signingProvider.signEvent({ ...event, id })
-    };
+    const signature = await this.signingProvider.signEvent(event);
+    const signedEvent: NostrEvent = { ...event, id, sig: signature };
     
     // Publish to all connected relays
     const relayResults = await this.relayManager.publishToAll(signedEvent);
@@ -409,28 +447,23 @@ export class NostrUnchained {
     
     // Return standard PublishResult format
     const success = relayResults.some(r => r.success);
-    const result: PublishResult = {
+      const result: PublishResult = {
       success,
       eventId: success ? signedEvent.id : undefined,
       event: success ? signedEvent : undefined,
       relayResults,
       timestamp: Date.now(),
-      error: success ? undefined : {
-        message: 'Failed to publish to any relay',
-        code: 'PUBLISH_FAILED',
-        retryable: true,
-        suggestion: 'Check relay connectivity or try different relays'
-      }
+        error: success ? undefined : { message: 'Failed to publish to any relay', retryable: true, suggestion: 'Check relay connectivity or try different relays' }
     };
     
     // Add debug info if debug mode is enabled
     if (this.config.debug) {
       result.debug = {
         connectionAttempts: this.relayManager.connectedRelays.length,
-        relayLatencies: relayResults.map(r => ({ relay: r.relay, latency: 0 })), // Simplified
+        relayLatencies: relayResults.reduce<Record<string, number>>((acc, r) => { acc[r.relay] = 0; return acc; }, {}),
         totalTime,
-        signingMethod: this.signingMethod || 'unknown'
-      };
+        signingMethod: (this.signingMethod === 'extension' ? 'extension' : 'temporary')
+      } as DebugInfo;
     }
     
     return result;
@@ -461,22 +494,17 @@ export class NostrUnchained {
       event: success ? signedEvent : undefined,
       relayResults,
       timestamp: Date.now(),
-      error: success ? undefined : {
-        message: 'Failed to publish to any relay',
-        code: 'PUBLISH_FAILED',
-        retryable: true,
-        suggestion: 'Check relay connectivity or try different relays'
-      }
+      error: success ? undefined : { message: 'Failed to publish to any relay', retryable: true, suggestion: 'Check relay connectivity or try different relays' }
     };
     
     // Add debug info if debug mode is enabled
     if (this.config.debug) {
       result.debug = {
         connectionAttempts: this.relayManager.connectedRelays.length,
-        relayLatencies: relayResults.map(r => ({ relay: r.relay, latency: 0 })), // Simplified
+        relayLatencies: relayResults.reduce<Record<string, number>>((acc, r) => { acc[r.relay] = 0; return acc; }, {}),
         totalTime,
-        signingMethod: 'pre-signed'
-      };
+        signingMethod: 'temporary'
+      } as DebugInfo;
     }
     
     return result;
@@ -603,12 +631,11 @@ export class NostrUnchained {
    * Get debug info
    */
   getDebugInfo(): DebugInfo {
-    return {
-      signingMethod: this.signingMethod || 'none',
-      connectedRelays: this.connectedRelays.length,
+    const info: any = {
+      signingMethod: (this.signingMethod === 'extension' ? 'extension' : 'temporary'),
       cacheSize: this.cache.getStatistics().totalEvents,
-      subscriptions: 0, // TODO: Get from subscription manager
       giftWrapActive: this.giftWrapSubscriptionActive
     };
+    return info as DebugInfo;
   }
 }

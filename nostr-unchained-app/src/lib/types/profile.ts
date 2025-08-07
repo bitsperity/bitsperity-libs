@@ -49,6 +49,7 @@ export interface ProfileViewProps {
 	readonly showActions?: boolean;
 	readonly compact?: boolean;
 	readonly className?: string;
+	readonly onDMClick?: (pubkey: string) => void;
 }
 
 export interface ProfileHeaderProps {

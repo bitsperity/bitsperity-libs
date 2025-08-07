@@ -39,12 +39,12 @@ export interface NostrUnchainedConfig {
 // Publishing Results
 export interface PublishResult {
   success: boolean;
-  eventId?: string;
-  event?: NostrEvent;
+  eventId?: string | undefined;
+  event?: NostrEvent | undefined;
   relayResults: RelayResult[];
   timestamp: number;
-  error?: NostrError;
-  debug?: DebugInfo;
+  error?: NostrError | undefined;
+  debug?: DebugInfo | undefined;
 }
 
 export interface RelayResult {
@@ -86,6 +86,13 @@ export interface SigningProvider {
   getPublicKey(): Promise<string>;
   getPublicKeySync?(): string | null; // Optional synchronous access
   signEvent(event: UnsignedEvent): Promise<string>;
+  // Optional NIP-44 capabilities
+  nip44Encrypt?(peerPubkey: string, plaintext: string): Promise<string>;
+  nip44Decrypt?(peerPubkey: string, ciphertext: string): Promise<string>;
+  // Optional raw key access for local crypto (hex only)
+  getPrivateKeyForEncryption?(): Promise<string>;
+  // Capability discovery
+  capabilities?(): Promise<{ nip44Encrypt: boolean; nip44Decrypt: boolean; rawKey: boolean }>;
 }
 
 // NIP-07: Browser Extension Interface
@@ -94,6 +101,10 @@ declare global {
     nostr?: {
       getPublicKey(): Promise<string>;
       signEvent(event: UnsignedEvent): Promise<NostrEvent>;
+      nip44?: {
+        encrypt(pubkey: string, plaintext: string): Promise<string>;
+        decrypt(pubkey: string, ciphertext: string): Promise<string>;
+      }
     };
   }
 }

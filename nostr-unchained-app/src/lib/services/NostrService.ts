@@ -67,7 +67,7 @@ export class NostrService {
 			});
 			this.signingProvider = tempSigner;
 		} else {
-			// Let NostrUnchained auto-detect the best available signing provider
+			// Create base instance without signer; signer can be set later centrally
 			this.nostr = new NostrUnchained({
 				relays: config.relays,
 				debug: config.debug,
@@ -85,16 +85,17 @@ export class NostrService {
 	async setSigningProvider(provider: any): Promise<void> {
 		try {
 			this.signingProvider = provider;
-			
-			// Recreate NostrUnchained with the new signing provider
-			this.nostr = new NostrUnchained({
-				relays: this.config.relays,
-				debug: this.config.debug,
-				timeout: this.config.timeout,
-				signingProvider: provider
-			});
-			
-			this.logger.info('NostrService recreated with new signing provider');
+			// Update existing instance to avoid multiple NostrUnchained objects app-wide
+			await (this.nostr as any).initializeSigning(provider);
+			// Ensure relay connection before starting inbox subscription to avoid missed REQ
+			try {
+				await this.nostr.connect();
+			} catch {}
+			// Ensure DM inbox subscription starts immediately after signing
+			try {
+				await (this.nostr as any).startUniversalGiftWrapSubscription();
+			} catch {}
+			this.logger.info('NostrService updated existing Nostr instance with new signing provider');
 		} catch (error) {
 			this.logger.error('Failed to set signing provider', { error });
 			throw error;
@@ -220,10 +221,14 @@ export class NostrService {
 
 	async publishDM(recipientPubkey: string, content: string): Promise<any> {
 		try {
-			// The new API automatically handles signing initialization
+			// Use the correct API: getDM() returns DMModule or undefined
+			const dmModule = this.nostr.getDM();
+			if (!dmModule) {
+				throw new Error('DM module not available');
+			}
 			
 			// Get or create conversation with recipient - this triggers lazy loading
-			const conversation = await this.nostr.dm.with(recipientPubkey);
+			const conversation = dmModule.with(recipientPubkey);
 			
 			// Send encrypted message
 			const result = await conversation.send(content);
@@ -242,14 +247,18 @@ export class NostrService {
 
 	async getDMConversation(pubkey: string) {
 		try {
+			// Use the correct API: getDM() returns DMModule or undefined
+			const dmModule = this.nostr.getDM();
+			if (!dmModule) {
+				throw new Error('DM module not available');
+			}
+			
 			// This returns the DMConversation instance with reactive stores
-			// Lazy loading is triggered automatically by dm.with()
-			const conversation = await this.nostr.dm.with(pubkey);
+			// Lazy loading is triggered automatically by getDM().with()
+			const conversation = dmModule.with(pubkey);
 			
 			this.logger.info('Retrieved DM conversation instance', { 
-				pubkey: pubkey.substring(0, 8) + '...',
-				hasMessages: !!conversation.messages,
-				hasStatus: !!conversation.status
+				pubkey: pubkey.substring(0, 8) + '...'
 			});
 			
 			return conversation;
@@ -426,16 +435,9 @@ export class NostrService {
 			// ALWAYS create a fresh temporary signer with new random keys
 			// This ensures each temporary account has unique keys
 			const tempSigner = new TemporarySigner();
-			
-			// Completely recreate NostrUnchained instance with the new signer
-			// This ensures no state from previous temporary accounts is carried over
-			this.nostr = new NostrUnchained({
-				relays: this.config.relays,
-				debug: true, // Enable debug for temporary accounts
-				timeout: this.config.timeout,
-				signingProvider: tempSigner
-			});
 			this.signingProvider = tempSigner;
+			// Update existing instance instead of creating a new one
+			await (this.nostr as any).initializeSigning(tempSigner);
 			
 			// Get the new unique public key
 			const tempPublicKey = await tempSigner.getPublicKey();
@@ -464,6 +466,13 @@ export class NostrService {
 				error: errorProcessor.process(error)
 			};
 		}
+	}
+
+	/**
+	 * Expose the single NostrUnchained instance
+	 */
+	getInstance(): NostrUnchained {
+		return this.nostr;
 	}
 }
 

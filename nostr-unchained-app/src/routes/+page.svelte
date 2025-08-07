@@ -5,15 +5,15 @@
 -->
 
 <script lang="ts">
-	import { NostrUnchained } from 'nostr-unchained';
-	import { ExtensionSigner, TemporarySigner } from 'nostr-unchained';
+    import { ExtensionSigner, TemporarySigner } from 'nostr-unchained';
+    import { getService } from '../lib/services/ServiceContainer.js';
 	import NostrApp from '../lib/components/NostrApp.svelte';
 
 	// =============================================================================
 	// State-of-the-Art NostrUnchained Integration
 	// =============================================================================
 	
-	let nostr: NostrUnchained | null = $state(null);
+    let nostr: any | null = $state(null);
 	let signerChoice: 'extension' | 'temporary' | null = $state(null);
 	let isInitializing = $state(false);
 	let error: string | null = $state(null);
@@ -23,28 +23,21 @@
 		isInitializing = true;
 		error = null;
 		
-		try {
-			let signer;
-			
-			if (signerType === 'extension') {
-				signer = new ExtensionSigner();
-				await signer.getPublicKey(); // Test extension availability
-			} else {
-				signer = new TemporarySigner();
-			}
+        try {
+            // Zentralen Singleton-Service nutzen
+            const nostrService: any = await getService('nostr');
+            const signer = signerType === 'extension' ? new ExtensionSigner() : new TemporarySigner();
+            if (signerType === 'extension') {
+                await signer.getPublicKey();
+            }
 
-			// PERFECT DX: Just create NostrUnchained and connect!
-			nostr = new NostrUnchained({
-				signingProvider: signer,
-				relays: ['ws://umbrel.local:4848'],
-				debug: true
-			});
-			
-			// Connect to relays - that's it!
-			await nostr.connect();
-			
-			signerChoice = signerType;
-		} catch (err) {
+            await nostrService.setSigningProvider(signer);
+            // Instanz aus Service holen
+            nostr = nostrService.getInstance();
+            await nostr.connect();
+
+            signerChoice = signerType;
+        } catch (err) {
 			error = err instanceof Error ? err.message : 'Failed to initialize';
 			nostr = null;
 		} finally {

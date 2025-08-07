@@ -10,6 +10,7 @@
 
 import type { NostrUnchained } from '../../core/NostrUnchained.js';
 import type { NostrEvent } from '../../core/types.js';
+import { EventBuilder } from '../../core/EventBuilder.js';
 import type { UniversalNostrStore } from '../../store/UniversalNostrStore.js';
 import { GiftWrapProtocol } from '../protocol/GiftWrapProtocol.js';
 
@@ -55,37 +56,29 @@ export class UniversalDMConversation {
     });
     
     try {
-      // NIP-17 DMs are gift wraps (kind 1059) that contain encrypted seals with DMs
-      // For Universal Cache Architecture: First subscribe, then query!
-      
-      // Step 1: Create subscription to populate cache
-      console.log('🔍 Creating Gift Wrap subscription for:', {
-        myPubkey: this.myPubkey.slice(0, 8) + '...',
-        otherPubkey: this.otherPubkey.slice(0, 8) + '...'
-      });
-      
-      const subscription = this.nostr.sub()
-        .kinds([1059]) // Gift wrap events
-        .tags('p', [this.myPubkey]) // Gift wraps tagged to me
+      // Ensure the global gift wrap inbox sub is active (centralized)
+      this.nostr.startUniversalGiftWrapSubscription().catch(() => {});
+
+      // Query decrypted DMs (kind 14) for this peer conversation using a single filter
+      // authors in [me, other] AND #p contains [me, other]
+      this.store = this.nostr
+        .query()
+        .kinds([14])
+        .authors([this.myPubkey, this.otherPubkey])
+        .tags('p', [this.myPubkey, this.otherPubkey])
         .execute();
-      
-      // Step 2: Create query store that will read from cache
-      this.store = this.nostr.query()
-        .kinds([1059]) // Gift wrap events
-        .tags('p', [this.myPubkey]) // Gift wraps tagged to me
-        .execute();
-      
+
       console.log('✅ Store created successfully:', typeof this.store, this.store?.constructor?.name);
-      
+
       // Debug: Check current cache state
       setTimeout(() => {
-        console.log('🔍 Cache state after subscription:', {
+        console.log('🔍 Cache state after store init:', {
           currentEvents: this.store.current.length,
           eventKinds: this.store.current.map(e => e.kind),
           eventIds: this.store.current.map(e => e.id?.slice(0, 8) + '...')
         });
       }, 1000);
-      
+
     } catch (error) {
       console.error('❌ Failed to create store:', error);
       // Create a dummy store for now
@@ -170,113 +163,115 @@ export class UniversalDMConversation {
     }
     
     try {
-      // Get the sender's private key for encryption
-      const privateKey = await this.nostr.getPrivateKeyForEncryption();
-      if (!privateKey) {
-        return { success: false, error: 'Private key not available for encryption' };
-      }
-      
-      // Create gift-wrapped DM using GiftWrapProtocol
-      const giftWrapResult = await GiftWrapProtocol.createGiftWrappedDM(
-        content,
-        privateKey,
-        {
-          recipients: [{ pubkey: this.otherPubkey, relayUrl: '' }], // relayUrl will be handled by publish
-          maxTimestampAge: 0 // Use current timestamp for test compatibility (no randomization)
-        },
-        subject
-      );
-      
-      if (!giftWrapResult.giftWraps || !giftWrapResult.giftWraps[0]) {
-        return { 
-          success: false, 
-          error: 'No gift wrap created' 
+      const signer: any = (this.nostr as any).signingProvider;
+      const caps = await (signer?.capabilities?.() ?? { nip44Encrypt: false, rawKey: false });
+
+      // Build rumor (kind 14) without needing private key
+      const rumor: any = {
+        pubkey: this.myPubkey,
+        created_at: Math.floor(Date.now() / 1000),
+        kind: 14,
+        tags: subject ? [['subject', subject]] : [],
+        content
+      };
+
+      // Build and publish gift wraps using signer if possible; else fallback to local key
+      if (caps.nip44Encrypt && typeof signer.nip44Encrypt === 'function') {
+        // Helper to build signed seal for a specific recipient
+        const buildSealForRecipient = async (peerPubkey: string) => {
+          const ciphertext = await signer.nip44Encrypt(peerPubkey, JSON.stringify(rumor));
+          const unsignedSeal = {
+            pubkey: this.myPubkey,
+            created_at: Math.floor(Date.now() / 1000),
+            kind: 13,
+            tags: [],
+            content: ciphertext
+          } as any;
+          const id = EventBuilder.calculateEventId(unsignedSeal as any);
+          const sig = await signer.signEvent(unsignedSeal as any);
+          return { ...(unsignedSeal as any), id, sig };
         };
-      }
-      
-      // Publish the gift wrap using regular publish method
-      const giftWrapEvent = giftWrapResult.giftWraps[0].giftWrap;
-      
-      // Don't modify timestamp - it would invalidate the signature!
-      
-      // DEBUG: Log event structure before publish
-      console.log('🔍 About to publish gift wrap:', {
-        id: giftWrapEvent.id?.slice(0, 8) + '...',
-        kind: giftWrapEvent.kind,
-        pubkey: giftWrapEvent.pubkey?.slice(0, 8) + '...',
-        created_at: giftWrapEvent.created_at,
-        tags: giftWrapEvent.tags,
-        content: giftWrapEvent.content?.slice(0, 20) + '...',
-        hasSignature: !!giftWrapEvent.sig,
-        signatureLength: giftWrapEvent.sig?.length
-      });
-      
-      const publishResult = await this.nostr.publishSigned(giftWrapEvent);
-      
-      if (publishResult.success) {
-        // Add sent message to our local conversation
-        const sentMessage: DMMessage = {
-          id: giftWrapResult.giftWraps[0].giftWrap.id,
-          content: content,
-          senderPubkey: this.myPubkey,
-          recipientPubkey: this.otherPubkey,
-          timestamp: giftWrapEvent.created_at,
-          isFromMe: true,
-          eventId: giftWrapResult.giftWraps[0].giftWrap.id,
-          status: 'sent',
-          subject: subject,
-          sender: this.myPubkey // Convenience alias
-        };
-        
-        // Add to message cache and notify subscribers
-        this.messageCache.push(sentMessage);
-        this.messageCache.sort((a, b) => a.timestamp - b.timestamp);
-        
-        return { 
-          success: true, 
-          messageId: giftWrapResult.giftWraps[0].giftWrap.id 
-        };
-      } else {
-        // For DMs, if the relay accepts the message but it's pending, consider it success
-        // TODO: Improve publish result handling to distinguish between rejection and pending
-        console.log('🔍 Publish result details:', publishResult);
-        
-        // Only consider it success if there's truly no error or it's a generic timeout
-        // "invalid: Event invalid signature" and other specific errors should fail
-        const hasSpecificError = publishResult.relayResults?.some(r => 
-          r.error && r.error.includes('invalid:')
-        );
-        
-        if (!hasSpecificError && (!publishResult.message || publishResult.message === 'Failed to publish message')) {
-          // Add sent message to our local conversation even if pending
+
+        // Create two seals: one for recipient, one self-addressed (multi-device history)
+        const [sealOther, sealSelf] = await Promise.all([
+          buildSealForRecipient(this.otherPubkey),
+          buildSealForRecipient(this.myPubkey)
+        ]);
+
+        const { GiftWrapCreator } = await import('../protocol/GiftWrapCreator.js');
+        const [wrapOther, wrapSelf] = await Promise.all([
+          GiftWrapCreator.createGiftWrap(sealOther as any, { pubkey: this.otherPubkey }, undefined, Math.floor(Date.now() / 1000)),
+          GiftWrapCreator.createGiftWrap(sealSelf as any, { pubkey: this.myPubkey }, undefined, Math.floor(Date.now() / 1000))
+        ]);
+
+        // Publish both; require recipient publish to succeed
+        const [resOther] = await Promise.all([
+          this.nostr.publishSigned(wrapOther.giftWrap),
+          this.nostr.publishSigned(wrapSelf.giftWrap).catch(() => ({ success: false }))
+        ]);
+
+        if (resOther.success) {
+          const giftWrapEvent = wrapOther.giftWrap;
           const sentMessage: DMMessage = {
-            id: giftWrapResult.giftWraps[0].giftWrap.id,
+            id: giftWrapEvent.id,
             content: content,
             senderPubkey: this.myPubkey,
             recipientPubkey: this.otherPubkey,
             timestamp: giftWrapEvent.created_at,
             isFromMe: true,
-            eventId: giftWrapResult.giftWraps[0].giftWrap.id,
+            eventId: giftWrapEvent.id,
             status: 'sent',
             subject: subject,
-            sender: this.myPubkey // Convenience alias
+            sender: this.myPubkey
           };
-          
-          // Add to message cache and notify subscribers
           this.messageCache.push(sentMessage);
           this.messageCache.sort((a, b) => a.timestamp - b.timestamp);
-          
-          return { 
-            success: true, 
-            messageId: giftWrapResult.giftWraps[0].giftWrap.id 
-          };
+          return { success: true, messageId: giftWrapEvent.id };
         }
-        
-        return { 
-          success: false, 
-          error: publishResult.message 
-        };
+
+        return { success: false, error: 'Failed to publish to recipient' };
+      } else {
+        // Fallback: use local private key flow (for LocalKeySigner)
+        const privateKey = await this.nostr.getPrivateKeyForEncryption();
+        if (!privateKey) {
+          return { success: false, error: 'Private key not available for encryption' };
+        }
+        const result = await GiftWrapProtocol.createGiftWrappedDM(
+          content,
+          privateKey,
+          { recipients: [
+            { pubkey: this.otherPubkey, relayUrl: '' },
+            { pubkey: this.myPubkey, relayUrl: '' }
+          ], maxTimestampAge: 0 },
+          subject
+        );
+        const giftWrapEventOther = result.giftWraps.find(g => g.recipient === this.otherPubkey)!.giftWrap;
+        const giftWrapEventSelf = result.giftWraps.find(g => g.recipient === this.myPubkey)!.giftWrap;
+        const [resOther] = await Promise.all([
+          this.nostr.publishSigned(giftWrapEventOther),
+          this.nostr.publishSigned(giftWrapEventSelf).catch(() => ({ success: false }))
+        ]);
+        if (resOther.success) {
+          const sentMessage: DMMessage = {
+            id: giftWrapEventOther.id,
+            content: content,
+            senderPubkey: this.myPubkey,
+            recipientPubkey: this.otherPubkey,
+            timestamp: giftWrapEventOther.created_at,
+            isFromMe: true,
+            eventId: giftWrapEventOther.id,
+            status: 'sent',
+            subject: subject,
+            sender: this.myPubkey
+          };
+          this.messageCache.push(sentMessage);
+          this.messageCache.sort((a, b) => a.timestamp - b.timestamp);
+          return { success: true, messageId: giftWrapEventOther.id };
+        }
+        return { success: false, error: 'Failed to publish to recipient' } as any;
       }
+
+      // signer and fallback branches return above
     } catch (error) {
       return { 
         success: false, 
@@ -288,62 +283,26 @@ export class UniversalDMConversation {
   private async convertEventsToMessages(events: NostrEvent[]): Promise<DMMessage[]> {
     const messages: DMMessage[] = [];
     
+    // Nur auf bereits entschlüsselte kind 14 aus Cache/Gesamtsystem reagieren
     for (const event of events) {
-      if (event.kind === 1059) { // Gift wrap
-        try {
-          // Try to decrypt the gift wrap
-          const privateKey = await this.nostr.getPrivateKeyForEncryption();
-          if (!privateKey) {
-            console.warn('No private key available for decryption');
-            continue;
-          }
-          
-          const decryptionResult = await GiftWrapProtocol.decryptGiftWrappedDM(
-            event as any, // Cast to GiftWrap type
-            privateKey
-          );
-          
-          console.log('🔍 Gift Wrap Decryption Debug:', {
-            eventId: event.id?.slice(0, 8) + '...',
-            isValid: decryptionResult.isValid,
-            senderPubkey: decryptionResult.senderPubkey?.slice(0, 8) + '...',
-            otherPubkey: this.otherPubkey?.slice(0, 8) + '...',
-            myPubkey: this.myPubkey?.slice(0, 8) + '...',
-            hasRumor: !!decryptionResult.rumor,
-            rumorContent: decryptionResult.rumor?.content?.slice(0, 30) + '...'
-          });
-          
-          if (decryptionResult.isValid && decryptionResult.rumor) {
-            // Check if this message is part of our conversation
-            const isFromOther = decryptionResult.senderPubkey === this.otherPubkey;
-            const isToMe = event.tags.some(tag => tag[0] === 'p' && tag[1] === this.myPubkey);
-            
-            console.log('🔍 Message filtering:', {
-              isFromOther,
-              isToMe,
-              willInclude: isFromOther && isToMe
-            });
-            
-            if (isFromOther && isToMe) {
-              messages.push({
-                id: decryptionResult.rumor.id || event.id,
-                content: decryptionResult.rumor.content,
-                senderPubkey: decryptionResult.senderPubkey,
-                recipientPubkey: this.myPubkey,
-                timestamp: decryptionResult.rumor.created_at || event.created_at,
-                isFromMe: false,
-                eventId: event.id,
-                status: 'received' as const,
-                subject: this.getSubjectFromRumor(decryptionResult.rumor),
-                sender: decryptionResult.senderPubkey // Convenience alias
-              });
-            }
-          }
-        } catch (error) {
-          // Decryption failed, skip this event
-          console.debug('Failed to decrypt gift wrap:', error);
-        }
-      }
+      if (event.kind !== 14) continue;
+      const isMeSender = event.pubkey === this.myPubkey;
+      const isToOther = event.tags.some(t => t[0] === 'p' && t[1] === this.otherPubkey);
+      const isToMe = event.tags.some(t => t[0] === 'p' && t[1] === this.myPubkey);
+      if (!(isToMe || (isMeSender && isToOther))) continue;
+
+      messages.push({
+        id: event.id,
+        content: event.content,
+        senderPubkey: event.pubkey,
+        recipientPubkey: isMeSender ? this.otherPubkey : this.myPubkey,
+        timestamp: event.created_at,
+        isFromMe: isMeSender,
+        eventId: event.id,
+        status: isMeSender ? 'sent' : 'received',
+        subject: this.getSubjectFromEvent(event),
+        sender: event.pubkey
+      });
     }
     
     return messages.sort((a, b) => a.timestamp - b.timestamp);

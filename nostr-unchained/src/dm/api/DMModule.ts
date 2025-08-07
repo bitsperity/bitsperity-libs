@@ -66,13 +66,20 @@ export class DMModule {
    * Get or create a conversation with a specific user
    * This is the main entry point: nostr.dm.with('npub...')
    */
-  async with(pubkey: string): Promise<DMConversation> {
+  with(pubkey: string): any {
     // Check if we should use the Universal DM Module (cache-based architecture)
     if (this.shouldUseUniversalDM()) {
       return this.delegateToUniversalDM(pubkey);
     }
     
-    // Fallback to legacy implementation
+    // Fallback to legacy implementation (returns Promise)
+    return this.withLegacy(pubkey);
+  }
+
+  /**
+   * Legacy async implementation for fallback
+   */
+  private async withLegacy(pubkey: string): Promise<DMConversation> {
     // Normalize pubkey (remove npub prefix if present)
     const normalizedPubkey = this.normalizePubkey(pubkey);
     
@@ -97,7 +104,24 @@ export class DMModule {
    * Create or get a multi-participant room
    * This is the main entry point: nostr.dm.room(['pubkey1', 'pubkey2'], { subject: 'Meeting' })
    */
-  async room(participants: string[], options?: DMRoomOptions): Promise<DMRoom> {
+  async room(participants: string[], options?: DMRoomOptions): Promise<DMRoom | any> {
+    // Check if we should use the Universal DM Module (cache-based architecture)
+    if (this.shouldUseUniversalDM()) {
+      const universalDM = this.getUniversalDMInstance();
+      if (universalDM && typeof universalDM.room === 'function') {
+        // Delegate to UniversalDM
+        return universalDM.room(participants, options);
+      }
+    }
+    
+    // Fallback to legacy implementation
+    return this.roomLegacy(participants, options);
+  }
+  
+  /**
+   * Legacy room implementation for fallback
+   */
+  private async roomLegacy(participants: string[], options?: DMRoomOptions): Promise<DMRoom> {
     // Normalize pubkeys
     const normalizedParticipants = participants.map(pubkey => this.normalizePubkey(pubkey));
     
@@ -125,6 +149,25 @@ export class DMModule {
    * Get all active conversations as summaries
    */
   getConversations(): ConversationSummary[] {
+    // Check if we should use the Universal DM Module
+    if (this.shouldUseUniversalDM()) {
+      const universalDM = this.getUniversalDMInstance();
+      if (universalDM && typeof universalDM.summaries === 'function') {
+        // Convert UniversalDM summaries to DMModule format
+        const universalSummaries = universalDM.summaries();
+        return universalSummaries.map((summary: any) => ({
+          pubkey: summary.pubkey,
+          latestMessage: null, // TODO: Get latest message from conversation
+          lastActivity: 0, // TODO: Get last activity timestamp
+          isActive: true, // TODO: Get actual status
+          subject: summary.subject, // Use subject from UniversalDM summary
+          participants: summary.participants,
+          type: summary.type
+        }));
+      }
+    }
+    
+    // Fallback to legacy implementation
     let currentList: ConversationSummary[] = [];
     const unsubscribe = this.conversations$.subscribe(list => {
       currentList = list;
@@ -559,6 +602,18 @@ export class DMModule {
       console.log('🎯 Delegating to Universal DM Module (cache-based) for:', pubkey.substring(0, 16) + '...');
     }
     
-    return universalDM.with(pubkey);
+    const result = universalDM.with(pubkey);
+    
+    if (this.config.debug) {
+      console.log('🔍 Result from universalDM.with():', {
+        result: !!result,
+        hasMessages: !!result?.messages,
+        hasSubscribe: typeof result?.subscribe,
+        hasSend: typeof result?.send,
+        constructor: result?.constructor?.name
+      });
+    }
+    
+    return result;
   }
 }

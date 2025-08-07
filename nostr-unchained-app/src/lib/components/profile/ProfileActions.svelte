@@ -22,6 +22,7 @@ interface Props {
 	pubkey: string;
 	onEditClick?: () => void;
 	onCreateClick?: () => void;
+	onDMClick?: (pubkey: string) => void;
 	showSecondaryActions?: boolean;
 	orientation?: 'horizontal' | 'vertical';
 	size?: 'small' | 'medium' | 'large';
@@ -35,6 +36,7 @@ const {
 	pubkey,
 	onEditClick,
 	onCreateClick,
+	onDMClick,
 	showSecondaryActions = true,
 	orientation = 'horizontal',
 	size = 'medium',
@@ -111,12 +113,12 @@ async function handleSendDM() {
 	if (!authState.isAuthenticated || isOwnProfile) return;
 	
 	try {
-		// TODO: Implement DM functionality
-		// Navigate to DM interface or open DM modal
 		console.log('Send DM to:', pubkey);
 		
-		// Future: Navigate to DM view
-		// await goto(`/dm/${pubkey}`);
+		// Call the DM click handler if provided
+		if (onDMClick) {
+			onDMClick(pubkey);
+		}
 		
 	} catch (error) {
 		console.error('DM error:', error);

@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # Ephemeral Nostr Relay für Tests - Keine Persistenz
+  nostr-relay:
+    image: scsibug/nostr-rs-relay:latest
+    ports:
+      - "7777:8080"
+    environment:
+      # In-Memory Database - keine Persistenz
+      - "RELAY_DB_URL=sqlite://:memory:"
+      - "RUST_LOG=warn,nostr_rs_relay=info"
+      # Relay-spezifische Config
+      - "RELAY_NAME=Test Relay"
+      - "RELAY_DESCRIPTION=Ephemeral relay for nostr-unchained tests"
+      - "RELAY_PUBKEY=test"
+      # Keine Rate Limits für Tests
+      - "RELAY_MAX_MESSAGE_LENGTH=131072"
+      - "RELAY_MAX_SUBSCRIPTIONS=100"
+      - "RELAY_MAX_FILTERS=100"
+    tmpfs:
+      # Alles im RAM
+      - /tmp
+      - /var/log
+    mem_limit: 256m
+    restart: "no"  # Kein Restart für Tests
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  # Alternative: strfry relay (falls nostr-rs-relay nicht funktioniert)
+  strfry-relay:
+    image: dtonon/strfry:latest
+    ports:
+      - "7778:7777"
+    environment:
+      - STRFRY_DB=":memory:"
+    tmpfs:
+      - /app/strfry-db
+      - /tmp
+    mem_limit: 256m
+    restart: "no"
+    profiles:
+      - "strfry"  # Nur aktivieren mit --profile strfry
+
+networks:
+  default:
+    name: nostr-test-network

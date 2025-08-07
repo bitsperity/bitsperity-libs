@@ -7,8 +7,9 @@
  * Reuses NostrUnchained profile loading logic.
  */
 
-import { createEventDispatcher } from 'svelte';
+import { createEventDispatcher, onDestroy } from 'svelte';
 import { formatPubkey } from '../../utils/nostr.js';
+import { getProfileStore, unsubscribeFromProfile } from '../../utils/ProfileSubscriptionManager.js';
 
 // Props
 let { 
@@ -36,40 +37,56 @@ const dispatch = createEventDispatcher<{
 let profile = $state(null);
 let isLoading = $state(true);
 let error = $state(null);
+let profileStore: any = null;
+let unsubscribe: (() => void) | null = null;
 
-// Load profile data from NostrUnchained
+// Generate unique subscriber ID for this component
+const subscriberId = `avatar-${pubkey}-${Math.random().toString(36).substring(7)}`;
+
+// Load profile data using aggregated subscription manager
 $effect(() => {
   if (pubkey && nostr) {
-    const profileModule = nostr.profile;
-    
-    if (profileModule) {
+    try {
       isLoading = true;
       error = null;
       
-      try {
-        // Get profile store from NostrUnchained
-        const profileStore = profileModule.get(pubkey);
-        
-        // Subscribe to profile changes
-        const unsubscribe = profileStore.subscribe((profileData) => {
-          profile = profileData;
-          isLoading = false;
-          error = null;
-        });
-        
-        return () => {
-          unsubscribe();
-        };
-      } catch (err) {
-        console.error('Failed to get profile store:', err);
-        error = 'Failed to load profile';
+      // Use ProfileSubscriptionManager for optimized subscriptions
+      profileStore = getProfileStore(pubkey, subscriberId);
+      
+      // Subscribe to profile changes
+      unsubscribe = profileStore.subscribe((profileData: any) => {
+        profile = profileData;
         isLoading = false;
-      }
-    } else {
-      // No profile module, use fallback
+        error = null;
+      });
+      
+      return () => {
+        if (unsubscribe) {
+          unsubscribe();
+          unsubscribe = null;
+        }
+        // Notify manager that this component is no longer interested
+        unsubscribeFromProfile(pubkey, subscriberId);
+      };
+    } catch (err) {
+      console.error('Failed to get profile store:', err);
+      error = 'Failed to load profile';
       isLoading = false;
-      profile = null;
     }
+  } else {
+    // No pubkey or nostr, use fallback
+    isLoading = false;
+    profile = null;
+  }
+});
+
+// Cleanup on component destroy
+onDestroy(() => {
+  if (unsubscribe) {
+    unsubscribe();
+  }
+  if (pubkey) {
+    unsubscribeFromProfile(pubkey, subscriberId);
   }
 });
 

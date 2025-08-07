@@ -19,6 +19,7 @@ import type { NostrUnchained } from '../core/NostrUnchained.js';
 import type { UserProfile } from './types.js';
 import type { NostrEvent } from '../core/types.js';
 import type { UniversalNostrStore } from '../store/UniversalNostrStore.js';
+import type { UniversalDMConversation } from '../dm/conversation/UniversalDMConversation.js';
 // Required for builders
 import type { RelayManager } from '../relay/RelayManager.js';
 import type { SubscriptionManager } from '../subscription/SubscriptionManager.js';
@@ -173,6 +174,27 @@ export class ProfileModule {
       subscriptionManager: this.config.subscriptionManager,
       debug: this.config.debug
     });
+  }
+
+  /**
+   * Start a DM conversation with this user
+   * 
+   * Convenience method that connects profiles to messaging functionality.
+   * Supports both hex pubkeys and npub format.
+   * 
+   * @param pubkeyOrNpub - Hex pubkey or npub of the user to chat with
+   * @returns UniversalDMConversation for messaging
+   */
+  chat(pubkeyOrNpub: string): UniversalDMConversation | null {
+    const dmModule = this.config.nostr.getDM();
+    if (!dmModule) {
+      if (this.config.debug) {
+        console.warn('DM module not available - make sure signing provider is initialized');
+      }
+      return null;
+    }
+    
+    return dmModule.with(pubkeyOrNpub);
   }
 
   /**

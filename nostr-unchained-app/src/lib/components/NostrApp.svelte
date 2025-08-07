@@ -5,12 +5,14 @@
 -->
 
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import type { NostrUnchained } from 'nostr-unchained';
 	import NostrTerminal from './terminal/NostrTerminal.svelte';
 	import DMChat from './terminal/DMChat.svelte';
 	import PublishCard from './terminal/PublishCard.svelte';
 	import ProfileView from './profile/ProfileView.svelte';
 	import KeyDisplay from './ui/KeyDisplay.svelte';
+	import { initializeProfileManager } from '../utils/ProfileSubscriptionManager.js';
 
 	// =============================================================================
 	// Props - Clean Dependency Injection
@@ -34,9 +36,13 @@
 		signerType: signer || 'extension'
 	});
 
-	// Get user info from NostrUnchained (signing already initialized in landing page)
+	// Initialize ProfileSubscriptionManager when NostrUnchained is ready
 	$effect(() => {
 		if (nostr) {
+			// Initialize the ProfileSubscriptionManager with NostrUnchained instance
+			initializeProfileManager(nostr);
+			
+			// Get user info
 			nostr.getPublicKey().then(pubkey => {
 				userInfo.publicKey = pubkey;
 			}).catch(() => {
@@ -68,6 +74,23 @@
 	function navigateToOwnProfile() {
 		currentProfilePubkey = null; // Reset to own profile
 		currentView = 'profile';
+	}
+	
+	function navigateToDM(pubkey: string | null = null) {
+		console.log('🎯 Navigate to DM in NostrApp', { pubkey, currentView });
+		currentView = 'messages';
+		// If pubkey provided, start conversation with that user
+		if (pubkey) {
+			// We'll pass this to DMChat component to auto-open conversation
+			setTimeout(() => {
+				// Trigger conversation opening in DMChat
+				const dmChatComponent = document.querySelector('.dm-chat');
+				if (dmChatComponent) {
+					// Dispatch custom event to DMChat to open conversation
+					dmChatComponent.dispatchEvent(new CustomEvent('openConversation', { detail: { pubkey } }));
+				}
+			}, 100);
+		}
 	}
 </script>
 
@@ -152,6 +175,7 @@
 				{nostr} 
 				{authState} 
 				pubkey={currentProfilePubkey}
+				onDMClick={navigateToDM}
 			/>
 		{/if}
 	</main>

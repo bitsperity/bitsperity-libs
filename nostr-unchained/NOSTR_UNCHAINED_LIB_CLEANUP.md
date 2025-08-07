@@ -97,4 +97,94 @@ Dieses Dokument hält strukturierte Architektur- und DX-Baustellen fest und schl
 
 Mit den oben vorgeschlagenen Low-Risk-Erweiterungen erhält die App die fehlenden, erwarteten UX-/DX-Schalter direkt an der Lib. Der DM-Flow bleibt sauber (Lazy Inbox, Cache-Entschlüsselung, NIP‑44 via Signer/Decryptor), die Frontend-Integration wird einfacher und robuster. Mittel- bis langfristig erhöht die Social-Layer-Bereinigung (Query/Sub-only) die strukturelle Qualität weiter.
 
+---
+
+## H) Signer-Sicherheits-Policy: Encrypt/Decrypt-only (kein Raw-Key-Leak)
+
+### H1) Grundsatz
+- Jeder Signer (Browser-Extension, Mobile, Custom) soll Verschlüsselung/Entschlüsselung selbst ausführen (NIP‑44), anstatt private Schlüssel offenzulegen.
+- Das Herausgeben eines Raw-Private-Keys ist in Produktion untersagt. Eine Dev‑Fallback‑Option bleibt ausschließlich für lokale Tests (z. B. `LocalKeySigner`) erhalten und muss explizit aktiviert werden.
+
+### H2) API-/Implementierungsfolgen
+- SigningProvider Interface:
+  - Verbindlich: `capabilities()` mit Flags für `nip44Encrypt`/`nip44Decrypt` (ohne jegliche Raw‑Key‑Angaben).
+  - Verbindlich: `nip44Encrypt(peerPubkey, plaintext)` und `nip44Decrypt(peerPubkey, ciphertext)` als First‑Class.
+  - Entfernen: `getPrivateKeyForEncryption()` (kein Raw‑Key‑Zugriff, auch nicht im DEV‑API).
+
+- NostrUnchained:
+  - `_initializeCache()` verkabelt ausschließlich den Decryptor, wenn verfügbar. Kein Raw‑Key‑Pfad mehr.
+  - Falls kein Decryptor verfügbar: Gift Wraps werden gespeichert, aber nicht lokal entschlüsselt (kein Fallback über Private Keys).
+
+- UniversalEventCache:
+  - Nur noch Decryptor‑Injection via `setDecryptor(...)`. Private‑Key‑Pfad wird entfernt.
+  - Konstruktor benötigt keinen Private‑Key mehr; Re‑Processing nutzt ausschließlich den Decryptor.
+
+- ExtensionSigner:
+  - `capabilities(): { nip44Encrypt: boolean; nip44Decrypt: boolean }` – kein Raw‑Key.
+  - NIP‑44 bleibt in der Extension implementiert.
+
+- LocalKeySigner (DEV):
+  - Behält interne Schlüsselverwaltung, aber exponiert sie nie. Implementiert `nip44Encrypt/Decrypt` vollständig, ohne Raw‑Key‑API.
+
+### H3) Migration/Kompatibilität
+- Kurzfristig:
+  - Entfernen aller Raw‑Key‑Nutzungen in Code und Doku.
+  - `_initializeCache()` ausschließlich mit Decryptor‑Pfad betreiben.
+
+- Mittelfristig:
+  - `getPrivateKeyForEncryption()` ersatzlos streichen (Removal), Changelog und README anpassen.
+  - Beispiele/Docs ausschließlich über `nip44Encrypt/Decrypt` führen.
+
+- Langfristig:
+  - `UniversalEventCache` ohne Private‑Key‑Konstruktion betreiben; alle Entschlüsselung via Decryptor.
+
+### H4) Tests
+- Sicherstellen, dass NIP‑44 Compliance‑Tests mit Decryptor laufen (ExtensionSigner‑Pfad, oder LocalKeySigner‑Decryptor ohne Raw‑Key‑Expose).
+- Zusätzliche Tests: „No Raw Key in Prod“ – Simulator, der `experimental.allowRawKey=false` erzwingt und sicherstellt, dass keinerlei Schlüssel ausgelesen/geloggt werden.
+
+---
+
+## I) Standardisierte SigningProvider‑Spezifikation (v1) – DM mit jedem Signer
+
+Ziel: Alle Signer verhalten sich identisch für DM‑Verschlüsselung/‑Entschlüsselung, ohne Raw‑Key‑Zugriff. Damit funktionieren DMs sofort mit jedem Signer.
+
+### I1) Minimal‑Interface (verbindlich)
+```ts
+interface SigningProviderV1 {
+  // Identität
+  getPublicKey(): Promise<string>;
+  getPublicKeySync?(): string | null;
+
+  // Signatur (NIP‑01)
+  signEvent(event: UnsignedEvent): Promise<string>; // sig hex
+
+  // Fähigkeiten
+  capabilities(): Promise<{
+    nip44Encrypt: boolean;
+    nip44Decrypt: boolean;
+  }>;
+
+  // NIP‑44 (Pflicht für DM‑Support)
+  nip44Encrypt(peerPubkeyHex: string, plaintext: string): Promise<string>;   // returns payload (base64)
+  nip44Decrypt(peerPubkeyHex: string, ciphertext: string): Promise<string>; // returns plaintext (utf‑8)
+}
+```
+
+Hinweise:
+- Es gibt keine Raw‑Key‑APIs. Signer dürfen interne Keys halten, aber niemals herausgeben.
+- Die Parameter sind hex‑Pubkeys; npub‑Konvertierung übernimmt die Lib vor dem Aufruf.
+
+### I2) Lib‑Handshake
+- `initializeSigning(provider)` ruft `capabilities()` auf und injiziert bei `nip44Decrypt===true` den Decryptor in den Cache.
+- Gift‑Wrap‑Inbox startet Lazy beim ersten `getDM().with(...)`.
+
+### I3) Kompatibilitätsmatrix (Zielzustand)
+- ExtensionSigner: `nip44Encrypt/Decrypt` via `window.nostr.nip44.*` → kompatibel.
+- LocalKeySigner (DEV): implementiert `nip44Encrypt/Decrypt` intern (keine Raw‑Key‑Expose nach außen).
+- Custom Signer: muss obiges Interface erfüllen; dann läuft DM out‑of‑the‑box.
+
+### I4) Abnahme‑Tests
+- Conformance‑Suite ergänzt: Signer‑Mock, der nur `nip44Encrypt/Decrypt` bereitstellt → DM‑Tests müssen bestehen (Senden/Empfangen/UTF‑8/Edge‑Cases).
+- Negative‑Pfad: `nip44Decrypt=false` → kein Decryptor; Cache speichert Gift Wraps, UI zeigt Hinweis „DM‑Decrypt nicht verfügbar“ (optional), keine Raw‑Keys als Fallback in Prod.
+
 

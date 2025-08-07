@@ -3,6 +3,7 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   test: {
+    // Default config stays for unit tests; tests-v2 gets its own config
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test-setup.ts'],
