@@ -89,18 +89,26 @@ export class UniversalEventCache {
   }
   
   async addEvent(event: NostrEvent): Promise<void> {
-    // Special handling ONLY for gift wraps
+    // CRITICAL FIX: Store Gift Wrap events in cache regardless of decryption
+    // Let the DM conversation handle decryption - cache should store all events
     if (event.kind === 1059) {
+      // Store the Gift Wrap event itself in cache
+      this.events.set(event.id, event);
+      this.updateIndexes(event);
+      this.updateAccessTracking(event.id);
+      this.notifySubscribers(event);
+      
+      // Additionally, try to decrypt and store decrypted content if possible
       try {
         const decrypted = await this.unwrapGiftWrap(event);
         if (decrypted) {
           await this.addEvent(decrypted); // Recursive: add unwrapped content
         }
       } catch (error) {
-        // Failed to decrypt - not for us, ignore
-        console.debug('Failed to unwrap gift wrap:', error);
+        // Failed to decrypt - that's fine, we still stored the Gift Wrap
+        console.debug('Failed to unwrap gift wrap (stored anyway):', error);
       }
-      return; // Gift wrap itself NOT stored
+      return;
     }
     
     // Check capacity before adding

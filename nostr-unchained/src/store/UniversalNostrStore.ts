@@ -88,7 +88,44 @@ export class UniversalNostrStore<T = NostrEvent[]> implements Readable<T> {
       return false;
     }
     
-    // TODO: Add more filter checks if needed (tags, since, until, etc.)
+    // CRITICAL FIX: Add tag filter matching
+    // This is essential for Gift Wrap events that use 'p' tags for recipients
+    if (filter['#p'] && filter['#p'].length > 0) {
+      const pTags = event.tags.filter(tag => tag[0] === 'p').map(tag => tag[1]);
+      if (!filter['#p'].some(filterValue => pTags.includes(filterValue))) {
+        return false;
+      }
+    }
+    
+    if (filter['#e'] && filter['#e'].length > 0) {
+      const eTags = event.tags.filter(tag => tag[0] === 'e').map(tag => tag[1]);
+      if (!filter['#e'].some(filterValue => eTags.includes(filterValue))) {
+        return false;
+      }
+    }
+    
+    if (filter['#t'] && filter['#t'].length > 0) {
+      const tTags = event.tags.filter(tag => tag[0] === 't').map(tag => tag[1]);
+      if (!filter['#t'].some(filterValue => tTags.includes(filterValue))) {
+        return false;
+      }
+    }
+    
+    // Add support for any generic tag filter (e.g., #subject, #d, etc.)
+    for (const key of Object.keys(filter)) {
+      if (key.startsWith('#') && key.length > 1 && !['#p', '#e', '#t'].includes(key)) {
+        const tagName = key.slice(1); // Remove the '#' prefix
+        const filterValues = filter[key];
+        if (filterValues && filterValues.length > 0) {
+          const eventTags = event.tags.filter(tag => tag[0] === tagName).map(tag => tag[1]);
+          if (!filterValues.some(filterValue => eventTags.includes(filterValue))) {
+            return false;
+          }
+        }
+      }
+    }
+    
+    // TODO: Add since/until timestamp filtering if needed
     
     return true;
   }

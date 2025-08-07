@@ -6,6 +6,7 @@
  */
 
 import { sha256 } from '@noble/hashes/sha256';
+import { bytesToHex } from '@noble/hashes/utils';
 import * as secp256k1 from '@noble/secp256k1';
 import { NIP44Crypto } from '../crypto/NIP44Crypto.js';
 import { EphemeralKeyManager } from './EphemeralKeyManager.js';
@@ -293,10 +294,11 @@ export class GiftWrapCreator {
       event.content
     ]);
     
-    const hash = sha256(new TextEncoder().encode(serialized));
-    return Array.from(hash)
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
+    const eventBytes = new TextEncoder().encode(serialized);
+    const hashBytes = sha256(eventBytes);
+    
+    // Use the same hex conversion as EventBuilder for consistency
+    return bytesToHex(hashBytes);
   }
 
   /**
@@ -305,9 +307,8 @@ export class GiftWrapCreator {
   private static async signEvent(event: any, eventId: string, privateKey: string): Promise<string> {
     try {
       const signature = await secp256k1.schnorr.sign(eventId, privateKey);
-      return Array.from(signature)
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('');
+      // Use the same hex conversion as SigningProvider for consistency
+      return bytesToHex(signature);
     } catch (error) {
       throw new NIP59Error(
         'Failed to sign gift wrap event',

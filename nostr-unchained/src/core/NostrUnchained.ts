@@ -154,6 +154,23 @@ export class NostrUnchained {
   }
 
   /**
+   * Get the private key for encryption (needed for DM functionality)
+   */
+  async getPrivateKeyForEncryption(): Promise<string | null> {
+    try {
+      if (!this.signingProvider) {
+        return null;
+      }
+      return await this.signingProvider.getPrivateKeyForEncryption();
+    } catch (error) {
+      if (this.config.debug) {
+        console.warn('Failed to get private key for encryption:', error);
+      }
+      return null;
+    }
+  }
+
+  /**
    * Get enhanced profile module (PERFECT DX - always works!)
    */
   get profile(): ProfileModule {
@@ -413,6 +430,52 @@ export class NostrUnchained {
         relayLatencies: relayResults.map(r => ({ relay: r.relay, latency: 0 })), // Simplified
         totalTime,
         signingMethod: this.signingMethod || 'unknown'
+      };
+    }
+    
+    return result;
+  }
+
+  /**
+   * Publish an already signed event (for Gift Wraps, etc.)
+   * This bypasses the normal signing process since the event is already signed
+   */
+  async publishSigned(signedEvent: NostrEvent): Promise<PublishResult> {
+    const startTime = Date.now();
+    
+    // Validate the signed event structure
+    if (!signedEvent.id || !signedEvent.sig || !signedEvent.pubkey) {
+      throw new Error('Invalid signed event: Missing required fields (id, sig, pubkey)');
+    }
+    
+    // Publish directly to all connected relays without re-signing
+    const relayResults = await this.relayManager.publishToAll(signedEvent);
+    
+    const totalTime = Date.now() - startTime;
+    
+    // Return standard PublishResult format
+    const success = relayResults.some(r => r.success);
+    const result: PublishResult = {
+      success,
+      eventId: success ? signedEvent.id : undefined,
+      event: success ? signedEvent : undefined,
+      relayResults,
+      timestamp: Date.now(),
+      error: success ? undefined : {
+        message: 'Failed to publish to any relay',
+        code: 'PUBLISH_FAILED',
+        retryable: true,
+        suggestion: 'Check relay connectivity or try different relays'
+      }
+    };
+    
+    // Add debug info if debug mode is enabled
+    if (this.config.debug) {
+      result.debug = {
+        connectionAttempts: this.relayManager.connectedRelays.length,
+        relayLatencies: relayResults.map(r => ({ relay: r.relay, latency: 0 })), // Simplified
+        totalTime,
+        signingMethod: 'pre-signed'
       };
     }
     
