@@ -187,4 +187,74 @@ Hinweise:
 - Conformance‑Suite ergänzt: Signer‑Mock, der nur `nip44Encrypt/Decrypt` bereitstellt → DM‑Tests müssen bestehen (Senden/Empfangen/UTF‑8/Edge‑Cases).
 - Negative‑Pfad: `nip44Decrypt=false` → kein Decryptor; Cache speichert Gift Wraps, UI zeigt Hinweis „DM‑Decrypt nicht verfügbar“ (optional), keine Raw‑Keys als Fallback in Prod.
 
+---
+
+## J) File‑by‑File Audit (laufend aktualisiert)
+
+### J1) core/NostrUnchained.ts
+- **Probleme/Abweichungen**:
+  - Versions‑Log immer aktiv (Zeile ~58) – nicht an `debug` gebunden.
+  - `_initializeCache()` nutzt noch Raw‑Key‑Pfad (Capabilities `rawKey`, `getPrivateKeyForEncryption`) – widerspricht H/I Policy.
+  - Öffentliche Methode `getPrivateKeyForEncryption()` – muss entfernt werden (keine Raw‑Key‑APIs).
+  - Cache‑Konstruktion mit Private‑Key (''/hex) – ersetzen durch key‑freies Konstrukt + Decryptor‑Injection.
+  - DX‑Convenience‑APIs fehlen (hasExtension/useExtensionSigner/useLocalKeySigner/getSigningInfo/publish(content)).
+
+- **Maßnahmen**:
+  1) `constructor`: Versions‑Log nur, wenn `config.debug`.
+  2) `_initializeCache()`:
+     - Raw‑Key‑Zweig löschen.
+     - `this.cache = new UniversalEventCache({ ...config })` (ohne Key) – API wird in K angepasst.
+     - Bei `capabilities().nip44Decrypt` Decryptor setzen; danach `reprocessGiftWraps()` (ohne Key‑Pfad).
+  3) Entferne `getPrivateKeyForEncryption()` komplett.
+  4) Ergänze DX‑APIs:
+     - `hasExtension()`, `useExtensionSigner()`, `useLocalKeySigner()`, `getSigningInfo()`
+     - Overload `publish(content: string, kind = 1)`.
+  5) `getDebugInfo()` um Versionsinfo erweitern (statt immer zu loggen).
+
+### J2) cache/UniversalEventCache.ts
+- **Ist‑Stand**:
+  - Hält `privateKey`, `setPrivateKey()`, unwrap‑Fallback via `GiftWrapProtocol` + Raw‑Key, Decryptor optional.
+
+- **Soll (gemäß H/I)**:
+  - Entferne Private‑Key‑State komplett; kein `setPrivateKey()` mehr.
+  - Konstruktor ohne Key; nur konfig‑Parameter.
+  - `unwrapGiftWrap()` nutzt ausschließlich Decryptor; ohne Decryptor: keine Entschlüsselung (Event bleibt 1059 im Cache).
+  - `reprocessGiftWraps()` versucht ausschließlich Decryptor‑Pfad.
+
+- **Zusatz**:
+  - Behalte Gift‑Wrap‑Speicherung und Indexierung bei; 14‑Events weiterhin nach erfolgreicher Entschlüsselung hinzufügen.
+  - Stats/Indexes/Subscribe unverändert.
+
+### J3) crypto/SigningProvider.ts
+- **Ist‑Stand**:
+  - `ExtensionSigner`: OK, hat `nip44Encrypt/Decrypt`.
+  - `LocalKeySigner`: implementiert NIP‑44 intern, exponiert aber `getPrivateKeyForEncryption()` und `capabilities().rawKey`.
+
+- **Soll**:
+  - Entferne `getPrivateKeyForEncryption()` und `rawKey` aus `capabilities()`.
+  - Belasse NIP‑44 Implementierung intern; API nur `nip44Encrypt/Decrypt`.
+  - Passe `SigningProvider` Typen entsprechend I1 an.
+  - `SigningProviderFactory.createBestAvailable()` unverändert (Extension bevorzugt, sonst DEV‑Signer), aber ohne Raw‑Key APIs.
+
+### J4) dm/api/UniversalDMModule.ts
+- **Beobachtungen**:
+  - Robust gegen npub/hex mit Auto‑Konvertierung; gutes Lazy‑Start der Inbox.
+  - `UniversalDMRoom.send()`/Teilnehmer‑Mgmt TODO – unvollständig.
+
+- **Maßnahmen**:
+  - Implementiere Room‑Send (mehrere Empfänger, Gift Wrap je Empfänger; Aggregation von PublishResult).
+  - Teilnehmerverwaltung: Events für Join/Leave oder definierte Tagging‑Konvention dokumentieren/umsetzen.
+  - Validierung vereinheitlichen (Helper für Pubkey‑Normierung zentralisieren).
+  - Optional: `.with()`/`.room()` geben klaren Fehlerzustand zurück (statt silent warn) – bessere DX für UI.
+
+### J5) relay/RelayManager.ts
+- **Beobachtungen**:
+  - Solide Connection/Retry/Backoff; Pending Publishes werden bei Disconnect bereinigt.
+  - Debug‑Logs reichlich, gut hinter `debug`.
+
+- **Maßnahmen (optional)**:
+  - Hook für Subscription‑Rehydration nach Reconnect (falls benötigt durch höhere Schicht; derzeit Sub‑Layer steuert das).
+  - Optionale Metrik: real gemessene Latenzen pro Publish (falls Relay OK/Timeout messen).
+  - Optional: Circuit‑Breaker/Zeitfenster für instabile Relays (temporär skippen).
+
 
