@@ -372,4 +372,90 @@ Hinweise:
 - DX:
   - `publish(content)`/`hasExtension()`/`use*Signer()` E2E in App‑Fixture; Fehlertexte via `ErrorHandler` geprüft.
 
+---
+
+## J18) dm/api/UniversalDMModule.ts
+
+- Ist‑Stand:
+  - Akzeptiert `npub`/hex und normalisiert; lazy startet Gift‑Wrap‑Subscription bei erstem Zugriff.
+  - Kapselt Konversationen/Räume in Cache‑basierte Stores.
+- Maßnahmen:
+  - OK hinsichtlich Clean‑Arch (Cache/Sub). Fehlerausgaben an `debug` binden.
+
+---
+
+## J19) dm/crypto/NIP44Crypto.ts
+
+- Ist‑Stand:
+  - Saubere NIP‑44 v2 Implementierung (HKDF, ChaCha20, HMAC, Padding). Fehler werden als `NIP44Error` zurückgegeben.
+- Maßnahmen:
+  - OK. Keine sensiblen Logs. Beibehalten.
+
+---
+
+## J20) dm/protocol/* (GiftWrapCreator, GiftWrapProtocol, EphemeralKeyManager, TimestampRandomizer)
+
+- Ist‑Stand:
+  - Korrekte Protokollschritte, Ephemeral Keys, Timestamp‑Randomisierung, Validierungen.
+  - `GiftWrapProtocol.unwrapGiftWrap()` erlaubt lokalen Key‑Pfad (DEV/Tests).
+- Maßnahmen:
+  - Dokumentieren: In Prod über Cache‑Decryptor nutzen. Lokaler Key nur in Tests/Tools.
+
+---
+
+## J21) dm/index.ts
+
+- Ist‑Stand:
+  - Exporte konsistent, inkl. Legacy‑DM und Universal‑DM.
+- Maßnahmen:
+  - Nach Security‑Migration (H/M) Legacy‑Exports überprüfen/kennzeichnen.
+
+---
+
+## J22) query/FilterBuilder.ts
+
+- Ist‑Stand:
+  - Symmetrische Fluent‑API, generische `tags()` mit Existenzprüfung.
+- Maßnahmen:
+  - OK.
+
+---
+
+## J23) profile/ProfileModule.ts
+
+- Ist‑Stand:
+  - Vorbildliche Clean‑Arch‑Nutzung von `nostr.query()`/`nostr.sub()`; DM‑Convenience via `chat()`.
+- Maßnahmen:
+  - OK.
+
+---
+
+## J24) social/* (SocialModule, Content/Reaction/Thread/Feed)
+
+- Ist‑Stand:
+  - SocialModule nutzt Clean‑Arch und lazy‑lädt Untermodule.
+  - Manager‑Implementierungen folgen Clean‑Arch (keine direkten Caches/SubscriptionManager Zugriffe) – Stand hier: Module‑Shells ok.
+- Maßnahmen:
+  - Bei Implementierung strikt `nostr.query()/sub()` nutzen; keine eigenen Maps/Caches.
+
+---
+
+## J25) scripts/* (dm-two-party.mjs, relay-inspect-1059.mjs)
+
+- Ist‑Stand:
+  - Nutzen Raw‑Key‑Signers (`getPrivateKeyForEncryption()`) zu Demo-/Debug‑Zwecken.
+- Maßnahmen:
+  - Deutlich als DEV‑Tools markieren. In Doku kennzeichnen, dass sie nicht Prod‑geeignet sind.
+
+---
+
+## J26) docs/* (dm/README.md, architecture/stores/events)
+
+- Befund:
+  - DM‑README referenziert an einer Stelle `nostr.getPrivateKeyForEncryption()` (manueller Decrypt‑Test). Das widerspricht H‑Policy im Prod‑Kontext.
+- Maßnahmen:
+  - Doku ergänzen: Der Aufruf ist nur in DEV/Tests zulässig; in Prod wird Decrypt transparent durch den Cache‑Decryptor erledigt. Rumor‑ID vs. Wrap‑ID Hinweis ergänzen.
+
+---
+
 
