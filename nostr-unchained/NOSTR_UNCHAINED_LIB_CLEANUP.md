@@ -187,4 +187,189 @@ Hinweise:
 - Conformance‑Suite ergänzt: Signer‑Mock, der nur `nip44Encrypt/Decrypt` bereitstellt → DM‑Tests müssen bestehen (Senden/Empfangen/UTF‑8/Edge‑Cases).
 - Negative‑Pfad: `nip44Decrypt=false` → kein Decryptor; Cache speichert Gift Wraps, UI zeigt Hinweis „DM‑Decrypt nicht verfügbar“ (optional), keine Raw‑Keys als Fallback in Prod.
 
+---
+
+## J6) dm/api/DMModule.ts
+
+- Ist‑Stand:
+  - Nutzt `getPrivateKeySecurely()` mit Zugriff auf `signingProvider.getPrivateKeyForEncryption()` und dev Fallback‑Key bei `debug`/`test`.
+  - Entschlüsselt Wraps im Modul (Legacy‑Pfad) und erzeugt Konversation/Rooms mit Raw‑Key.
+  - `normalizePubkey()` lehnt `npub` ab; nur 64‑Hex akzeptiert.
+- Probleme:
+  - Verstößt gegen H‑Policy (Raw‑Key‑Zugriff, Dev‑Fallback‑Key im Klartext, Logging von Key‑Metadaten).
+  - Doppelverantwortung für Decryption (Modul vs. Cache/UniversalDM) → potenzielle Inkonsistenz.
+  - DX: `npub` wird nicht akzeptiert; inkonsistent zur restlichen Lib.
+- Maßnahmen:
+  - Entferne Raw‑Key‑Pfad (nur Decryptor/Universal‑Flow). Delegiere Decrypt/Inbox vollständig an Universal‑Cache/UniversalDM.
+  - Entferne dev Fallback‑Key. Keine Key‑Logs.
+  - Akzeptiere `npub` und normalisiere zentral (siehe Utils).
+  - Dokumentiere, dass dieser Pfad legacy ist und mittelfristig durch UniversalDM ersetzt wird.
+
+---
+
+## J7) dm/conversation/UniversalDMConversation.ts
+
+- Ist‑Stand:
+  - Nutzt `subscriptionManager.getOrCreateSubscription` via `nostr.startUniversalGiftWrapSubscription()` (global) + `query().kinds(14)` Store.
+  - Send‑Pfad: bevorzugt `signer.nip44Encrypt`; Fallback auf `nostr.getPrivateKeyForEncryption()` bei fehlender NIP‑44 Capability.
+- Probleme:
+  - Fallback auf Raw‑Key widerspricht H‑Policy; in Prod nicht zulässig.
+  - Kapselt Signer‑Capabilities partiell; Fehlerpfade liefern generische Texte.
+- Maßnahmen:
+  - Entferne Raw‑Key‑Fallback; wenn `nip44Encrypt`/`nip44Decrypt` nicht verfügbar: DM‑Send/Decrypt deaktivieren, UI‑Signal über Status/Fehler liefern.
+  - Klarere Fehler (Capability fehlt) über `ErrorHandler`.
+  - DX: Helper `with(subject?: string)` optional; `send()` Ergebnis strukturierter (Relay/IDs).
+
+---
+
+## J8) dm/protocol/SealCreator.ts
+
+- Ist‑Stand:
+  - Loggt sensible Private‑Key‑Metadaten in `getPublicKeyFromPrivate()` (L223 ff.).
+- Probleme (kritisch):
+  - Leakage sensibler Informationen im Log (auch mit Debug riskant). Verstößt gegen H‑Policy.
+- Maßnahmen:
+  - Entferne sämtliches Logging sensibler Key‑Infos. Fehler nur mit generischen Messages.
+
+---
+
+## J9) dm/protocol/GiftWrapProtocol.ts
+
+- Ist‑Stand:
+  - Saubere Protokollierung der NIP‑59 Schritte; Unwrap unterstützt lokalen Key‑Pfad (hex) und validiert Format.
+- Hinweise:
+  - In Prod‑Flows sollte Unwrap über Cache‑Decryptor erfolgen. Dokumentieren, dass lokale Key‑Pfade nur für DEV/Tests gelten.
+
+---
+
+## J10) cache/UniversalEventCache.ts
+
+- Ist‑Stand:
+  - Hält `privateKey` und `setPrivateKey()`, optionaler `decryptor` via `setDecryptor()`. Fallback‑Unwrap über lokalen Key.
+- Probleme:
+  - Private‑Key‑State widerspricht Zielbild (H/I). Silent Failures bei Decrypt schwer debugbar.
+- Maßnahmen:
+  - Entferne Private‑Key‑State; alleiniger Decryptor‑Pfad. `reprocessGiftWraps()` nutzt nur Decryptor.
+  - Optional: strukturierte Fehlertelemetrie (Grund für Decrypt‑Fail), jedoch ohne sensible Daten.
+
+---
+
+## J11) crypto/SigningProvider.ts
+
+- Ist‑Stand:
+  - `ExtensionSigner.capabilities(): { nip44Encrypt, nip44Decrypt, rawKey: false }` – gut.
+  - `LocalKeySigner` exponiert `getPrivateKeyForEncryption()` und `capabilities().rawKey = true`.
+- Probleme:
+  - Raw‑Key‑Expose im DEV‑Signer verletzt H‑Policy (API‑Oberfläche). Intern ok, außen nicht.
+- Maßnahmen:
+  - Entferne `getPrivateKeyForEncryption()` und `rawKey` aus Capabilities. Behalte interne Key‑Nutzung für NIP‑44, aber ausschließlich via `nip44Encrypt/Decrypt`.
+
+---
+
+## J12) core/NostrUnchained.ts
+
+- Ist‑Stand:
+  - Constructor loggt Version immer (L58). `_initializeCache()` setzt Private‑Key in Cache (`setPrivateKey`) abhängig von Capabilities.rawKey, anschließend `setDecryptor()` bei `nip44Decrypt`.
+  - Öffentliche `getPrivateKeyForEncryption()` Methode vorhanden.
+- Probleme:
+  - Immer‑Log stört Prod‑DX. Raw‑Key‑Pfad widerspricht H‑Policy. Öffentliche Raw‑Key‑API.
+- Maßnahmen:
+  - Version‑Log nur bei `config.debug`.
+  - Entferne Raw‑Key‑Pfad, allein `setDecryptor()` + Reprocessing.
+  - Entferne öffentliche `getPrivateKeyForEncryption()`.
+  - Ergänze DX‑APIs (B1/E) für App‑Kompatibilität.
+
+---
+
+## J13) relay/RelayManager.ts
+
+- Ist‑Stand:
+  - Saubere Retry/Backoff/Debug‑Logs hinter Flag; Pending‑Publishes Tracking gut.
+- Maßnahmen (optional):
+  - Export granularer Latenz‑Metriken; Hook für Sub‑Rehydration dokumentieren.
+
+---
+
+## J14) subscription/SubscriptionManager.ts + SharedSubscription.ts
+
+- Ist‑Stand:
+  - Dedup‑Subscriptions, Listener‑Multiplexing, solide Fehlerpfade.
+- Maßnahmen (optional):
+  - Metriken/Analytics im Debug aus `getStats()` harmonisieren.
+
+---
+
+## J15) events/FluentEventBuilder.ts
+
+- Ist‑Stand:
+  - Gute Fluent‑DX; `events.note(content).publish()` als Workaround vorhanden.
+- Maßnahmen (DX):
+  - In `NostrUnchained` einen `publish(content: string, kind=1)` Overload anbieten (B1/E), damit App ohne Builder publizieren kann.
+
+---
+
+## J16) utils/encoding-utils.ts
+
+- Ist‑Stand:
+  - Umfangreiche NIP‑19 Utilities; npub/nsec/… Round‑Trips stabil.
+- Maßnahmen:
+  - Nichts kritisch; zentral als Normalisierungs‑Helper in DM/API verwenden.
+
+---
+
+## J17) store/UniversalNostrStore.ts
+
+- Ist‑Stand:
+  - Tag‑Filter Matching implementiert (#p/#e/#t/Generic); reaktiv.
+- Maßnahmen:
+  - OK.
+
+---
+
+## K) Sicherheitsbefunde (kritisch)
+
+- Entfernen/unterbinden:
+  - Raw‑Key‑APIs/Cap‑Flags (siehe H/J11/J12/J6/J7).
+  - Jegliches Logging von Private‑Keys/Derivaten (J8).
+  - Dev‑Fallback‑Keys in Modulen (J6) → streichen.
+- Prod‑Verhalten:
+  - Wenn `nip44Decrypt` fehlt: Gift Wraps cachen, UI‑Signal „Decrypt nicht verfügbar“, kein Fallback über Raw‑Key.
+
+---
+
+## L) Logging‑Policy (präzisiert)
+
+- Nur loggen bei `config.debug === true`.
+- Niemals sensible Daten loggen (Keys, Ciphertexts, unmaskierte IDs).
+- Versions‑/Build‑Info über `getDebugInfo()` abrufbar statt Always‑Log.
+
+---
+
+## M) Migrationsplan (inkrementell, ohne Breaking UX)
+
+- PR‑1 (DX/Compat):
+  - `NostrUnchained`: `hasExtension()`, `useExtensionSigner()`, `useLocalKeySigner()`, `getSigningInfo()`, `publish(content, kind)`, Alias `getStats()`.
+  - Constructor‑Log an `debug` binden.
+- PR‑2 (Security):
+  - Entferne `getPrivateKeyForEncryption()` (Core/Signer) und `rawKey` Capability.
+  - Entferne Key‑Logging (SealCreator) und Dev‑Fallback‑Keys.
+- PR‑3 (Cache/Decryptor‑Only):
+  - `UniversalEventCache`: Private‑Key‑State entfernen; nur `setDecryptor()`; Reprocessing anpassen.
+  - `NostrUnchained._initializeCache()`: nur Decryptor‑Pfad.
+- PR‑4 (DM‑Konsolidierung):
+  - `DMModule`/`UniversalDMConversation`: Raw‑Key‑Fallbacks entfernen; klare Fehlerpfade bei fehlenden Capabilities; `npub` Normalisierung.
+
+---
+
+## N) Testplan
+
+- Conformance:
+  - NIP‑44 Vektoren weiterhin grün (Signer‑Decryptor‑Pfad).
+  - „No Raw Key in Prod“: Tests erzwingen fehlende Raw‑Key‑APIs, prüfen, dass DMs mit Extension/LocalSigner via `nip44*` laufen.
+- Regression:
+  - „Rumor‑ID vs. Wrap‑ID“ Validierung im Cache/DM‑Flow.
+  - „Lazy Inbox Activation“: Erste `with()`/`send()` aktiviert Gift‑Wrap‑Sub (kein Doppelstart).
+- DX:
+  - `publish(content)`/`hasExtension()`/`use*Signer()` E2E in App‑Fixture; Fehlertexte via `ErrorHandler` geprüft.
+
 
