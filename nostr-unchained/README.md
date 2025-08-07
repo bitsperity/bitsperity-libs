@@ -92,7 +92,7 @@ const nostr = new NostrUnchained();
 await nostr.connect();
 
 // 📝 Publishing - Zero Config
-await nostr.publish("Hallo, dezentrale Welt! 🌍");
+await nostr.events.note("Hallo, dezentrale Welt! 🌍");
 
 // 🔍 Cache Queries - Sofortiger Zugriff (<10ms)
 const cachedPosts = nostr.query().kinds([1]).execute();
@@ -155,7 +155,7 @@ await nostr.useExtensionSigner(); // Browser extension (recommended)
 
 // 4️⃣ Start building!
 // 📝 Publish content
-const result = await nostr.publish("My first Nostr note!");
+const result = await nostr.events.note("My first Nostr note!");
 console.log(`Published to ${result.successCount} relays`);
 
 // 🔍 Query cached data (instant)
