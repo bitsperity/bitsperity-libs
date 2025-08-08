@@ -89,7 +89,7 @@ export class NostrUnchained {
       this.signingMethod = config.signingProvider.constructor.name.includes('Extension') ? 'extension' : 'temporary';
       
       // Initialize cache synchronously first with empty key
-      this.cache = new UniversalEventCache('', {});
+      this.cache = new UniversalEventCache('', { debug: this.config.debug });
       
       // Then try to initialize with private key asynchronously
       this._initializeCache().catch(err => {
@@ -103,7 +103,7 @@ export class NostrUnchained {
       }
     } else {
       // Initialize with empty cache if no signing provider yet
-      this.cache = new UniversalEventCache('', {});
+      this.cache = new UniversalEventCache('', { debug: this.config.debug });
       
       if (this.config.debug) {
         console.log('🚨 NostrUnchained initialized WITHOUT signing provider - will auto-detect later');
@@ -389,6 +389,17 @@ export class NostrUnchained {
     
     // Return standard PublishResult format
     const success = relayResults.some(r => r.success);
+    // Feed into cache immediately for reactive UX (incl. deletions)
+    try {
+      if (this.config.debug) {
+        console.log('[Publish->Cache] Adding event to cache', { id: signedEvent.id.substring(0, 8) + '...', kind: signedEvent.kind });
+      }
+      await this.cache.addEvent(signedEvent);
+    } catch (e) {
+      if (this.config.debug) {
+        console.warn('[Publish->Cache] Failed to add event to cache', e);
+      }
+    }
     return {
       success,
       eventId: success ? signedEvent.id : undefined,
@@ -434,6 +445,17 @@ export class NostrUnchained {
     
     // Return standard PublishResult format
     const success = relayResults.some(r => r.success);
+    // Feed into cache immediately for reactive UX (incl. deletions)
+    try {
+      if (this.config.debug) {
+        console.log('[Publish->Cache] Adding event to cache', { id: signedEvent.id.substring(0, 8) + '...', kind: signedEvent.kind });
+      }
+      await this.cache.addEvent(signedEvent);
+    } catch (e) {
+      if (this.config.debug) {
+        console.warn('[Publish->Cache] Failed to add event to cache', e);
+      }
+    }
       const result: PublishResult = {
       success,
       eventId: success ? signedEvent.id : undefined,
@@ -475,6 +497,17 @@ export class NostrUnchained {
     
     // Return standard PublishResult format
     const success = relayResults.some(r => r.success);
+    // Feed into cache immediately for reactive UX (incl. deletions)
+    try {
+      if (this.config.debug) {
+        console.log('[Publish->Cache] Adding event to cache', { id: signedEvent.id.substring(0, 8) + '...', kind: signedEvent.kind });
+      }
+      await this.cache.addEvent(signedEvent);
+    } catch (e) {
+      if (this.config.debug) {
+        console.warn('[Publish->Cache] Failed to add event to cache', e);
+      }
+    }
     const result: PublishResult = {
       success,
       eventId: success ? signedEvent.id : undefined,

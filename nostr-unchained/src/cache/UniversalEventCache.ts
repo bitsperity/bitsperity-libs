@@ -19,6 +19,7 @@ export interface CacheConfig {
   maxEvents?: number; // Default: 10,000
   maxMemoryMB?: number; // Default: 50MB
   evictionPolicy?: 'lru' | 'fifo'; // Default: 'lru'
+  debug?: boolean; // Emit console logs when true
 }
 
 export interface CacheStatistics {
@@ -84,7 +85,8 @@ export class UniversalEventCache {
     this.config = {
       maxEvents: config.maxEvents || 10000,
       maxMemoryMB: config.maxMemoryMB || 50,
-      evictionPolicy: config.evictionPolicy || 'lru'
+      evictionPolicy: config.evictionPolicy || 'lru',
+      debug: !!config.debug
     };
   }
 
@@ -126,6 +128,34 @@ export class UniversalEventCache {
   }
   
   async addEvent(event: NostrEvent): Promise<void> {
+    // Handle deletion events (NIP-09) generically: remove referenced events from cache
+    if (event.kind === 5) {
+      try {
+        const candidateIds: string[] = [];
+        for (const tag of event.tags) {
+          if (Array.isArray(tag) && tag[0] === 'e' && typeof tag[1] === 'string' && tag[1]) {
+            candidateIds.push(tag[1]);
+          }
+        }
+        // NIP-09: Nur eigene Events dürfen gelöscht werden → filtere nach Autor
+        const idsToDelete = candidateIds.filter((id) => {
+          const existing = this.events.get(id);
+          return !!existing && existing.pubkey === event.pubkey;
+        });
+        if (idsToDelete.length > 0) {
+          if (this.config.debug) console.log('[UEC] Deletion event received – removing referenced events from cache', {
+            deletionId: (event.id || '').substring(0, 8) + '...',
+            count: idsToDelete.length,
+            ids: idsToDelete.map((id) => id.substring(0, 8) + '...')
+          });
+          this.deleteEventsByIds(idsToDelete);
+          if (this.config.debug) console.log('[UEC] Deletion processing complete');
+        }
+      } catch {}
+      // Optionally store deletion event itself; for now, we skip storing to keep cache lean
+      return;
+    }
+    
     // CRITICAL FIX: Store Gift Wrap events in cache regardless of decryption
     // Let the DM conversation handle decryption - cache should store all events
     if (event.kind === 1059) {
@@ -156,6 +186,20 @@ export class UniversalEventCache {
     this.updateIndexes(event);
     this.updateAccessTracking(event.id);
     this.notifySubscribers(event);
+  }
+
+  /**
+   * Public API: Remove a list of events by ID and notify subscribers so stores update reactively
+   */
+  deleteEventsByIds(eventIds: string[]): void {
+    for (const id of eventIds) {
+      const existing = this.events.get(id);
+      if (!existing) continue;
+      // IMPORTANT: Remove first, then notify so reactive queries see the updated state (without the event)
+      this.removeEvent(id);
+      console.log('[UEC] Removed event from cache', { id: id.substring(0, 8) + '...', kind: existing.kind });
+      this.notifySubscribers(existing);
+    }
   }
   
   query(filter: Filter): NostrEvent[] {

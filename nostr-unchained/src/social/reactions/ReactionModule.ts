@@ -19,6 +19,12 @@ import type {
 } from '../types/reaction-types.js';
 
 export class ReactionModule {
+  // Static batch aggregator across all instances in the same runtime
+  private static pendingEventIds: Set<string> = new Set<string>();
+  private static activeEventIds: Set<string> = new Set<string>();
+  private static batchTimer: any = null;
+  private static BATCH_SIZE = 100; // number of event ids per subscription
+  private static BATCH_DELAY_MS = 250; // debounce window to collect ids (coalesce many cards)
   constructor(private nostr: NostrUnchained, private debug?: boolean) {
     if (this.debug) {
       console.log('🎯 ReactionModule initialized with Clean Architecture');
@@ -30,7 +36,7 @@ export class ReactionModule {
    * Returns aggregated reactions with counts and user's reaction
    */
   to(eventId: string): UniversalNostrStore<ReactionSummary> {
-    // Start subscription for live reaction updates
+    // Start batched subscription for live reaction updates (dedupe across multiple EventCards)
     this.startReactionSubscription(eventId);
     
     // Return reactive store with aggregated reactions
@@ -52,8 +58,7 @@ export class ReactionModule {
       return this.createNullStore();
     }
     
-    // Start subscription for live updates
-    this.startMyReactionSubscription(eventId, myPubkey);
+    // Kein separates Live-Abo nötig: die batched Reaction-Subscription deckt myReaction ab
     
     return this.nostr.query()
       .kinds([7])
@@ -105,36 +110,35 @@ export class ReactionModule {
    */
   async unreact(eventId: string): Promise<{ success: boolean; error?: string }> {
     try {
-      // Ensure my pubkey and have my reaction available in cache
+      // Ensure my pubkey and fetch ALL my reactions to this event from cache
       const myPubkey = await this.nostr.getPublicKey();
-      // Start a focused subscription to pull my latest reaction if not cached
-      await this.nostr.sub()
+      const myReactionsStore = this.nostr.query()
         .kinds([7])
         .authors([myPubkey])
         .tags('e', [eventId])
-        .limit(1)
         .execute();
 
-      // Give cache a brief moment to ingest
-      await new Promise((r) => setTimeout(r, 200));
-
-      const currentReactions = this.nostr.query()
-        .kinds([7])
-        .authors([myPubkey])
-        .tags('e', [eventId])
-        .limit(1)
-        .execute();
-
-      const reactionEvents = currentReactions.current || [];
-      if (!reactionEvents || reactionEvents.length === 0) {
+      const myReactions: NostrEvent[] = (myReactionsStore.current || []) as NostrEvent[];
+      if (!myReactions || myReactions.length === 0) {
         return { success: false, error: 'No reaction found to remove' };
       }
 
-      // Delete the most recent reaction (NIP-09 deletion)
-      const reactionToDelete = reactionEvents[0];
-      const result = await this.nostr.events
-        .deletion(reactionToDelete.id, 'User removed reaction')
-        .publish();
+      // Build one deletion (NIP-09) that references ALL my reaction IDs for this target
+      const first = myReactions[0];
+      let builder = this.nostr.events
+        .deletion(first.id, 'User removed reaction');
+      for (let i = 1; i < myReactions.length; i++) {
+        builder = builder.tag('e', myReactions[i].id);
+      }
+
+      if (this.debug) {
+        console.log('ReactionModule.unreact: deleting all my reactions for target', {
+          targetEventId: eventId.substring(0, 8) + '...',
+          count: myReactions.length
+        });
+      }
+
+      const result = await builder.publish();
 
       if (this.debug) {
         console.log(`ReactionModule: Deleted reaction to event ${eventId.substring(0, 8)}...`);
@@ -155,31 +159,48 @@ export class ReactionModule {
   // Private helper methods
 
   private async startReactionSubscription(eventId: string): Promise<void> {
-    try {
-      await this.nostr.sub()
-        .kinds([7])
-        .tags('e', [eventId])
-        .execute();
-    } catch (error) {
-      if (this.debug) {
-        console.warn(`Failed to start reaction subscription for ${eventId}:`, error);
-      }
+    // De-dup if already active
+    if (ReactionModule.activeEventIds.has(eventId)) return;
+    ReactionModule.pendingEventIds.add(eventId);
+
+    if (!ReactionModule.batchTimer) {
+      ReactionModule.batchTimer = setTimeout(async () => {
+        ReactionModule.batchTimer = null;
+        const batch: string[] = [];
+        for (const id of ReactionModule.pendingEventIds) {
+          if (batch.length >= ReactionModule.BATCH_SIZE) break;
+          if (!ReactionModule.activeEventIds.has(id)) {
+            batch.push(id);
+          }
+        }
+        batch.forEach((id) => {
+          ReactionModule.pendingEventIds.delete(id);
+          ReactionModule.activeEventIds.add(id);
+        });
+
+        if (batch.length === 0) return;
+        try {
+          if (this.debug) {
+            console.log('ReactionModule: starting batched reaction subscription', { size: batch.length });
+          }
+          await this.nostr.sub()
+            .kinds([7])
+            .tags('e', batch)
+            .limit(ReactionModule.BATCH_SIZE)
+            .execute();
+        } catch (error) {
+          if (this.debug) {
+            console.warn('Failed to start batched reaction subscription:', error);
+          }
+          // On failure, allow retry on next call
+          batch.forEach((id) => ReactionModule.activeEventIds.delete(id));
+        }
+      }, ReactionModule.BATCH_DELAY_MS);
     }
   }
 
   private async startMyReactionSubscription(eventId: string, myPubkey: string): Promise<void> {
-    try {
-      await this.nostr.sub()
-        .kinds([7])
-        .authors([myPubkey])
-        .tags('e', [eventId])
-        .limit(1)
-        .execute();
-    } catch (error) {
-      if (this.debug) {
-        console.warn(`Failed to start my reaction subscription for ${eventId}:`, error);
-      }
-    }
+    // no-op (abgedeckt durch batched reaction subscription)
   }
 
   private async getTargetEvent(eventId: string): Promise<NostrEvent | null> {

@@ -9,6 +9,7 @@
 	import { createEventDispatcher } from 'svelte';
 	import KeyDisplay from '../ui/KeyDisplay.svelte';
 	import ProfileAvatar from '../ui/ProfileAvatar.svelte';
+	import { onMount } from 'svelte';
 	
 	let { event, nostr }: { event: any; nostr?: any } = $props();
 	
@@ -18,41 +19,41 @@
 	// Event Type Detection & Formatting
 	// =============================================================================
 
-	function getEventType(kind: number): string {
-		const eventTypes = {
-			0: 'Profile',
-			1: 'Text Note',
-			3: 'Contacts',
-			4: 'Direct Message',
-			5: 'Delete',
-			6: 'Repost',
-			7: 'Reaction',
-			1984: 'Report',
-			9734: 'Zap Request',
-			9735: 'Zap',
-			10002: 'Relay List',
-			30023: 'Long Form'
-		};
-		return eventTypes[kind] || `Kind ${kind}`;
-	}
+function getEventType(kind: number): string {
+    const eventTypes: Record<number, string> = {
+      0: 'Profile',
+      1: 'Text Note',
+      3: 'Contacts',
+      4: 'Direct Message',
+      5: 'Delete',
+      6: 'Repost',
+      7: 'Reaction',
+      1984: 'Report',
+      9734: 'Zap Request',
+      9735: 'Zap',
+      10002: 'Relay List',
+      30023: 'Long Form'
+    };
+    return eventTypes[kind] ?? `Kind ${kind}`;
+  }
 
-	function getEventIcon(kind: number): string {
-		const icons = {
-			0: '👤',
-			1: '💬',
-			3: '👥',
-			4: '🔒',
-			5: '🗑️',
-			6: '🔄',
-			7: '❤️',
-			1984: '🚨',
-			9734: '⚡',
-			9735: '⚡',
-			10002: '🔗',
-			30023: '📄'
-		};
-		return icons[kind] || '📦';
-	}
+function getEventIcon(kind: number): string {
+    const icons: Record<number, string> = {
+      0: '👤',
+      1: '💬',
+      3: '👥',
+      4: '🔒',
+      5: '🗑️',
+      6: '🔄',
+      7: '❤️',
+      1984: '🚨',
+      9734: '⚡',
+      9735: '⚡',
+      10002: '🔗',
+      30023: '📄'
+    };
+    return icons[kind] ?? '📦';
+  }
 
 	function formatTimestamp(timestamp: number): string {
 		const now = Date.now() / 1000;
@@ -72,8 +73,174 @@
 		return content.substring(0, maxLength) + '...';
 	}
 
-	function formatPubkey(pubkey: string): string {
-		return pubkey.substring(0, 8) + '...' + pubkey.substring(-4);
+  // function formatPubkey(pubkey: string): string {
+  //   return pubkey.substring(0, 8) + '...' + pubkey.substring(-4);
+  // }
+
+	// =============================================================================
+	// Reactive Counters (Reactions/Reposts/Replies) & Actions
+	// =============================================================================
+
+	let reactionSummary: any = $state({ totalCount: 0, userReacted: false, userReactionType: undefined });
+	let repostCount: number = $state(0);
+	let replyCount: number = $state(0);
+
+	let likePending = $state(false);
+	let repostPending = $state(false);
+	let replyPending = $state(false);
+	let deletePending = $state(false);
+	let lastPublishResult: any = $state(null);
+
+	let unsubscribers: Array<() => void> = [];
+
+	onMount(() => {
+		try {
+			// Reactions summary store (live)
+			if ((nostr as any)?.social?.reactions?.to) {
+				const store = (nostr as any).social.reactions.to(event.id);
+				const unsub = store.subscribe((summary: any) => {
+					if (!summary) return;
+					const changed =
+						summary.totalCount !== reactionSummary.totalCount ||
+						summary.userReactionType !== reactionSummary.userReactionType;
+					if (changed) {
+						reactionSummary = summary;
+					}
+				});
+				unsubscribers.push(unsub);
+			}
+		} catch {}
+
+		try {
+			// Reposts count store
+			const repostStore = (nostr as any)?.query?.()
+				?.kinds?.([6])
+				?.tags?.('e', [event.id])
+				?.execute?.();
+			if (repostStore && typeof repostStore.subscribe === 'function') {
+				const unsub = repostStore.subscribe((events: any[]) => {
+					if (Array.isArray(events)) {
+						const cnt = events.length;
+						if (cnt !== repostCount) repostCount = cnt;
+					}
+				});
+				unsubscribers.push(unsub);
+			}
+		} catch {}
+
+		try {
+			// Replies count store (heuristic: kind 1 with e-tag to this id)
+			const replyStore = (nostr as any)?.query?.()
+				?.kinds?.([1])
+				?.tags?.('e', [event.id])
+				?.execute?.();
+			if (replyStore && typeof replyStore.subscribe === 'function') {
+				const unsub = replyStore.subscribe((events: any[]) => {
+					if (Array.isArray(events)) {
+						const cnt = events.length;
+						if (cnt !== replyCount) replyCount = cnt;
+					}
+				});
+				unsubscribers.push(unsub);
+			}
+		} catch {}
+
+		return () => {
+			unsubscribers.forEach((u) => {
+				try { u(); } catch {}
+			});
+			unsubscribers = [];
+		};
+	});
+
+	async function toggleLike() {
+		if (!(nostr as any)?.social?.reactions) return;
+		likePending = true;
+		try {
+			if (reactionSummary.userReactionType) {
+				await (nostr as any).social.reactions.unreact(event.id);
+			} else {
+				await (nostr as any).social.reactions.react(event.id, '+');
+			}
+		} catch (e) {
+			console.error('Reaction failed', e);
+		} finally {
+			likePending = false;
+		}
+	}
+
+	async function doRepost() {
+		if (!(nostr as any)?.social?.content) return;
+		repostPending = true;
+		try {
+			const result = await (nostr as any).social.content.repost(event.id);
+			lastPublishResult = result;
+		} catch (e) {
+			console.error('Repost failed', e);
+		} finally {
+			repostPending = false;
+		}
+	}
+
+	async function doReply() {
+		if (!(nostr as any)?.events) return;
+		const reply = window.prompt('Reply to note:', '');
+		if (!reply) return;
+		replyPending = true;
+		try {
+			const result = await (nostr as any).events
+				.create()
+				.replyTo(event.id)
+				.content(reply)
+				.publish();
+			lastPublishResult = result;
+		} catch (e) {
+			console.error('Reply failed', e);
+		} finally {
+			replyPending = false;
+		}
+	}
+
+	async function doDelete() {
+		if (!(nostr as any)?.events) return;
+		if ((nostr as any)?.me !== event.pubkey) return;
+		if (!confirm('Delete this event?')) return;
+		deletePending = true;
+		try {
+			const result = await (nostr as any).events
+				.deletion(event.id, 'User deleted event')
+				.publish();
+			lastPublishResult = result;
+		} catch (e) {
+			console.error('Delete failed', e);
+		} finally {
+			deletePending = false;
+		}
+	}
+
+	// =============================================================================
+	// Tags rendering and interactions
+	// =============================================================================
+	function groupTags(tags: string[][]): Record<string, string[][]> {
+		const groups: Record<string, string[][]> = {};
+		(tags || []).forEach((t) => {
+			if (!t || t.length === 0) return;
+			const key = String(t[0] ?? '');
+			if (!groups[key]) groups[key] = [];
+			groups[key].push(t as string[]);
+		});
+		return groups;
+	}
+
+	function handleTagClick(tag: string[]) {
+		if (!tag || tag.length === 0) return;
+		const [type, value] = tag;
+		if (type === 'p' && value) {
+			// treat as profile click
+			dispatch('profileClick', { pubkey: value });
+			return;
+		}
+		dispatch('tagClick', { type, value });
 	}
 
 	// =============================================================================
@@ -208,11 +375,10 @@
 
 <!-- Event Card -->
 <div 
-	class="event-card {isPressed ? 'pressed' : ''} event-type-{event.kind}"
-	ontouchstart={handleTouchStart}
-	ontouchend={handleTouchEnd}
-	role="article"
-	tabindex="0"
+    class="event-card {isPressed ? 'pressed' : ''} event-type-{event.kind}"
+    ontouchstart={handleTouchStart}
+    ontouchend={handleTouchEnd}
+    role="article"
 >
 	<!-- Card Header -->
 	<div class="card-header">
@@ -311,10 +477,44 @@
 				{/if}
 			</div>
 		{/if}
+
+		{#if event.tags && event.tags.length > 0}
+			<div class="tags-section">
+				{#each Object.entries(groupTags(event.tags)) as [key, values]}
+					<div class="tag-group">
+						<div class="tag-key">#{key}</div>
+						<div class="tag-values">
+							{#each values as t}
+								<button class="tag-chip" onclick={() => handleTagClick(t)} title={t.join(', ')}>
+									{t[1]?.slice(0, 12)}{t[1] && t[1].length > 12 ? '…' : ''}
+								</button>
+							{/each}
+						</div>
+					</div>
+				{/each}
+			</div>
+		{/if}
 	</div>
 
 	<!-- Card Actions -->
 	<div class="card-actions">
+		<div class="left-actions">
+			<button class="action-btn heart-btn {reactionSummary.userReactionType ? 'active' : ''}" aria-label="Like" title="Like/Unlike" onclick={toggleLike} disabled={likePending}>
+				<svg class="heart-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+					<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 6.01 4.01 4 6.5 4 8.04 4 9.54 4.81 10.35 6.08 11.16 4.81 12.66 4 14.2 4 16.69 4 18.7 6.01 18.7 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path>
+				</svg>
+				<span class="count">{reactionSummary.totalCount || ''}</span>
+			</button>
+			<button class="action-btn" aria-label="Repost" title="Repost" onclick={doRepost} disabled={repostPending}>
+				🔄 {repostCount || ''}
+			</button>
+			<button class="action-btn" aria-label="Reply" title="Reply" onclick={doReply} disabled={replyPending}>
+				💬 {replyCount || ''}
+			</button>
+			{#if (nostr as any)?.me === event.pubkey}
+				<button class="action-btn" aria-label="Delete" title="Delete" onclick={doDelete} disabled={deletePending}>🗑️</button>
+			{/if}
+		</div>
 		<button 
 			class="action-btn" 
 			onclick={() => copyToClipboard(event.id, 'event ID')}
@@ -346,6 +546,25 @@
 			{/if}
 		</button>
 	</div>
+
+	{#if lastPublishResult}
+		<div class="publish-result">
+			<div class="result-title">Publish Result</div>
+			<div class="result-row {lastPublishResult.success ? 'ok' : 'fail'}">
+				{lastPublishResult.success ? '✅' : '❌'} {lastPublishResult.eventId || lastPublishResult.error}
+			</div>
+			{#if lastPublishResult.relayResults}
+				<div class="relay-results">
+					{#each lastPublishResult.relayResults as r}
+						<div class="relay-row {r.success ? 'ok' : 'fail'}">
+							<span class="relay-url">{r.relay}</span>
+							<span class="relay-status">{r.success ? 'OK' : 'FAIL'}</span>
+						</div>
+					{/each}
+				</div>
+			{/if}
+		</div>
+	{/if}
 
 	<!-- Toast Notification -->
 	{#if copyMessage}
@@ -591,6 +810,12 @@
 		border-top: 1px solid rgba(255, 255, 255, 0.05);
 	}
 
+	.left-actions {
+		display: flex;
+		gap: 0.25rem;
+		align-items: center;
+	}
+
 	.action-btn {
 		background: none;
 		border: none;
@@ -607,6 +832,30 @@
 	.action-btn:hover {
 		color: #94a3b8;
 		background: rgba(255, 255, 255, 0.05);
+	}
+
+	/* Heart (Like) button */
+	.heart-btn {
+		color: #64748b;
+	}
+
+	.heart-btn .heart-icon {
+		display: inline-block;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 2;
+	}
+
+	.heart-btn.active {
+		color: #ef4444;
+	}
+
+	.heart-btn.active .heart-icon {
+		fill: currentColor;
+	}
+
+	.heart-btn .count {
+		margin-left: 4px;
 	}
 
 	.event-id {
@@ -628,6 +877,37 @@
 		background: rgba(255, 255, 255, 0.05);
 		color: #94a3b8;
 	}
+
+	/* Publish result */
+	.publish-result {
+		margin-top: 0.5rem;
+		border-top: 1px dashed rgba(255, 255, 255, 0.1);
+		padding-top: 0.5rem;
+	}
+
+	.result-title {
+		font-size: 0.75rem;
+		color: #94a3b8;
+		margin-bottom: 0.25rem;
+	}
+
+	.relay-results {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+
+	.relay-row {
+		display: flex;
+		justify-content: space-between;
+		font-size: 0.75rem;
+		background: rgba(255,255,255,0.03);
+		padding: 0.25rem 0.5rem;
+		border-radius: 0.375rem;
+	}
+
+	.relay-row.ok { color: #10b981; }
+	.relay-row.fail { color: #ef4444; }
 
 	/* Copy Indicators */
 	.copy-indicator {
