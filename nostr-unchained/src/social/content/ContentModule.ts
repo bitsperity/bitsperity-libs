@@ -153,10 +153,6 @@ export class ContentModule {
    * Publish a text note (NIP-01)
    */
   async publishNote(content: string): Promise<{ success: boolean; eventId?: string; error?: string }> {
-    if (!this.nostr.me) {
-      return { success: false, error: 'No signing provider available. Please initialize signing first.' };
-    }
-
     try {
       const result = await this.nostr.events
         .note(content)
@@ -183,10 +179,6 @@ export class ContentModule {
    * Publish a repost (NIP-18)
    */
   async repost(eventId: string, relayHint?: string): Promise<{ success: boolean; eventId?: string; error?: string }> {
-    if (!this.nostr.me) {
-      return { success: false, error: 'No signing provider available. Please initialize signing first.' };
-    }
-
     try {
       // Get the original event to include its author in p-tag
       const originalEvent = await this.getEvent(eventId);
