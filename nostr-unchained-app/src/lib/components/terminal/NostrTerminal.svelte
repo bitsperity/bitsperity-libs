@@ -9,7 +9,8 @@
 	import { onMount } from 'svelte';
 	import { createContextLogger } from '../../utils/Logger.js';
 	import { createEventDispatcher } from 'svelte';
-	import DevExplorer from './DevExplorer.svelte';
+  import DevExplorer from './DevExplorer.svelte';
+  import RelayInspector from './RelayInspector.svelte';
 	import KeyDisplay from '../ui/KeyDisplay.svelte';
 	import type { AuthState } from '../../types/app.js';
 
@@ -28,7 +29,8 @@
 	// Simple Connection Status
 	// =============================================================================
 
-	let connectionStatus = $state({ isConnected: false, connectedRelays: [] });
+  let connectionStatus = $state({ isConnected: false, connectedRelays: [] });
+  let showRelayInspector = $state(false);
 	const logger = createContextLogger('NostrTerminal');
 
 	onMount(async () => {
@@ -74,6 +76,9 @@
 		</div>
 		
 		<div class="status-right">
+        <button class="relay-toggle" onclick={() => showRelayInspector = !showRelayInspector} title="Relay Inspector">
+          {showRelayInspector ? '📡 Hide Relay' : '📡 Show Relay'}
+        </button>
 			<div class="user-info">
 				{#if authState.publicKey}
 					<KeyDisplay 
@@ -100,6 +105,11 @@
 			{nostr} 
 			on:profileNavigate={(e) => dispatch('profileNavigate', e.detail)}
 		/>
+    {#if showRelayInspector}
+      <div class="relay-inspector-wrapper">
+        <RelayInspector />
+      </div>
+    {/if}
 	</div>
 </div>
 

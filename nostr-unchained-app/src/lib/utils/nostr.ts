@@ -67,16 +67,15 @@ export function formatPubkey(
 		suffix = ''
 	} = options;
 	
-	if (!pubkey || typeof pubkey !== 'string') {
-		logger.warn('Invalid pubkey provided to formatPubkey', { pubkey });
-		return 'Invalid pubkey';
-	}
+  if (!pubkey || typeof pubkey !== 'string') {
+    // Quietly handle empty/invalid input to avoid UI noise and loops
+    return '';
+  }
 	
 	// Validate pubkey format
-	if (!isValidPubkey(pubkey)) {
-		logger.warn('Pubkey format validation failed', { pubkey: pubkey.substring(0, 16) });
-		return 'Invalid format';
-	}
+  if (!isValidPubkey(pubkey)) {
+    return '';
+  }
 	
 	// Return full pubkey if length is greater than or equal to pubkey length
 	if (length >= pubkey.length) {

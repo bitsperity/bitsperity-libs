@@ -55,7 +55,15 @@ $effect(() => {
       
       // Subscribe to profile changes
       unsubscribe = profileStore.subscribe((profileData: any) => {
-        profile = profileData;
+        // Equality guard to avoid write loops and depth errors
+        const prevId = (profile as any)?.eventId;
+        const nextId = (profileData as any)?.eventId;
+        const prevUpdated = (profile as any)?.lastUpdated;
+        const nextUpdated = (profileData as any)?.lastUpdated;
+        const changed = prevId !== nextId || prevUpdated !== nextUpdated;
+        if (changed) {
+          profile = profileData;
+        }
         isLoading = false;
         error = null;
       });
@@ -91,9 +99,11 @@ onDestroy(() => {
 });
 
 // Computed values
-const displayName = $derived(profile?.metadata?.name || 
-                            profile?.metadata?.display_name || 
-                            formatPubkey(pubkey, { length: 8 }));
+const displayName = $derived(
+  profile?.metadata?.name || 
+  profile?.metadata?.display_name || 
+  formatPubkey(pubkey || '', { length: 8 }) || 'Unknown'
+);
 
 const avatarLetter = $derived(displayName && typeof displayName === 'string' 
                              ? displayName.charAt(0).toUpperCase() 

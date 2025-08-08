@@ -5,7 +5,6 @@
 -->
 
 <script lang="ts">
-    import { ExtensionSigner, TemporarySigner } from 'nostr-unchained';
     import { getService } from '../lib/services/ServiceContainer.js';
 	import NostrApp from '../lib/components/NostrApp.svelte';
 
@@ -14,19 +13,22 @@
 	// =============================================================================
 	
     let nostr: any | null = $state(null);
-	let signerChoice: 'extension' | 'temporary' | null = $state(null);
-	let isInitializing = $state(false);
-	let error: string | null = $state(null);
+    let signerChoice: 'extension' | 'temporary' | null = $state(null);
+    let isInitializing = $state(false);
+    let error: string | null = $state(null);
+    let showApiMap = $state(false);
 
 	// Create NostrUnchained instance with chosen signer
-	async function initializeNostr(signerType: 'extension' | 'temporary') {
+    async function initializeNostr(signerType: 'extension' | 'temporary') {
 		isInitializing = true;
 		error = null;
 		
         try {
             // Zentralen Singleton-Service nutzen
             const nostrService: any = await getService('nostr');
-            const signer = signerType === 'extension' ? new ExtensionSigner() : new TemporarySigner();
+            // dynamisch importieren, um SSR-Resolver-Probleme zu vermeiden
+            const mod = await import('nostr-unchained');
+            const signer = signerType === 'extension' ? new mod.ExtensionSigner() : new mod.TemporarySigner();
             if (signerType === 'extension') {
                 await signer.getPublicKey();
             }
@@ -81,10 +83,64 @@
 				<div class="error">Error: {error}</div>
 			{/if}
 		</div>
-	{:else}
-		<!-- Main App - NostrUnchained Ready -->
-		<NostrApp {nostr} signer={signerChoice} />
-	{/if}
+    {:else}
+        <!-- Main App - NostrUnchained Ready -->
+        <NostrApp {nostr} signer={signerChoice} />
+
+        <!-- Floating API Map (discoverability of full API) -->
+        <div class="api-map">
+            <button class="api-toggle" onclick={() => showApiMap = !showApiMap}>
+                {showApiMap ? '❌ API-Map schließen' : '🧭 API-Map öffnen'}
+            </button>
+            {#if showApiMap}
+                <div class="api-grid">
+                    <div class="api-section">
+                        <h4>Core</h4>
+                        <ul>
+                            <li><code>connect()</code></li>
+                            <li><code>disconnect()</code></li>
+                            <li><code>publish(event)</code></li>
+                            <li><code>query().kinds().authors().tags().limit().execute()</code></li>
+                            <li><code>sub().kinds().authors().tags().limit().execute()</code></li>
+                        </ul>
+                    </div>
+                    <div class="api-section">
+                        <h4>Events</h4>
+                        <ul>
+                            <li><code>events.create().kind().content().tag().publish()</code></li>
+                            <li><code>events.note().publish()</code></li>
+                            <li><code>events.reaction(eventId).publish()</code></li>
+                            <li><code>events.deletion(eventId).publish()</code></li>
+                        </ul>
+                    </div>
+                    <div class="api-section">
+                        <h4>DM</h4>
+                        <ul>
+                            <li><code>getDM()?.with(pubkey)</code></li>
+                            <li><code>conversation.send('hello')</code></li>
+                            <li><code>conversation.messages.store</code></li>
+                        </ul>
+                    </div>
+                    <div class="api-section">
+                        <h4>Social</h4>
+                        <ul>
+                            <li><code>social.content.feed({ '{' } authors {'}' })</code></li>
+                            <li><code>social.reactions.react(eventId)</code></li>
+                            <li><code>social.threads.reply(eventId, '...')</code></li>
+                        </ul>
+                    </div>
+                    <div class="api-section">
+                        <h4>Profile</h4>
+                        <ul>
+                            <li><code>profile.get(pubkey)</code></li>
+                            <li><code>profile.edit().name('...').publish()</code></li>
+                            <li><code>profile.follows.add(pubkey).publish()</code></li>
+                        </ul>
+                    </div>
+                </div>
+            {/if}
+        </div>
+    {/if}
 </main>
 
 <style>
@@ -179,5 +235,32 @@
 		border: 1px solid var(--color-danger);
 		color: var(--color-danger);
 	}
+
+  /* Floating API Map styles */
+  .api-map { position: fixed; right: 16px; bottom: 16px; z-index: 10; }
+  .api-toggle {
+    background: var(--color-primary);
+    color: var(--color-primary-text);
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 8px 12px;
+    cursor: pointer;
+  }
+  .api-grid {
+    margin-top: 8px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 12px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    max-width: 92vw;
+    max-height: 60vh;
+    overflow: auto;
+  }
+  .api-section h4 { margin: 0 0 4px 0; }
+  .api-section ul { margin: 0; padding-left: 16px; }
+  .api-section code { font-family: var(--font-mono); }
 </style>
 

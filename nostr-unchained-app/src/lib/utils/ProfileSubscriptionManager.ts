@@ -77,12 +77,17 @@ class ProfileSubscriptionManager {
       return writable(null);
     }
 
-    // Check cache first
-    const cached = this.profileCache[pubkey];
-    if (cached && this.isCacheValid(cached)) {
+    // Ensure cache bucket exists with ONE shared store per pubkey
+    let cached = this.profileCache[pubkey];
+    if (!cached) {
+      cached = this.profileCache[pubkey] = {
+        data: null,
+        timestamp: 0,
+        lastRequested: Date.now(),
+        subscription: writable(null)
+      };
+    } else {
       cached.lastRequested = Date.now();
-      logger.debug('Profile served from cache', undefined, { pubkey: pubkey.substring(0, 8) });
-      return writable(cached.data);
     }
 
     // Track this request
@@ -104,30 +109,12 @@ class ProfileSubscriptionManager {
     // Schedule batch processing
     this.scheduleBatchRequest();
 
-    // Return cached data if available (even if expired) while we fetch fresh data
-    const store = writable(cached?.data || null);
-    
-    // Store reference for updates
-    if (!cached) {
-      this.profileCache[pubkey] = {
-        data: null,
-        timestamp: 0,
-        lastRequested: Date.now(),
-        subscription: store
-      };
-    } else if (cached) {
-      // Ensure we keep a store to push updates to existing consumers
-      const existing = this.profileCache[pubkey];
-      if (existing) {
-        existing.subscription = existing.subscription || store;
-      } else {
-        this.profileCache[pubkey] = { data: cached.data, timestamp: cached.timestamp, lastRequested: Date.now(), subscription: store };
-      }
-      // Update immediate consumer with cached value
-      if (cached.data) { store.set(cached.data); }
+    // Serve existing data immediately via the shared store
+    if (cached.data != null) {
+      try { cached.subscription!.set(cached.data); } catch {}
     }
 
-    return store;
+    return cached.subscription!;
   }
 
   /**
@@ -269,7 +256,7 @@ class ProfileSubscriptionManager {
       
       // Update the store if it exists
       if (cached.subscription) {
-        cached.subscription.set(profileData);
+        try { cached.subscription.set(profileData); } catch {}
       }
 
       logger.debug('Profile cache updated', undefined, { 
