@@ -7,6 +7,7 @@
  */
 
 import { createContextLogger } from './Logger.js';
+import { isValidHexKey, isValidNpub, npubToHex } from 'nostr-unchained';
 
 // =============================================================================
 // Types
@@ -24,6 +25,13 @@ export interface NormalizeUrlResult {
 	isValid: boolean;
 	protocol: string;
 	domain: string;
+}
+
+export interface NormalizeRecipientResult {
+  ok: boolean;
+  hex?: string;
+  source?: 'hex' | 'npub';
+  errorCode?: 'format' | 'empty' | 'unknown';
 }
 
 // =============================================================================
@@ -104,6 +112,37 @@ export function getPubkeyDisplayName(pubkey: string): string {
 	}
 	
 	return pubkey.substring(0, 8);
+}
+
+/**
+ * Normalize recipient (hex or npub) to hex for DM flows
+ */
+export function normalizeRecipientToHex(input: string): NormalizeRecipientResult {
+  if (!input || typeof input !== 'string') {
+    return { ok: false, errorCode: 'empty' };
+  }
+  const trimmed = input.trim();
+  if (isValidHexKey(trimmed)) {
+    return { ok: true, hex: trimmed.toLowerCase(), source: 'hex' };
+  }
+  if (isValidNpub(trimmed)) {
+    try {
+      const hex = npubToHex(trimmed);
+      return { ok: true, hex: hex.toLowerCase(), source: 'npub' };
+    } catch (error) {
+      logger.warn('npub→hex conversion failed', { error });
+      return { ok: false, errorCode: 'format' };
+    }
+  }
+  return { ok: false, errorCode: 'format' };
+}
+
+/**
+ * Quick validation helper for recipient inputs
+ */
+export function isValidRecipient(input: string): boolean {
+  const res = normalizeRecipientToHex(input);
+  return res.ok === true;
 }
 
 // =============================================================================

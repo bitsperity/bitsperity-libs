@@ -8,7 +8,8 @@
 
 import { NostrUnchained, TemporarySigner } from 'nostr-unchained';
 import type { ServiceResult } from '../types/app.js';
-import { createNostrError, errorProcessor } from '../utils/ErrorHandler.js';
+import { createNostrError, createValidationError, errorProcessor } from '../utils/ErrorHandler.js';
+import { normalizeRecipientToHex } from '../utils/nostr.js';
 import { createContextLogger } from '../utils/Logger.js';
 
 // =============================================================================
@@ -215,8 +216,14 @@ export class NostrService {
 		}
 	}
 
-	async publishDM(recipientPubkey: string, content: string): Promise<any> {
+  async publishDM(recipientInput: string, content: string): Promise<any> {
 		try {
+      // Validate and normalize recipient
+      const recipient = normalizeRecipientToHex(recipientInput);
+      if (!recipient.ok || !recipient.hex) {
+        const err = createValidationError('Ungültiger Empfänger (erwarte hex oder npub)');
+        return { success: false, error: errorProcessor.process(err) };
+      }
 			// Use the correct API: getDM() returns DMModule or undefined
 			const dmModule = this.nostr.getDM();
 			if (!dmModule) {
@@ -224,13 +231,13 @@ export class NostrService {
 			}
 			
 			// Get or create conversation with recipient - this triggers lazy loading
-			const conversation = dmModule.with(recipientPubkey);
+      const conversation = dmModule.with(recipient.hex);
 			
 			// Send encrypted message
 			const result = await conversation.send(content);
 			
 			this.logger.info('DM sent', { 
-				recipient: recipientPubkey.substring(0, 8) + '...',
+        recipient: recipient.hex.substring(0, 8) + '...',
 				success: result.success 
 			});
 			
