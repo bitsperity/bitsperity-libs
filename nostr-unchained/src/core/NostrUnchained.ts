@@ -137,18 +137,20 @@ export class NostrUnchained {
     if (!this.signingProvider) return;
     
     try {
-      // Prefer decrypt capability, else fallback to raw key
-      let privateKey = '';
-      if (this.signingProvider.capabilities && (await this.signingProvider.capabilities()).rawKey) {
-        privateKey = (await this.signingProvider.getPrivateKeyForEncryption?.()) || '';
+      // Decryptor-first: wire decryptor if signer supports NIP-44 decrypt
+      if (!this.cache) {
+        this.cache = new UniversalEventCache('', {});
       }
-      if (this.cache) {
-        // Preserve existing cache and subscribers; just set the key and reprocess wraps
-        this.cache.setPrivateKey(privateKey);
-        await this.cache.reprocessGiftWraps();
-      } else {
-        this.cache = new UniversalEventCache(privateKey, {});
-      }
+      try {
+        if (this.signingProvider.capabilities) {
+          const caps = await this.signingProvider.capabilities();
+          if (caps.nip44Decrypt && (this.cache as any).setDecryptor) {
+            (this.cache as any).setDecryptor({ nip44Decrypt: (this.signingProvider as any).nip44Decrypt.bind(this.signingProvider) });
+          }
+        }
+      } catch {}
+      // Reprocess wraps without relying on raw key paths
+      await this.cache.reprocessGiftWraps();
       
       // Initialize Universal DM Module with cache-based architecture
       const myPubkey = await this.signingProvider.getPublicKey();
@@ -168,14 +170,8 @@ export class NostrUnchained {
       } catch {}
 
     } catch (error) {
-      // Fallback to empty cache if private key not available
-      if (!this.cache) {
-        this.cache = new UniversalEventCache('', {});
-      }
-      
-      if (this.config.debug) {
-        console.log('⚠️ Could not get private key for cache, using empty key (no gift wrap decryption)');
-      }
+      // Ensure cache exists even if decryptor wiring failed
+      if (!this.cache) this.cache = new UniversalEventCache('', {});
     }
   }
 
