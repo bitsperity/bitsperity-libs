@@ -87,13 +87,9 @@ export class NostrService {
 			this.signingProvider = provider;
 			// Update existing instance to avoid multiple NostrUnchained objects app-wide
 			await (this.nostr as any).initializeSigning(provider);
-			// Ensure relay connection before starting inbox subscription to avoid missed REQ
+			// Optional: connect eagerly; inbox subscription wird lazy via getDM().with() gestartet
 			try {
 				await this.nostr.connect();
-			} catch {}
-			// Ensure DM inbox subscription starts immediately after signing
-			try {
-				await (this.nostr as any).startUniversalGiftWrapSubscription();
 			} catch {}
 			this.logger.info('NostrService updated existing Nostr instance with new signing provider');
 		} catch (error) {
