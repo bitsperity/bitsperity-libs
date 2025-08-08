@@ -154,10 +154,6 @@ export class ThreadModule {
     content: string, 
     mentionedPubkeys: string[] = []
   ): Promise<{ success: boolean; eventId?: string; error?: string }> {
-    if (!this.nostr.me) {
-      return { success: false, error: 'No signing provider available. Please initialize signing first.' };
-    }
-
     try {
       // Get the target event to understand thread structure
       const targetEvent = await this.getEvent(eventId);
@@ -218,8 +214,13 @@ export class ThreadModule {
   get(rootEventId: string, options?: { useCache?: boolean; timeout?: number }): Promise<ThreadEvent[]> {
     return new Promise((resolve) => {
       const store = this.thread(rootEventId);
-      const unsubscribe = store.subscribe(events => {
-        unsubscribe();
+      let unsubscribe: (() => void) | null = null;
+      unsubscribe = store.subscribe(events => {
+        if (unsubscribe) {
+          const fn = unsubscribe;
+          unsubscribe = null;
+          fn();
+        }
         resolve(events);
       });
     });

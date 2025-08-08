@@ -69,10 +69,6 @@ export class ReactionModule {
    * Creates a NIP-25 compliant reaction event
    */
   async react(eventId: string, content = '+'): Promise<{ success: boolean; eventId?: string; error?: string }> {
-    if (!this.nostr.me) {
-      return { success: false, error: 'No signing provider available. Please initialize signing first.' };
-    }
-
     try {
       // Get target event author for p-tag
       const targetEvent = await this.getTargetEvent(eventId);

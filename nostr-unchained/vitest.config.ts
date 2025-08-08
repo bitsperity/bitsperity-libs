@@ -3,10 +3,12 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   test: {
-    // Default config stays for unit tests; tests-v2 gets its own config
-    environment: 'jsdom',
+    // Default config: exclude legacy backup tests; v2 hat eigene Config
+    include: ['tests-v2/**/*.test.ts'],
+    exclude: ['tests-old-backup/**'],
+    environment: 'node',
     globals: true,
-    setupFiles: ['./src/test-setup.ts'],
+    setupFiles: [],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
@@ -25,8 +27,9 @@ export default defineConfig({
         'src/test-setup.ts'
       ]
     },
-    testTimeout: 120000,  // 2 minutes for publishing tests
-    hookTimeout: 10000
+    testTimeout: 120000,
+    hookTimeout: 20000,
+    globalSetup: ['./tests-v2/globalSetup.ts']
   },
   resolve: {
     alias: {
