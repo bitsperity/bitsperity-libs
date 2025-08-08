@@ -104,20 +104,28 @@ export class ReactionModule {
    * Publishes a deletion request for the reaction
    */
   async unreact(eventId: string): Promise<{ success: boolean; error?: string }> {
-    if (!this.nostr.me) {
-      return { success: false, error: 'No signing provider available' };
-    }
-
     try {
-      // Find my current reaction
-      const myReactionStore = this.myReaction(eventId);
-      const currentReactions = this.nostr.query()
+      // Ensure my pubkey and have my reaction available in cache
+      const myPubkey = await this.nostr.getPublicKey();
+      // Start a focused subscription to pull my latest reaction if not cached
+      await this.nostr.sub()
         .kinds([7])
-        .authors([this.nostr.me])
+        .authors([myPubkey])
         .tags('e', [eventId])
+        .limit(1)
         .execute();
 
-      const reactionEvents = currentReactions.current;
+      // Give cache a brief moment to ingest
+      await new Promise((r) => setTimeout(r, 200));
+
+      const currentReactions = this.nostr.query()
+        .kinds([7])
+        .authors([myPubkey])
+        .tags('e', [eventId])
+        .limit(1)
+        .execute();
+
+      const reactionEvents = currentReactions.current || [];
       if (!reactionEvents || reactionEvents.length === 0) {
         return { success: false, error: 'No reaction found to remove' };
       }
