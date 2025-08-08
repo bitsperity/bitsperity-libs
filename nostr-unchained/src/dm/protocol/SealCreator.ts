@@ -87,6 +87,77 @@ export class SealCreator {
   }
 
   /**
+   * Create a kind 13 seal using a signer (no raw private key exposure)
+   * Requires signer.nip44Encrypt and signer.signEvent
+   */
+  static async createSealWithSigner(
+    rumor: Rumor,
+    signer: { nip44Encrypt: (peerPubkey: string, plaintext: string) => Promise<string>; signEvent?: (event: any) => Promise<string>; getPublicKeySync?: () => string | null; getPublicKey?: () => Promise<string> },
+    recipientPublicKey: string
+  ): Promise<Seal> {
+    try {
+      // Validate inputs
+      this.validateRumor(rumor);
+      this.validatePublicKey(recipientPublicKey);
+
+      if (!signer || typeof signer.nip44Encrypt !== 'function') {
+        throw new NIP59Error(
+          'Signer must provide nip44Encrypt capability',
+          NIP59ErrorCode.SEAL_CREATION_FAILED
+        );
+      }
+      if (typeof signer.signEvent !== 'function') {
+        throw new NIP59Error(
+          'Signer must provide signEvent capability',
+          NIP59ErrorCode.SEAL_CREATION_FAILED
+        );
+      }
+
+      // Serialize rumor and encrypt using signer
+      const rumorJson = JSON.stringify(rumor);
+      const payload = await signer.nip44Encrypt(recipientPublicKey, rumorJson);
+
+      // Determine sender public key (prefer rumor.pubkey)
+      const senderPublicKey = rumor.pubkey;
+
+      // Build unsigned seal
+      const unsignedSeal = {
+        pubkey: senderPublicKey,
+        created_at: Math.floor(Date.now() / 1000),
+        kind: NIP59_CONFIG.SEAL_KIND,
+        tags: [],
+        content: payload
+      };
+
+      // Calculate id and sign via signer
+      const eventId = this.calculateEventId(unsignedSeal);
+      // Some signers expect `id` precomputed; ensure property exists for signature context
+      const signTarget = { ...unsignedSeal, id: eventId };
+      const signature = await signer.signEvent!(signTarget);
+
+      // Return complete seal
+      const seal: Seal = {
+        id: eventId,
+        pubkey: senderPublicKey,
+        created_at: unsignedSeal.created_at,
+        kind: NIP59_CONFIG.SEAL_KIND,
+        tags: [],
+        content: payload,
+        sig: signature
+      };
+
+      return seal;
+    } catch (error) {
+      if (error instanceof NIP59Error) throw error;
+      throw new NIP59Error(
+        `Seal creation (with signer) failed: ${error.message}`,
+        NIP59ErrorCode.SEAL_CREATION_FAILED,
+        error
+      );
+    }
+  }
+
+  /**
    * Decrypt a seal to recover the original rumor
    */
   static decryptSeal(

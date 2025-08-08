@@ -175,25 +175,7 @@ export class NostrUnchained {
     }
   }
 
-  /**
-   * Get the private key for encryption (needed for DM functionality)
-   */
-  async getPrivateKeyForEncryption(): Promise<string | null> {
-    try {
-      if (!this.signingProvider) {
-        return null;
-      }
-      if (typeof (this.signingProvider as any).getPrivateKeyForEncryption === 'function') {
-        return await (this.signingProvider as any).getPrivateKeyForEncryption();
-      }
-      return null;
-    } catch (error) {
-      if (this.config.debug) {
-        console.warn('Failed to get private key for encryption:', error);
-      }
-      return null;
-    }
-  }
+  // P1: Removed raw key access API. Encryption must use signer nip44 capabilities.
 
   /**
    * Get enhanced profile module (PERFECT DX - always works!)

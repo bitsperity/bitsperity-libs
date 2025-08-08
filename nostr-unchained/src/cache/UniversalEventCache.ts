@@ -12,9 +12,7 @@
  */
 
 import type { NostrEvent, Filter } from '../core/types.js';
-import { GiftWrapProtocol } from '../dm/protocol/GiftWrapProtocol.js';
 import { EventBuilder } from '../core/EventBuilder.js';
-import { isValidHexKey, nsecToHex } from '../utils/encoding-utils.js';
 import type { SigningProvider } from '../core/types.js';
 
 export interface CacheConfig {
@@ -66,7 +64,7 @@ export class UniversalEventCache {
   private eventsByAuthor = new Map<string, Set<string>>(); // Fast lookup by author
   private eventsByTag = new Map<string, Map<string, Set<string>>>(); // tag name → value → event IDs
   private subscribers = new Set<(event: NostrEvent) => void>();
-  private privateKey: string;
+  // P1: Remove private key state – decryptor-only
   private config: Required<CacheConfig>;
   
   // Efficient LRU tracking with doubly-linked list - O(1) operations
@@ -82,10 +80,7 @@ export class UniversalEventCache {
     createdAt: Date.now()
   };
   
-  constructor(privateKey: string, config: CacheConfig = {}) {
-    // Enforce hex-only invariant internally
-    this.privateKey = '';
-    this.setPrivateKey(privateKey);
+  constructor(_unused: unknown, config: CacheConfig = {}) {
     this.config = {
       maxEvents: config.maxEvents || 10000,
       maxMemoryMB: config.maxMemoryMB || 50,
@@ -99,35 +94,7 @@ export class UniversalEventCache {
     this.decryptor = provider ?? null;
   }
   
-  /**
-   * Update the private key used for unwrapping gift wraps without replacing the cache instance.
-   * This avoids losing previously cached events and subscribers.
-   */
-  setPrivateKey(privateKey: string): void {
-    if (!privateKey || typeof privateKey !== 'string') {
-      this.privateKey = '';
-      return;
-    }
-
-    let normalized = privateKey.trim();
-    // Accept bech32 (nsec) at boundary but normalize to hex internally
-    if (normalized.startsWith('nsec1')) {
-      try {
-        normalized = nsecToHex(normalized);
-      } catch {
-        // fall through to invalid handling
-      }
-    }
-    if (normalized.startsWith('0x')) {
-      normalized = normalized.slice(2);
-    }
-    if (!isValidHexKey(normalized)) {
-      console.warn('UniversalEventCache: invalid private key provided (expected 64-hex). Disabling unwrap.');
-      this.privateKey = '';
-      return;
-    }
-    this.privateKey = normalized.toLowerCase();
-  }
+  // setPrivateKey removed in P1
   
   /**
    * Re-process all stored gift wrap (kind 1059) events using the current private key.
@@ -279,10 +246,8 @@ export class UniversalEventCache {
       }
     }
 
-    // Fallback: local unwrap using hex private key
-    const rumorEvent = await GiftWrapProtocol.unwrapGiftWrap(giftWrap, this.privateKey);
-    if (!rumorEvent) return null;
-    return this.normalizeRumorFromWrap(giftWrap, rumorEvent);
+    // No decryptor and no local key fallback in P1
+    return null;
   }
 
   private normalizeRumorFromWrap(giftWrap: NostrEvent, rumorEvent: any): NostrEvent | null {

@@ -164,7 +164,7 @@ export class UniversalDMConversation {
     
     try {
       const signer: any = (this.nostr as any).signingProvider;
-      const caps = await (signer?.capabilities?.() ?? { nip44Encrypt: false, rawKey: false });
+      const caps = await (signer?.capabilities?.() ?? { nip44Encrypt: false, nip44Decrypt: false });
 
       // Build rumor (kind 14) without needing private key
       const rumor: any = {
@@ -231,44 +231,8 @@ export class UniversalDMConversation {
 
         return { success: false, error: 'Failed to publish to recipient' };
       } else {
-        // Fallback: use local private key flow (for LocalKeySigner)
-        const privateKey = await this.nostr.getPrivateKeyForEncryption();
-        if (!privateKey) {
-          return { success: false, error: 'Private key not available for encryption' };
-        }
-        const result = await GiftWrapProtocol.createGiftWrappedDM(
-          content,
-          privateKey,
-          { recipients: [
-            { pubkey: this.otherPubkey, relayUrl: '' },
-            { pubkey: this.myPubkey, relayUrl: '' }
-          ], maxTimestampAge: 0 },
-          subject
-        );
-        const giftWrapEventOther = result.giftWraps.find(g => g.recipient === this.otherPubkey)!.giftWrap;
-        const giftWrapEventSelf = result.giftWraps.find(g => g.recipient === this.myPubkey)!.giftWrap;
-        const [resOther] = await Promise.all([
-          this.nostr.publishSigned(giftWrapEventOther),
-          this.nostr.publishSigned(giftWrapEventSelf).catch(() => ({ success: false }))
-        ]);
-        if (resOther.success) {
-          const sentMessage: DMMessage = {
-            id: giftWrapEventOther.id,
-            content: content,
-            senderPubkey: this.myPubkey,
-            recipientPubkey: this.otherPubkey,
-            timestamp: giftWrapEventOther.created_at,
-            isFromMe: true,
-            eventId: giftWrapEventOther.id,
-            status: 'sent',
-            subject: subject,
-            sender: this.myPubkey
-          };
-          this.messageCache.push(sentMessage);
-          this.messageCache.sort((a, b) => a.timestamp - b.timestamp);
-          return { success: true, messageId: giftWrapEventOther.id };
-        }
-        return { success: false, error: 'Failed to publish to recipient' } as any;
+        // No nip44 capability → cannot send encrypted DMs
+        return { success: false, error: 'Signer does not support NIP-44 encryption' } as any;
       }
 
       // signer and fallback branches return above

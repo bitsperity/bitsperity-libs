@@ -28,7 +28,7 @@ describe('Container Relay Health', () => {
     
     // Connection should succeed
     expect(user.nostr).toBeDefined();
-    expect(user.privateKey).toMatch(/^[a-f0-9]{64}$/);
+    // P1: no raw key exposure
     expect(user.publicKey).toMatch(/^[a-f0-9]{64}$/);
     
     await user.nostr.disconnect();

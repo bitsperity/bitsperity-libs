@@ -13,7 +13,7 @@ import { LocalKeySigner } from '../../src/crypto/SigningProvider.js';
 import { EventBuilder } from '../../src/core/EventBuilder.js';
 
 export interface TestUser {
-  privateKey: string;
+  privateKey?: string; // removed in P1
   publicKey: string;
   nostr: NostrUnchained;
   name: string;
@@ -51,7 +51,6 @@ export class TestEnvironment {
     // Create a new signing provider (generates secure keys automatically)
     const signer = new LocalKeySigner();
     const publicKey = await signer.getPublicKey();
-    const privateKey = await signer.getPrivateKeyForEncryption();
     
     const nostr = new NostrUnchained({
       relays: [this.relayUrl],
@@ -64,7 +63,7 @@ export class TestEnvironment {
     await nostr.connect();
     
     const user: TestUser = {
-      privateKey,
+      privateKey: undefined,
       publicKey,
       nostr,
       name

@@ -60,13 +60,17 @@ describe('Gift Wrap Debug: Minimal Test', () => {
       timestamp: rumor.created_at
     });
     
-    // Step 2: Create a seal
-    const privateKey = await alice.nostr.getPrivateKeyForEncryption();
-    const seal = await SealCreator.createSeal(
-      rumor,
-      privateKey,
-      alice.publicKey // encrypt to myself for testing
-    );
+    // Step 2: Create a seal via signer (no raw key)
+    const seal = await SealCreator.createSealWithSigner(rumor, {
+      nip44Encrypt: async (peer: string, plaintext: string) => {
+        const signer: any = (alice.nostr as any).signingProvider;
+        return signer.nip44Encrypt(peer, plaintext);
+      },
+      signEvent: async (event: any) => {
+        const signer: any = (alice.nostr as any).signingProvider;
+        return signer.signEvent({ ...event });
+      }
+    }, alice.publicKey);
     
     console.log('Seal created:', {
       kind: seal.kind,

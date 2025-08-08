@@ -50,14 +50,10 @@ export class ExtensionSigner implements SigningProvider {
   }
 
   // Optional capabilities for NIP-44
-  /**
-   * @deprecated The `rawKey` capability is deprecated and will be removed in v0.2.0.
-   * Use `nip44Encrypt/Decrypt` exclusively. Raw key access is DEV-only and not allowed in production.
-   */
-  async capabilities(): Promise<{ nip44Encrypt: boolean; nip44Decrypt: boolean; rawKey: boolean }> {
+  async capabilities(): Promise<{ nip44Encrypt: boolean; nip44Decrypt: boolean }> {
     const hasNip44 = typeof window !== 'undefined' && !!window.nostr?.nip44 &&
       typeof window.nostr.nip44.encrypt === 'function' && typeof window.nostr.nip44.decrypt === 'function';
-    return { nip44Encrypt: hasNip44, nip44Decrypt: hasNip44, rawKey: false };
+    return { nip44Encrypt: hasNip44, nip44Decrypt: hasNip44 };
   }
 
   async nip44Encrypt(peerPubkey: string, plaintext: string): Promise<string> {
@@ -117,19 +113,8 @@ export class LocalKeySigner implements SigningProvider {
     return bytesToHex(signature);
   }
 
-  /**
-   * @deprecated Will be removed in v0.2.0. Use nip44Encrypt/Decrypt without exposing raw keys.
-   * WARNING: DEV/Testing only. Never use in production.
-   */
-  async getPrivateKeyForEncryption(): Promise<string> {
-    return this.privateKey;
-  }
-
-  /**
-   * @deprecated `rawKey` flag will be removed in v0.2.0. Only report nip44 capabilities.
-   */
-  async capabilities(): Promise<{ nip44Encrypt: boolean; nip44Decrypt: boolean; rawKey: boolean }> {
-    return { nip44Encrypt: true, nip44Decrypt: true, rawKey: true };
+  async capabilities(): Promise<{ nip44Encrypt: boolean; nip44Decrypt: boolean }> {
+    return { nip44Encrypt: true, nip44Decrypt: true };
   }
 
   async nip44Encrypt(peerPubkey: string, plaintext: string): Promise<string> {

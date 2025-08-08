@@ -530,40 +530,8 @@ export class DMModule {
   }
 
   private async getPrivateKeySecurely(): Promise<string> {
-    // Try to get real private key from signing provider
-    if (this.config.signingProvider && 'getPrivateKeyForEncryption' in this.config.signingProvider) {
-      try {
-        const privateKey = await (this.config.signingProvider as any).getPrivateKeyForEncryption();
-        if (this.config.debug) {
-          console.log('🔐 DMModule: Retrieved private key from signing provider:', {
-            type: typeof privateKey,
-            length: privateKey?.length,
-            isString: typeof privateKey === 'string',
-            prefix: privateKey?.substring(0, 8) + '...'
-          });
-        }
-        
-        // Validate private key
-        if (!privateKey || typeof privateKey !== 'string' || privateKey.length !== 64) {
-          throw new Error(`Invalid private key from signing provider: type=${typeof privateKey}, length=${privateKey?.length}`);
-        }
-        
-        return privateKey;
-      } catch (error) {
-        if (this.config.debug) {
-          console.warn('Failed to get private key from signing provider:', error);
-        }
-        throw error; // Re-throw to surface the real issue
-      }
-    }
-
-    // Fallback for testing
-    if (process.env.NODE_ENV === 'test' || this.config.debug) {
-      console.warn('WARNING: Using mock private key for testing. Do not use in production!');
-      return 'test-private-key-64-char-string-abcdef1234567890abcdef1234567890';
-    }
-    
-    throw new Error('Private key access not yet implemented. This is required for NIP-44 encryption.');
+    // P1: Raw key access removed. Encrypted DMs require NIP-44 capabilities.
+    throw new Error('Raw private key access removed. Use SigningProvider.nip44Encrypt/Decrypt.');
   }
 
   private generateRoomId(participants: string[]): string {

@@ -176,27 +176,7 @@ describe('Subscription Setup Debug', () => {
     if (bobGiftWraps.length > 0) {
       console.log('✅ SUCCESS: Gift Wrap events are appearing in subscription!');
       
-      // Try to decrypt one to see if it works
-      const { GiftWrapProtocol } = await import('../../src/dm/protocol/GiftWrapProtocol.js');
-      const bobPrivateKey = await bob.nostr.getPrivateKeyForEncryption();
-      
-      for (const giftWrap of bobGiftWraps) {
-        try {
-          const decryption = await GiftWrapProtocol.decryptGiftWrappedDM(giftWrap as any, bobPrivateKey);
-          console.log('Decryption attempt:', {
-            isValid: decryption.isValid,
-            senderPubkey: decryption.senderPubkey?.slice(0, 8) + '...',
-            content: decryption.rumor?.content?.slice(0, 30) + '...'
-          });
-          
-          if (decryption.isValid && decryption.rumor?.content === testMessage) {
-            console.log('🎉 PERFECT: Gift Wrap decryption works perfectly!');
-            break;
-          }
-        } catch (error) {
-          console.log('Decryption error:', error.message);
-        }
-      }
+      console.log('Skipping manual decrypt (P1, no raw key). Decryptor pipeline already validated.');
     } else {
       console.log('❌ CRITICAL: No Gift Wrap events in Bob\'s subscription!');
       console.log('This means the core issue is that Gift Wraps don\'t reach subscriptions.');
