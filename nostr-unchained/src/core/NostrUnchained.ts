@@ -662,6 +662,19 @@ export class NostrUnchained {
   }
 
   /**
+   * DX convenience: initialize with a custom SigningProvider
+   */
+  async useCustomSigner(provider: SigningProvider): Promise<{ success: boolean; pubkey?: string; error?: string }> {
+    try {
+      await this.initializeSigning(provider);
+      const pubkey = await provider.getPublicKey();
+      return { success: true, pubkey };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  }
+
+  /**
    * Update the signing provider for this instance and all modules
    */
   async updateSigningProvider(signingProvider: SigningProvider): Promise<void> {
