@@ -50,8 +50,8 @@ class ProfileSubscriptionManager {
   private readonly BATCH_DELAY = 300; // ms - wait for more requests before batching
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
   private readonly CLEANUP_INTERVAL = 30 * 1000; // 30 seconds
-  private readonly MAX_BATCH_SIZE = 50; // Maximum profiles per batch subscription
-  private readonly SUB_CLOSE_DELAY = 2500; // ms - auto-close aggregated subs after initial sync
+  private readonly MAX_BATCH_SIZE = 20; // reduce batch size to avoid UI spikes
+  private readonly SUB_CLOSE_DELAY = 1200; // faster auto-close to reduce live load
 
   // Keep reference to the last aggregated subscription to avoid opening too many in parallel
   private lastAggregatedStop: (() => Promise<void>) | null = null;

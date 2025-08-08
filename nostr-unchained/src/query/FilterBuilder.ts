@@ -13,18 +13,26 @@ export abstract class FilterBuilder {
   // Abstract method to create new instance - subclasses must implement
   protected abstract clone(newFilter: Filter): this;
   
+  // Default limit to protect UI when not explicitly set
+  private ensureLimit(filter: Filter): Filter {
+    if (!('limit' in filter) || typeof filter.limit !== 'number') {
+      return { ...filter, limit: 100 };
+    }
+    return filter;
+  }
+  
   kinds(kinds: number[]): this {
-    const newFilter = { ...this.filter, kinds };
+    const newFilter = this.ensureLimit({ ...this.filter, kinds });
     return this.clone(newFilter);
   }
   
   authors(authors: string[]): this {
-    const newFilter = { ...this.filter, authors };
+    const newFilter = this.ensureLimit({ ...this.filter, authors });
     return this.clone(newFilter);
   }
   
   tags(tagName: string, values?: string[]): this {
-    const newFilter = { ...this.filter };
+    const newFilter = this.ensureLimit({ ...this.filter });
     if (values) {
       newFilter[`#${tagName}`] = values;
     } else {

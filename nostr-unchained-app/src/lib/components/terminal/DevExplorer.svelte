@@ -171,18 +171,37 @@
 				queryBuilder = queryBuilder.tags(actualTagType, selectedTags);
 			}
 			
-			// Execute cache query - returns UniversalNostrStore
-			cacheQuery = queryBuilder.execute();
+            // Apply a safety default limit if user did not specify one
+            try {
+                // @ts-ignore - builder carries filter internally
+                const hasLimit = !!queryBuilder?.filter?.limit;
+                if (!hasLimit) {
+                    queryBuilder = queryBuilder.limit(limit || 100);
+                }
+            } catch {}
+
+            // Execute cache query - returns UniversalNostrStore
+            cacheQuery = queryBuilder.execute();
 			
 			// Get immediate results from cache - UniversalNostrStore is a store
 			// Subscribe to the store to get the current value and updates
-			const unsubscribe = cacheQuery.subscribe(cachedEvents => {
-				events = (cachedEvents || []).sort((a, b) => b.created_at - a.created_at);
-				eventCount = events.length;
-				if (queryTime === null) {
-					queryTime = performance.now() - startTime;
-				}
-			});
+            const unsubscribe = cacheQuery.subscribe(cachedEvents => {
+                try {
+                    const sorted = (cachedEvents || []).slice().sort((a, b) => b.created_at - a.created_at);
+                    // Avoid write loops by only assigning when changed in length or first id
+                    const firstBefore = events?.[0]?.id;
+                    const firstAfter = sorted?.[0]?.id;
+                    if (events.length !== sorted.length || firstBefore !== firstAfter) {
+                        events = sorted;
+                        eventCount = events.length;
+                    }
+                    if (queryTime === null) {
+                        queryTime = performance.now() - startTime;
+                    }
+                } catch (err) {
+                    logger.error('Error processing cached events', { error: err });
+                }
+            });
 			
 			logger.info('💾 Cache query executed', { 
 				filters: { kinds: selectedKinds, authors: selectedAuthors, tags: selectedTags },

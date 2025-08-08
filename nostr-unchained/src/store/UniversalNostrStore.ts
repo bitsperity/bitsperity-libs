@@ -144,11 +144,11 @@ class MappedUniversalNostrStore<TSource, TTarget> implements Readable<TTarget> {
     private transform: (data: TSource) => TTarget
   ) {
     // Get initial transformed data
-    this._data = this.transform(this.sourceStore.current);
+    this._data = this.safeTransform(this.sourceStore.current, this._data);
     
     // Subscribe to source store changes
     this.sourceUnsubscriber = this.sourceStore.subscribe((sourceData) => {
-      const newData = this.transform(sourceData);
+      const newData = this.safeTransform(sourceData, this._data);
       if (this._data !== newData) { // Simple reference equality check
         this._data = newData;
         this.notifySubscribers();
@@ -175,5 +175,15 @@ class MappedUniversalNostrStore<TSource, TTarget> implements Readable<TTarget> {
   
   private notifySubscribers(): void {
     this.subscribers.forEach(callback => callback(this._data));
+  }
+
+  private safeTransform(sourceData: TSource, fallback: TTarget): TTarget {
+    try {
+      return this.transform(sourceData);
+    } catch (error) {
+      // Swallow mapping errors to protect UI; keep previous data
+      // Optionally: console.warn('Store map() error', error)
+      return fallback;
+    }
   }
 }
