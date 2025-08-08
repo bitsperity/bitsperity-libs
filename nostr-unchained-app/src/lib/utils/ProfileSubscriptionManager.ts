@@ -51,7 +51,8 @@ class ProfileSubscriptionManager {
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
   private readonly CLEANUP_INTERVAL = 30 * 1000; // 30 seconds
   private readonly MAX_BATCH_SIZE = 20; // reduce batch size to avoid UI spikes
-  private readonly SUB_CLOSE_DELAY = 1200; // faster auto-close to reduce live load
+  // Live profile updates: keep subs open while there are subscribers
+  private readonly SUB_CLOSE_DELAY = 0; // disabled auto-close; lifecycle-managed
 
   // Keep reference to the last aggregated subscription to avoid opening too many in parallel
   private lastAggregatedStop: (() => Promise<void>) | null = null;
@@ -132,6 +133,9 @@ class ProfileSubscriptionManager {
         });
       }
     }
+
+    // If there are no subscribers across all requests, stop live sub
+    this.ensureLiveSubscriptionLifecycle();
   }
 
   /**
@@ -192,7 +196,7 @@ class ProfileSubscriptionManager {
     }
 
     try {
-      // 1) Immediate cache read to prefill stores
+      // Build a cache reader store and subscribe to it for continuous updates
       const cacheStore = this.nostr.query()
         .kinds([0])
         .authors(pubkeys)
@@ -200,7 +204,7 @@ class ProfileSubscriptionManager {
         .execute();
 
       const primeFromCache = (events: any[]) => {
-        for (const event of events) {
+        for (const event of events || []) {
           if (event?.kind === 0 && event.pubkey && pubkeys.includes(event.pubkey)) {
             try {
               const profileData = {
@@ -216,32 +220,44 @@ class ProfileSubscriptionManager {
         }
       };
 
-      // Prefill from cache once
-      primeFromCache(cacheStore.current);
+      // Subscribe to cache store to push updates to UI stores
+      const cacheUnsubscribe = cacheStore.subscribe((events: any[]) => {
+        try { primeFromCache(events); } catch {}
+      });
 
-      // 2) Single aggregated live sub for all requested authors
+      // 2) Single aggregated live sub for all requested authors (feeds cache)
       const handle = await this.nostr.sub()
         .kinds([0])
         .authors(pubkeys)
         .limit(pubkeys.length)
         .execute();
 
-      // Feed events into cache comes from SubBuilder; we only need to read again after short delay
-      // Auto-close after initial sync window to avoid keeping the sub open indefinitely
-      const stop = async () => { try { await handle.stop(); } catch {} };
+      // Keep live subscription open while there are active subscribers
+      const stop = async () => {
+        try { cacheUnsubscribe && cacheUnsubscribe(); } catch {}
+        try { await handle.stop(); } catch {}
+      };
       this.lastAggregatedStop = stop;
-
-      setTimeout(async () => {
-        // Final cache read and notify stores
-        primeFromCache(cacheStore.current);
-        await stop();
-        logger.debug('Aggregated profile subscription auto-closed', undefined, { count: pubkeys.length });
-      }, this.SUB_CLOSE_DELAY);
+      this.ensureLiveSubscriptionLifecycle();
 
       return { success: true };
     } catch (error) {
       logger.error('Failed aggregated profile fetch', undefined, { count: pubkeys.length, error });
       return { success: false, error };
+    }
+  }
+
+  /**
+   * Ensure live subscription lifecycle matches active subscribers presence
+   */
+  private async ensureLiveSubscriptionLifecycle() {
+    const hasAnySubscriber = Array.from(this.activeRequests.values()).some(r => r.subscribers.size > 0);
+    if (!hasAnySubscriber && this.lastAggregatedStop) {
+      try {
+        await this.lastAggregatedStop();
+        logger.debug('Aggregated profile subscription stopped (no active subscribers)');
+      } catch {}
+      this.lastAggregatedStop = null;
     }
   }
 

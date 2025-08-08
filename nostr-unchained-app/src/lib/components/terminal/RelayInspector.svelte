@@ -33,7 +33,7 @@
 		created_at: number;
 		id: string;
 	}>>([]);
-	let relayInfo = $state<any>(null);
+  // removed unused: relayInfo
 	let isMonitoring = $state(false);
 	let eventCount = $state(0);
 	let monitoringInterval: ReturnType<typeof setInterval> | null = null;
@@ -60,14 +60,21 @@
 	async function checkRelayStatus(): Promise<void> {
 		try {
 			const nostrService = await getService<NostrService>('nostr');
-			const status = await nostrService.getConnectionStatus();
+    const status = await nostrService.getConnectionStatus();
+    
+    isConnected = status.isConnected;
+    // Map service status to local stats shape
+    connectionStats = {
+      total: (status.connectedRelays?.length || 0) + (status.failedRelays?.length || 0),
+      connected: status.connectedRelays?.length || 0,
+      connecting: 0,
+      disconnected: status.failedRelays?.length || 0,
+      error: 0
+    };
 			
-			isConnected = status.isConnected;
-			connectionStats = status.stats || connectionStats;
-			
-			logger.info('Relay status checked', { isConnected, stats: connectionStats });
+      logger.info('Relay status checked', JSON.stringify({ isConnected, stats: connectionStats }));
 		} catch (error) {
-			logger.error('Failed to check relay status', { error });
+      logger.error('Failed to check relay status: ' + (error as Error)?.message);
 			isConnected = false;
 		}
 	}
@@ -96,48 +103,55 @@
 		logger.info('Stopped relay monitoring');
 	}
 
-	let currentSubscription: any = null;
+  let currentUnsubscribe: (() => void) | null = null;
 
-	async function fetchRecentEvents(): Promise<void> {
-		try {
-			const nostrService = await getService<NostrService>('nostr');
-			
-			// Close previous subscription to avoid "Maximum concurrent subscription count"
-			if (currentSubscription) {
-				try {
-					await currentSubscription.close();
-				} catch (e) {
-					// Ignore close errors
-				}
-			}
+  async function fetchRecentEvents(): Promise<void> {
+    try {
+      const nostrService = await getService<NostrService>('nostr');
 
-			// Query for recent text notes (kind 1) - the most common type
-			const events = await nostrService.query()
-				.kinds([1])
-				.limit(10)
-				.execute();
+      // Unsubscribe previous cache reader if present
+      if (currentUnsubscribe) {
+        try { currentUnsubscribe(); } catch {}
+        currentUnsubscribe = null;
+      }
 
-			if (events && events.length > 0) {
-				recentEvents = events.map(event => ({
-					kind: event.kind,
-					content: event.content.substring(0, 100),
-					pubkey: event.pubkey, // Keep full pubkey for KeyDisplay
-					created_at: event.created_at,
-					id: event.id.substring(0, 8) + '...'
-				}));
+      // Cache-only query; subscribe to read current snapshot
+      const store = nostrService
+        .query()
+        .kinds([1])
+        .limit(50)
+        .execute();
 
-				eventCount = events.length;
-			} else {
-				// No events found, set empty state
-				recentEvents = [];
-				eventCount = 0;
-			}
-		} catch (error) {
-			logger.error('Failed to fetch recent events', { error });
-			recentEvents = [];
-			eventCount = 0;
-		}
-	}
+      currentUnsubscribe = store.subscribe((cached: any[]) => {
+        try {
+          const items = (cached || [])
+            .slice()
+            .sort((a: any, b: any) => b.created_at - a.created_at)
+            .slice(0, 50)
+            .map((event: any) => ({
+              kind: event.kind,
+              content: (event.content || '').substring(0, 100),
+              pubkey: event.pubkey,
+              created_at: event.created_at,
+              id: (event.id || '').substring(0, 8) + '...'
+            }));
+          // Equality guard: only update when first id changes or length changes
+          const firstPrev = recentEvents?.[0]?.id;
+          const firstNext = items?.[0]?.id;
+          if (recentEvents.length !== items.length || firstPrev !== firstNext) {
+            recentEvents = items;
+            eventCount = items.length;
+          }
+        } catch (e: any) {
+          logger.error('Failed processing cached events: ' + (e?.message || String(e)));
+        }
+      });
+    } catch (error) {
+      logger.error('Failed to fetch recent events: ' + (error as Error)?.message);
+      recentEvents = [];
+      eventCount = 0;
+    }
+  }
 
 	async function reconnectRelay(): Promise<void> {
 		try {
@@ -147,7 +161,7 @@
 			await checkRelayStatus();
 			logger.info('Relay reconnected');
 		} catch (error) {
-			logger.error('Failed to reconnect relay', { error });
+      logger.error('Failed to reconnect relay: ' + (error as Error)?.message);
 		}
 	}
 

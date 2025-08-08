@@ -325,8 +325,8 @@ export class NostrService {
 	// =============================================================================
 
 	query() {
-		// Use the subscription manager for now until query/sub APIs are confirmed available
-		return this.nostr.getSubscriptionManager();
+		// Expose the library's QueryBuilder directly for fluent API usage
+		return this.nostr.query();
 	}
 
 	// =============================================================================

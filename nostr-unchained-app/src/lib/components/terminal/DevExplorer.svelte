@@ -11,7 +11,7 @@
 	import { createContextLogger } from '../../utils/Logger.js';
 	import EventCard from './EventCard.svelte';
 	import KeyDisplay from '../ui/KeyDisplay.svelte';
-	import { npubToHex, isValidHexKey } from 'nostr-unchained';
+    import { normalizeRecipientToHex } from '../../utils/nostr.js';
 	
 	let { nostr }: { nostr: any } = $props();
 	
@@ -39,11 +39,10 @@
 	let selectedTags = $state<string[]>([]);
 	let customTagType = $state(''); // For completely custom tag types
 	let limit = $state(20);
-	let since = $state('');
-	let until = $state('');
+    // removed unused since/until to avoid linter errors
 	
 	// Explicit subscription/query state
-	let liveSubscription = $state<import('nostr-unchained').SubscriptionHandle | null>(null);
+    let liveSubscription = $state<any>(null);
 	let isSubscribing = $state(false);
 	let cacheQuery = $state<any>(null);
 	let isQueryingCache = $state(false);
@@ -112,28 +111,39 @@
 			liveSubscription = await subBuilder.execute();
 			
 			// Subscribe to the store to get live updates
-			if (liveSubscription && liveSubscription.store) {
-				liveSubscription.store.subscribe(liveEvents => {
-					// Live events will be shown when querying the cache
-					logger.info('🔴 Live events received', { count: liveEvents?.length || 0 });
-				});
-			}
+            if (liveSubscription && liveSubscription.store) {
+                liveSubscription.store.subscribe((liveEvents: any[]) => {
+                    try {
+                        const sorted = (liveEvents || []).slice().sort((a, b) => b.created_at - a.created_at);
+                        // Avoid write loops by only assigning when changed in length or first id
+                        const firstBefore = events?.[0]?.id;
+                        const firstAfter = sorted?.[0]?.id;
+                        if (events.length !== sorted.length || firstBefore !== firstAfter) {
+                            events = sorted;
+                            eventCount = events.length;
+                        }
+                        logger.info('🔴 Live events received ' + JSON.stringify({ count: liveEvents?.length || 0 }));
+                    } catch (err) {
+                        logger.error('Error processing live events: ' + (err as any)?.message);
+                    }
+                });
+            }
 			
-			logger.info('🔴 Live subscription started - filling cache', { 
-				filters: { kinds: selectedKinds, authors: selectedAuthors, tags: selectedTags },
-				subscriptionId: liveSubscription?.id,
-				liveSubscriptionType: typeof liveSubscription,
-				hasStore: !!liveSubscription?.store,
-				hasStop: typeof liveSubscription?.stop === 'function',
-				filtersApplied: {
-					kinds: selectedKinds.length > 0 ? selectedKinds : 'none',
-					authors: selectedAuthors.length > 0 ? selectedAuthors : 'none',
-					tags: selectedTags.length > 0 ? selectedTags : 'none'
-				}
-			});
+            logger.info('🔴 Live subscription started - filling cache ' + JSON.stringify({ 
+                filters: { kinds: selectedKinds, authors: selectedAuthors, tags: selectedTags },
+                subscriptionId: liveSubscription?.id,
+                liveSubscriptionType: typeof liveSubscription,
+                hasStore: !!liveSubscription?.store,
+                hasStop: typeof liveSubscription?.stop === 'function',
+                filtersApplied: {
+                    kinds: selectedKinds.length > 0 ? selectedKinds : 'none',
+                    authors: selectedAuthors.length > 0 ? selectedAuthors : 'none',
+                    tags: selectedTags.length > 0 ? selectedTags : 'none'
+                }
+            }));
 			
 		} catch (error) {
-			logger.error('Subscription failed', { error });
+            logger.error('Subscription failed: ' + (error as any)?.message);
 		} finally {
 			isSubscribing = false;
 		}
@@ -185,9 +195,9 @@
 			
 			// Get immediate results from cache - UniversalNostrStore is a store
 			// Subscribe to the store to get the current value and updates
-            const unsubscribe = cacheQuery.subscribe(cachedEvents => {
+            cacheQuery.subscribe((cachedEvents: any[]) => {
                 try {
-                    const sorted = (cachedEvents || []).slice().sort((a, b) => b.created_at - a.created_at);
+                    const sorted = (cachedEvents || []).slice().sort((a: any, b: any) => b.created_at - a.created_at);
                     // Avoid write loops by only assigning when changed in length or first id
                     const firstBefore = events?.[0]?.id;
                     const firstAfter = sorted?.[0]?.id;
@@ -198,19 +208,19 @@
                     if (queryTime === null) {
                         queryTime = performance.now() - startTime;
                     }
-                } catch (err) {
-                    logger.error('Error processing cached events', { error: err });
+                } catch (err: any) {
+                    logger.error('Error processing cached events: ' + (err?.message || String(err)));
                 }
             });
 			
-			logger.info('💾 Cache query executed', { 
-				filters: { kinds: selectedKinds, authors: selectedAuthors, tags: selectedTags },
-				resultCount: events.length,
-				queryTime: queryTime 
-			});
+            logger.info('💾 Cache query executed ' + JSON.stringify({ 
+                filters: { kinds: selectedKinds, authors: selectedAuthors, tags: selectedTags },
+                resultCount: events.length,
+                queryTime: queryTime 
+            }));
 			
 		} catch (error) {
-			logger.error('Cache query failed', { error });
+            logger.error('Cache query failed: ' + (error as any)?.message);
 		} finally {
 			isQueryingCache = false;
 		}
@@ -236,7 +246,7 @@
 				activeSubscriptions = [];
 			}
 		} catch (error) {
-			logger.error('Failed to get cache stats', { error });
+            logger.error('Failed to get cache stats: ' + (error as any)?.message);
 			cacheStats = null;
 		}
 	}
@@ -281,7 +291,7 @@
 			const subManager = nostr.getSubscriptionManager();
 			if (subManager && typeof subManager.unsubscribe === 'function') {
 				await subManager.unsubscribe(subId);
-				logger.info('Stopped subscription', { subId });
+                logger.info('Stopped subscription ' + JSON.stringify({ subId }));
 				
 				// If this was our live subscription, clear it
 				if (liveSubscription && liveSubscription.id === subId) {
@@ -291,7 +301,7 @@
 				updateCacheStats(); // Refresh the list
 			}
 		} catch (error) {
-			logger.error('Failed to stop subscription', { subId, error });
+            logger.error('Failed to stop subscription: ' + JSON.stringify({ subId, error: (error as any)?.message }));
 		}
 	}
 
@@ -300,12 +310,12 @@
 			const subManager = nostr.getSubscriptionManager();
 			if (subManager && typeof subManager.unsubscribeAll === 'function') {
 				await subManager.unsubscribeAll();
-				logger.info('Stopped all subscriptions');
+                logger.info('Stopped all subscriptions');
 				liveSubscription = null; // Clear our local subscription
 				updateCacheStats();
 			}
 		} catch (error) {
-			logger.error('Failed to stop all subscriptions', { error });
+            logger.error('Failed to stop all subscriptions: ' + (error as any)?.message);
 		}
 	}
 	
@@ -314,9 +324,9 @@
 			try {
 				// Use the handle's stop method - excellent DX!
 				await liveSubscription.stop();
-				logger.info('Live subscription stopped', { id: liveSubscription.id });
+                logger.info('Live subscription stopped ' + JSON.stringify({ id: liveSubscription.id }));
 			} catch (error) {
-				logger.error('Failed to stop live subscription', { error });
+                logger.error('Failed to stop live subscription: ' + (error as any)?.message);
 			}
 			liveSubscription = null;
 			
@@ -360,26 +370,17 @@
 		kindsInput = selectedKinds.join(',');
 	}
 	
-	function addAuthor() {
+    function addAuthor() {
 		if (!authorInput.trim()) return;
 		
 		let authorKey = authorInput.trim();
-		
-		// Convert npub to hex if needed
-		if (authorKey.startsWith('npub')) {
-			try {
-				authorKey = npubToHex(authorKey);
-			} catch (error) {
-				logger.error('Failed to convert npub to hex', { npub: authorKey, error });
-				return;
-			}
-		}
-		
-		// Validate the resulting hex key
-		if (!isValidHexKey(authorKey)) {
-			logger.error('Invalid author key format', { authorKey });
-			return;
-		}
+        // Normalize (npub|hex) → hex
+        const normalized = normalizeRecipientToHex(authorKey);
+        if (!normalized.ok || !normalized.hex) {
+            logger.error('Invalid author key format: ' + authorKey);
+            return;
+        }
+        authorKey = normalized.hex;
 		
 		// Check if already added
 		if (!selectedAuthors.includes(authorKey)) {
@@ -405,8 +406,8 @@
 	}
 	
 	function handleProfileClick(detail: { pubkey: string }) {
-		console.log('🎯 Profile click in DevExplorer', { pubkey: detail.pubkey });
-		logger.info('Profile click', { pubkey: detail.pubkey });
+        console.log('🎯 Profile click in DevExplorer', { pubkey: detail.pubkey });
+        logger.info('Profile click ' + JSON.stringify({ pubkey: detail.pubkey }));
 		dispatch('profileNavigate', { pubkey: detail.pubkey });
 	}
 	
@@ -427,10 +428,10 @@
 	onMount(() => {
 		// Parse initial kinds input
 		parseKindsInput();
-		logger.info('DevExplorer initialized', { 
-			initialKinds: selectedKinds,
-			cacheState: 'empty - ready for subscription'
-		});
+        logger.info('DevExplorer initialized ' + JSON.stringify({ 
+            initialKinds: selectedKinds,
+            cacheState: 'empty - ready for subscription'
+        }));
 		
 		// Cleanup on unmount
 		return () => {
