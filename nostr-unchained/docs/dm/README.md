@@ -9,7 +9,7 @@ Basiert auf der **Subscription-First Universal Cache Architecture** mit SOLID-Pr
 - **3-Layer-Verschlüsselung**: Rumor → Seal → Gift Wrap (NIP-59)
 - **NIP-44 v2 Compliance**: ChaCha20-Poly1305 mit HKDF Key Derivation
 - **Perfect Forward Secrecy**: Ephemeral Keys mit publishSigned() Support
-- **Gift Wrap Handling**: Automatische Kind 1059 Verarbeitung
+- **Gift Wrap Handling**: Automatische Kind 1059 Verarbeitung (Decryptor-only über Signer)
 - **Tag Filtering**: Vollständige #p Tag-Filterung für targeted Messages
 
 ## Table of Contents
@@ -136,13 +136,13 @@ Everything happens automatically in the background.
 
 ## Sending Messages
 
-### Simple Messages
+### Simple Messages (Signer-basiert)
 
 ```typescript
 // Get conversation (auto-subscribes for message conversion)
 const chat = nostr.getDM()?.with('pubkey-here');
 
-// Send encrypted message
+// Send encrypted message (Signer führt NIP-44 aus, keine Raw-Keys im Code)
 await chat.send('Hello there! 👋');
 
 // Send with custom options

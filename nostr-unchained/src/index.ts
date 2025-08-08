@@ -116,4 +116,4 @@ export {
 } from './utils/encoding-utils.js';
 
 // Version (will be updated by build process)
-export const VERSION = '0.1.0';
+export const VERSION = '0.2.0';
