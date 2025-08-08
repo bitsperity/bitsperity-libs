@@ -6,20 +6,23 @@
 -->
 
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
-	import KeyDisplay from '../ui/KeyDisplay.svelte';
-	import ProfileAvatar from '../ui/ProfileAvatar.svelte';
-	import { onMount } from 'svelte';
-	
-	let { event, nostr }: { event: any; nostr?: any } = $props();
-	
-	const dispatch = createEventDispatcher();
+    import { createEventDispatcher } from 'svelte';
+    // moved into subcomponents
+    import { onMount } from 'svelte';
+    import EventCardHeader from '../event-card/EventCardHeader.svelte';
+    import EventCardActions from '../event-card/EventCardActions.svelte';
+    import EventCardTags from '../event-card/EventCardTags.svelte';
+    
+    let { event, nostr }: { event: any; nostr?: any } = $props();
+    
+    const dispatch = createEventDispatcher();
 
 	// =============================================================================
 	// Event Type Detection & Formatting
 	// =============================================================================
 
-function getEventType(kind: number): string {
+  /* moved to header subcomponent
+  function getEventType(kind: number): string {
     const eventTypes: Record<number, string> = {
       0: 'Profile',
       1: 'Text Note',
@@ -37,7 +40,7 @@ function getEventType(kind: number): string {
     return eventTypes[kind] ?? `Kind ${kind}`;
   }
 
-function getEventIcon(kind: number): string {
+  function getEventIcon(kind: number): string {
     const icons: Record<number, string> = {
       0: '👤',
       1: '💬',
@@ -55,7 +58,7 @@ function getEventIcon(kind: number): string {
     return icons[kind] ?? '📦';
   }
 
-	function formatTimestamp(timestamp: number): string {
+  function formatTimestamp(timestamp: number): string {
 		const now = Date.now() / 1000;
 		const diff = now - timestamp;
 		
@@ -65,7 +68,8 @@ function getEventIcon(kind: number): string {
 		if (diff < 2592000) return `${Math.floor(diff / 86400)}d`;
 		
 		return new Date(timestamp * 1000).toLocaleDateString();
-	}
+  }
+  */
 
 	function formatContent(content: string, maxLength: number = 280): string {
 		if (!content) return '';
@@ -221,25 +225,19 @@ function getEventIcon(kind: number): string {
 	// =============================================================================
 	// Tags rendering and interactions
 	// =============================================================================
-	function groupTags(tags: string[][]): Record<string, string[][]> {
-		const groups: Record<string, string[][]> = {};
-		(tags || []).forEach((t) => {
-			if (!t || t.length === 0) return;
-			const key = String(t[0] ?? '');
-			if (!groups[key]) groups[key] = [];
-			groups[key].push(t as string[]);
-		});
-		return groups;
-	}
-
-	function handleTagClick(tag: string[]) {
+    function handleTagClick(tag: string[]) {
 		if (!tag || tag.length === 0) return;
 		const [type, value] = tag;
 		if (type === 'p' && value) {
 			// treat as profile click
 			dispatch('profileClick', { pubkey: value });
 			return;
-		}
+    }
+
+    // Removed inline copy UI; keep state resets to avoid unused warnings
+    $effect.pre(() => {
+        copySuccess = false; copyMessage = '';
+    });
 		dispatch('tagClick', { type, value });
 	}
 
@@ -321,56 +319,7 @@ function getEventIcon(kind: number): string {
 		return hashtags.map(tag => tag.substring(1)); // Remove #
 	}
 
-	// =============================================================================
-	// Clipboard Functionality
-	// =============================================================================
-
-	async function copyToClipboard(text: string, type: string = 'text') {
-		try {
-			await navigator.clipboard.writeText(text);
-			copySuccess = true;
-			copyMessage = `${type} copied!`;
-			
-			// Add haptic feedback on mobile
-			if (navigator.vibrate) {
-				navigator.vibrate(25);
-			}
-			
-			// Reset success state after 2 seconds
-			setTimeout(() => {
-				copySuccess = false;
-				copyMessage = '';
-			}, 2000);
-			
-		} catch (error) {
-			console.error('Failed to copy to clipboard:', error);
-			// Fallback for older browsers
-			try {
-				const textArea = document.createElement('textarea');
-				textArea.value = text;
-				document.body.appendChild(textArea);
-				textArea.select();
-				document.execCommand('copy');
-				document.body.removeChild(textArea);
-				
-				copySuccess = true;
-				copyMessage = `${type} copied!`;
-				setTimeout(() => {
-					copySuccess = false;
-					copyMessage = '';
-				}, 2000);
-			} catch (fallbackError) {
-				console.error('Fallback copy failed:', fallbackError);
-				copyMessage = 'Copy failed';
-				setTimeout(() => {
-					copyMessage = '';
-				}, 2000);
-			}
-		}
-	}
-
-	// Note: handlePubkeyClick and handleEventIdClick functions removed 
-	// since we're using inline onclick handlers instead
+    // Clipboard-Funktionalität entfernt (wird später in eigenem UI-Element ergänzt)
 </script>
 
 <!-- Event Card -->
@@ -380,34 +329,10 @@ function getEventIcon(kind: number): string {
     ontouchend={handleTouchEnd}
     role="article"
 >
-	<!-- Card Header -->
-	<div class="card-header">
-		<div class="event-meta">
-			<span class="event-icon" role="img" aria-label={getEventType(event.kind)}>
-				{getEventIcon(event.kind)}
-			</span>
-			<span class="event-type">{getEventType(event.kind)}</span>
-			<span class="event-time">{formatTimestamp(event.created_at)}</span>
-		</div>
-		<div class="author-info">
-			<ProfileAvatar 
-				pubkey={event.pubkey}
-				{nostr}
-				size="sm"
-				clickable={true}
-				on:profileClick={(e) => {
-					console.log('🎯 Profile click in EventCard', e.detail);
-					dispatch('profileClick', e.detail);
-				}}
-			/>
-			<KeyDisplay 
-				hexKey={event.pubkey} 
-				variant="compact" 
-				copyable={true}
-				className="event-author"
-			/>
-		</div>
-	</div>
+    <!-- Card Header -->
+    <div class="card-header">
+        <EventCardHeader {event} {nostr} on:profileClick={(e)=>dispatch('profileClick', e.detail)} />
+    </div>
 
 	<!-- Card Content -->
 	<div class="card-content">
@@ -478,74 +403,22 @@ function getEventIcon(kind: number): string {
 			</div>
 		{/if}
 
-		{#if event.tags && event.tags.length > 0}
-			<div class="tags-section">
-				{#each Object.entries(groupTags(event.tags)) as [key, values]}
-					<div class="tag-group">
-						<div class="tag-key">#{key}</div>
-						<div class="tag-values">
-							{#each values as t}
-								<button class="tag-chip" onclick={() => handleTagClick(t)} title={t.join(', ')}>
-									{t[1]?.slice(0, 12)}{t[1] && t[1].length > 12 ? '…' : ''}
-								</button>
-							{/each}
-						</div>
-					</div>
-				{/each}
-			</div>
-		{/if}
+        <EventCardTags tags={event.tags} on:tagClick={(e)=>handleTagClick([e.detail.type, e.detail.value])} />
 	</div>
 
-	<!-- Card Actions -->
-	<div class="card-actions">
-		<div class="left-actions">
-			<button class="action-btn heart-btn {reactionSummary.userReactionType ? 'active' : ''}" aria-label="Like" title="Like/Unlike" onclick={toggleLike} disabled={likePending}>
-				<svg class="heart-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-					<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 6.01 4.01 4 6.5 4 8.04 4 9.54 4.81 10.35 6.08 11.16 4.81 12.66 4 14.2 4 16.69 4 18.7 6.01 18.7 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path>
-				</svg>
-				<span class="count">{reactionSummary.totalCount || ''}</span>
-			</button>
-			<button class="action-btn" aria-label="Repost" title="Repost" onclick={doRepost} disabled={repostPending}>
-				🔄 {repostCount || ''}
-			</button>
-			<button class="action-btn" aria-label="Reply" title="Reply" onclick={doReply} disabled={replyPending}>
-				💬 {replyCount || ''}
-			</button>
-			{#if (nostr as any)?.me === event.pubkey}
-				<button class="action-btn" aria-label="Delete" title="Delete" onclick={doDelete} disabled={deletePending}>🗑️</button>
-			{/if}
-		</div>
-		<button 
-			class="action-btn" 
-			onclick={() => copyToClipboard(event.id, 'event ID')}
-			aria-label="Copy event ID"
-			title="Copy full event ID"
-		>
-			<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-				<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-				<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-			</svg>
-			{#if copySuccess && copyMessage.includes('event ID')}
-				<span class="copy-indicator-small">✓</span>
-			{/if}
-		</button>
-		<button class="action-btn" aria-label="View raw event">
-			<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-				<polyline points="16,18 22,12 16,6"/>
-				<polyline points="8,6 2,12 8,18"/>
-			</svg>
-		</button>
-		<button 
-			class="event-id clickable"
-			onclick={() => copyToClipboard(event.id, 'event ID')}
-			title="Click to copy full event ID"
-		>
-			{event.id.substring(0, 8)}...
-			{#if copySuccess && copyMessage.includes('event ID')}
-				<span class="copy-indicator-small">✓</span>
-			{/if}
-		</button>
-	</div>
+    <!-- Card Actions -->
+    <EventCardActions 
+        {event} {nostr}
+        reactionSummary={reactionSummary}
+        likePending={likePending}
+        repostPending={repostPending}
+        replyPending={replyPending}
+        deletePending={deletePending}
+        onLike={toggleLike}
+        onRepost={doRepost}
+        onReply={doReply}
+        onDelete={doDelete}
+    />
 
 	{#if lastPublishResult}
 		<div class="publish-result">
@@ -834,29 +707,8 @@ function getEventIcon(kind: number): string {
 		background: rgba(255, 255, 255, 0.05);
 	}
 
-	/* Heart (Like) button */
-	.heart-btn {
-		color: #64748b;
-	}
-
-	.heart-btn .heart-icon {
-		display: inline-block;
-		fill: none;
-		stroke: currentColor;
-		stroke-width: 2;
-	}
-
-	.heart-btn.active {
-		color: #ef4444;
-	}
-
-	.heart-btn.active .heart-icon {
-		fill: currentColor;
-	}
-
-	.heart-btn .count {
-		margin-left: 4px;
-	}
+    /* Heart (Like) button */
+    .heart-btn { color: #64748b; }
 
 	.event-id {
 		font-size: 0.75rem;
