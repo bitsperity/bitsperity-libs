@@ -46,8 +46,8 @@ export class UniversalDMConversation {
     otherPubkey: string
   ) {
     this.nostr = nostr;
-    this.myPubkey = myPubkey.toLowerCase();
-    this.otherPubkey = otherPubkey.toLowerCase();
+    this.myPubkey = (myPubkey || '').toLowerCase();
+    this.otherPubkey = (otherPubkey || '').toLowerCase();
     
     console.log('🚀 UniversalDMConversation constructor:', {
       myPubkey: myPubkey.substring(0, 16) + '...',

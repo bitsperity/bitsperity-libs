@@ -40,7 +40,7 @@ export class UniversalDMModule {
     if (!this.isValidPubkey(normalizedPubkey)) {
       console.warn('⚠️ Invalid pubkey format, creating conversation that will fail gracefully:', pubkeyOrNpub.substring(0, 16) + '...');
       // Return a conversation that will handle the invalid pubkey gracefully, but still cache it
-      const conversation = new UniversalDMConversation(this.nostr, this.myPubkey, normalizedPubkey);
+      const conversation = new UniversalDMConversation(this.nostr, this.getMyPubkey(), normalizedPubkey);
       this.conversationCache.set(normalizedPubkey, conversation);
       return conversation;
     }
@@ -96,7 +96,7 @@ export class UniversalDMModule {
   
   private generateRoomId(participants: string[]): string {
     // Create a consistent room ID based on sorted participants (including self)
-    const allParticipants = [...participants, this.myPubkey.toLowerCase()].sort();
+    const allParticipants = [...participants, this.getMyPubkey().toLowerCase()].sort();
     return allParticipants.join(',');
   }
   

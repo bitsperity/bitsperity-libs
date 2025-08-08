@@ -9,7 +9,7 @@
 import * as secp256k1 from '@noble/secp256k1';
 import { bytesToHex, randomBytes } from '@noble/hashes/utils';
 import { EventBuilder } from '../core/EventBuilder.js';
-import type { SigningProvider, UnsignedEvent, NostrEvent } from '../core/types.js';
+import type { SigningProvider, UnsignedEvent } from '../core/types.js';
 import { ERROR_MESSAGES } from '../utils/constants.js';
 
 /**
@@ -128,9 +128,11 @@ export class LocalKeySigner implements SigningProvider {
   async nip44Encrypt(peerPubkey: string, plaintext: string): Promise<string> {
     const { NIP44Crypto } = await import('../dm/crypto/NIP44Crypto.js');
     const key = NIP44Crypto.deriveConversationKey(this.privateKey, peerPubkey);
-    const res = NIP44Crypto.encrypt(plaintext, key);
-    if (!res || !res.isValid) throw new Error('NIP-44 encrypt failed');
-    return res.ciphertext;
+    const result = NIP44Crypto.encrypt(plaintext, key);
+    if (!result || typeof result.payload !== 'string') {
+      throw new Error('NIP-44 encrypt failed');
+    }
+    return result.payload;
   }
 
   async nip44Decrypt(peerPubkey: string, ciphertext: string): Promise<string> {

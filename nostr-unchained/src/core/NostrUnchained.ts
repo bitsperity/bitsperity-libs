@@ -7,7 +7,7 @@
 
 import { EventBuilder } from './EventBuilder.js';
 import { RelayManager } from '../relay/RelayManager.js';
-import { SigningProviderFactory } from '../crypto/SigningProvider.js';
+import { SigningProviderFactory, ExtensionSigner, LocalKeySigner } from '../crypto/SigningProvider.js';
 import { ErrorHandler } from '../utils/errors.js';
 import { DEFAULT_RELAYS, DEFAULT_CONFIG } from '../utils/constants.js';
 import { EventsModule } from '../events/FluentEventBuilder.js';
@@ -54,9 +54,6 @@ export class NostrUnchained {
   private _profile?: ProfileModule;
 
   constructor(config: NostrUnchainedConfig = {}) {
-    // Version info for debugging - ALWAYS show
-    console.log('🔥 NostrUnchained v0.1.0-FIX (build:', new Date().toISOString().substring(0, 19) + 'Z)');
-    
     // Merge with defaults
     const baseConfig: any = {
       relays: config.relays ?? DEFAULT_RELAYS,
@@ -69,6 +66,11 @@ export class NostrUnchained {
       baseConfig.signingProvider = config.signingProvider;
     }
     this.config = baseConfig as any;
+
+    // Version info for debugging - only when debug is enabled
+    if (this.config.debug) {
+      console.log('🔥 NostrUnchained v0.1.0-FIX (build:', new Date().toISOString().substring(0, 19) + 'Z)');
+    }
 
     // Initialize relay manager
     this.relayManager = new RelayManager(this.config.relays, {
@@ -422,12 +424,19 @@ export class NostrUnchained {
   /**
    * Publish an event
    */
-  async publish(event: UnsignedEvent): Promise<PublishResult> {
+  async publish(event: UnsignedEvent): Promise<PublishResult>;
+  async publish(content: string, kind?: number): Promise<PublishResult>;
+  async publish(eventOrContent: UnsignedEvent | string, kind: number = 1): Promise<PublishResult> {
     const startTime = Date.now();
     
     if (!this.signingProvider) {
       throw new Error('No signing provider available. Call initializeSigning() first.');
     }
+
+    // Build event from content if a string was provided
+    const event: UnsignedEvent = typeof eventOrContent === 'string'
+      ? await EventBuilder.createEvent(eventOrContent, await this.getPublicKey(), { kind })
+      : eventOrContent;
 
     // Validate the event
     const validation = EventBuilder.validateEvent(event);
@@ -554,6 +563,13 @@ export class NostrUnchained {
   }
 
   /**
+   * Alias for getRelayStats (DX convenience)
+   */
+  getStats(): Record<string, any> {
+    return this.getRelayStats();
+  }
+
+  /**
    * Create a query builder for complex queries
    */
   query(): QueryBuilder {
@@ -600,6 +616,53 @@ export class NostrUnchained {
    */
   getDM(): UniversalDMModule | undefined {
     return this.universalDM;
+  }
+
+  /**
+   * DX convenience: detect NIP-07 extension availability
+   */
+  async hasExtension(): Promise<boolean> {
+    try {
+      return await ExtensionSigner.isAvailable();
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * DX convenience: initialize with ExtensionSigner (if available)
+   */
+  async useExtensionSigner(): Promise<{ success: boolean; pubkey?: string; error?: string }> {
+    try {
+      const signer = new ExtensionSigner();
+      await this.initializeSigning(signer);
+      const pubkey = await signer.getPublicKey();
+      return { success: true, pubkey };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  }
+
+  /**
+   * DX convenience: initialize with LocalKeySigner (DEV/testing)
+   */
+  async useLocalKeySigner(): Promise<{ success: boolean; pubkey?: string; error?: string }> {
+    try {
+      const signer = new LocalKeySigner();
+      await this.initializeSigning(signer);
+      const pubkey = await signer.getPublicKey();
+      return { success: true, pubkey };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  }
+
+  /**
+   * DX convenience: expose signing method and pubkey for UI
+   */
+  getSigningInfo(): { method: 'extension' | 'temporary' | 'unknown'; pubkey: string | null } {
+    const method: 'extension' | 'temporary' | 'unknown' = this.signingMethod ?? 'unknown';
+    return { method, pubkey: this.me };
   }
 
   /**
