@@ -451,11 +451,11 @@ console.log('Gift Wraps in cache:', giftWraps.current.length);
 const sub = await nostr.sub().kinds([1059]).tags('p', [myPubkey]).execute();
 sub.store.subscribe(events => console.log('Live Gift Wraps:', events.length));
 
-// Test decryption manually
-import { GiftWrapProtocol } from 'nostr-unchained';
-const privateKey = await nostr.getPrivateKeyForEncryption();
-const decrypted = await GiftWrapProtocol.decryptGiftWrappedDM(giftWrap, privateKey);
-console.log('Decryption valid:', decrypted.isValid);
+// Manuelle Decryption (DEV-Hinweis)
+// Ab v0.2.0 gibt es keinen Raw-Key-Zugriff mehr. Die Decryption erfolgt ausschließlich
+// über den vom Signer bereitgestellten Decryptor (NIP-44) und wird vom Cache automatisch
+// ausgeführt. Für manuelle Debug-Zwecke nutze bitte die vorhandenen Debug-Tests unter
+// tests-v2/debug/* oder Signer-spezifische Tools. Ein direkter Private-Key-Workflow ist deprecated.
 ```
 
 ---

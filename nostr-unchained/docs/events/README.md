@@ -251,6 +251,12 @@ if (result.success) {
 }
 ```
 
+### Deprecations & Migration (→ v0.2.0)
+
+- Raw‑Key APIs werden entfernt. Verwende ausschließlich `nip44Encrypt/Decrypt` deines Signers.
+- Der Universal Cache arbeitet decryptor‑only; ein Private‑Key‑Pfad wird nicht mehr unterstützt.
+- Migration: Stelle sicher, dass dein Signer `capabilities()` mit `{ nip44Encrypt, nip44Decrypt }` liefert.
+
 ### Custom Signing Provider
 
 ```typescript
