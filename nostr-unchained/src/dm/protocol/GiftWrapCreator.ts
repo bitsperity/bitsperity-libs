@@ -155,43 +155,7 @@ export class GiftWrapCreator {
   /**
    * Decrypt a gift wrap to recover the original seal
    */
-  static decryptGiftWrap(
-    giftWrap: GiftWrap,
-    recipientPrivateKey: string
-  ): { seal: Seal; isValid: boolean } {
-    try {
-      // Validate gift wrap format
-      if (!this.isValidGiftWrap(giftWrap)) {
-        return { seal: null as any, isValid: false };
-      }
-      
-      // Derive conversation key using recipient private key and ephemeral public key
-      const conversationKey = NIP44Crypto.deriveConversationKey(
-        recipientPrivateKey,
-        giftWrap.pubkey
-      );
-      
-      // Decrypt the gift wrap content
-      const decryptionResult = NIP44Crypto.decrypt(giftWrap.content, conversationKey);
-      
-      if (!decryptionResult.isValid) {
-        return { seal: null as any, isValid: false };
-      }
-      
-      // Parse the seal
-      const seal: Seal = JSON.parse(decryptionResult.plaintext);
-      
-      // Validate seal structure
-      if (!this.isValidSeal(seal)) {
-        return { seal: null as any, isValid: false };
-      }
-      
-      return { seal, isValid: true };
-      
-    } catch {
-      return { seal: null as any, isValid: false };
-    }
-  }
+  // Raw-key decrypt path removed in P1
 
   /**
    * Validate seal structure

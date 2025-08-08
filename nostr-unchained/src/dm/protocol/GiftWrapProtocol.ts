@@ -36,16 +36,17 @@ export class GiftWrapProtocol {
    */
   static async createGiftWrappedDM(
     message: string,
-    senderPrivateKey: string,
+    senderPublicKey: string,
     config: GiftWrapConfig,
-    subject?: string
+    subject?: string,
+    signer?: { nip44Encrypt: (peer: string, plaintext: string) => Promise<string>; signEvent: (event: any) => Promise<string> }
   ): Promise<GiftWrapProtocolResult> {
     try {
       // Validate inputs
-      this.validateCreateDMInputs(message, senderPrivateKey, config);
+      this.validateCreateDMInputs(message, senderPublicKey, config);
       
       // Step 1: Create the rumor (unsigned event with the actual message)
-      const rumor = this.createRumor(message, senderPrivateKey, subject);
+      const rumor = this.createRumor(message, senderPublicKey, subject);
       
       // Step 2: Create seals for each recipient
       // Each recipient needs their own seal due to different conversation keys
@@ -53,11 +54,7 @@ export class GiftWrapProtocol {
       
       for (const recipient of config.recipients) {
         // Create seal encrypted for this specific recipient
-        const seal = await SealCreator.createSeal(
-          rumor,
-          senderPrivateKey,
-          recipient.pubkey
-        );
+        const seal = await SealCreator.createSealWithSigner(rumor, signer as any, recipient.pubkey);
         
         // Create gift wrap for this recipient
         // For testing, use current timestamp if maxTimestampAge is 0
@@ -80,17 +77,13 @@ export class GiftWrapProtocol {
       
       // For the protocol result, we return the seal from the first recipient
       // (all seals are identical except for encryption to different recipients)
-      const firstSeal = await SealCreator.createSeal(
-        rumor,
-        senderPrivateKey,
-        config.recipients[0].pubkey
-      );
+      const firstSeal = await SealCreator.createSealWithSigner(rumor, signer as any, config.recipients[0].pubkey);
       
       return {
         rumor,
         seal: firstSeal,
         giftWraps: giftWrapResults,
-        senderPrivateKey
+        senderPrivateKey: undefined as any
       };
       
     } catch (error) {
@@ -107,66 +100,12 @@ export class GiftWrapProtocol {
    * Decrypt a gift-wrapped direct message
    * Returns the original rumor and verification status
    */
-  static async decryptGiftWrappedDM(
-    giftWrap: GiftWrap,
-    recipientPrivateKey: string
-  ): Promise<GiftWrapDecryptionResult> {
-    try {
-      // Step 1: Decrypt the gift wrap to get the seal
-      const sealDecryption = GiftWrapCreator.decryptGiftWrap(
-        giftWrap,
-        recipientPrivateKey
-      );
-      
-      if (!sealDecryption.isValid) {
-        return {
-          rumor: null as any,
-          seal: null as any,
-          isValid: false,
-          senderPubkey: ''
-        };
-      }
-      
-      const seal = sealDecryption.seal;
-      
-      // Step 2: Decrypt the seal to get the rumor
-      const rumorDecryption = SealCreator.decryptSeal(
-        seal,
-        recipientPrivateKey
-      );
-      
-      if (!rumorDecryption.isValid) {
-        return {
-          rumor: null as any,
-          seal,
-          isValid: false,
-          senderPubkey: seal.pubkey // We know the seal's pubkey even if rumor is invalid
-        };
-      }
-      
-      return {
-        rumor: rumorDecryption.rumor,
-        seal,
-        isValid: true,
-        senderPubkey: seal.pubkey
-      };
-      
-    } catch {
-      return {
-        rumor: null as any,
-        seal: null as any,
-        isValid: false,
-        senderPubkey: ''
-      };
-    }
-  }
+  // Raw-key decryption path removed in P1. Decryption is performed upstream via signer decryptor injection.
 
   /**
    * Create a rumor (unsigned event) containing the message
    */
-  private static createRumor(message: string, senderPrivateKey: string, subject?: string): Rumor {
-    // Get sender's public key
-    const senderPublicKey = this.getPublicKeyFromPrivate(senderPrivateKey);
+  private static createRumor(message: string, senderPublicKey: string, subject?: string): Rumor {
     
     // Build tags array - add subject tag if provided (per NIP-17)
     const tags: string[][] = [];

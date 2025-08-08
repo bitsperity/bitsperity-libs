@@ -100,6 +100,21 @@ export class DMConversation {
     this.initializeSubscription();
   }
 
+  private wrapSigner() {
+    const anySelf: any = this as any;
+    const relayMgr = anySelf.config?.relayManager;
+    const realSigner = relayMgr?.signingProvider || anySelf.signer || anySelf.nostr?.signingProvider;
+    return {
+      nip44Encrypt: async (peer: string, plaintext: string) => {
+        if (!realSigner?.nip44Encrypt) throw new Error('Signer missing nip44Encrypt');
+        return realSigner.nip44Encrypt(peer, plaintext);
+      },
+      signEvent: async (event: any) => {
+        if (!realSigner?.signEvent) throw new Error('Signer missing signEvent');
+        return realSigner.signEvent(event);
+      }
+    };
+  }
   /**
    * Send an encrypted direct message
    */
@@ -147,9 +162,10 @@ export class DMConversation {
 
       const giftWrapResult = await GiftWrapProtocol.createGiftWrappedDM(
         content,
-        this.config.senderPrivateKey,
+        this.config.senderPubkey,
         giftWrapConfig,
-        subject
+        subject,
+        this.wrapSigner()
       );
 
       if (this.config.debug) {

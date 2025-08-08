@@ -119,31 +119,8 @@ describe('Gift Wrap Decryption Debug', () => {
     // Step 10: Try manual decryption if we found Gift Wrap events
     if (giftWrapQuery.current.length > 0) {
       console.log('\n🧪 Attempting manual decryption of found Gift Wraps...');
-      const { GiftWrapProtocol } = await import('../../src/dm/protocol/GiftWrapProtocol.js');
-      
-      for (const giftWrap of giftWrapQuery.current) {
-        try {
-          const bobPrivateKey = await bob.nostr.getPrivateKeyForEncryption();
-          const decryptionResult = await GiftWrapProtocol.decryptGiftWrappedDM(
-            giftWrap as any,
-            bobPrivateKey
-          );
-          
-          console.log('Manual decryption result:', {
-            isValid: decryptionResult.isValid,
-            senderPubkey: decryptionResult.senderPubkey?.slice(0, 8) + '...',
-            rumorContent: decryptionResult.rumor?.content?.slice(0, 30) + '...',
-            errorDetails: decryptionResult.isValid ? null : 'Decryption failed'
-          });
-          
-          if (decryptionResult.isValid && decryptionResult.rumor?.content === testMessage) {
-            console.log('✅ SUCCESS: Manual decryption worked! The issue is in the automatic decryption pipeline.');
-          }
-          
-        } catch (error) {
-          console.log('❌ Manual decryption error:', error.message);
-        }
-      }
+      // P1: kein manueller Decrypt via Raw-Key – Decryptor-Pipeline wurde oben validiert
+      console.log('Skipping manual decryption in P1 (no raw key). Decryption verified via DM pipeline.');
     } else {
       console.log('❌ No Gift Wrap events found in direct query - subscription/relay issue?');
     }

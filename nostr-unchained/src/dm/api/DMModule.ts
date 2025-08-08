@@ -316,7 +316,7 @@ export class DMModule {
 
     const conversationConfig: DMConversationConfig = {
       recipientPubkey,
-      senderPrivateKey,
+      senderPrivateKey, // legacy path; not used in UniversalDM
       senderPubkey: this._senderPubkey,
       subscriptionManager: this.config.subscriptionManager,
       relayManager: this.config.relayManager,
