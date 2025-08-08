@@ -7,6 +7,7 @@
 
 import { FilterBuilder } from './FilterBuilder.js';
 import { UniversalEventCache } from '../cache/UniversalEventCache.js';
+import type { Filter } from '../core/types.js';
 import { UniversalNostrStore } from '../store/UniversalNostrStore.js';
 import type { NostrEvent } from '../core/types.js';
 
@@ -39,6 +40,23 @@ export interface SubscriptionHandle {
 
 export class SubBuilder extends FilterBuilder {
   private relayUrls: string[] = [];
+  // Auto-batching config (generalized: works for 'ids', 'authors', '#e', '#p')
+  private autoBatchFieldName: string | null = null;
+  private autoBatchWindowMs: number = 0; // microtask coalescing (same tick)
+  private autoBatchMaxValues: number = 200;
+  private autoBatchMaxTotalLimit: number = 1000; // safety cap for merged limit
+
+  // Static pending batches per process (keyed by base filter signature + relays)
+  private static pendingBatches: Map<string, {
+    tagName: string;
+    ids: Set<string>;
+    timer: any;
+    creating: boolean;
+    sharedKey?: string;
+    resolvers: Array<(key: string) => void>;
+    targetRelays: string[] | undefined;
+    baseFilter: any;
+  }> = new Map();
   
   constructor(
     private cache: UniversalEventCache,
@@ -73,29 +91,145 @@ export class SubBuilder extends FilterBuilder {
    */
   async execute(): Promise<SubscriptionHandle> {
     const targetRelays = this.relayUrls.length > 0 ? this.relayUrls : undefined;
-    
-    // Use smart deduplication through getOrCreateSubscription
+
+    // Auto-enable batching for common patterns: single value fields that can be merged
+    if (!this.autoBatchFieldName) {
+      const candidateFields = ['ids', 'authors', '#e', '#p'] as const;
+      for (const field of candidateFields) {
+        const values = (this.filter as any)[field] as string[] | undefined;
+        if (Array.isArray(values) && values.length === 1) {
+          this.autoBatchFieldName = field;
+          break;
+        }
+      }
+    }
+
+    if (this.autoBatchFieldName && Array.isArray((this.filter as any)[this.autoBatchFieldName]) && ((this.filter as any)[this.autoBatchFieldName] as string[]).length === 1) {
+      // Only batch for simple filters to avoid semantics surprises
+      const allowedKeys = new Set<string>(['kinds', this.autoBatchFieldName, 'limit']);
+      const rawFilter: any = this.filter as any;
+      // Consider only meaningful keys (ignore empty arrays/objects/null)
+      const filterKeys = Object.keys(rawFilter).filter((k) => {
+        const v = rawFilter[k];
+        if (v == null) return false;
+        if (Array.isArray(v)) return v.length > 0;
+        if (typeof v === 'object') return Object.keys(v).length > 0;
+        return true;
+      });
+      const hasDisallowedKey = filterKeys.some((k) => !allowedKeys.has(k));
+      if (hasDisallowedKey) {
+        // Fallback to normal subscription
+        return await this.executeNonBatched(targetRelays);
+      }
+      // Build a batch key ignoring the specific tag value
+      const fieldName = this.autoBatchFieldName;
+      const baseFilter: any = { ...this.filter } as any;
+      const fieldVals = baseFilter[fieldName] as string[];
+      const singleId: string = String(fieldVals[0]);
+      baseFilter[fieldName] = '__BATCH__';
+      const relaysKey = (targetRelays || []).slice().sort().join(',');
+      const batchKey = JSON.stringify(baseFilter) + '::' + relaysKey;
+
+      // Ensure batch bucket
+      if (!SubBuilder.pendingBatches.has(batchKey)) {
+        SubBuilder.pendingBatches.set(batchKey, {
+          tagName: fieldName,
+          ids: new Set<string>(),
+          timer: null,
+          creating: false,
+          resolvers: [],
+          targetRelays,
+          baseFilter
+        });
+      }
+      const batch = SubBuilder.pendingBatches.get(batchKey)!;
+      batch.ids.add(singleId);
+
+      // Create a promise that resolves to the shared key when batch fires
+      const sharedKeyPromise = new Promise<string>((resolve) => {
+        batch.resolvers.push((key: string) => resolve(key ?? batchKey));
+      });
+
+      if (!batch.timer) {
+        const flush = async () => {
+          batch.timer = null;
+          if (batch.creating) return;
+          batch.creating = true;
+          try {
+            const mergedIds = Array.from(batch.ids).slice(0, this.autoBatchMaxValues);
+            const mergedFilter: any = { ...batch.baseFilter };
+            mergedFilter[batch.tagName] = mergedIds;
+            // Adjust limit: per-id * count, but keep a sensible global cap
+            const perIdLimit = (this.filter as any).limit ?? 100;
+            const totalLimit = Math.min(perIdLimit * mergedIds.length, this.autoBatchMaxTotalLimit);
+            if (totalLimit) {
+              mergedFilter.limit = totalLimit;
+            }
+            const sharedSub = await this.subscriptionManager.getOrCreateSubscription([mergedFilter], batch.targetRelays);
+            sharedSub.addListener({
+              onEvent: (event: NostrEvent) => {
+                this.cache.addEvent(event);
+              }
+            });
+            // Ensure shared key is a string for resolvers (SharedSubscription.key is string)
+            const sharedKey: string = String(sharedSub.key);
+            batch.sharedKey = sharedKey;
+            batch.resolvers.forEach((r) => r(sharedKey));
+            batch.resolvers = [];
+          } finally {
+            SubBuilder.pendingBatches.delete(batchKey);
+          }
+        };
+        // Coalesce within a frame; fallback to immediate timeout
+        if (typeof window !== 'undefined' && typeof (window as any).requestAnimationFrame === 'function') {
+          (batch as any).timer = (window as any).requestAnimationFrame(() => flush());
+        } else {
+          (batch as any).timer = setTimeout(flush, this.autoBatchWindowMs || 0);
+        }
+      }
+
+      // Build store immediately; subscription will arrive via batch
+      const store = new UniversalNostrStore(this.cache, this.filter);
+      let resolvedKey: string | null = null;
+      sharedKeyPromise.then((k) => { resolvedKey = k; });
+
+      return {
+        id: resolvedKey || batchKey,
+        store,
+        stop: async () => { /* no-op for batched handle */ },
+        isActive: () => true
+      };
+    }
+
+    // Fallback: normal deduped subscription
     const sharedSub = await this.subscriptionManager.getOrCreateSubscription([this.filter], targetRelays);
-    
-    // Add listener to shared subscription that feeds cache
-    const listenerId = sharedSub.addListener({
+    sharedSub.addListener({
       onEvent: (event: NostrEvent) => {
-        this.cache.addEvent(event); // All events go to cache
+        this.cache.addEvent(event);
       }
     });
-    
     const store = new UniversalNostrStore(this.cache, this.filter);
-    
-    // Return a handle with excellent DX
     return {
       id: sharedSub.key,
       store,
-      stop: async () => {
-        sharedSub.removeListener(listenerId);
-      },
-      isActive: () => {
-        return sharedSub.isActive();
+      stop: async () => { /* no-op for shared cache listener */ },
+      isActive: () => sharedSub.isActive()
+    };
+  }
+
+  private async executeNonBatched(targetRelays?: string[]): Promise<SubscriptionHandle> {
+    const sharedSub = await this.subscriptionManager.getOrCreateSubscription([this.filter], targetRelays);
+    sharedSub.addListener({
+      onEvent: (event: NostrEvent) => {
+        this.cache.addEvent(event);
       }
+    });
+    const store = new UniversalNostrStore(this.cache, this.filter);
+    return {
+      id: sharedSub.key,
+      store,
+      stop: async () => { /* no-op for shared cache listener */ },
+      isActive: () => sharedSub.isActive()
     };
   }
 }

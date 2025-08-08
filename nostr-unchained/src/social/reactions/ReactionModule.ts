@@ -19,12 +19,6 @@ import type {
 } from '../types/reaction-types.js';
 
 export class ReactionModule {
-  // Static batch aggregator across all instances in the same runtime
-  private static pendingEventIds: Set<string> = new Set<string>();
-  private static activeEventIds: Set<string> = new Set<string>();
-  private static batchTimer: any = null;
-  private static BATCH_SIZE = 100; // number of event ids per subscription
-  private static BATCH_DELAY_MS = 250; // debounce window to collect ids (coalesce many cards)
   constructor(private nostr: NostrUnchained, private debug?: boolean) {
     if (this.debug) {
       console.log('🎯 ReactionModule initialized with Clean Architecture');
@@ -159,48 +153,22 @@ export class ReactionModule {
   // Private helper methods
 
   private async startReactionSubscription(eventId: string): Promise<void> {
-    // De-dup if already active
-    if (ReactionModule.activeEventIds.has(eventId)) return;
-    ReactionModule.pendingEventIds.add(eventId);
-
-    if (!ReactionModule.batchTimer) {
-      ReactionModule.batchTimer = setTimeout(async () => {
-        ReactionModule.batchTimer = null;
-        const batch: string[] = [];
-        for (const id of ReactionModule.pendingEventIds) {
-          if (batch.length >= ReactionModule.BATCH_SIZE) break;
-          if (!ReactionModule.activeEventIds.has(id)) {
-            batch.push(id);
-          }
-        }
-        batch.forEach((id) => {
-          ReactionModule.pendingEventIds.delete(id);
-          ReactionModule.activeEventIds.add(id);
-        });
-
-        if (batch.length === 0) return;
-        try {
-          if (this.debug) {
-            console.log('ReactionModule: starting batched reaction subscription', { size: batch.length });
-          }
-          await this.nostr.sub()
-            .kinds([7])
-            .tags('e', batch)
-            .limit(ReactionModule.BATCH_SIZE)
-            .execute();
-        } catch (error) {
-          if (this.debug) {
-            console.warn('Failed to start batched reaction subscription:', error);
-          }
-          // On failure, allow retry on next call
-          batch.forEach((id) => ReactionModule.activeEventIds.delete(id));
-        }
-      }, ReactionModule.BATCH_DELAY_MS);
+    // Single-ID sub; zentrales Batching erfolgt in SubBuilder (microtask)
+    try {
+      await this.nostr.sub()
+        .kinds([7])
+        .tags('e', [eventId])
+        .limit(100)
+        .execute();
+    } catch (error) {
+      if (this.debug) {
+        console.warn('Failed to start reaction subscription:', error);
+      }
     }
   }
 
   private async startMyReactionSubscription(eventId: string, myPubkey: string): Promise<void> {
-    // no-op (abgedeckt durch batched reaction subscription)
+    // no-op (zentrales Batching übernimmt SubBuilder)
   }
 
   private async getTargetEvent(eventId: string): Promise<NostrEvent | null> {
