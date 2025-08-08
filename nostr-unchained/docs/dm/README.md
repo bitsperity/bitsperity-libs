@@ -102,6 +102,23 @@ const posts = nostr.query().kinds([1]).execute(); // ✅ Works without DMs
 const chat = nostr.dm.with(pubkey); // 🎁 NOW gift wrap subscription starts
 ```
 
+## DM‑Ready Flow (Empfohlene Reihenfolge)
+
+Um Race‑Conditions zu vermeiden und sofort eine funktionierende DM‑Inbox zu haben:
+
+```ts
+// 1) Verbinden (optional vor Signer)
+await nostr.connect();
+
+// 2) Signer initialisieren (Extension oder Local)
+await nostr.initializeSigning(provider);
+
+// 3) Erste DM nutzen → startet Lazy Gift Wrap Subscription
+const chat = nostr.getDM()?.with(recipientHexOrNpub);
+```
+
+Hinweis: `getDM()` kann vor erfolgreicher Signer‑Initialisierung `undefined` sein. Nach `initializeSigning()` ist die DM‑API verfügbar und die erste Nutzung startet die Inbox automatisch (Lazy Loading).
+
 ### Zero Technical Complexity
 Users never need to know about:
 - ❌ `kind: 1059` (gift wraps)
@@ -276,6 +293,12 @@ Gift wraps hide message metadata:
 
 // Your real message metadata is encrypted inside
 ```
+
+## Rumor‑ID vs. Wrap‑ID (Wichtig für Debugging)
+
+- Gift Wrap Events (Kind 1059) tragen eine eigene Event‑ID (Wrap‑ID). Nach erfolgreicher Entschlüsselung wird der enthaltene Rumor (Kind 13) zu einem DM‑Event (Kind 14) normalisiert und erhält dabei eine eigene ID (Rumor/DM‑ID), da der DM‑Eventinhalt und die Struktur eigenständig sind.
+- Konsequenz: In Stores/Cache tauchen DM‑Events (Kind 14) mit einer anderen ID auf als die korrespondierenden Gift Wraps (Kind 1059). Das ist beabsichtigt und protokollkonform.
+- Empfehlung: Für UI/Threading stets die 14er‑Events verwenden. Gift Wraps dienen nur als Transport/Verpackung und werden unabhängig vom Decrypt‑Erfolg im Cache gespeichert.
 
 ## API Reference
 

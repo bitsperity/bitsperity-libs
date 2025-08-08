@@ -19,7 +19,7 @@ import { NostrUnchained } from 'nostr-unchained';
 
 const nostr = new NostrUnchained();
 
-// Simple text note
+// Simple text note (DX Overload)
 await nostr.publish("Hello, Nostr! 🌟");
 
 // NEW: Super-fluent API - start directly with kind or content
@@ -370,6 +370,8 @@ publish(content: string, kind?: number): Promise<PublishResult>
 - `kind` - Event kind (default: 1 for text note)
 
 **Returns:** `PublishResult` with success status and relay details
+
+Hinweis: Das Overload `publish(content, kind=1)` ist eine DX‑Abkürzung für einfache Textevents. Für komplexe Events nutze den Fluent Builder unter `nostr.events`.
 
 ### NostrUnchained.events
 
