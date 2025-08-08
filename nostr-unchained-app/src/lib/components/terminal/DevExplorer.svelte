@@ -38,7 +38,7 @@
 	let tagInput = $state('');
 	let selectedTags = $state<string[]>([]);
 	let customTagType = $state(''); // For completely custom tag types
-	let limit = $state(20);
+    let limit = $state(100);
     // removed unused since/until to avoid linter errors
 	
 	// Explicit subscription/query state
@@ -107,7 +107,13 @@
 				subBuilder = subBuilder.tags(actualTagType, selectedTags);
 			}
 			
-			// Execute subscription - returns a handle with excellent DX
+            // Apply limit explicitly (override safety default)
+            try {
+                const lim = Math.max(1, Math.min(5000, Number(limit) || 100));
+                subBuilder = subBuilder.limit(lim);
+            } catch {}
+
+            // Execute subscription - returns a handle with excellent DX
 			liveSubscription = await subBuilder.execute();
 			
 			// Subscribe to the store to get live updates
@@ -123,6 +129,7 @@
                             eventCount = events.length;
                         }
                         logger.info('🔴 Live events received ' + JSON.stringify({ count: liveEvents?.length || 0 }));
+                        if (showCacheStats) updateCacheStats();
                     } catch (err) {
                         logger.error('Error processing live events: ' + (err as any)?.message);
                     }
@@ -190,6 +197,12 @@
                 }
             } catch {}
 
+            // Apply explicit limit for cache reads
+            try {
+                const lim = Math.max(1, Math.min(5000, Number(limit) || 100));
+                queryBuilder = queryBuilder.limit(lim);
+            } catch {}
+
             // Execute cache query - returns UniversalNostrStore
             cacheQuery = queryBuilder.execute();
 			
@@ -208,6 +221,7 @@
                     if (queryTime === null) {
                         queryTime = performance.now() - startTime;
                     }
+                    if (showCacheStats) updateCacheStats();
                 } catch (err: any) {
                     logger.error('Error processing cached events: ' + (err?.message || String(err)));
                 }
@@ -233,9 +247,14 @@
 	function updateCacheStats() {
 		if (!nostr) return;
 		
-		try {
-			// Get cache statistics
-			cacheStats = nostr.getCacheStatistics ? nostr.getCacheStatistics() : nostr.getCacheStats?.();
+        try {
+            // Get cache statistics (multi-source fallback)
+            cacheStats =
+                (nostr.getCacheStatistics && nostr.getCacheStatistics()) ||
+                (nostr.getCacheStats && nostr.getCacheStats()) ||
+                (nostr.getSubscriptionManager && typeof nostr.getSubscriptionManager === 'function' &&
+                    nostr.getSubscriptionManager()?.getCacheStats?.()) ||
+                cacheStats;
 			
 			// Get active subscriptions from SubscriptionManager
 			const subManager = nostr.getSubscriptionManager();
@@ -495,7 +514,7 @@
 
 	<!-- FILTER PANEL: Completely Agnostic -->
 	<div class="filter-panel">
-		<!-- Free Kinds Input -->
+        <!-- Free Kinds Input -->
 		<div class="filter-section">
 			<label class="filter-label">Event Kinds (comma-separated or JSON array)</label>
 			<div class="input-group">
@@ -508,6 +527,17 @@
 				/>
 				<button class="parse-btn" onclick={parseKindsInput}>Parse</button>
 			</div>
+            <div class="input-group" style="max-width: 300px;">
+                <label class="filter-label" style="margin:0; align-self:center;">Limit</label>
+                <input
+                    type="number"
+                    min="1"
+                    max="5000"
+                    bind:value={limit}
+                    class="filter-input"
+                    title="Maximum events to fetch"
+                />
+            </div>
 			
 			<!-- Quick Kind Buttons (optional helpers) -->
 			<div class="quick-filters">
