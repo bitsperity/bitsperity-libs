@@ -470,73 +470,27 @@
 			</div>
 		</div>
 		
-		<div class="header-controls">
-			<button 
-				class="control-btn" 
-				onclick={() => showRawJson = !showRawJson}
-				class:active={showRawJson}
-			>
-				{showRawJson ? '📋' : '🔧'} {showRawJson ? 'Cards' : 'JSON'}
-			</button>
-			
-			<!-- Explicit Cache Control -->
-			<button 
-				class="control-btn subscription-btn" 
-				onclick={startSubscription}
-				disabled={isSubscribing || liveSubscription}
-				title="Start filling cache from relays"
-			>
-				{#if isSubscribing}
-					⏳ Starting...
-				{:else if liveSubscription}
-					🔴 Live Sub Active
-				{:else}
-					🚀 Start Subscription
-				{/if}
-			</button>
-			
-			<button 
-				class="control-btn cache-btn" 
-				onclick={queryCache}
-				disabled={isQueryingCache}
-				title="Query events from cache"
-			>
-				{#if isQueryingCache}
-					⏳ Querying...
-				{:else}
-					💾 Query Cache
-				{/if}
-			</button>
-			
-			{#if liveSubscription}
-				<button 
-					class="control-btn stop-btn" 
-					onclick={() => stopLiveSubscription()}
-					title="Stop live subscription"
-				>
-					⏹️ Stop
-				</button>
-			{/if}
-			
-			<!-- Monitoring Controls -->
-			<button 
-				class="control-btn stats-btn" 
-				onclick={toggleCacheStats}
-				class:active={showCacheStats}
-				title="Toggle cache statistics"
-			>
-				📊 Cache Stats
-			</button>
-			
-			<button 
-				class="control-btn subs-btn" 
-				onclick={toggleSubsManager}
-				class:active={showSubsManager}
-				title="Manage active subscriptions"
-			>
-				🔧 Manage Subs
-			</button>
-		</div>
+        <div class="header-controls">
+            <!-- Mode: Live | Cache -->
+            <div class="segmented">
+                <button class="seg-btn" class:active={!!liveSubscription} onclick={() => startSubscription()} disabled={isSubscribing || !!liveSubscription}>Live</button>
+                <button class="seg-btn" class:active={!liveSubscription} onclick={() => queryCache()} disabled={isQueryingCache}>Cache</button>
+            </div>
+
+            <!-- Show JSON toggle -->
+            <button class="control-btn" onclick={() => showRawJson = !showRawJson} class:active={showRawJson} title="Toggle JSON view">
+                {showRawJson ? '📋 Cards' : '🧱 JSON'}
+            </button>
+
+            <!-- Stop live if active -->
+            {#if liveSubscription}
+                <button class="control-btn stop-btn" onclick={() => stopLiveSubscription()} title="Stop live subscription">⏹️ Stop</button>
+            {/if}
+
+            <!-- Tools -->
+            <button class="control-btn stats-btn" onclick={toggleCacheStats} class:active={showCacheStats} title="Toggle cache statistics">📊 Cache Stats</button>
+            <button class="control-btn subs-btn" onclick={toggleSubsManager} class:active={showSubsManager} title="Manage active subscriptions">🛠️ Manage Subs</button>
+        </div>
 	</div>
 
 	<!-- FILTER PANEL: Completely Agnostic -->
@@ -804,16 +758,20 @@
 	<!-- RESULTS: Events or JSON -->
 	<div class="results-section">
 		{#if isLoading}
-			<div class="loading-state">
-				<div class="spinner"></div>
-				<span>Querying events...</span>
-			</div>
+            <div class="loading-state">
+                <div class="spinner"></div>
+                <span>Loading events…</span>
+            </div>
 		{:else if events.length === 0}
-			<div class="empty-state">
-				<div class="empty-icon">🔍</div>
-				<h3>No events found</h3>
-				<p>Try adjusting your filters or check your relay connection</p>
-			</div>
+            <div class="empty-state">
+                <div class="empty-icon">🔍</div>
+                <h3>No events yet</h3>
+                <p>Start <strong>Live</strong> to stream from relays or press <strong>Cache</strong> to read cached events.</p>
+                <div class="empty-actions">
+                    <button class="control-btn subscription-btn" onclick={startSubscription} disabled={isSubscribing || !!liveSubscription}>▶ Live</button>
+                    <button class="control-btn cache-btn" onclick={queryCache} disabled={isQueryingCache}>💾 Cache</button>
+                </div>
+            </div>
 		{:else if showRawJson}
 			<!-- Raw JSON View -->
 			<div class="json-view">
@@ -902,6 +860,27 @@
 		display: flex;
 		gap: var(--spacing-sm);
 	}
+
+.segmented {
+    display: inline-flex;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.seg-btn {
+    padding: 8px 12px;
+    background: var(--color-background);
+    color: var(--color-text);
+    border: none;
+    cursor: pointer;
+    font-size: var(--text-sm);
+}
+
+.seg-btn.active {
+    background: var(--color-primary);
+    color: var(--color-primary-text);
+}
 
 	.control-btn {
 		padding: var(--spacing-sm) var(--spacing-md);
