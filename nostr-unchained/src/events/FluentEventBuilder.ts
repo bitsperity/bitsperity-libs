@@ -32,6 +32,18 @@ export class FluentEventBuilder {
   }
 
   /**
+   * NIP-36: Mark event as sensitive with optional reason
+   */
+  contentWarning(reason?: string): FluentEventBuilder {
+    if (reason && reason.length > 0) {
+      this.eventData.tags.push(['content-warning', reason]);
+    } else {
+      this.eventData.tags.push(['content-warning']);
+    }
+    return this;
+  }
+
+  /**
    * NIP-92: Attach media URL with imeta inline metadata
    */
   attachMedia(url: string, opts?: { mimeType?: string; alt?: string; blurhash?: string; dim?: string; sha256?: string; fallbacks?: string[] }): FluentEventBuilder {
