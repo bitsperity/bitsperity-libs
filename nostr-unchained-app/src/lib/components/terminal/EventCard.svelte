@@ -163,11 +163,13 @@
 		if (!(nostr as any)?.social?.reactions) return;
 		likePending = true;
 		try {
+			let result: any;
 			if (reactionSummary.userReactionType) {
-				await (nostr as any).social.reactions.unreact(event.id);
+				result = await (nostr as any).social.reactions.unreact(event.id);
 			} else {
-				await (nostr as any).social.reactions.react(event.id, '+');
+				result = await (nostr as any).social.reactions.react(event.id, '+');
 			}
+			lastPublishResult = result;
 		} catch (e) {
 			console.error('Reaction failed', e);
 		} finally {
@@ -506,7 +508,7 @@
         onDelete={doDelete}
     />
 
-    <EventCardMeta result={lastPublishResult} />
+    <EventCardMeta result={lastPublishResult} {event} {nostr} />
     <EventCardJson {event} />
 
 	<!-- Toast Notification -->
