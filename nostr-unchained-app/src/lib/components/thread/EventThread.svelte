@@ -1,14 +1,16 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import EventCard from '../terminal/EventCard.svelte';
+  import { createEventDispatcher } from 'svelte';
 
   let { nostr, rootId }: { nostr: any; rootId: string } = $props();
 
   let rootEvent: any = $state(null);
   let replies: any[] = $state([]);
   let loading = $state(false);
-  // Cleanup management for re-navigation within the same component
+  // Cleanup management for re-navigation
   let cleanupFns: Array<() => void> = [];
+  const dispatch = createEventDispatcher<{ back: {}; openThread: { id: string } }>();
 
   function cleanup() {
     for (const fn of cleanupFns.splice(0)) {
@@ -46,16 +48,21 @@
   onMount(load);
 
   function openThreadLocal(id: string) {
-    if (!id || id === rootId) return;
-    rootId = id;
-    load();
-    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
+    if (!id) return;
+    dispatch('openThread', { id });
   }
+
+  // Reload when parent updates the rootId (navigating deeper)
+  $effect(() => {
+    if (nostr && rootId) {
+      load();
+    }
+  });
 </script>
 
 <div class="thread">
   <div class="thread-toolbar">
-    <button class="ghost-btn" onclick={() => history.back()} title="Zurück">← Back</button>
+    <button class="ghost-btn" onclick={() => dispatch('back', {})} title="Zurück">← Back</button>
     {#if rootEvent}
       <div class="toolbar-title">Thread · {rootEvent.id.slice(0,8)}…</div>
     {/if}

@@ -35,6 +35,7 @@
     let currentView = $state<'terminal' | 'messages' | 'publish' | 'profile' | 'feed' | 'thread'>('terminal');
 	let currentProfilePubkey = $state<string | null>(null); // For viewing other profiles
     let currentThreadId = $state<string | null>(null);
+  let historyStack: string[] = $state([]);
 	let userInfo = $state<{ publicKey: string; signerType: string }>({
 		publicKey: '',
 		signerType: signer || 'extension'
@@ -202,7 +203,21 @@
             />
         {:else if currentView === 'thread'}
             {#if currentThreadId}
-                <EventThread {nostr} rootId={currentThreadId} />
+                <EventThread {nostr} rootId={currentThreadId}
+                  on:back={() => {
+                    // Thread history: zurück zur vorherigen Ansicht, oder Terminal fallback
+                    if (historyStack.length > 0) {
+                      const prev = historyStack.pop() as string;
+                      currentThreadId = prev;
+                    } else {
+                      currentView = 'terminal';
+                    }
+                  }}
+                  on:openThread={(e) => {
+                    if (currentThreadId) historyStack.push(currentThreadId);
+                    currentThreadId = e.detail.id;
+                  }}
+                />
             {/if}
 		{/if}
 	</main>
