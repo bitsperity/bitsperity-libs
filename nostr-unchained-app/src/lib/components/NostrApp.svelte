@@ -200,6 +200,7 @@
                 {authState} 
                 pubkey={currentProfilePubkey || ''}
                 onDMClick={navigateToDM}
+                on:openThread={(e) => { if (currentThreadId) historyStack.push(currentThreadId); currentThreadId = e.detail.id; currentView = 'thread'; }}
             />
         {:else if currentView === 'thread'}
             {#if currentThreadId}

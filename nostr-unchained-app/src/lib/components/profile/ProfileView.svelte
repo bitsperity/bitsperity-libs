@@ -179,6 +179,8 @@ let currentTab: Tab = $state('notes');
 let listEvents: any[] = $state([]);
 let listLoading = $state(false);
 let liveHandle: any = null;
+let paging: { until: number | null; hasMore: boolean } = $state({ until: null, hasMore: true });
+const PAGE_SIZE = 50;
 const dispatch = createEventDispatcher<{ openThread: { id: string } }>();
 
 function stopLive() {
@@ -200,7 +202,7 @@ async function startLive() {
       // notes / replies are both kind 1; split in UI
       b = b.kinds([1]).authors([profilePubkey]); // NIP-01
     }
-    b = b.limit(200);
+    b = b.limit(PAGE_SIZE);
     const handle = await b.execute();
     liveHandle = handle;
     handle.store.subscribe((arr: any[]) => {
@@ -212,6 +214,16 @@ async function startLive() {
         items = items.filter((ev: any) => Array.isArray(ev.tags) && ev.tags.some((t: any[]) => t?.[0] === 'e'));
       }
       listEvents = items.sort((a: any, b: any) => b.created_at - a.created_at);
+      // hasMore anhand der Rohmenge beurteilen (ohne Postfilter), um konsistent zu sein
+      const raw = (arr || []);
+      paging.hasMore = raw.length >= PAGE_SIZE;
+      // bis zum ältesten Zeitstempel der Rohmenge paginieren (minus 1 Sekunde, um Duplikate zu vermeiden)
+      if (raw.length > 0) {
+        const oldest = raw.reduce((min: number, e: any) => Math.min(min, e.created_at || Number.MAX_SAFE_INTEGER), Number.MAX_SAFE_INTEGER);
+        paging.until = oldest > 0 ? oldest - 1 : null;
+      } else {
+        paging.until = null;
+      }
       listLoading = false;
     });
   } catch (e) {
@@ -226,6 +238,36 @@ $effect(() => {
 });
 
 onDestroy(() => stopLive());
+
+async function loadMore() {
+  if (paging.until == null || !nostr) return;
+  try {
+    let qb = nostr
+      .query()
+      .kinds([currentTab === 'reposts' ? 6 : currentTab === 'likes' ? 7 : 1])
+      .authors([profilePubkey])
+      .until(paging.until)
+      .limit(PAGE_SIZE);
+    const store = qb.execute();
+    let first = true;
+    const unsub = store.subscribe((more: any[]) => {
+      if (!first) return; first = false; try { unsub(); } catch {}
+      if (!Array.isArray(more) || more.length === 0) { paging.hasMore = false; return; }
+      let items = more.slice();
+      if (currentTab === 'notes') items = items.filter((ev: any) => !(Array.isArray(ev.tags) && ev.tags.some((t: any[]) => t?.[0] === 'e')));
+      if (currentTab === 'replies') items = items.filter((ev: any) => Array.isArray(ev.tags) && ev.tags.some((t: any[]) => t?.[0] === 'e'));
+      const merged = [...listEvents, ...items];
+      const dedup = new Map<string, any>();
+      merged.forEach(ev => { if (ev?.id) dedup.set(ev.id, ev); });
+      listEvents = Array.from(dedup.values()).sort((a: any, b: any) => b.created_at - a.created_at);
+      paging.hasMore = (more || []).length >= PAGE_SIZE;
+      if ((more || []).length > 0) {
+        const oldest = (more || []).reduce((min: number, e: any) => Math.min(min, e.created_at || Number.MAX_SAFE_INTEGER), Number.MAX_SAFE_INTEGER);
+        paging.until = oldest > 0 ? oldest - 1 : paging.until;
+      }
+    });
+  } catch (e) { console.error('Load more failed', e); }
+}
 
 // =============================================================================
 // Computed Properties
@@ -320,6 +362,9 @@ onDestroy(() => stopLive());
 						{#each listEvents as ev (ev.id)}
 							<EventCard event={ev} {nostr} on:openThread={(e)=>dispatch('openThread', e.detail)} />
 						{/each}
+						{#if paging.hasMore}
+							<button class="ghost-btn load-more" onclick={loadMore}>Mehr laden</button>
+						{/if}
 					</div>
 				{/if}
 			</div>
@@ -560,6 +605,7 @@ onDestroy(() => stopLive());
 .loading-list, .empty-list { color:#94a3b8; padding: .5rem 0; }
 .spinner { width:16px; height:16px; border:2px solid var(--color-border); border-top:2px solid var(--color-primary); border-radius:50%; display:inline-block; animation: spin 1s linear infinite; margin-right:.5rem; }
 @keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
+.ghost-btn.load-more { align-self: center; padding:8px 14px; border:1px solid rgba(255,255,255,0.1); border-radius:10px; background: rgba(255,255,255,0.06); color:#e2e8f0; cursor:pointer; }
 
 .profile-editor-placeholder {
 	padding: var(--spacing-xl);
