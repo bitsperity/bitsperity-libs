@@ -366,6 +366,12 @@
 		return event.content || '❤️';
 	}
 
+    // Open Thread navigation
+    function openThread() {
+        // Dispatch upwards so the app can switch to thread view
+        dispatch('openThread', { id: event.id });
+    }
+
 	function extractMentions(content: string): string[] {
 		const mentions = content.match(/@npub[a-z0-9]+/g) || [];
 		return mentions.map(mention => mention.substring(1)); // Remove @
@@ -461,6 +467,12 @@
 		{/if}
 
         <EventCardTags tags={event.tags} on:tagClick={(e)=>handleTagClick([e.detail.type, e.detail.value])} />
+
+        {#if isTextNote()}
+            <div class="thread-nav">
+                <button class="ghost-btn" onclick={openThread} title="Open Thread">🧵 Open Thread</button>
+            </div>
+        {/if}
 
         {#if expandedEventRefId}
             <div class="ref-panel">
@@ -982,4 +994,7 @@
 			gap: 0.25rem;
 		}
 	}
+
+    .thread-nav { margin-top: .5rem; }
+    .thread-nav .ghost-btn { padding:6px 10px; border:1px solid rgba(255,255,255,0.1); border-radius:10px; background: rgba(255,255,255,0.06); color:#e2e8f0; cursor:pointer; }
 </style>

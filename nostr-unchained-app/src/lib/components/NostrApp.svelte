@@ -19,6 +19,7 @@
 	
     import FeedView from './feed/FeedView.svelte';
     import EventThread from './thread/EventThread.svelte';
+    import EncodingsPanel from './ui/EncodingsPanel.svelte';
 
     interface Props {
         nostr: any;
@@ -39,6 +40,7 @@
 		signerType: signer || 'extension'
 	});
   let showRelay = $state(false);
+  let showEnc = $state(false);
 
 	// Initialize ProfileSubscriptionManager when NostrUnchained is ready
 	$effect(() => {
@@ -161,6 +163,7 @@
                 {/if}
             </div>
             <button class="ghost-btn" onclick={() => showRelay = !showRelay} title="Relay Inspector">{showRelay ? '📡 Hide Relay' : '📡 Show Relay'}</button>
+            <button class="ghost-btn" onclick={() => showEnc = !showEnc} title="Encodings">🔤 Encodings</button>
             <button class="ghost-btn danger" onclick={logout} title="Logout">🚪 Logout</button>
         </div>
     </header>
@@ -173,6 +176,11 @@
                 showRelayInspector={showRelay}
                 on:profileNavigate={(e) => navigateToProfile(e.detail.pubkey)}
             />
+            {#if showEnc}
+                <div style="padding: 0.75rem 1rem;">
+                    <EncodingsPanel />
+                </div>
+            {/if}
         {:else if currentView === 'messages'}
 			<DMChat {authState} {nostr} />
         {:else if currentView === 'feed'}
