@@ -34,6 +34,7 @@
 		publicKey: '',
 		signerType: signer || 'extension'
 	});
+  let showRelay = $state(false);
 
 	// Initialize ProfileSubscriptionManager when NostrUnchained is ready
 	$effect(() => {
@@ -142,20 +143,26 @@
         </nav>
 
         <div class="header-right">
+            <div class="connection-chip" title={nostr?.connectedRelays?.length ? `${nostr.connectedRelays.length} relay(s)` : 'No relay'}>
+                {#if nostr?.connectedRelays?.length}
+                    🟢 Connected to {nostr.connectedRelays.length} relays
+                {:else}
+                    🔴 Connecting…
+                {/if}
+            </div>
+            <button class="ghost-btn" onclick={() => showRelay = !showRelay} title="Relay Inspector">{showRelay ? '📡 Hide Relay' : '📡 Show Relay'}</button>
             <button class="ghost-btn danger" onclick={logout} title="Logout">🚪 Logout</button>
         </div>
     </header>
 
 	<!-- Main Content - NostrUnchained powered -->
 	<main class="app-main">
-		{#if currentView === 'terminal'}
-			<NostrTerminal 
-				{authState} 
-				{nostr} 
-				onLogout={logout} 
-				onShowKeys={() => {}}
-				on:profileNavigate={(e) => navigateToProfile(e.detail.pubkey)}
-			/>
+        {#if currentView === 'terminal'}
+            <NostrTerminal 
+                {nostr}
+                showRelayInspector={showRelay}
+                on:profileNavigate={(e) => navigateToProfile(e.detail.pubkey)}
+            />
 		{:else if currentView === 'messages'}
 			<DMChat {authState} {nostr} />
 		{:else if currentView === 'publish'}
@@ -216,6 +223,7 @@
     .ghost-btn:hover { transform: translateY(-1px); background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.14); }
     .ghost-btn.danger { border-color: rgba(239,68,68,0.5); color:#fecaca; }
     .ghost-btn.danger:hover { background: rgba(239,68,68,0.15); }
+    .connection-chip { font-size:.85rem; color:#86efac; border:1px solid rgba(34,197,94,0.35); background: rgba(34,197,94,0.1); padding:4px 8px; border-radius:10px; }
 
 	.app-main {
 		flex: 1;
