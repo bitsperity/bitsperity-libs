@@ -401,7 +401,7 @@
 	<div class="card-content">
 		{#if isTextNote()}
 			<!-- Text Note -->
-			<div class="text-note">
+            <div class="text-note" role="button" tabindex="0" onclick={openThread} onkeydown={(e)=> (e.key==='Enter'||e.key===' ') && openThread()} title="Open thread">
 				<p class="note-content">{formatContent(event.content)}</p>
 				
 				{#if extractHashtags(event.content).length > 0}
@@ -467,12 +467,6 @@
 		{/if}
 
         <EventCardTags tags={event.tags} on:tagClick={(e)=>handleTagClick([e.detail.type, e.detail.value])} />
-
-        {#if isTextNote()}
-            <div class="thread-nav">
-                <button class="ghost-btn" onclick={openThread} title="Open Thread">🧵 Open Thread</button>
-            </div>
-        {/if}
 
         {#if expandedEventRefId}
             <div class="ref-panel">
@@ -995,6 +989,5 @@
 		}
 	}
 
-    .thread-nav { margin-top: .5rem; }
-    .thread-nav .ghost-btn { padding:6px 10px; border:1px solid rgba(255,255,255,0.1); border-radius:10px; background: rgba(255,255,255,0.06); color:#e2e8f0; cursor:pointer; }
+    /* removed legacy thread-nav styles */
 </style>

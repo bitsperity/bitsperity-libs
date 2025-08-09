@@ -54,6 +54,12 @@
 </script>
 
 <div class="thread">
+  <div class="thread-toolbar">
+    <button class="ghost-btn" onclick={() => history.back()} title="Zurück">← Back</button>
+    {#if rootEvent}
+      <div class="toolbar-title">Thread · {rootEvent.id.slice(0,8)}…</div>
+    {/if}
+  </div>
   {#if loading}
     <div class="loading"><div class="spinner"></div> <span>lädt…</span></div>
   {:else}
@@ -72,6 +78,9 @@
 
 <style>
   .thread { display:flex; flex-direction: column; gap:1rem; padding: 1rem; }
+  .thread-toolbar { display:flex; justify-content:space-between; align-items:center; }
+  .toolbar-title { font-family: var(--font-mono); color:#94a3b8; font-size:.85rem; }
+  .ghost-btn { padding:6px 10px; border:1px solid rgba(255,255,255,0.1); border-radius:10px; background: rgba(255,255,255,0.06); color:#e2e8f0; cursor:pointer; }
   .replies { display:flex; flex-direction: column; gap:.75rem; padding-left:.5rem; border-left:1px dashed rgba(255,255,255,0.12); }
   .loading { display:flex; align-items:center; gap:.5rem; padding:1rem; color:#cbd5e1; }
   .spinner { width:20px; height:20px; border:2px solid var(--color-border); border-top:2px solid var(--color-primary); border-radius:50%; animation: spin 1s linear infinite; }
