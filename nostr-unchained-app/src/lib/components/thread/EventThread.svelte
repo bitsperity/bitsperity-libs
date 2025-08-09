@@ -7,25 +7,36 @@
   let rootEvent: any = $state(null);
   let replies: any[] = $state([]);
   let loading = $state(false);
-  // (no handle kept; subscriptions are GC'd with component lifecycle)
+  // Cleanup management for re-navigation within the same component
+  let cleanupFns: Array<() => void> = [];
+
+  function cleanup() {
+    for (const fn of cleanupFns.splice(0)) {
+      try { fn(); } catch {}
+    }
+  }
 
   async function load() {
     if (!nostr || !rootId) return;
     loading = true;
+    cleanup();
     try {
       // Fetch root
       const rootHandle = await nostr.sub().ids([rootId]).limit(1).execute();
-      rootHandle.store.subscribe((list: any[]) => {
+      const unsubRoot = rootHandle.store.subscribe((list: any[]) => {
         rootEvent = (list || [])[0] || null;
       });
-      // no-op
+      cleanupFns.push(() => { try { unsubRoot?.(); } catch {} });
+      cleanupFns.push(() => { try { rootHandle.stop?.(); } catch {} });
 
       // Subscribe replies (NIP-10: kind 1 with #e rootId)
       const rep = await nostr.sub().kinds([1]).tags('e', [rootId]).limit(1000).execute();
-      rep.store.subscribe((list: any[]) => {
+      const unsubRep = rep.store.subscribe((list: any[]) => {
         replies = (list || []).slice().sort((a,b) => a.created_at - b.created_at);
         loading = false;
       });
+      cleanupFns.push(() => { try { unsubRep?.(); } catch {} });
+      cleanupFns.push(() => { try { rep.stop?.(); } catch {} });
     } catch (e) {
       loading = false;
       console.error('Thread load failed', e);
@@ -33,6 +44,13 @@
   }
 
   onMount(load);
+
+  function openThreadLocal(id: string) {
+    if (!id || id === rootId) return;
+    rootId = id;
+    load();
+    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
+  }
 </script>
 
 <div class="thread">
@@ -40,10 +58,10 @@
     <div class="loading"><div class="spinner"></div> <span>lädt…</span></div>
   {:else}
     {#if rootEvent}
-      <EventCard event={rootEvent} {nostr} />
+      <EventCard event={rootEvent} {nostr} on:openThread={(e)=>openThreadLocal(e.detail.id)} />
       <div class="replies">
         {#each replies as ev (ev.id)}
-          <EventCard event={ev} {nostr} />
+          <EventCard event={ev} {nostr} on:openThread={(e)=>openThreadLocal(e.detail.id)} />
         {/each}
       </div>
     {:else}
