@@ -236,8 +236,67 @@
 			return;
     }
 
+        if (type === 'e' && value) {
+            toggleRefPanel(value);
+        }
+
 		dispatch('tagClick', { type, value });
 	}
+
+    // Inline Referenz‑Panel für #e‑Tags
+    let expandedEventRefId: string | null = $state(null);
+    let refLoading: boolean = $state(false);
+    let refEvent: any = $state(null);
+    let refUnsubscribe: (() => void) | null = null;
+
+    function closeRefPanel() {
+        if (refUnsubscribe) {
+            try { refUnsubscribe(); } catch {}
+            refUnsubscribe = null;
+        }
+        expandedEventRefId = null;
+        refEvent = null;
+        refLoading = false;
+    }
+
+    function toggleRefPanel(targetId: string) {
+        if (!nostr) return;
+        if (expandedEventRefId === targetId) {
+            // Collapse if same
+            closeRefPanel();
+            return;
+        }
+        // Open new target
+        if (refUnsubscribe) {
+            try { refUnsubscribe(); } catch {}
+            refUnsubscribe = null;
+        }
+        expandedEventRefId = targetId;
+        refEvent = null;
+        refLoading = true;
+
+        // Start a batched subscription to ensure event is fetched if not cached
+        try {
+            const sub = (nostr as any)?.sub?.()?.ids?.([targetId])?.limit?.(1);
+            if (sub && typeof sub.execute === 'function') {
+                sub.execute().then((handle: any) => {
+                    const store = handle?.store;
+                    if (store && typeof store.subscribe === 'function') {
+                        refUnsubscribe = store.subscribe((evts: any[]) => {
+                            refEvent = Array.isArray(evts) && evts.length > 0 ? evts[0] : null;
+                            refLoading = false;
+                        });
+                    } else {
+                        refLoading = false;
+                    }
+                }).catch(() => { refLoading = false; });
+            } else {
+                refLoading = false;
+            }
+        } catch {
+            refLoading = false;
+        }
+    }
 
 	// =============================================================================
 	// Touch Interaction Handlers
@@ -347,7 +406,7 @@
 					</div>
 				{/if}
 				
-				{#if extractMentions(event.content).length > 0}
+			{#if extractMentions(event.content).length > 0}
 					<div class="mentions">
 						{#each extractMentions(event.content) as mention}
 							<span class="mention">@{mention.substring(0, 8)}...</span>
@@ -393,7 +452,7 @@
 			<!-- Generic Event -->
 			<div class="generic-event">
 				<p class="event-content">{formatContent(event.content, 200)}</p>
-				{#if event.tags && event.tags.length > 0}
+		{#if event.tags && event.tags.length > 0}
 					<div class="event-tags">
 						<span class="tags-count">{event.tags.length} tags</span>
 					</div>
@@ -402,6 +461,27 @@
 		{/if}
 
         <EventCardTags tags={event.tags} on:tagClick={(e)=>handleTagClick([e.detail.type, e.detail.value])} />
+
+        {#if expandedEventRefId}
+            <div class="ref-panel">
+                <div class="ref-header">
+                    <span class="ref-title">Referenced Event</span>
+                    <button class="ref-close" onclick={closeRefPanel}>✕</button>
+                </div>
+                {#if refLoading}
+                    <div class="ref-loading">
+                        <div class="spinner small"></div>
+                        <span>lädt…</span>
+                    </div>
+                {:else}
+                    {#if refEvent}
+                        <pre class="ref-json">{JSON.stringify(refEvent, null, 2)}</pre>
+                    {:else}
+                        <div class="ref-empty">Kein Event gefunden ({expandedEventRefId})</div>
+                    {/if}
+                {/if}
+            </div>
+        {/if}
 	</div>
 
     <!-- Card Actions -->
@@ -832,6 +912,46 @@
 	.clickable:active {
 		transform: scale(0.98);
 	}
+
+	/* Inline Referenzpanel */
+	.ref-panel {
+		margin-top: 0.5rem;
+		border: 1px solid rgba(255,255,255,0.08);
+		border-radius: 12px;
+		background: rgba(255,255,255,0.04);
+		backdrop-filter: blur(10px);
+		overflow: hidden;
+	}
+	.ref-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0.5rem 0.75rem;
+		border-bottom: 1px solid rgba(255,255,255,0.06);
+	}
+	.ref-title { font-size: 0.8rem; color: #cbd5e1; font-weight: 600; }
+	.ref-close {
+		background: rgba(255,255,255,0.06);
+		border: 1px solid rgba(255,255,255,0.1);
+		color: #e2e8f0;
+		padding: 0.15rem 0.4rem;
+		border-radius: 8px;
+		cursor: pointer;
+	}
+	.ref-close:hover { background: rgba(255,255,255,0.1); }
+	.ref-loading { display:flex; align-items:center; gap:.5rem; padding:.75rem; color:#cbd5e1; }
+	.spinner.small { width:16px; height:16px; border-width:2px; }
+	.ref-json {
+		margin: 0;
+		padding: 0.75rem;
+		font-family: var(--font-mono);
+		font-size: 0.8rem;
+		color: #a3b2c5;
+		max-height: 320px;
+		overflow: auto;
+		background: rgba(2,6,23,0.35);
+	}
+	.ref-empty { padding: .75rem; color: #94a3b8; font-style: italic; }
 
 	/* Touch Optimizations */
 	@media (hover: none) and (pointer: coarse) {
