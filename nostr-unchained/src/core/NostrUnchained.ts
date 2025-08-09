@@ -19,6 +19,7 @@ import { UniversalEventCache, type CacheStatistics } from '../cache/UniversalEve
 import { QueryBuilder, SubBuilder } from '../query/QueryBuilder.js';
 import { ProfileModule } from '../profile/ProfileModule.js';
 import { RelayListModule } from '../relay/RelayListModule.js';
+import { Nip65RelayRouter, type RelayRoutingStrategy } from '../relay/Nip65RelayRouter.js';
 
 import type {
   NostrUnchainedConfig,
@@ -55,6 +56,8 @@ export class NostrUnchained {
   private _profile?: ProfileModule;
   // Relay List API (NIP-65)
   private _relayList?: RelayListModule;
+  // Optional routing strategy (NIP-65)
+  private relayRouter?: RelayRoutingStrategy;
 
   constructor(config: NostrUnchainedConfig = {}) {
     // Merge with defaults
@@ -63,7 +66,8 @@ export class NostrUnchained {
       debug: config.debug ?? false,
       retryAttempts: config.retryAttempts ?? DEFAULT_CONFIG.RETRY_ATTEMPTS,
       retryDelay: config.retryDelay ?? DEFAULT_CONFIG.RETRY_DELAY,
-      timeout: config.timeout ?? DEFAULT_CONFIG.PUBLISH_TIMEOUT
+      timeout: config.timeout ?? DEFAULT_CONFIG.PUBLISH_TIMEOUT,
+      routing: config.routing ?? 'none'
     };
     if (config.signingProvider) {
       baseConfig.signingProvider = config.signingProvider;
@@ -157,6 +161,12 @@ export class NostrUnchained {
 
     if (this.config.debug) {
       console.log('NostrUnchained initialized with relays:', this.config.relays);
+    }
+
+    // Initialize optional router (nip65)
+    if (this.config.routing === 'nip65') {
+      // RelayListModule will be lazily created in getter; create router now
+      this.relayRouter = new Nip65RelayRouter(this.relayList, (u) => this.normalizeRelayUrl(u));
     }
   }
 
@@ -467,8 +477,21 @@ export class NostrUnchained {
     const signature = await this.signingProvider.signEvent(event);
     const signedEvent: NostrEvent = { ...event, id, sig: signature };
     
-    // Publish to all connected relays
-    const relayResults = await this.relayManager.publishToAll(signedEvent);
+    // Determine target relays
+    let targetRelays = this.relayManager.connectedRelays;
+    try {
+      if (this.relayRouter && this.config.routing === 'nip65') {
+        const authorPubkey = signedEvent.pubkey;
+        const mentioned = this.extractMentionedPubkeys(signedEvent);
+        targetRelays = await this.relayRouter.selectRelays(signedEvent, targetRelays, {
+          authorPubkey,
+          mentionedPubkeys: mentioned
+        });
+      }
+    } catch {}
+
+    // Publish to selected relays
+    const relayResults = await this.relayManager.publishToRelays(signedEvent, targetRelays);
     
     const totalTime = Date.now() - startTime;
     
@@ -489,7 +512,8 @@ export class NostrUnchained {
         connectionAttempts: this.relayManager.connectedRelays.length,
         relayLatencies: relayResults.reduce<Record<string, number>>((acc, r) => { acc[r.relay] = 0; return acc; }, {}),
         totalTime,
-        signingMethod: (this.signingMethod === 'extension' ? 'extension' : 'temporary')
+        signingMethod: (this.signingMethod === 'extension' ? 'extension' : 'temporary'),
+        targetRelays
       } as DebugInfo;
     }
     
@@ -508,8 +532,21 @@ export class NostrUnchained {
       throw new Error('Invalid signed event: Missing required fields (id, sig, pubkey)');
     }
     
-    // Publish directly to all connected relays without re-signing
-    const relayResults = await this.relayManager.publishToAll(signedEvent);
+    // Determine target relays
+    let targetRelays = this.relayManager.connectedRelays;
+    try {
+      if (this.relayRouter && this.config.routing === 'nip65') {
+        const authorPubkey = signedEvent.pubkey;
+        const mentioned = this.extractMentionedPubkeys(signedEvent);
+        targetRelays = await this.relayRouter.selectRelays(signedEvent, targetRelays, {
+          authorPubkey,
+          mentionedPubkeys: mentioned
+        });
+      }
+    } catch {}
+
+    // Publish to selected relays (no re-signing)
+    const relayResults = await this.relayManager.publishToRelays(signedEvent, targetRelays);
     
     const totalTime = Date.now() - startTime;
     
@@ -530,11 +567,35 @@ export class NostrUnchained {
         connectionAttempts: this.relayManager.connectedRelays.length,
         relayLatencies: relayResults.reduce<Record<string, number>>((acc, r) => { acc[r.relay] = 0; return acc; }, {}),
         totalTime,
-        signingMethod: 'temporary'
+        signingMethod: 'temporary',
+        targetRelays
       } as DebugInfo;
     }
     
     return result;
+  }
+
+  // ------------- Internal helpers -------------
+  private extractMentionedPubkeys(event: NostrEvent): string[] {
+    const mentioned: string[] = [];
+    for (const tag of event.tags || []) {
+      if (Array.isArray(tag) && tag[0] === 'p' && tag[1] && /^[0-9a-f]{64}$/i.test(tag[1])) {
+        mentioned.push(tag[1].toLowerCase());
+      }
+    }
+    return mentioned;
+  }
+
+  private normalizeRelayUrl(url: string): string {
+    if (!url) return url;
+    let u = url.trim();
+    if (!/^wss?:\/\//i.test(u)) {
+      // default to wss if missing
+      u = 'wss://' + u.replace(/^\/*/, '');
+    }
+    // strip trailing slashes
+    u = u.replace(/\/+$/, '');
+    return u;
   }
 
   /**

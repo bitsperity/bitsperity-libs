@@ -275,6 +275,49 @@ const chat = nostr.dm.with(pubkey);
 
 > **Complete Guide:** See [Event Publishing](./docs/events/README.md) for all signing options and patterns.
 
+### 🛰️ NIP-65 Relay Routing (opt-in)
+
+Aktiviere optionales Routing gemäß NIP-65. Events werden an deine Write‑Relays sowie an Read‑Relays der Erwähnten (p‑Tags) gesendet; Default‑Relays bleiben stets enthalten (robust).
+
+```typescript
+import { NostrUnchained } from 'nostr-unchained';
+
+// 1) Opt-in aktivieren
+const nostr = new NostrUnchained({
+  relays: ['wss://relay.example'],
+  routing: 'nip65'
+});
+await nostr.useExtensionSigner();
+await nostr.connect();
+
+// 2) (Optional) Eigene/Empfänger-Relays pflegen
+await nostr.relayList.edit()
+  .read('wss://read.example.com')
+  .write('wss://write.example.com')
+  .publish();
+
+// 3) Routing in Aktion: Mention-Note → auch Empfänger-Read-Relays
+const result = await nostr.publish({
+  pubkey: await nostr.getPublicKey(),
+  created_at: Math.floor(Date.now() / 1000),
+  kind: 1,
+  tags: [['p', 'abcdef...peerhex...']],
+  content: 'Hello with routing!'
+});
+// Debug enthält die tatsächlich genutzten Ziel-Relays
+console.log(result.debug?.targetRelays);
+
+// 4) DMs profitieren automatisch
+// DM → Gift Wrap (kind 1059 mit p‑Tag) → publishSigned() → NIP-65 Routing aktiv
+const chat = nostr.dm.with('abcdef...peerhex...');
+await chat.send('Hi there!');
+```
+
+Hinweise:
+- Standard bleibt unverändert (`routing: 'none'`).
+- Routing ist rein additiv: Default‑Relays werden immer berücksichtigt.
+- URL‑Normalisierung: Schema ergänzt, Trailing Slashes entfernt.
+
 ## 📚 Complete Documentation Guide
 
 ### 🎯 **Learning Path** (Recommended Order)

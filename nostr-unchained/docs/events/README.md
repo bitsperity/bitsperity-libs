@@ -227,6 +227,31 @@ rl.subscribe((state) => {
 });
 ```
 
+### NIP-65 Relay Routing (Opt-in)
+
+Routing gemäß NIP-65 ist optional. Wenn aktiv, wird beim Publish die Zielmenge aus
+- Autoren‑Write/Beide‑Relays,
+- Read/Beide‑Relays aller in `p`‑Tags erwähnten Nutzer,
+- plus den konfigurierten Default‑Relays
+gebildet. So bleiben Publishes robust und erreichen relevante Empfänger‑Relays.
+
+```ts
+const nostr = new NostrUnchained({ relays: ['wss://relay.example'], routing: 'nip65' });
+await nostr.useLocalKeySigner();
+await nostr.connect();
+
+// Mention-Note (ersetzt DM‑Flow im Beispiel)
+await nostr.publish({
+  pubkey: await nostr.getPublicKey(),
+  created_at: Math.floor(Date.now() / 1000),
+  kind: 1,
+  tags: [['p', 'abcdef...peerhex...']],
+  content: 'Hello via routing!'
+});
+```
+
+DM‑Events (Gift Wrap, kind 1059) enthalten `p`‑Tags; dadurch greift das Routing automatisch bei `publishSigned()`.
+
 | `7` | Reaction | Likes, dislikes, emoji reactions |
 | `40` | Channel Creation | Chat channel creation |
 | `41` | Channel Metadata | Channel information |

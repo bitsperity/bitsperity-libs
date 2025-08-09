@@ -34,6 +34,8 @@ export interface NostrUnchainedConfig {
   retryDelay?: number;
   timeout?: number;
   signingProvider?: SigningProvider;
+  // Optional routing strategy for selecting relays (default: 'none')
+  routing?: 'none' | 'nip65';
 }
 
 // Publishing Results
@@ -68,6 +70,8 @@ export interface DebugInfo {
   relayLatencies?: Record<string, number>;
   totalTime?: number;
   signingMethod?: 'extension' | 'temporary';
+  // When routing is active, include the computed target relays for observability in tests
+  targetRelays?: string[];
 }
 
 // NIP-11: Relay Information
