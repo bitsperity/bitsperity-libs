@@ -42,7 +42,7 @@
 			initializeProfileManager(nostr);
 			
 			// Get user info
-			nostr.getPublicKey().then(pubkey => {
+            nostr.getPublicKey().then((pubkey: string) => {
 				userInfo.publicKey = pubkey;
 			}).catch(() => {
 				userInfo.publicKey = 'Unable to get public key';
@@ -95,63 +95,56 @@
 
 <div class="nostr-app">
 	<!-- Header - Shows NostrUnchained integration -->
-	<header class="app-header">
-		<div class="user-info">
-			<div class="user-avatar">
-				{#if signer === 'extension'}🔌{:else}⚡{/if}
-			</div>
-			<div class="user-details">
-				<div class="user-key">
-					{#if userInfo.publicKey}
-						<KeyDisplay 
-							hexKey={userInfo.publicKey} 
-							variant="compact" 
-							copyable={true}
-							className="header-key"
-						/>
-					{:else}
-						<span class="loading-key">Loading...</span>
-					{/if}
-				</div>
-				<div class="user-signer">{userInfo.signerType} signer</div>
-			</div>
-		</div>
+    <header class="app-header">
+        <div class="header-left">
+            <div class="user-chip">
+                {#if userInfo.publicKey}
+                    <KeyDisplay 
+                        hexKey={userInfo.publicKey} 
+                        variant="compact" 
+                        copyable={true}
+                        className="header-key"
+                    />
+                {:else}
+                    <span class="loading-key">Loading…</span>
+                {/if}
+                <span class="signer-chip" title={`signer: ${userInfo.signerType}`}>
+                    {#if signer === 'extension'}EXTENSION{:else}TEMP{/if}
+                </span>
+            </div>
+        </div>
 
-		<nav class="app-nav">
-			<button 
-				class="nav-btn"
-				class:active={currentView === 'terminal'}
-				onclick={() => currentView = 'terminal'}
-			>
-				🌐 Explore
-			</button>
-			<button 
-				class="nav-btn"
-				class:active={currentView === 'messages'}
-				onclick={() => currentView = 'messages'}
-			>
-				💬 Messages
-			</button>
-			<button 
-				class="nav-btn"
-				class:active={currentView === 'publish'}
-				onclick={() => currentView = 'publish'}
-			>
-				📝 Publish
-			</button>
-			<button 
-				class="nav-btn"
-				class:active={currentView === 'profile'}
-				onclick={navigateToOwnProfile}
-			>
-				👤 Profile
-			</button>
-		</nav>
+        <nav class="segmented-nav">
+            <button 
+                class="seg-btn"
+                class:active={currentView === 'terminal'}
+                onclick={() => currentView = 'terminal'}
+                title="Explore"
+            >🌐 Explore</button>
+            <button 
+                class="seg-btn"
+                class:active={currentView === 'messages'}
+                onclick={() => currentView = 'messages'}
+                title="Messages"
+            >💬 Messages</button>
+            <button 
+                class="seg-btn"
+                class:active={currentView === 'publish'}
+                onclick={() => currentView = 'publish'}
+                title="Publish"
+            >📝 Publish</button>
+            <button 
+                class="seg-btn"
+                class:active={currentView === 'profile'}
+                onclick={navigateToOwnProfile}
+                title="Profile"
+            >👤 Profile</button>
+        </nav>
 
-		<button class="logout-btn" onclick={logout}>
-			🚪 Logout
-		</button>
-	</header>
+        <div class="header-right">
+            <button class="ghost-btn danger" onclick={logout} title="Logout">🚪 Logout</button>
+        </div>
+    </header>
 
 	<!-- Main Content - NostrUnchained powered -->
 	<main class="app-main">
@@ -189,116 +182,40 @@
 		color: var(--color-text);
 	}
 
-	.app-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: var(--spacing-lg) var(--spacing-xl);
-		background: var(--color-surface);
-		backdrop-filter: blur(10px);
-		border-bottom: 1px solid var(--color-border);
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-	}
+    .app-header {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        padding: var(--spacing-md) var(--spacing-xl);
+        background: var(--color-surface);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--color-border);
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        gap: var(--spacing-md);
+    }
 
-	.user-info {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-	}
+    .header-left { display:flex; align-items:center; }
+    .header-right { display:flex; justify-content:flex-end; }
+    .user-chip { display:flex; align-items:center; gap:.5rem; }
+    .user-chip :global(.header-key) {
+        font-size: 0.85rem;
+        padding: 4px 8px;
+        background: rgba(255,255,255,0.06) !important;
+        border: 1px solid rgba(255,255,255,0.12) !important;
+    }
+    .signer-chip { font-size:.7rem; letter-spacing:.06em; color:#a3b2c5; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); padding:2px 6px; border-radius:9999px; }
+    .loading-key { color: var(--color-text-muted); font-style: italic; }
 
-	.user-avatar {
-		width: 40px;
-		height: 40px;
-		border-radius: 50%;
-		background: rgba(255, 255, 255, 0.1);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-size: 1.2rem;
-	}
+    .segmented-nav { display:inline-flex; border:1px solid rgba(255,255,255,0.08); border-radius:14px; overflow:hidden; background: rgba(255,255,255,0.04); backdrop-filter: blur(8px); }
+    .seg-btn { padding:8px 14px; background:transparent; color:#cbd5e1; border:none; cursor:pointer; font-size:.9rem; transition:background .15s ease,color .15s ease; }
+    .seg-btn.active { background: var(--color-primary); color: var(--color-primary-text); }
 
-	.user-details {
-		display: flex;
-		flex-direction: column;
-	}
-
-	.user-key {
-		font-weight: 600;
-		font-family: var(--font-mono);
-	}
-
-	/* Styling for KeyDisplay in header */
-	.user-key :global(.header-key) {
-		font-size: 0.85rem;
-		padding: 4px 8px;
-		background: rgba(255, 255, 255, 0.1) !important;
-		border: 1px solid rgba(255, 255, 255, 0.2) !important;
-	}
-
-	.user-key :global(.header-key:hover) {
-		background: rgba(255, 255, 255, 0.15) !important;
-		transform: none; /* Remove the lift effect in header */
-	}
-
-	.loading-key {
-		color: var(--color-text-muted);
-		font-style: italic;
-	}
-
-	.user-signer {
-		font-size: 0.8rem;
-		opacity: 0.7;
-		text-transform: capitalize;
-	}
-
-	.app-nav {
-		display: flex;
-		gap: var(--spacing-sm);
-		background: var(--color-background);
-		padding: var(--spacing-sm);
-		border-radius: var(--radius-xl);
-		border: 1px solid var(--color-border);
-	}
-
-	.nav-btn {
-		background: transparent;
-		border: none;
-		color: var(--color-text-muted);
-		padding: var(--spacing-md) var(--spacing-lg);
-		border-radius: var(--radius-lg);
-		cursor: pointer;
-		transition: all var(--transition-fast);
-		font-size: var(--text-sm);
-		font-weight: 500;
-	}
-
-	.nav-btn:hover {
-		background: var(--color-surface);
-		color: var(--color-text);
-	}
-
-	.nav-btn.active {
-		background: var(--color-primary);
-		color: var(--color-primary-text);
-	}
-
-	.logout-btn {
-		background: transparent;
-		border: 1px solid var(--color-danger);
-		color: var(--color-danger);
-		padding: var(--spacing-sm) var(--spacing-md);
-		border-radius: var(--radius-md);
-		cursor: pointer;
-		transition: all var(--transition-fast);
-		font-size: var(--text-sm);
-	}
-
-	.logout-btn:hover {
-		background: var(--color-danger);
-		color: var(--color-danger-text);
-	}
+    .ghost-btn { padding:8px 12px; border:1px solid rgba(255,255,255,0.1); border-radius:10px; background: rgba(255,255,255,0.06); color:#e2e8f0; cursor:pointer; transition: all .15s ease; }
+    .ghost-btn:hover { transform: translateY(-1px); background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.14); }
+    .ghost-btn.danger { border-color: rgba(239,68,68,0.5); color:#fecaca; }
+    .ghost-btn.danger:hover { background: rgba(239,68,68,0.15); }
 
 	.app-main {
 		flex: 1;
@@ -314,21 +231,9 @@
 		background: transparent; /* Let the global background show through */
 	}
 
-	@media (max-width: 768px) {
-		.app-header {
-			flex-direction: column;
-			gap: 1rem;
-			padding: 1rem;
-		}
-
-		.app-nav {
-			width: 100%;
-			justify-content: center;
-		}
-
-		.nav-btn {
-			flex: 1;
-			text-align: center;
-		}
-	}
+    @media (max-width: 768px) {
+        .app-header { grid-template-columns: 1fr; padding: 0.75rem; }
+        .header-left { justify-content: space-between; }
+        .segmented-nav { width: 100%; justify-content: center; }
+    }
 </style>
