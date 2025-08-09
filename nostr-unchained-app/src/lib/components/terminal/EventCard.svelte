@@ -12,6 +12,8 @@
     import EventCardHeader from '../event-card/EventCardHeader.svelte';
     import EventCardActions from '../event-card/EventCardActions.svelte';
     import EventCardTags from '../event-card/EventCardTags.svelte';
+    import EventCardMeta from '../event-card/EventCardMeta.svelte';
+    import EventCardJson from '../event-card/EventCardJson.svelte';
     
     let { event, nostr }: { event: any; nostr?: any } = $props();
     
@@ -420,24 +422,8 @@
         onDelete={doDelete}
     />
 
-	{#if lastPublishResult}
-		<div class="publish-result">
-			<div class="result-title">Publish Result</div>
-			<div class="result-row {lastPublishResult.success ? 'ok' : 'fail'}">
-				{lastPublishResult.success ? '✅' : '❌'} {lastPublishResult.eventId || lastPublishResult.error}
-			</div>
-			{#if lastPublishResult.relayResults}
-				<div class="relay-results">
-					{#each lastPublishResult.relayResults as r}
-						<div class="relay-row {r.success ? 'ok' : 'fail'}">
-							<span class="relay-url">{r.relay}</span>
-							<span class="relay-status">{r.success ? 'OK' : 'FAIL'}</span>
-						</div>
-					{/each}
-				</div>
-			{/if}
-		</div>
-	{/if}
+    <EventCardMeta result={lastPublishResult} />
+    <EventCardJson {event} />
 
 	<!-- Toast Notification -->
 	{#if copyMessage}
