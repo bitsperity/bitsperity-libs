@@ -112,9 +112,15 @@ export class ReactionModule {
         .tags('e', [eventId])
         .execute();
 
-      const myReactions: NostrEvent[] = (myReactionsStore.current || []) as NostrEvent[];
+      // If cache is empty (no prior subscription), start a targeted subscription and recheck
+      let myReactions: NostrEvent[] = (myReactionsStore.current || []) as NostrEvent[];
       if (!myReactions || myReactions.length === 0) {
-        return { success: false, error: 'No reaction found to remove' };
+        await this.nostr.sub().kinds([7]).authors([myPubkey]).tags('e', [eventId]).limit(100).execute();
+        await new Promise(resolve => setTimeout(resolve, 300));
+        myReactions = (this.nostr.query().kinds([7]).authors([myPubkey]).tags('e', [eventId]).limit(100).execute().current || []) as NostrEvent[];
+        if (!myReactions || myReactions.length === 0) {
+          return { success: false, error: 'No reaction found to remove' };
+        }
       }
 
       // Build one deletion (NIP-09) that references ALL my reaction IDs for this target

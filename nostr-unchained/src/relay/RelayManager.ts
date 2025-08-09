@@ -47,12 +47,21 @@ export interface RelayConnection {
   reconnectAttempts?: number;
   reconnectTimeout?: NodeJS.Timeout;
   lastReconnectAttempt?: number;
+  // NIP-42: last auth challenge for this relay
+  lastAuthChallenge?: string;
+  // Whether we have performed AUTH successfully in this connection
+  isAuthenticated?: boolean;
+  // Last AUTH event id sent to this relay
+  lastAuthEventId?: string;
 }
 
 export class RelayManager {
   private connections = new Map<string, RelayConnection>();
   private debug: boolean;
   private messageHandler?: (relayUrl: string, message: RelayMessage) => void;
+  // NIP-42: optional provider and hook to create and sign auth events
+  private authEventFactory?: (params: { relay: string; challenge: string }) => Promise<NostrEvent>;
+  private onAuthStateChange?: (relay: string, state: { authenticated: boolean; challenge?: string; reason?: string }) => void;
   
   // Reconnection configuration
   private maxReconnectAttempts = 5;
@@ -70,6 +79,17 @@ export class RelayManager {
         state: 'disconnected'
       });
     });
+  }
+
+  /**
+   * Configure NIP-42 authentication hooks
+   */
+  configureAuth(options: {
+    authEventFactory: (params: { relay: string; challenge: string }) => Promise<NostrEvent>;
+    onAuthStateChange?: (relay: string, state: { authenticated: boolean; challenge?: string; reason?: string }) => void;
+  }): void {
+    this.authEventFactory = options.authEventFactory;
+    this.onAuthStateChange = options.onAuthStateChange;
   }
 
   /**
@@ -326,13 +346,29 @@ export class RelayManager {
           } else {
             pending.reject(new Error(errorMessage || 'Relay rejected event'));
           }
-        } else if (this.debug) {
-          console.warn(`No pending publish found for event ID: ${eventId}`);
+        } else {
+          // Might be an AUTH confirmation (NIP-42)
+          const conn = this.connections.get(relayUrl);
+          if (conn && conn.lastAuthEventId === eventId) {
+            conn.isAuthenticated = !!success;
+            if (this.debug) {
+              console.log(`🔐 AUTH ${success ? 'succeeded' : 'failed'} for ${relayUrl}${errorMessage ? ' (' + errorMessage + ')' : ''}`);
+            }
+            this.onAuthStateChange?.(relayUrl, { authenticated: !!success, reason: success ? undefined : errorMessage });
+          } else if (this.debug) {
+            console.warn(`No pending publish found for event ID: ${eventId}`);
+          }
         }
       } else if (message[0] === 'NOTICE') {
         const [, notice] = message;
         if (this.debug) {
           console.log(`Notice from ${relayUrl}:`, notice);
+        }
+        // NIP-42: Some relays use OK/NOTICE texts with "auth-required:" / "restricted:" hints
+        if (typeof notice === 'string' && (notice.startsWith('auth-required:') || notice.startsWith('restricted:'))) {
+          if (this.debug) console.log('NIP-42 hint via NOTICE:', notice);
+          // Attempt authentication if challenge is stored and we have a factory
+          void this.tryAuthenticate(relayUrl);
         }
       } else if (message[0] === 'EVENT' || message[0] === 'EOSE') {
         // Forward subscription-related messages to message handler
@@ -341,11 +377,58 @@ export class RelayManager {
         } else if (this.debug) {
           console.log(`No message handler registered for ${message[0]} message`);
         }
+      } else if (message[0] === 'AUTH') {
+        // NIP-42: Relay sends a challenge string
+        const [, challenge] = message;
+        const conn = this.connections.get(relayUrl);
+        if (conn) {
+          conn.lastAuthChallenge = challenge;
+          conn.isAuthenticated = false;
+        }
+        if (this.debug) {
+          console.log(`🔐 NIP-42 challenge from ${relayUrl}:`, challenge);
+        }
+        // Try to authenticate immediately if possible
+        void this.tryAuthenticate(relayUrl);
+      } else if (message[0] === 'CLOSED') {
+        // NIP-42: Subscription closed with reason (may include auth-required / restricted)
+        const [, , reason] = message as ['CLOSED', string, string];
+        if (typeof reason === 'string' && (reason.startsWith('auth-required:') || reason.startsWith('restricted:'))) {
+          if (this.debug) console.log(`🔐 NIP-42 CLOSED hint from ${relayUrl}:`, reason);
+          void this.tryAuthenticate(relayUrl);
+        }
       }
     } catch (error) {
       if (this.debug) {
         console.error(`Failed to parse message from ${relayUrl}:`, error);
       }
+    }
+  }
+
+  /**
+   * NIP-42: Attempt to authenticate to a relay using stored challenge
+   */
+  private async tryAuthenticate(relayUrl: string): Promise<void> {
+    const connection = this.connections.get(relayUrl);
+    if (!connection || connection.state !== 'connected' || !connection.ws) return;
+    if (!this.authEventFactory) return;
+    const challenge = connection.lastAuthChallenge;
+    if (!challenge) {
+      if (this.debug) console.log('NIP-42: No challenge stored for', relayUrl);
+      return;
+    }
+    try {
+      const authEvent = await this.authEventFactory({ relay: relayUrl, challenge });
+      // Track AUTH event id to correlate OK acknowledgment
+      connection.lastAuthEventId = authEvent.id;
+      const authMsg: ClientMessage = ['AUTH', authEvent];
+      connection.ws.send(JSON.stringify(authMsg));
+      if (this.debug) console.log(`📤 Sent AUTH to ${relayUrl}`);
+      // Mark as pending; success is acknowledged via OK for the AUTH event id
+      this.onAuthStateChange?.(relayUrl, { authenticated: false, challenge });
+    } catch (error) {
+      if (this.debug) console.error('NIP-42 AUTH send failed:', error);
+      this.onAuthStateChange?.(relayUrl, { authenticated: false, challenge, reason: (error as Error).message });
     }
   }
 

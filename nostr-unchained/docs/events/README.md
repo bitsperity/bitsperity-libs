@@ -195,6 +195,18 @@ Nostr Unchained supports all standard event kinds:
 | `3` | Contact List | Following/followers |
 | `4` | Encrypted DM | Private messages (deprecated, use NIP-17) |
 | `5` | Event Deletion | Delete events |
+### NIP-42 Relay Authentication (Neu)
+
+Die Library antwortet automatisch auf Relay-Herausforderungen:
+
+```text
+Relay → ["AUTH", "<challenge>"]
+Client → ["AUTH", { kind:22242, tags:[ ["relay", url], ["challenge", value] ], ... }]
+```
+
+- Keine manuelle Konfiguration nötig – sobald ein Signer aktiv ist, wird der AUTH‑Event erzeugt und gesendet.
+- CLOSED/NOTICE mit `auth-required:`/`restricted:` werden erkannt; die Library versucht automatisch AUTH erneut.
+
 | `7` | Reaction | Likes, dislikes, emoji reactions |
 | `40` | Channel Creation | Chat channel creation |
 | `41` | Channel Metadata | Channel information |

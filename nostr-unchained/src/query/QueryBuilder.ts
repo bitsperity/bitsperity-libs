@@ -166,7 +166,7 @@ export class SubBuilder extends FilterBuilder {
               mergedFilter.limit = totalLimit;
             }
             const sharedSub = await this.subscriptionManager.getOrCreateSubscription([mergedFilter], batch.targetRelays);
-            sharedSub.addListener({
+            const batchedListenerId = sharedSub.addListener({
               onEvent: (event: NostrEvent) => {
                 this.cache.addEvent(event);
               }
@@ -176,6 +176,9 @@ export class SubBuilder extends FilterBuilder {
             batch.sharedKey = sharedKey;
             batch.resolvers.forEach((r) => r(sharedKey));
             batch.resolvers = [];
+            // Register listener so that a later stop() can deregister
+            (SubBuilder as any)._batchedListenerRegistry = (SubBuilder as any)._batchedListenerRegistry || new Map<string, { sub: any, listenerId: string }>();
+            (SubBuilder as any)._batchedListenerRegistry.set(sharedKey, { sub: sharedSub, listenerId: batchedListenerId });
           } finally {
             SubBuilder.pendingBatches.delete(batchKey);
           }
@@ -196,14 +199,25 @@ export class SubBuilder extends FilterBuilder {
       return {
         id: resolvedKey || batchKey,
         store,
-        stop: async () => { /* no-op for batched handle */ },
+        stop: async () => {
+          const registry = (SubBuilder as any)._batchedListenerRegistry as Map<string, { sub: any, listenerId: string }> | undefined;
+          const key = resolvedKey || batchKey;
+          if (registry && registry.has(key)) {
+            const entry = registry.get(key)!;
+            const noListeners = entry.sub.removeListener(entry.listenerId);
+            registry.delete(key);
+            if (noListeners && this.subscriptionManager?.cleanupSharedSubscriptions) {
+              await this.subscriptionManager.cleanupSharedSubscriptions();
+            }
+          }
+        },
         isActive: () => true
       };
     }
 
     // Fallback: normal deduped subscription
     const sharedSub = await this.subscriptionManager.getOrCreateSubscription([this.filter], targetRelays);
-    sharedSub.addListener({
+    const listenerId = sharedSub.addListener({
       onEvent: (event: NostrEvent) => {
         this.cache.addEvent(event);
       }
@@ -212,14 +226,20 @@ export class SubBuilder extends FilterBuilder {
     return {
       id: sharedSub.key,
       store,
-      stop: async () => { /* no-op for shared cache listener */ },
-      isActive: () => sharedSub.isActive()
+      stop: async () => {
+        // Remove listener and cleanup shared subscriptions when no listeners remain
+        const noListeners = sharedSub.removeListener(listenerId);
+        if (noListeners && this.subscriptionManager?.cleanupSharedSubscriptions) {
+          await this.subscriptionManager.cleanupSharedSubscriptions();
+        }
+      },
+      isActive: () => sharedSub.hasListeners()
     };
   }
 
   private async executeNonBatched(targetRelays?: string[]): Promise<SubscriptionHandle> {
     const sharedSub = await this.subscriptionManager.getOrCreateSubscription([this.filter], targetRelays);
-    sharedSub.addListener({
+    const listenerId = sharedSub.addListener({
       onEvent: (event: NostrEvent) => {
         this.cache.addEvent(event);
       }
@@ -228,8 +248,13 @@ export class SubBuilder extends FilterBuilder {
     return {
       id: sharedSub.key,
       store,
-      stop: async () => { /* no-op for shared cache listener */ },
-      isActive: () => sharedSub.isActive()
+      stop: async () => {
+        const noListeners = sharedSub.removeListener(listenerId);
+        if (noListeners && this.subscriptionManager?.cleanupSharedSubscriptions) {
+          await this.subscriptionManager.cleanupSharedSubscriptions();
+        }
+      },
+      isActive: () => sharedSub.hasListeners()
     };
   }
 }

@@ -152,7 +152,11 @@ export class UniversalEventCache {
           if (this.config.debug) console.log('[UEC] Deletion processing complete');
         }
       } catch {}
-      // Optionally store deletion event itself; for now, we skip storing to keep cache lean
+      // Store deletion event itself so queries for kind 5 work in tests and apps
+      this.events.set(event.id, event);
+      this.updateIndexes(event);
+      this.updateAccessTracking(event.id);
+      this.notifySubscribers(event);
       return;
     }
     

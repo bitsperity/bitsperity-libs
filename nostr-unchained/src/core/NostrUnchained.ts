@@ -80,6 +80,33 @@ export class NostrUnchained {
     // Initialize subscription manager
     this.subscriptionManager = new SubscriptionManager(this.relayManager);
 
+    // Configure NIP-42 AUTH (if signer available later, we still install factory dynamically)
+    this.relayManager.configureAuth({
+      authEventFactory: async ({ relay, challenge }) => {
+        // Build canonical AUTH event (kind 22242) per NIP-42
+        if (!this.signingProvider) throw new Error('No signing provider for AUTH');
+        const pubkey = await this.signingProvider.getPublicKey();
+        const unsigned = {
+          pubkey,
+          created_at: Math.floor(Date.now() / 1000),
+          kind: 22242,
+          tags: [
+            ['relay', relay],
+            ['challenge', challenge]
+          ],
+          content: ''
+        } as const;
+        const id = EventBuilder.calculateEventId(unsigned);
+        const sig = await this.signingProvider.signEvent(unsigned);
+        return { ...unsigned, id, sig };
+      },
+      onAuthStateChange: (relay, state) => {
+        if (this.config.debug) {
+          console.log(`NIP-42 state for ${relay}:`, state);
+        }
+      }
+    });
+
     // Initialize events module
     this.events = new EventsModule(this);
 
@@ -389,17 +416,6 @@ export class NostrUnchained {
     
     // Return standard PublishResult format
     const success = relayResults.some(r => r.success);
-    // Feed into cache immediately for reactive UX (incl. deletions)
-    try {
-      if (this.config.debug) {
-        console.log('[Publish->Cache] Adding event to cache', { id: signedEvent.id.substring(0, 8) + '...', kind: signedEvent.kind });
-      }
-      await this.cache.addEvent(signedEvent);
-    } catch (e) {
-      if (this.config.debug) {
-        console.warn('[Publish->Cache] Failed to add event to cache', e);
-      }
-    }
     return {
       success,
       eventId: success ? signedEvent.id : undefined,
@@ -445,17 +461,6 @@ export class NostrUnchained {
     
     // Return standard PublishResult format
     const success = relayResults.some(r => r.success);
-    // Feed into cache immediately for reactive UX (incl. deletions)
-    try {
-      if (this.config.debug) {
-        console.log('[Publish->Cache] Adding event to cache', { id: signedEvent.id.substring(0, 8) + '...', kind: signedEvent.kind });
-      }
-      await this.cache.addEvent(signedEvent);
-    } catch (e) {
-      if (this.config.debug) {
-        console.warn('[Publish->Cache] Failed to add event to cache', e);
-      }
-    }
       const result: PublishResult = {
       success,
       eventId: success ? signedEvent.id : undefined,
@@ -497,17 +502,6 @@ export class NostrUnchained {
     
     // Return standard PublishResult format
     const success = relayResults.some(r => r.success);
-    // Feed into cache immediately for reactive UX (incl. deletions)
-    try {
-      if (this.config.debug) {
-        console.log('[Publish->Cache] Adding event to cache', { id: signedEvent.id.substring(0, 8) + '...', kind: signedEvent.kind });
-      }
-      await this.cache.addEvent(signedEvent);
-    } catch (e) {
-      if (this.config.debug) {
-        console.warn('[Publish->Cache] Failed to add event to cache', e);
-      }
-    }
     const result: PublishResult = {
       success,
       eventId: success ? signedEvent.id : undefined,

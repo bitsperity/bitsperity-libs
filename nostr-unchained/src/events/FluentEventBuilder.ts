@@ -333,7 +333,8 @@ export class EventsModule {
     return this.create()
       .kind(5) // NIP-09 deletion event
       .content(reason || '') // Optional deletion reason
-      .tag('e', eventId); // Reference to event being deleted
+      // Use marked tag format preferred by NIP-10-style conventions: add marker 'deletion'
+      .tag('e', eventId, '', 'deletion'); // Reference to event being deleted
   }
 
   /**

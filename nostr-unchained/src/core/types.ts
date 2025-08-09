@@ -117,13 +117,19 @@ export interface ValidationResult {
 export type ClientMessage = 
   | ['EVENT', NostrEvent]
   | ['REQ', string, ...Filter[]]
-  | ['CLOSE', string];
+  | ['CLOSE', string]
+  // NIP-42: Client authentication message with signed ephemeral event (kind 22242)
+  | ['AUTH', NostrEvent];
 
 export type RelayMessage =
   | ['EVENT', string, NostrEvent]
   | ['OK', string, boolean, string]
   | ['EOSE', string]
-  | ['NOTICE', string];
+  | ['NOTICE', string]
+  // NIP-42: Relay challenge message
+  | ['AUTH', string]
+  // NIP-01 extension used with NIP-42: subscription closed with reason
+  | ['CLOSED', string, string];
 
 // Filter interface (for subscriptions)
 export interface Filter {
