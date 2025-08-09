@@ -17,6 +17,9 @@
 	// Props - Clean Dependency Injection
 	// =============================================================================
 	
+    import FeedView from './feed/FeedView.svelte';
+    import EventThread from './thread/EventThread.svelte';
+
     interface Props {
         nostr: any;
         signer: 'extension' | 'temporary' | null;
@@ -28,8 +31,9 @@
 	// App State - Reactive and Clean
 	// =============================================================================
 	
-	let currentView = $state<'terminal' | 'messages' | 'publish' | 'profile'>('terminal');
+    let currentView = $state<'terminal' | 'messages' | 'publish' | 'profile' | 'feed' | 'thread'>('terminal');
 	let currentProfilePubkey = $state<string | null>(null); // For viewing other profiles
+    let currentThreadId = $state<string | null>(null);
 	let userInfo = $state<{ publicKey: string; signerType: string }>({
 		publicKey: '',
 		signerType: signer || 'extension'
@@ -130,6 +134,12 @@
             >💬 Messages</button>
             <button 
                 class="seg-btn"
+                class:active={currentView === 'feed'}
+                onclick={() => currentView = 'feed'}
+                title="Feed"
+            >📰 Feed</button>
+            <button 
+                class="seg-btn"
                 class:active={currentView === 'publish'}
                 onclick={() => currentView = 'publish'}
                 title="Publish"
@@ -163,8 +173,10 @@
                 showRelayInspector={showRelay}
                 on:profileNavigate={(e) => navigateToProfile(e.detail.pubkey)}
             />
-		{:else if currentView === 'messages'}
+        {:else if currentView === 'messages'}
 			<DMChat {authState} {nostr} />
+        {:else if currentView === 'feed'}
+            <FeedView {nostr} />
 		{:else if currentView === 'publish'}
 			<div class="publish-view">
 				<PublishCard {nostr} />
@@ -176,6 +188,10 @@
                 pubkey={currentProfilePubkey || ''}
                 onDMClick={navigateToDM}
             />
+        {:else if currentView === 'thread'}
+            {#if currentThreadId}
+                <EventThread {nostr} rootId={currentThreadId} />
+            {/if}
 		{/if}
 	</main>
 </div>
