@@ -21,6 +21,7 @@
 - **🛰️ Relay Lists (NIP-65)** - Publish & Read Relay-Listen (read/write/both) mit göttlicher DX
 - **🗂️ Lists (NIP-51)** - Generische Listen (30000–30003) mit Fluent Builder und reaktivem Lesen
 - **💬 Comments (NIP-22)** - Universelle Kommentare (kind 1111) auf Events/Addressables/Externals
+ - **🖼️ Media Attachments (NIP-92)** - `attachMedia()` mit `imeta`‑Tags, Parser/Helper exportiert
 - **🔐 Advanced Cryptography** - ChaCha20-Poly1305, HKDF, Perfect Forward Secrecy
 - **🎁 Pre-Signed Event Support** - `publishSigned()` für Gift Wrap Events ohne Re-Signing
 - **🧪 Real Relay Testing** - Keine Mocks, nur echte Protokoll-Validierung
@@ -433,6 +434,23 @@ console.log(profile.current?.name); // Synchroner Zugriff möglich
 // Intelligente Deduplication
 const sub1 = nostr.sub().kinds([1]).execute(); // Startet Subscription
 const sub2 = nostr.sub().kinds([1]).execute(); // Nutzt dieselbe Subscription!
+```
+
+### 🖼️ NIP-92 Media Attachments
+
+```ts
+const img = 'https://nostr.build/i/my-image.jpg';
+await nostr.events
+  .create()
+  .kind(1)
+  .content('Post with image')
+  .attachMedia(img, { mimeType: 'image/jpeg', alt: 'Coastal view', dim: '3024x4032' })
+  .publish();
+
+// Parser/Helper
+import { parseImetaTags } from 'nostr-unchained';
+const posts = nostr.query().kinds([1]).execute();
+const imetas = posts.current.flatMap(e => parseImetaTags(e));
 ```
 
 ### 🎛️ **Benutzer-Kontrolle & Privacy by Design**

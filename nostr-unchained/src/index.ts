@@ -32,6 +32,8 @@ export { EventBuilder } from './core/EventBuilder.js';
 export { RelayManager } from './relay/RelayManager.js';
 export { SigningProviderFactory, ExtensionSigner, LocalKeySigner, QuickSigner, TemporarySigner } from './crypto/SigningProvider.js';
 export { ErrorHandler } from './utils/errors.js';
+// NIP-92 helpers
+export { parseImetaTags, buildImetaTag, guessMimeType } from './social/content/Attachments.js';
 
 // Event Builder API
 export { FluentEventBuilder, EventsModule } from './events/FluentEventBuilder.js';

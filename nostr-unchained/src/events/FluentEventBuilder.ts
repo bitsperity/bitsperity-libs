@@ -32,6 +32,28 @@ export class FluentEventBuilder {
   }
 
   /**
+   * NIP-92: Attach media URL with imeta inline metadata
+   */
+  attachMedia(url: string, opts?: { mimeType?: string; alt?: string; blurhash?: string; dim?: string; sha256?: string; fallbacks?: string[] }): FluentEventBuilder {
+    // Ensure content contains the URL once
+    const current = this.eventData.content || '';
+    const needsUrl = !current.includes(url);
+    this.eventData.content = needsUrl ? (current ? `${current} ${url}` : url) : current;
+    const tokens: string[] = [];
+    tokens.push(`url ${url}`);
+    if (opts?.mimeType) tokens.push(`m ${opts.mimeType}`);
+    if (opts?.blurhash) tokens.push(`blurhash ${opts.blurhash}`);
+    if (opts?.dim) tokens.push(`dim ${opts.dim}`);
+    if (opts?.alt) tokens.push(`alt ${opts.alt}`);
+    if (opts?.sha256) tokens.push(`x ${opts.sha256}`);
+    if (opts?.fallbacks && opts.fallbacks.length) {
+      for (const f of opts.fallbacks) tokens.push(`fallback ${f}`);
+    }
+    this.eventData.tags.push(['imeta', ...tokens]);
+    return this;
+  }
+
+  /**
    * Set the event kind
    */
   kind(kindNumber: number): FluentEventBuilder {

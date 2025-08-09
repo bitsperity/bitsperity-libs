@@ -250,6 +250,44 @@ await nostr.publish({
 });
 ```
 
+### NIP-92 Media Attachments (Neu)
+
+Füge Medien (Bilder/Videos/Audio/Dateien) zu Events hinzu, indem du die URL im Content platzierst und eine passende `imeta`‑Tag mitgibst.
+
+```ts
+import { NostrUnchained } from 'nostr-unchained';
+
+const nostr = new NostrUnchained();
+await nostr.useExtensionSigner();
+await nostr.connect();
+
+const img = 'https://nostr.build/i/my-image.jpg';
+await nostr.events
+  .create()
+  .kind(1)
+  .content('Post with image')
+  .attachMedia(img, {
+    mimeType: 'image/jpeg',
+    alt: 'Coastal view',
+    dim: '3024x4032'
+  })
+  .publish();
+
+// Lesen: Events mit imeta finden
+const posts = nostr.sub().kinds([1]).execute();
+posts.subscribe((events) => {
+  events.forEach((e) => {
+    const imetas = e.tags.filter(t => t[0] === 'imeta');
+    // oder: parseImetaTags(e) aus dem Package verwenden
+  });
+});
+```
+
+Best Practices:
+- Jede `imeta` gehört zu genau einer URL, die auch im `content` steht.
+- Felder: `url`, optional `m` (MIME), `alt`, `dim` (Breite×Höhe), `blurhash`, `x` (sha256 aus NIP‑94), mehrere `fallback` URLs.
+- Beim Upload: Metadaten nach Upload ergänzen, vor Publish.
+
 DM‑Events (Gift Wrap, kind 1059) enthalten `p`‑Tags; dadurch greift das Routing automatisch bei `publishSigned()`.
 
 | `7` | Reaction | Likes, dislikes, emoji reactions |
