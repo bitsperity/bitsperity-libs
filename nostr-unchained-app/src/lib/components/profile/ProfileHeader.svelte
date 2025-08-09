@@ -7,11 +7,12 @@
  * Max 200 lines - Zero Monolith Policy
  */
 
-import type { UserProfile } from '../../types/profile.js';
-import { copyToClipboard } from '../../utils/clipboard.js';
+type UserProfile = any;
+import { verifyNip05 } from '../../utils/nip05.js';
+// import { copyToClipboard } from '../../utils/clipboard.js';
 import { formatPubkey } from '../../utils/nostr.js';
 import KeyDisplay from '../ui/KeyDisplay.svelte';
-import ProfileAvatar from '../ui/ProfileAvatar.svelte';
+// import ProfileAvatar from '../ui/ProfileAvatar.svelte';
 
 // =============================================================================
 // Props & Types
@@ -51,26 +52,26 @@ const avatarLetter = $derived(
 		: '?'
 );
 
-const shortPubkey = $derived(
-	profile?.pubkey ? formatPubkey(profile.pubkey) : ''
-);
+// const shortPubkey = $derived(
+//   profile?.pubkey ? formatPubkey(profile.pubkey) : ''
+// );
 
 const hasNip05 = $derived(!!profile?.metadata?.nip05);
+let verifying = $state(false);
+let verifyError: string | null = $state(null);
+async function doVerify() {
+  if (!profile?.metadata?.nip05 || !profile?.pubkey) return;
+  verifying = true; verifyError = null;
+  const res = await verifyNip05(profile.metadata.nip05, profile.pubkey, 6000);
+  verifying = false;
+  if (!res.ok) { verifyError = res.reason || 'failed'; }
+}
 
 // =============================================================================
 // Event Handlers
 // =============================================================================
 
-async function handleCopyPubkey() {
-	if (!profile?.pubkey) return;
-	
-	try {
-		await copyToClipboard(profile.pubkey);
-		// TODO: Show toast notification
-	} catch (error) {
-		console.error('Failed to copy pubkey:', error);
-	}
-}
+// copy handler not used in current header variant
 </script>
 
 <div class="profile-header {className}" class:compact>
@@ -95,11 +96,20 @@ async function handleCopyPubkey() {
 		<h1 class="display-name">{displayName}</h1>
 		
 		<!-- NIP-05 Verification Badge -->
-		{#if hasNip05 && showVerification}
-			<div class="nip05-badge" class:verified>
-				{verified ? '✅' : '❌'} {profile.metadata.nip05}
-			</div>
-		{/if}
+    {#if hasNip05 && showVerification}
+      <div class="nip05-badge" class:verified title={verified ? 'Verified' : 'Not verified'}>
+        {#if verified}
+          ✅ {profile.metadata.nip05}
+        {:else}
+          <button class="verify-btn" onclick={doVerify} disabled={verifying}>
+            {verifying ? '⏳ verifying…' : 'Verify '}{profile.metadata.nip05}
+          </button>
+        {/if}
+      </div>
+      {#if verifyError}
+        <div class="verify-hint">Verify failed: {verifyError}</div>
+      {/if}
+    {/if}
 		
 		<!-- Pubkey with Copy -->
 		{#if profile?.pubkey}
@@ -216,6 +226,9 @@ async function handleCopyPubkey() {
 	color: var(--color-success-text);
 	border-color: var(--color-success);
 }
+
+.verify-btn { background: transparent; border: none; color: inherit; cursor: pointer; padding: 0; font: inherit; text-decoration: underline; }
+.verify-hint { font-size: .75rem; color: #ef4444; }
 
 .pubkey-section {
 	display: flex;

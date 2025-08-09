@@ -141,21 +141,22 @@ export class FollowManager {
 	 * Follow a user using clean architecture
 	 * CLEAN ARCHITECTURE: Uses NostrUnchained batch API with instant cache updates
 	 */
-	async followUser(targetPubkey: string): Promise<void> {
+  async followUser(targetPubkey: string): Promise<any> {
 		if (targetPubkey === this.myPubkey) {
 			throw new Error("Cannot follow yourself");
 		}
 
 		try {
 			// Use the clean batch API - this automatically adds to cache
-			await this.nostr.profile.follows.batch()
-				.add([targetPubkey])
-				.publish();
+      const result = await this.nostr.profile.follows.batch()
+        .add([targetPubkey])
+        .publish();
 			
 			if (this.debug) {
 				console.log('FollowManager: Successfully followed user:', targetPubkey);
 			}
-		} catch (error) {
+      return result;
+    } catch (error) {
 			if (this.debug) {
 				console.error('FollowManager: Failed to follow user:', error);
 			}
@@ -167,21 +168,22 @@ export class FollowManager {
 	 * Unfollow a user using clean architecture
 	 * CLEAN ARCHITECTURE: Uses NostrUnchained batch API with instant cache updates
 	 */
-	async unfollowUser(targetPubkey: string): Promise<void> {
+  async unfollowUser(targetPubkey: string): Promise<any> {
 		if (targetPubkey === this.myPubkey) {
 			throw new Error("Cannot unfollow yourself");
 		}
 
 		try {
 			// Use the clean batch API - this automatically adds to cache
-			await this.nostr.profile.follows.batch()
-				.remove([targetPubkey])
-				.publish();
+      const result = await this.nostr.profile.follows.batch()
+        .remove([targetPubkey])
+        .publish();
 			
 			if (this.debug) {
 				console.log('FollowManager: Successfully unfollowed user:', targetPubkey);
 			}
-		} catch (error) {
+      return result;
+    } catch (error) {
 			if (this.debug) {
 				console.error('FollowManager: Failed to unfollow user:', error);
 			}
@@ -297,14 +299,15 @@ export class FollowManager {
 				updateState({ loading: true, error: null });
 				return setupReactiveSubscriptions();
 			},
-			follow: async () => {
+      follow: async () => {
 				if (isOwnProfile) return;
 				
 				updateState({ loading: true, error: null });
 				try {
-					await this.followUser(targetPubkey);
+          const res = await this.followUser(targetPubkey);
 					// No need for optimistic update - reactive subscriptions handle it
 					updateState({ loading: false });
+          return res;
 				} catch (error) {
 					updateState({
 						loading: false,
@@ -312,15 +315,16 @@ export class FollowManager {
 					});
 					throw error;
 				}
-			},
-			unfollow: async () => {
+      },
+      unfollow: async () => {
 				if (isOwnProfile) return;
 				
 				updateState({ loading: true, error: null });
 				try {
-					await this.unfollowUser(targetPubkey);
+          const res = await this.unfollowUser(targetPubkey);
 					// No need for optimistic update - reactive subscriptions handle it
 					updateState({ loading: false });
+          return res;
 				} catch (error) {
 					updateState({
 						loading: false,

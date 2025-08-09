@@ -5,6 +5,7 @@
  */
 
 import { hexToNpub, hexToNote, isValidHexKey } from 'nostr-unchained';
+export { hexToNote, isValidHexKey };
 
 export interface KeyDisplayEvent {
   hex: string;

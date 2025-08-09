@@ -14,6 +14,8 @@
   let live: any = $state(null);
   let events: any[] = $state([]);
   let isLoading = $state(false);
+  const PAGE_SIZE = 50;
+  let paging: { until: number | null; hasMore: boolean } = $state({ until: null, hasMore: true });
 
   // Resolve my pubkey and follows (NIP-02) reactively
   onMount(async () => {
@@ -56,13 +58,21 @@
       }
 
       // Reasonable limit; auto-batching in builder will scale
-      builder = builder.limit(200);
+      builder = builder.limit(PAGE_SIZE);
 
       const handle = await builder.execute();
       live = handle;
       handle.store.subscribe((list: any[]) => {
-        const sorted = (list || []).slice().sort((a, b) => b.created_at - a.created_at);
+        const raw = (list || []);
+        const sorted = raw.slice().sort((a, b) => b.created_at - a.created_at);
         events = sorted;
+        paging.hasMore = raw.length >= PAGE_SIZE;
+        if (raw.length > 0) {
+          const oldest = raw.reduce((min: number, e: any) => Math.min(min, e.created_at || Number.MAX_SAFE_INTEGER), Number.MAX_SAFE_INTEGER);
+          paging.until = oldest > 0 ? oldest - 1 : null;
+        } else {
+          paging.until = null;
+        }
         isLoading = false;
       });
     } catch (e) {
@@ -75,6 +85,31 @@
     if (tab === next) return;
     tab = next;
     startLive();
+  }
+
+  async function loadMore() {
+    if (paging.until == null || !nostr) return;
+    try {
+      let qb = nostr.query().kinds([1]);
+      if (tab === 'home' && myFollows.length > 0) qb = qb.authors(myFollows);
+      if (tab === 'mentions' && me) qb = qb.tags('p', [me]);
+      if (tab === 'hashtags' && hashtag.trim()) qb = qb.tags('t', [hashtag.trim()]);
+      if (tab === 'own' && me) qb = qb.authors([me]);
+      qb = qb.until(paging.until).limit(PAGE_SIZE);
+      const store = qb.execute();
+      let first = true;
+      const unsub = store.subscribe((more: any[]) => {
+        if (!first) return; first = false; try { unsub(); } catch {}
+        if (!Array.isArray(more) || more.length === 0) { paging.hasMore = false; return; }
+        const merged = [...events, ...more];
+        const dedup = new Map<string, any>();
+        merged.forEach(ev => { if (ev?.id) dedup.set(ev.id, ev); });
+        events = Array.from(dedup.values()).sort((a: any, b: any) => b.created_at - a.created_at);
+        paging.hasMore = more.length >= PAGE_SIZE;
+        const oldest = more.reduce((min: number, e: any) => Math.min(min, e.created_at || Number.MAX_SAFE_INTEGER), Number.MAX_SAFE_INTEGER);
+        paging.until = oldest > 0 ? oldest - 1 : paging.until;
+      });
+    } catch (e) { console.error('Feed loadMore failed', e); }
   }
 </script>
 
@@ -108,6 +143,9 @@
       {#each events as ev (ev.id)}
         <EventCard event={ev} {nostr} />
       {/each}
+      {#if paging.hasMore}
+        <button class="ghost-btn load-more" onclick={loadMore}>Mehr laden</button>
+      {/if}
     </div>
   {/if}
 </div>
@@ -127,6 +165,7 @@
   @keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
   .empty { padding: 1rem; color: var(--color-text-muted); }
   .list { display:flex; flex-direction: column; gap: 1rem; padding: 1rem; overflow-y:auto; }
+  .ghost-btn.load-more { align-self:center; padding:8px 14px; border:1px solid rgba(255,255,255,0.1); border-radius:10px; background: rgba(255,255,255,0.06); color:#e2e8f0; cursor:pointer; }
 </style>
 
 

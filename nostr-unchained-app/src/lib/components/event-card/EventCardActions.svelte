@@ -1,17 +1,54 @@
 <script lang="ts">
-  export let event: any;
-  export let nostr: any;
-  export let reactionSummary: { totalCount: number; userReacted: boolean; userReactionType?: string };
-  export let likePending = false;
-  export let repostPending = false;
-  export let replyPending = false;
-  export let deletePending = false;
-  export let repostCount: number = 0;
-  export let replyCount: number = 0;
-  export let onLike: () => void;
-  export let onRepost: () => void;
-  export let onReply: () => void;
-  export let onDelete: () => void;
+  let { event, nostr, reactionSummary, likePending = false, repostPending = false, replyPending = false, deletePending = false, repostCount = 0, replyCount = 0, onLike, onRepost, onReply, onDelete }: any = $props();
+
+  // Share menu state
+  import { hexToNote, isValidHexKey } from '../../utils/keyDisplay.js';
+  let shareOpen = $state(false);
+  let copying = $state<null | 'hex' | 'note' | 'uri'>(null);
+
+  function toggleShare() {
+    shareOpen = !shareOpen;
+  }
+
+  async function copyHex() {
+    if (!event?.id) return;
+    copying = 'hex';
+    try { await navigator.clipboard.writeText(event.id); } finally { setTimeout(()=> copying=null, 600); }
+  }
+
+  async function copyNote() {
+    if (!event?.id) return;
+    copying = 'note';
+    try {
+      const note = isValidHexKey(event.id) ? hexToNote(event.id) : '';
+      await navigator.clipboard.writeText(note || event.id);
+    } finally { setTimeout(()=> copying=null, 600); }
+  }
+
+  async function copyNostrUri() {
+    if (!event?.id) return;
+    copying = 'uri';
+    try {
+      const note = isValidHexKey(event.id) ? hexToNote(event.id) : '';
+      const uri = note ? `nostr:${note}` : `nostr:${event.id}`;
+      await navigator.clipboard.writeText(uri);
+    } finally { setTimeout(()=> copying=null, 600); }
+  }
+
+  function openNjump() {
+    if (!event?.id) return;
+    const hex = String(event.id || '').toLowerCase();
+    const note = isValidHexKey(hex) ? hexToNote(hex) : '';
+    const target = `https://njump.me/${note || hex}`;
+    const a = document.createElement('a');
+    a.href = target;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    shareOpen = false;
+  }
 </script>
 
 <div class="card-actions">
@@ -46,6 +83,29 @@
         {#if deletePending}<span class="spinner" aria-hidden="true"></span>{/if}
       </button>
     {/if}
+
+    <!-- Share Menu -->
+    <div class="share-wrapper">
+      <button class="ghost" aria-label="Share" title="Share" onclick={toggleShare}>
+        <span class="icon">🔗</span>
+      </button>
+      {#if shareOpen}
+        <div class="share-menu" role="menu" tabindex="0" onmouseleave={() => shareOpen=false}>
+          <button class="share-item" onclick={copyHex}>
+            {copying==='hex' ? '✅' : '📋'} Copy hex id
+          </button>
+          <button class="share-item" onclick={copyNote}>
+            {copying==='note' ? '✅' : '📋'} Copy note id
+          </button>
+          <button class="share-item" onclick={copyNostrUri}>
+            {copying==='uri' ? '✅' : '📋'} Copy nostr: URI
+          </button>
+          <button class="share-item" onclick={openNjump}>
+            ↗ Open on njump
+          </button>
+        </div>
+      {/if}
+    </div>
   </div>
 </div>
 
@@ -63,6 +123,12 @@
   .badge { font-size: 0.7rem; background: rgba(255,255,255,0.06); padding: 0.05rem 0.4rem; border-radius: 9999px; }
   .spinner { width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.15); border-top-color: rgba(255,255,255,0.7); border-radius: 50%; animation: spin .6s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Share menu */
+  .share-wrapper { position: relative; }
+  .share-menu { position: absolute; bottom: 110%; left: 0; display:flex; flex-direction: column; background: rgba(2,6,23,0.9); border:1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: .25rem; min-width: 180px; z-index: 20; box-shadow: 0 6px 18px rgba(0,0,0,.35); max-height: 220px; overflow:auto; }
+  .share-item { text-align: left; background: transparent; color:#cbd5e1; border:none; padding: .35rem .5rem; border-radius: 8px; cursor: pointer; }
+  .share-item:hover { background: rgba(255,255,255,0.06); }
 </style>
 
 

@@ -7,8 +7,10 @@
  * Max 200 lines - Zero Monolith Policy
  */
 
-import type { NostrUnchained } from 'nostr-unchained';
-import type { UserProfile, AuthenticationState } from '../../types/profile.js';
+// keep types minimal to avoid cross-package resolution issues in app
+type NostrUnchained = any;
+type UserProfile = any;
+type AuthenticationState = { isAuthenticated: boolean; publicKey?: string };
 import { FollowManager, type FollowState } from '../../utils/followManager.js';
 
 // =============================================================================
@@ -57,6 +59,9 @@ let followState = $state<FollowState>({
 });
 
 let followStore: any = null;
+let lastResult: any = $state(null);
+let lastAction: 'follow' | 'unfollow' | null = $state(null);
+let retrying = $state(false);
 
 const isOwnProfile = $derived(pubkey === authState.publicKey);
 const hasProfileData = $derived(profile && (profile.metadata?.name || profile.metadata?.about || profile.metadata?.picture));
@@ -98,15 +103,27 @@ async function handleFollowToggle() {
 	if (!authState.isAuthenticated || isOwnProfile || !followStore) return;
 	
 	try {
-		if (followState.isFollowing) {
-			await followStore.unfollow();
-		} else {
-			await followStore.follow();
-		}
+    const doUnfollow = followState.isFollowing;
+    const result = doUnfollow ? await followStore.unfollow() : await followStore.follow();
+    lastAction = doUnfollow ? 'unfollow' : 'follow';
+    lastResult = result;
 	} catch (error) {
 		console.error('Follow toggle error:', error);
 		// Error is already handled by the store
 	}
+}
+
+async function retryLast() {
+  if (!followStore || !lastAction) return;
+  retrying = true;
+  try {
+    lastResult = null;
+    lastResult = lastAction === 'follow' ? await followStore.follow() : await followStore.unfollow();
+  } catch (e) {
+    // keep lastResult untouched on hard error
+  } finally {
+    retrying = false;
+  }
 }
 
 async function handleSendDM() {
@@ -230,6 +247,32 @@ function handleCopyProfile() {
 			{followState.error}
 		</div>
 	{/if}
+
+  <!-- Publish Result (Follow/Unfollow) -->
+  {#if lastResult}
+    <div class="publish-result">
+      <div class="result-title">{lastAction === 'follow' ? 'Follow' : 'Unfollow'} Result</div>
+      <div class="result-row {lastResult.success ? 'ok' : 'fail'}">
+        {lastResult.success ? '✅' : '❌'} {lastResult.eventId || lastResult.error}
+      </div>
+      {#if lastResult.relayResults}
+        <div class="relay-results">
+          <div class="relay-toolbar">
+            <button class="action-btn secondary" onclick={retryLast} disabled={retrying || (lastResult.relayResults.filter((r:any)=>!r.success).length===0)}>
+              {retrying ? '⏳' : '↻'} Retry failed
+            </button>
+          </div>
+          {#each lastResult.relayResults as r}
+            <div class="relay-row {r.success ? 'ok' : 'fail'}">
+              <span class="relay-url">{r.relay}</span>
+              <span class="relay-status">{r.success ? 'OK' : (r.error || 'FAIL')}</span>
+              <span class="relay-latency">{r.latencyMs ? `${r.latencyMs}ms` : ''}</span>
+            </div>
+          {/each}
+        </div>
+      {/if}
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -421,6 +464,19 @@ function handleCopyProfile() {
 	text-align: center;
 	margin-top: var(--spacing-sm);
 }
+
+/* Publish result styles (reused aesthetic) */
+.publish-result { width:100%; margin-top: .5rem; border-top: 1px dashed rgba(255,255,255,.08); padding-top:.5rem; }
+.result-title { font-size: .75rem; color:#94a3b8; margin-bottom:.25rem; }
+.result-row.ok { color:#10b981; }
+.result-row.fail { color:#ef4444; }
+.relay-results { display:flex; flex-direction:column; gap:.25rem; }
+.relay-row { display:grid; grid-template-columns: 1fr auto auto; gap:.5rem; font-size:.75rem; background: rgba(255,255,255,.03); padding:.25rem .5rem; border-radius:.375rem; }
+.relay-row.ok { color:#10b981; }
+.relay-row.fail { color:#ef4444; }
+.relay-url { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.relay-status { justify-self:end; }
+.relay-latency { color:#94a3b8; font-family: var(--font-mono); }
 
 /* Mobile Responsive */
 @media (max-width: 768px) {

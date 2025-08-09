@@ -36,7 +36,7 @@ Ziel: Vollständige Abbildung der `nostr-unchained` API in der Demo-App, klare S
   - [x] Tabs: Notes/Replies/Reposts/Likes (mit Paging) — `ProfileView.svelte`
   - [x] Follows/FollowerCount Stores — `utils/followManager.ts`
   - [x] Follow/Unfollow Aktion inkl. Publish‑Result & Retry — `profile/ProfileActions.svelte`, `utils/followManager.ts`
-  - [ ] NIP‑05 Verify UI — fehlt
+  - [x] NIP‑05 Verify UI (Verify‑Button, Timeout/Fehlergründe) — `profile/ProfileHeader.svelte`, `utils/nip05.ts`
 - [ ] Listen & Communities (NIP‑51)
   - Ansicht für Mute/Bookmarks/Custom noch offen
 - [~] EventCard UX Feinschliff

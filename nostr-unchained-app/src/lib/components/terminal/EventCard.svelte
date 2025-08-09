@@ -97,6 +97,10 @@
 	let deletePending = $state(false);
 	let lastPublishResult: any = $state(null);
 
+	// Inline Reply Composer
+	let showReplyComposer = $state(false);
+	let replyText: string = $state('');
+
 	let unsubscribers: Array<() => void> = [];
 
 	onMount(() => {
@@ -190,18 +194,26 @@
 		}
 	}
 
+	function toggleReplyComposer() {
+		showReplyComposer = !showReplyComposer;
+	}
+
 	async function doReply() {
 		if (!(nostr as any)?.events) return;
-		const reply = window.prompt('Reply to note:', '');
-		if (!reply) return;
+		if (!replyText || replyText.trim().length === 0) {
+			showReplyComposer = true;
+			return;
+		}
 		replyPending = true;
 		try {
 			const result = await (nostr as any).events
 				.create()
 				.replyTo(event.id)
-				.content(reply)
+				.content(replyText)
 				.publish();
 			lastPublishResult = result;
+			replyText = '';
+			showReplyComposer = false;
 		} catch (e) {
 			console.error('Reply failed', e);
 		} finally {
@@ -504,9 +516,21 @@
         deletePending={deletePending}
         onLike={toggleLike}
         onRepost={doRepost}
-        onReply={doReply}
+        onReply={toggleReplyComposer}
         onDelete={doDelete}
     />
+
+	{#if showReplyComposer}
+		<div class="reply-composer">
+			<textarea rows="3" placeholder="Antwort schreiben…" bind:value={replyText} disabled={replyPending}></textarea>
+			<div class="reply-actions">
+				<button class="ghost" onclick={() => { showReplyComposer = false; replyText = ''; }} disabled={replyPending}>Abbrechen</button>
+				<button class="ghost primary" onclick={doReply} disabled={replyPending || !replyText.trim()}>
+					{#if replyPending}<span class="spinner"></span> Senden…{:else}Senden{/if}
+				</button>
+			</div>
+		</div>
+	{/if}
 
     <EventCardMeta result={lastPublishResult} {event} {nostr} />
     <EventCardJson {event} />
@@ -808,6 +832,13 @@
 		border-top: 1px dashed rgba(255, 255, 255, 0.1);
 		padding-top: 0.5rem;
 	}
+
+	/* Reply composer */
+	.reply-composer { display:flex; flex-direction: column; gap:.5rem; margin-top:.5rem; }
+	.reply-composer textarea { width:100%; resize: vertical; background: rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:.5rem .6rem; color:#e2e8f0; }
+	.reply-actions { display:flex; gap:.5rem; justify-content:flex-end; }
+	.reply-actions .ghost { padding: .35rem .6rem; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; background: rgba(255,255,255,0.06); color:#e2e8f0; }
+	.reply-actions .ghost.primary { background: var(--color-primary, rgba(99,102,241,.25)); border-color: rgba(255,255,255,0.14); }
 
 	.result-title {
 		font-size: 0.75rem;
