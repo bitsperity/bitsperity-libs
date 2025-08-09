@@ -35,13 +35,13 @@ Ziel: Vollständige Abbildung der `nostr-unchained` API in der Demo-App, klare S
 - [~] Profile erweitert
   - [x] Tabs: Notes/Replies/Reposts/Likes (mit Paging) — `ProfileView.svelte`
   - [x] Follows/FollowerCount Stores — `utils/followManager.ts`
-  - [~] Follow/Unfollow Aktion (UI‑Verdrahtung finalisieren) — `Profile*`
+  - [x] Follow/Unfollow Aktion inkl. Publish‑Result & Retry — `profile/ProfileActions.svelte`, `utils/followManager.ts`
   - [ ] NIP‑05 Verify UI — fehlt
 - [ ] Listen & Communities (NIP‑51)
   - Ansicht für Mute/Bookmarks/Custom noch offen
 - [~] EventCard UX Feinschliff
-  - [ ] Share‑Menü (npub/note kopieren, „Open in Relay“)
-  - [ ] Inline‑Reply‑Composer (statt Prompt)
+  - [x] Share‑Menü (hex/note/nostr: kopieren, „Open on njump“) — `event-card/EventCardActions.svelte`
+  - [x] Inline‑Reply‑Composer (statt Prompt) — `terminal/EventCard.svelte`
   - [~] A11y Final Review (Fokus/ARIA konsolidieren)
 - [~] Performance
   - [ ] Virtuelle Listen für Feed/Profil/Thread
