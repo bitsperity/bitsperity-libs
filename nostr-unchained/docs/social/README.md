@@ -349,6 +349,36 @@ topReactors.subscribe(reactors => {
 
 ## 📰 Social Feeds
 
+## 🗂️ Lists (NIP-51)
+
+Unterstützung für Listen (30000–30003) als addressable Events:
+
+- 30000: Follow‑Kategorien
+- 30001: Generische Listen
+- 30002: Relay‑Sammlungen
+- 30003: Bookmarks
+
+Publish und Lesen mit Fluent‑API und Subscription‑First Caching:
+
+```ts
+// Bookmark-Liste anlegen
+await nostr.lists
+  .edit(30003, 'bookmarks')
+  .title('Bookmarks')
+  .description('Important posts to remember')
+  .addEvent('e'.repeat(64))
+  .addAddress(`30023:${await nostr.getPublicKey()}:article`)
+  .addPerson(await nostr.getPublicKey(), 'wss://relay.example', 'Me')
+  .topic('nostr')
+  .publish();
+
+// Lesen (reactive)
+const bookmarks = nostr.lists.get(await nostr.getPublicKey(), 30003, 'bookmarks');
+bookmarks.subscribe(list => {
+  console.log(list?.title, list?.p?.length, list?.e?.length, list?.a?.length);
+});
+```
+
 ### Feed Types
 
 ```typescript

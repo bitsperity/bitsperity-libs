@@ -14,6 +14,7 @@ import { EventsModule } from '../events/FluentEventBuilder.js';
 import { DMModule } from '../dm/api/DMModule.js';
 import { UniversalDMModule } from '../dm/api/UniversalDMModule.js';
 import { SocialModule } from '../social/api/SocialModule.js';
+import { ListModule } from '../social/lists/ListModule.js';
 import { SubscriptionManager } from '../subscription/SubscriptionManager.js';
 import { UniversalEventCache, type CacheStatistics } from '../cache/UniversalEventCache.js';
 import { QueryBuilder, SubBuilder } from '../query/QueryBuilder.js';
@@ -51,6 +52,8 @@ export class NostrUnchained {
   
   // Social Media API
   public readonly social: SocialModule;
+  // Lists API (NIP-51)
+  private _lists?: ListModule;
   
   // Profile API (Enhanced)
   private _profile?: ProfileModule;
@@ -244,6 +247,14 @@ export class NostrUnchained {
       this._relayList = new RelayListModule(this);
     }
     return this._relayList;
+  }
+
+  /** NIP-51 Lists module */
+  get lists(): ListModule {
+    if (!this._lists) {
+      this._lists = new ListModule(this);
+    }
+    return this._lists;
   }
 
   /**

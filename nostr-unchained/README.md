@@ -19,6 +19,7 @@
 - **📊 100% Protocol Compliance** - Vollständige NIP-17/NIP-44/NIP-59 Implementierung
 - **🔐 Relay Auth (NIP-42)** - Automatisches AUTH-Handshake bei Bedarf (Challenge → signiertes AUTH‑Event)
 - **🛰️ Relay Lists (NIP-65)** - Publish & Read Relay-Listen (read/write/both) mit göttlicher DX
+- **🗂️ Lists (NIP-51)** - Generische Listen (30000–30003) mit Fluent Builder und reaktivem Lesen
 - **🔐 Advanced Cryptography** - ChaCha20-Poly1305, HKDF, Perfect Forward Secrecy
 - **🎁 Pre-Signed Event Support** - `publishSigned()` für Gift Wrap Events ohne Re-Signing
 - **🧪 Real Relay Testing** - Keine Mocks, nur echte Protokoll-Validierung
@@ -317,6 +318,27 @@ Hinweise:
 - Standard bleibt unverändert (`routing: 'none'`).
 - Routing ist rein additiv: Default‑Relays werden immer berücksichtigt.
 - URL‑Normalisierung: Schema ergänzt, Trailing Slashes entfernt.
+
+### 🗂️ NIP-51 Lists (30000–30003)
+
+Erstelle und lese Listen (Follow‑Kategorien, generische Listen, Relay‑Sammlungen, Bookmarks). Subscription‑First sorgt für Cache‑Fill ohne Schichtenbruch.
+
+```ts
+// Publish Bookmark‑Liste (30003)
+await nostr.lists
+  .edit(30003, 'bookmarks')
+  .title('Bookmarks')
+  .description('Important posts to remember')
+  .addEvent('e'.repeat(64))
+  .addAddress(`30023:${await nostr.getPublicKey()}:article`)
+  .addPerson(await nostr.getPublicKey(), 'wss://relay.example', 'Me')
+  .topic('nostr')
+  .publish();
+
+// Reactive read
+const list = nostr.lists.get(await nostr.getPublicKey(), 30003, 'bookmarks');
+list.subscribe(v => console.log(v?.title, v?.p?.length, v?.e?.length));
+```
 
 ## 📚 Complete Documentation Guide
 
