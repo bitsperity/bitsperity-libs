@@ -9,6 +9,47 @@ Ziel: Vollständige Abbildung der `nostr-unchained` API in der Demo-App, klare S
 
 ---
 
+## Status Snapshot (Stand: 2025-08-09)
+
+- [x] Verbindung & Status
+  - Referenzen: `src/lib/services/NostrService.ts`, `src/lib/components/NostrApp.svelte`, `src/lib/components/terminal/RelayInspector.svelte`
+- [x] Auth/Signer (Extension/Temporary, `getPublicKey()`)
+  - Referenzen: `src/routes/+page.svelte`, `src/lib/services/NostrService.ts`, `src/lib/components/auth/*`
+- [x] Query & Subscription (Core)
+  - Referenzen: `DevExplorer.svelte`, `FeedView.svelte`, `ProfileView.svelte`, `EventThread.svelte`, `RelayInspector.svelte`, `utils/ProfileSubscriptionManager.ts`
+- [x] Events/Publish (Fluent)
+  - Referenzen: `EventCard.svelte` (Reply/Delete/Repost), `terminal/PublishCard.svelte`
+- [x] Reactions (NIP-25)
+  - UI: Like/Unlike inkl. Live‑Summary und Publish‑Result via `EventCardMeta`
+  - Referenzen: `EventCard.svelte`
+- [x] Reposts (NIP-18)
+  - Referenzen: `EventCard.svelte`
+- [x] Replies/Threads (NIP-10)
+  - Referenzen: `components/thread/EventThread.svelte`, `components/NostrApp.svelte` (Back‑Stack), `EventCard.svelte` (Open Thread)
+- [x] Delete (NIP-09)
+  - Referenzen: `EventCard.svelte`
+- [x] Feeds/Timelines (inkl. Paging)
+  - Referenzen: `components/feed/FeedView.svelte`
+- [x] Encodings Playground
+  - Referenzen: `components/ui/EncodingsPanel.svelte`, `components/ui/KeyDisplay.svelte`, `utils/nostr.ts`
+- [~] Profile erweitert
+  - [x] Tabs: Notes/Replies/Reposts/Likes (mit Paging) — `ProfileView.svelte`
+  - [x] Follows/FollowerCount Stores — `utils/followManager.ts`
+  - [~] Follow/Unfollow Aktion (UI‑Verdrahtung finalisieren) — `Profile*`
+  - [ ] NIP‑05 Verify UI — fehlt
+- [ ] Listen & Communities (NIP‑51)
+  - Ansicht für Mute/Bookmarks/Custom noch offen
+- [~] EventCard UX Feinschliff
+  - [ ] Share‑Menü (npub/note kopieren, „Open in Relay“)
+  - [ ] Inline‑Reply‑Composer (statt Prompt)
+  - [~] A11y Final Review (Fokus/ARIA konsolidieren)
+- [~] Performance
+  - [ ] Virtuelle Listen für Feed/Profil/Thread
+- [ ] Tests (App‑UI)
+  - Flows: Like/Unlike mit Publish‑Result + Retry, Feed/Profile Paging, Thread Back‑Stack
+
+---
+
 ## 1) Bereits verwendete API (Wo und wie)
 
 - **Verbindung & Status**
