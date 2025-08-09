@@ -412,6 +412,8 @@
     <EventCardActions 
         {event} {nostr}
         reactionSummary={reactionSummary}
+        repostCount={repostCount}
+        replyCount={replyCount}
         likePending={likePending}
         repostPending={repostPending}
         replyPending={replyPending}

@@ -6,6 +6,8 @@
   export let repostPending = false;
   export let replyPending = false;
   export let deletePending = false;
+  export let repostCount: number = 0;
+  export let replyCount: number = 0;
   export let onLike: () => void;
   export let onRepost: () => void;
   export let onReply: () => void;
@@ -14,34 +16,53 @@
 
 <div class="card-actions">
   <div class="left-actions">
-    <button class="action-btn heart-btn {reactionSummary.userReactionType ? 'active' : ''}" aria-label="Like" title="Like/Unlike" onclick={onLike} disabled={likePending}>
-      <svg class="heart-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 6.01 4.01 4 6.5 4 8.04 4 9.54 4.81 10.35 6.08 11.16 4.81 12.66 4 14.2 4 16.69 4 18.7 6.01 18.7 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path>
-      </svg>
-      <span class="count">{reactionSummary.totalCount || ''}</span>
+    <button class="ghost {reactionSummary.userReactionType ? 'active' : ''}" aria-label="Like" title="Like/Unlike" onclick={onLike} disabled={likePending} aria-busy={likePending}>
+      <span class="icon">❤️</span>
+      {#if reactionSummary.totalCount}
+        <span class="badge">{reactionSummary.totalCount}</span>
+      {/if}
+      {#if likePending}<span class="spinner" aria-hidden="true"></span>{/if}
     </button>
-    <button class="action-btn" aria-label="Repost" title="Repost" onclick={onRepost} disabled={repostPending}>
-      🔄
+
+    <button class="ghost" aria-label="Repost" title="Repost" onclick={onRepost} disabled={repostPending} aria-busy={repostPending}>
+      <span class="icon">🔄</span>
+      {#if repostCount}
+        <span class="badge">{repostCount}</span>
+      {/if}
+      {#if repostPending}<span class="spinner" aria-hidden="true"></span>{/if}
     </button>
-    <button class="action-btn" aria-label="Reply" title="Reply" onclick={onReply} disabled={replyPending}>
-      💬
+
+    <button class="ghost" aria-label="Reply" title="Reply" onclick={onReply} disabled={replyPending} aria-busy={replyPending}>
+      <span class="icon">💬</span>
+      {#if replyCount}
+        <span class="badge">{replyCount}</span>
+      {/if}
+      {#if replyPending}<span class="spinner" aria-hidden="true"></span>{/if}
     </button>
+
     {#if (nostr as any)?.me === event.pubkey}
-      <button class="action-btn" aria-label="Delete" title="Delete" onclick={onDelete} disabled={deletePending}>🗑️</button>
+      <button class="ghost danger" aria-label="Delete" title="Delete" onclick={onDelete} disabled={deletePending} aria-busy={deletePending}>
+        <span class="icon">🗑️</span>
+        {#if deletePending}<span class="spinner" aria-hidden="true"></span>{/if}
+      </button>
     {/if}
   </div>
 </div>
 
 <style>
   .card-actions { display: flex; justify-content: space-between; align-items: center; padding-top: 0.75rem; border-top: 1px solid rgba(255, 255, 255, 0.05); }
-  .left-actions { display: flex; gap: 0.25rem; align-items: center; }
-  .action-btn { background: none; border: none; color: #64748b; cursor: pointer; padding: 0.5rem; border-radius: 0.5rem; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; }
-  .action-btn:hover { color: #94a3b8; background: rgba(255, 255, 255, 0.05); }
-  .heart-btn { color: #64748b; }
-  .heart-btn .heart-icon { display: inline-block; fill: none; stroke: currentColor; stroke-width: 2; }
-  .heart-btn.active { color: #ef4444; }
-  .heart-btn.active .heart-icon { fill: currentColor; }
-  .heart-btn .count { margin-left: 4px; }
+  .left-actions { display: flex; gap: 0.35rem; align-items: center; }
+  .ghost { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.35rem 0.6rem; border-radius: 9999px; 
+           background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); color: #cbd5e1; cursor: pointer;
+           backdrop-filter: blur(6px); transition: transform .15s ease, background .15s ease, border-color .15s ease; position: relative; }
+  .ghost:hover { transform: translateY(-1px); background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); }
+  .ghost[disabled] { opacity: 0.6; cursor: default; }
+  .ghost.active { color: #ef4444; border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.08); }
+  .ghost.danger { color: #ef4444; }
+  .icon { line-height: 1; }
+  .badge { font-size: 0.7rem; background: rgba(255,255,255,0.06); padding: 0.05rem 0.4rem; border-radius: 9999px; }
+  .spinner { width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.15); border-top-color: rgba(255,255,255,0.7); border-radius: 50%; animation: spin .6s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 
 

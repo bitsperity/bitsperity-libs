@@ -516,10 +516,11 @@
 	<div class="filter-panel">
         <!-- Free Kinds Input -->
 		<div class="filter-section">
-			<label class="filter-label">Event Kinds (comma-separated or JSON array)</label>
+            <label class="filter-label" for="kinds-input">Event Kinds (comma-separated or JSON array)</label>
 			<div class="input-group">
 				<input
 					type="text"
+                    id="kinds-input"
 					bind:value={kindsInput}
 					placeholder="1,7,42 or [1,7,42] or 30023"
 					class="filter-input kinds-input"
@@ -528,11 +529,12 @@
 				<button class="parse-btn" onclick={parseKindsInput}>Parse</button>
 			</div>
             <div class="input-group" style="max-width: 300px;">
-                <label class="filter-label" style="margin:0; align-self:center;">Limit</label>
+                <label class="filter-label" for="limit-input" style="margin:0; align-self:center;">Limit</label>
                 <input
                     type="number"
                     min="1"
                     max="5000"
+                    id="limit-input"
                     bind:value={limit}
                     class="filter-input"
                     title="Maximum events to fetch"
@@ -560,11 +562,12 @@
 		</div>
 
 		<!-- Author Filters -->
-		<div class="filter-section">
-			<label class="filter-label">Authors</label>
+        <div class="filter-section">
+            <label class="filter-label" for="author-input">Authors</label>
 			<div class="input-group">
 				<input
 					type="text"
+                    id="author-input"
 					bind:value={authorInput}
 					placeholder="Enter pubkey (hex or npub)..."
 					class="filter-input"
@@ -590,8 +593,8 @@
 		</div>
 
 		<!-- Tag Filters: Completely Free -->
-		<div class="filter-section">
-			<label class="filter-label">Tags (any tag type + values)</label>
+        <div class="filter-section">
+            <label class="filter-label" for="tag-value-input">Tags (any tag type + values)</label>
 			<div class="input-group">
 				<input
 					type="text"
@@ -602,6 +605,7 @@
 				/>
 				<input
 					type="text"
+                    id="tag-value-input"
 					bind:value={tagInput}
 					placeholder="Tag value..."
 					class="filter-input"
@@ -893,18 +897,21 @@
 
 .segmented {
     display: inline-flex;
-    border: 1px solid var(--color-border);
+    border: 1px solid rgba(255,255,255,0.08);
     border-radius: var(--radius-lg);
     overflow: hidden;
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(8px);
 }
 
 .seg-btn {
     padding: 8px 12px;
-    background: var(--color-background);
+    background: transparent;
     color: var(--color-text);
     border: none;
     cursor: pointer;
     font-size: var(--text-sm);
+    transition: background .15s ease, color .15s ease;
 }
 
 .seg-btn.active {
@@ -912,28 +919,21 @@
     color: var(--color-primary-text);
 }
 
-	.control-btn {
-		padding: var(--spacing-sm) var(--spacing-md);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
-		background: var(--color-background);
-		color: var(--color-text);
-		cursor: pointer;
-		transition: all var(--transition-fast);
-		font-size: var(--text-sm);
-		font-weight: 500;
-	}
+    .control-btn {
+        padding: var(--spacing-sm) var(--spacing-md);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 9999px;
+        background: rgba(255,255,255,0.04);
+        color: #cbd5e1;
+        cursor: pointer;
+        transition: transform .15s ease, background .15s ease, border-color .15s ease;
+        font-size: var(--text-sm);
+        font-weight: 500;
+        backdrop-filter: blur(8px);
+    }
 
-	.control-btn:hover {
-		background: var(--color-surface);
-		border-color: var(--color-primary);
-	}
-
-	.control-btn.active {
-		background: var(--color-primary);
-		color: var(--color-primary-text);
-		border-color: var(--color-primary);
-	}
+    .control-btn:hover { transform: translateY(-1px); background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); }
+    .control-btn.active { background: var(--color-primary); color: var(--color-primary-text); border-color: var(--color-primary); }
 
 	.subscription-btn:not(:disabled) {
 		border-color: rgb(34, 197, 94);
@@ -993,16 +993,6 @@
 		border-color: rgb(168, 85, 247);
 	}
 
-	.live-btn {
-		background: rgb(239, 68, 68);
-		color: white;
-		border-color: rgb(239, 68, 68);
-	}
-
-	.live-btn:hover {
-		background: rgb(220, 38, 38);
-	}
-
 	.stop-btn {
 		background: rgb(239, 68, 68);
 		color: white;
@@ -1045,30 +1035,21 @@
 		gap: var(--spacing-sm);
 	}
 
-	.quick-filter-btn {
-		padding: var(--spacing-sm) var(--spacing-md);
-		border: 2px solid var(--color-border);
-		border-radius: var(--radius-md);
-		background: var(--color-background);
-		color: var(--color-text);
-		cursor: pointer;
-		transition: all var(--transition-fast);
-		font-size: var(--text-sm);
-		font-weight: 500;
-	}
+    .quick-filter-btn {
+        padding: var(--spacing-sm) var(--spacing-md);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 9999px;
+        background: rgba(255,255,255,0.04);
+        color: #cbd5e1;
+        cursor: pointer;
+        transition: transform .15s ease, background .15s ease, border-color .15s ease;
+        font-size: var(--text-sm);
+        font-weight: 500;
+        backdrop-filter: blur(8px);
+    }
 
-	.quick-filter-btn:hover {
-		border-color: var(--filter-color);
-		background: var(--color-surface);
-	}
-
-	.quick-filter-btn.active {
-		background: var(--filter-color);
-		border-color: var(--filter-color);
-		color: white;
-		transform: translateY(-1px);
-		box-shadow: var(--shadow-md);
-	}
+    .quick-filter-btn:hover { transform: translateY(-1px); background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); }
+    .quick-filter-btn.active { background: var(--filter-color); border-color: var(--filter-color); color: white; transform: translateY(-1px); box-shadow: var(--shadow-md); }
 
 	.input-group {
 		display: flex;
@@ -1164,11 +1145,7 @@
 		border-color: var(--color-primary);
 	}
 
-	.mode-toggle.active {
-		background: rgb(239, 68, 68);
-		color: white;
-		border-color: rgb(239, 68, 68);
-	}
+    /* removed unused .mode-toggle.active */
 
 	.add-btn {
 		padding: var(--spacing-md) var(--spacing-lg);
@@ -1277,27 +1254,7 @@
 		color: var(--color-danger);
 	}
 
-	.execute-btn {
-		padding: var(--spacing-md) var(--spacing-xl);
-		border: 1px solid var(--color-primary);
-		border-radius: var(--radius-md);
-		background: var(--color-primary);
-		color: var(--color-primary-text);
-		cursor: pointer;
-		font-weight: 600;
-		transition: all var(--transition-fast);
-	}
-
-	.execute-btn:hover:not(:disabled) {
-		background: var(--color-primary-hover);
-		transform: translateY(-1px);
-		box-shadow: var(--shadow-md);
-	}
-
-	.execute-btn:disabled {
-		opacity: 0.6;
-		cursor: not-allowed;
-	}
+    /* removed unused .execute-btn styles */
 
 	/* ===== RESULTS ===== */
 	.results-section {
