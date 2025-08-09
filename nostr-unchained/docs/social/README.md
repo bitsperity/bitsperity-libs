@@ -377,6 +377,29 @@ const bookmarks = nostr.lists.get(await nostr.getPublicKey(), 30003, 'bookmarks'
 bookmarks.subscribe(list => {
   console.log(list?.title, list?.p?.length, list?.e?.length, list?.a?.length);
 });
+
+## 💬 Comments (NIP-22)
+
+Universelle Kommentare (kind 1111) auf Addressables, Events oder externe Inhalte – mit klarer Trennung von Root‑ und Parent‑Referenzen gemäß Groß/Kleinschreibung der Tags.
+
+```ts
+// Addressable (z. B. Artikel) kommentieren
+const myPubkey = await nostr.getPublicKey();
+await nostr.events.create().kind(30023).tag('d', 'article-1').content('My article').sign().then(async b => {
+  await nostr.publishSigned(await b.build());
+});
+
+await nostr.comments
+  .create()
+  .onAddressableRoot(30023, myPubkey, 'article-1') // A/K/P root
+  .replyToAddress(30023, myPubkey, 'article-1')     // a/k/p parent
+  .content('Great article!')
+  .publish();
+
+// Reactive lesen
+const comments = nostr.comments.getForAddressable(30023, myPubkey, 'article-1');
+comments.subscribe(list => console.log('comments', list.length));
+```
 ```
 
 ### Feed Types

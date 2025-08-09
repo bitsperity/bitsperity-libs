@@ -14,6 +14,7 @@ import { EventsModule } from '../events/FluentEventBuilder.js';
 import { DMModule } from '../dm/api/DMModule.js';
 import { UniversalDMModule } from '../dm/api/UniversalDMModule.js';
 import { SocialModule } from '../social/api/SocialModule.js';
+import { CommentsModule } from '../social/comments/CommentsModule.js';
 import { ListModule } from '../social/lists/ListModule.js';
 import { SubscriptionManager } from '../subscription/SubscriptionManager.js';
 import { UniversalEventCache, type CacheStatistics } from '../cache/UniversalEventCache.js';
@@ -52,6 +53,8 @@ export class NostrUnchained {
   
   // Social Media API
   public readonly social: SocialModule;
+  // Comments API (NIP-22)
+  private _comments?: CommentsModule;
   // Lists API (NIP-51)
   private _lists?: ListModule;
   
@@ -101,14 +104,14 @@ export class NostrUnchained {
           created_at: Math.floor(Date.now() / 1000),
           kind: 22242,
           tags: [
-            ['relay', relay],
-            ['challenge', challenge]
-          ],
+            ['relay', relay] as string[],
+            ['challenge', challenge] as string[]
+          ] as string[][],
           content: ''
-        } as const;
-        const id = EventBuilder.calculateEventId(unsigned);
-        const sig = await this.signingProvider.signEvent(unsigned);
-        return { ...unsigned, id, sig };
+        } as { pubkey: string; created_at: number; kind: number; tags: string[][]; content: string };
+        const id = EventBuilder.calculateEventId(unsigned as any);
+        const sig = await this.signingProvider.signEvent(unsigned as any);
+        return { ...(unsigned as any), id, sig } as any;
       },
       onAuthStateChange: (relay, state) => {
         if (this.config.debug) {
@@ -255,6 +258,14 @@ export class NostrUnchained {
       this._lists = new ListModule(this);
     }
     return this._lists;
+  }
+
+  /** NIP-22 Comments module */
+  get comments(): CommentsModule {
+    if (!this._comments) {
+      this._comments = new CommentsModule(this);
+    }
+    return this._comments;
   }
 
   /**

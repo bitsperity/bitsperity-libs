@@ -20,6 +20,7 @@
 - **🔐 Relay Auth (NIP-42)** - Automatisches AUTH-Handshake bei Bedarf (Challenge → signiertes AUTH‑Event)
 - **🛰️ Relay Lists (NIP-65)** - Publish & Read Relay-Listen (read/write/both) mit göttlicher DX
 - **🗂️ Lists (NIP-51)** - Generische Listen (30000–30003) mit Fluent Builder und reaktivem Lesen
+- **💬 Comments (NIP-22)** - Universelle Kommentare (kind 1111) auf Events/Addressables/Externals
 - **🔐 Advanced Cryptography** - ChaCha20-Poly1305, HKDF, Perfect Forward Secrecy
 - **🎁 Pre-Signed Event Support** - `publishSigned()` für Gift Wrap Events ohne Re-Signing
 - **🧪 Real Relay Testing** - Keine Mocks, nur echte Protokoll-Validierung
