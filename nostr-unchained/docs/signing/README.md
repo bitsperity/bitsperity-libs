@@ -62,6 +62,22 @@ await nostr.useCustomSigner(remoteSigner);
 await nostr.events.note('Hallo aus Remote‑Signing!').publish();
 ```
 
+## Client‑initiierter Flow: nostrconnect:// Token erzeugen
+
+Du kannst einen Verbindungs‑Token erzeugen, den der Remote‑Signer konsumiert. Damit können Permissions/Relays vorab kommuniziert werden.
+
+```ts
+const token = await remoteSigner.createClientToken({
+  name: 'My Web App',
+  relays: ['wss://relay1.example','wss://relay2.example'],
+  perms: ['sign_event:1','sign_event:14','nip44_encrypt','nip44_decrypt']
+});
+
+// Anzeige als QR oder Link
+console.log(token);
+// z.B. nostrconnect://<client-pubkey>?relay=wss%3A%2F%2Frelay1.example&...
+```
+
 ## Vollständiges Beispiel inkl. Parse eines nostrconnect:// URIs
 
 Einige Signer geben eine `nostrconnect://` URL aus. Hier ein simples Beispiel, wie du `pubkey` und `relays` extrahierst:

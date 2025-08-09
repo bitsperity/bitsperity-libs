@@ -18,6 +18,7 @@ export class NostrConnectSigner {
   private remoteUserPubkey: string | null = null;
   private responseCallbacks = new Map<string, (payload: any) => void>();
   private subscriptionStarted = false;
+  private requestedPermissions: string[] = [];
 
   constructor(params: { remoteSignerPubkey: string; relays: string[]; nostr: any }) {
     this.remoteSignerPubkey = params.remoteSignerPubkey;
@@ -95,6 +96,29 @@ export class NostrConnectSigner {
 
     await this.nostr.publishSigned(signed);
     return await response;
+  }
+
+  /**
+   * Client-initiated connection token (nostrconnect://)
+   * Allows sharing a QR/URI with remote-signer to establish permissions.
+   */
+  async createClientToken(options?: { name?: string; secret?: string; relays?: string[]; perms?: string[] }): Promise<string> {
+    const clientPub = await this.clientTransport.getPublicKey();
+    const relays = (options?.relays && options.relays.length ? options.relays : this.relays) || [];
+    const params = new URLSearchParams();
+    for (const r of relays) params.append('relay', encodeURIComponent(r));
+    if (options?.perms && options.perms.length) {
+      params.set('perms', options.perms.join(','));
+      this.requestedPermissions = options.perms.slice();
+    }
+    if (options?.name) params.set('name', options.name);
+    if (options?.secret) params.set('secret', options.secret);
+    const qs = params.toString();
+    return `nostrconnect://${clientPub}${qs ? `?${qs}` : ''}`;
+  }
+
+  setRequestedPermissions(perms: string[]): void {
+    this.requestedPermissions = perms.slice();
   }
 
   async getPublicKey(): Promise<string> {
