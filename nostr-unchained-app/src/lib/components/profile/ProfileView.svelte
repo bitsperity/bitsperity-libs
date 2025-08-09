@@ -7,13 +7,14 @@
  * Max 200 lines - Zero Monolith Policy
  */
 
-import { onDestroy } from 'svelte';
-import type { NostrUnchained } from 'nostr-unchained';
-import type { ProfileViewProps } from '../../types/profile.js';
+import { onDestroy, createEventDispatcher } from 'svelte';
+// keep props untyped locally to avoid external type resolution issues
+type ProfileViewProps = any;
 import ProfileHeader from './ProfileHeader.svelte';
 import ProfileInfo from './ProfileInfo.svelte';
 import ProfileActions from './ProfileActions.svelte';
 import { getProfileStore, unsubscribeFromProfile } from '../../utils/ProfileSubscriptionManager.js';
+import EventCard from '../terminal/EventCard.svelte';
 
 // =============================================================================
 // Props
@@ -23,7 +24,7 @@ const {
 	nostr,
 	pubkey,
 	authState,
-	initialData,
+    // initialData,
 	showActions = true,
 	compact = false,
 	className = '',
@@ -40,7 +41,7 @@ const {
 
 // PERFECT DX: Clean pubkey access via NostrUnchained
 let profilePubkey = $derived(pubkey || nostr.me || '');
-let isOwnProfile = $derived(profilePubkey === nostr.me);
+// const isOwnProfile = $derived(profilePubkey === nostr.me);
 let viewMode = $state<'display' | 'edit' | 'create'>('display');
 
 // Use ProfileSubscriptionManager for optimized profile loading
@@ -50,28 +51,18 @@ const subscriberId = `profile-view-${Math.random().toString(36).substring(7)}`;
 
 // Reactive profile loading using aggregated subscription manager
 $effect(() => {
-  if (profilePubkey && nostr) {
-    try {
-      // Use ProfileSubscriptionManager for optimized subscriptions
-      const profileStore = getProfileStore(profilePubkey, subscriberId);
-      
-      profileUnsubscribe = profileStore.subscribe((profileData: any) => {
-        profile = profileData;
-      });
-      
-      return () => {
-        if (profileUnsubscribe) {
-          profileUnsubscribe();
-          profileUnsubscribe = null;
-        }
-        unsubscribeFromProfile(profilePubkey, subscriberId);
-      };
-    } catch (err) {
-      console.error('Failed to load profile:', err);
-      profile = null;
-    }
-  } else {
+  if (!(profilePubkey && nostr)) { profile = null; return undefined; }
+  try {
+    const profileStore = getProfileStore(profilePubkey, subscriberId);
+    profileUnsubscribe = profileStore.subscribe((profileData: any) => { profile = profileData as any; });
+    return () => {
+      try { profileUnsubscribe?.(); } catch {}
+      unsubscribeFromProfile(profilePubkey, subscriberId);
+    };
+  } catch (err) {
+    console.error('Failed to load profile:', err);
     profile = null;
+    return undefined;
   }
 });
 
@@ -95,7 +86,7 @@ let error = $derived<string | null>(null);
 // TODO: Implement NIP-05 verification in clean architecture
 let verified = $derived(false);
 
-let hasProfileData = $derived(profile && (profile.metadata?.name || profile.metadata?.about || profile.metadata?.picture));
+let hasProfileData = $derived(!!(profile && (profile as any)?.metadata && (((profile as any).metadata.name) || ((profile as any).metadata.about) || ((profile as any).metadata.picture))));
 
 // CLEAN ARCHITECTURE: No auto-create logic needed
 // Cache-first approach shows profiles immediately when available
@@ -180,20 +171,77 @@ async function handleSaveProfile(event: Event) {
 }
 
 // =============================================================================
+// Profile Tabs: Notes / Replies / Reposts / Likes
+// =============================================================================
+
+type Tab = 'notes' | 'replies' | 'reposts' | 'likes';
+let currentTab: Tab = $state('notes');
+let listEvents: any[] = $state([]);
+let listLoading = $state(false);
+let liveHandle: any = null;
+const dispatch = createEventDispatcher<{ openThread: { id: string } }>();
+
+function stopLive() {
+  try { liveHandle?.stop?.(); } catch {}
+  liveHandle = null;
+}
+
+async function startLive() {
+  if (!nostr || !profilePubkey) return;
+  stopLive();
+  listLoading = true;
+  try {
+    let b = nostr.sub();
+    if (currentTab === 'reposts') {
+      b = b.kinds([6]).authors([profilePubkey]); // NIP-18
+    } else if (currentTab === 'likes') {
+      b = b.kinds([7]).authors([profilePubkey]); // NIP-25
+    } else {
+      // notes / replies are both kind 1; split in UI
+      b = b.kinds([1]).authors([profilePubkey]); // NIP-01
+    }
+    b = b.limit(200);
+    const handle = await b.execute();
+    liveHandle = handle;
+    handle.store.subscribe((arr: any[]) => {
+      let items = (arr || []).slice();
+      if (currentTab === 'notes') {
+        // exclude replies: those having at least one 'e' tag
+        items = items.filter((ev: any) => !(Array.isArray(ev.tags) && ev.tags.some((t: any[]) => t?.[0] === 'e')));
+      } else if (currentTab === 'replies') {
+        items = items.filter((ev: any) => Array.isArray(ev.tags) && ev.tags.some((t: any[]) => t?.[0] === 'e'));
+      }
+      listEvents = items.sort((a: any, b: any) => b.created_at - a.created_at);
+      listLoading = false;
+    });
+  } catch (e) {
+    listLoading = false;
+    console.error('Profile list load failed', e);
+  }
+}
+
+$effect(() => {
+  // Start/refresh when tab or target profile changes
+  if (nostr && profilePubkey) startLive();
+});
+
+onDestroy(() => stopLive());
+
+// =============================================================================
 // Computed Properties
 // =============================================================================
 
-const displayName = $derived(
-	!profilePubkey ? 'No Profile' :
-	profile?.metadata?.name ? profile.metadata.name :
-	profile?.metadata?.display_name ? profile.metadata.display_name :
-	profilePubkey.substring(0, 8) + '...'
-);
+// const displayName = $derived(
+//     !profilePubkey ? 'No Profile' :
+//     (profile as any)?.metadata?.name ? (profile as any).metadata.name :
+//     (profile as any)?.metadata?.display_name ? (profile as any).metadata.display_name :
+//     profilePubkey.substring(0, 8) + '...'
+// );
 
-const shortPubkey = $derived(
-	!profilePubkey ? '' :
-	profilePubkey.substring(0, 8) + '...' + profilePubkey.substring(-8)
-);
+// const shortPubkey = $derived(
+//     !profilePubkey ? '' :
+//     profilePubkey.substring(0, 8) + '...' + profilePubkey.substring(profilePubkey.length - 8)
+// );
 </script>
 
 <div class="profile-view {className}" class:compact>
@@ -216,8 +264,8 @@ const shortPubkey = $derived(
 		<div class="profile-container">
 			<!-- Profile Banner -->
 			<div class="profile-banner">
-				{#if profile?.metadata?.banner}
-					<img src={profile.metadata.banner} alt="" class="banner-image" />
+                {#if (profile as any)?.metadata?.banner}
+                    <img src={(profile as any).metadata.banner} alt="" class="banner-image" />
 				{:else}
 					<div class="banner-placeholder"></div>
 				{/if}
@@ -233,16 +281,16 @@ const shortPubkey = $derived(
 			
 			<!-- Modular Profile Actions -->
 			{#if showActions}
-				<ProfileActions 
-					{profile}
-					{nostr}
-					{authState}
-					pubkey={profilePubkey}
-					onEditClick={handleEditClick}
-					onCreateClick={handleCreateClick}
-					{onDMClick}
-					className="main-profile-actions"
-				/>
+                <ProfileActions 
+                    {profile}
+                    {nostr}
+                    {authState}
+                    pubkey={profilePubkey}
+                    onEditClick={handleEditClick}
+                    onCreateClick={handleCreateClick}
+                    onDMClick={onDMClick || (()=>{})}
+                    className="main-profile-actions"
+                />
 			{/if}
 			
 			<!-- Modular Profile Info -->
@@ -253,6 +301,28 @@ const shortPubkey = $derived(
 				{compact}
 				className="main-profile-info"
 			/>
+
+			<!-- Profile Tabs -->
+			<div class="profile-tabs">
+				<div class="segmented">
+					<button class="seg-btn" class:active={currentTab==='notes'} onclick={() => currentTab='notes'}>Notes</button>
+					<button class="seg-btn" class:active={currentTab==='replies'} onclick={() => currentTab='replies'}>Replies</button>
+					<button class="seg-btn" class:active={currentTab==='reposts'} onclick={() => currentTab='reposts'}>Reposts</button>
+					<button class="seg-btn" class:active={currentTab==='likes'} onclick={() => currentTab='likes'}>Likes</button>
+				</div>
+
+				{#if listLoading}
+					<div class="loading-list"><div class="spinner"></div> Lädt…</div>
+				{:else if listEvents.length === 0}
+					<div class="empty-list">Keine Einträge</div>
+				{:else}
+					<div class="event-list">
+						{#each listEvents as ev (ev.id)}
+							<EventCard event={ev} {nostr} on:openThread={(e)=>dispatch('openThread', e.detail)} />
+						{/each}
+					</div>
+				{/if}
+			</div>
 		</div>
 	{:else if viewMode === 'edit' || viewMode === 'create'}
 		<!-- Profile Creation/Edit Form -->
@@ -271,12 +341,12 @@ const shortPubkey = $derived(
 				
 				<div class="form-group">
 					<label for="name">Display Name</label>
-					<input
+                    <input
 						id="name"
 						name="name"
 						type="text"
 						placeholder="Your display name"
-						value={profile?.metadata?.name || ''}
+                        value={(profile as any)?.metadata?.name || ''}
 						class="form-input"
 					/>
 					<small class="form-hint">This is how others will see you on Nostr</small>
@@ -284,11 +354,11 @@ const shortPubkey = $derived(
 				
 				<div class="form-group">
 					<label for="about">About</label>
-					<textarea
+                    <textarea
 						id="about"
 						name="about"
 						placeholder="Tell people about yourself..."
-						value={profile?.metadata?.about || ''}
+                        value={(profile as any)?.metadata?.about || ''}
 						class="form-textarea"
 						rows="4"
 					></textarea>
@@ -297,12 +367,12 @@ const shortPubkey = $derived(
 				
 				<div class="form-group">
 					<label for="picture">Profile Picture URL</label>
-					<input
+                    <input
 						id="picture"
 						name="picture"
 						type="url"
 						placeholder="https://example.com/avatar.jpg"
-						value={profile?.metadata?.picture || ''}
+                        value={(profile as any)?.metadata?.picture || ''}
 						class="form-input"
 					/>
 					<small class="form-hint">Link to your profile picture</small>
@@ -310,12 +380,12 @@ const shortPubkey = $derived(
 				
 				<div class="form-group">
 					<label for="banner">Banner Image URL</label>
-					<input
+                    <input
 						id="banner"
 						name="banner"
 						type="url"
 						placeholder="https://example.com/banner.jpg"
-						value={profile?.metadata?.banner || ''}
+                        value={(profile as any)?.metadata?.banner || ''}
 						class="form-input"
 					/>
 					<small class="form-hint">Link to your profile banner</small>
@@ -323,12 +393,12 @@ const shortPubkey = $derived(
 				
 				<div class="form-group">
 					<label for="website">Website</label>
-					<input
+                    <input
 						id="website"
 						name="website"
 						type="url"
 						placeholder="https://yoursite.com"
-						value={profile?.metadata?.website || ''}
+                        value={(profile as any)?.metadata?.website || ''}
 						class="form-input"
 					/>
 					<small class="form-hint">Your personal website or blog</small>
@@ -336,12 +406,12 @@ const shortPubkey = $derived(
 				
 				<div class="form-group">
 					<label for="nip05">NIP-05 Identifier</label>
-					<input
+                    <input
 						id="nip05"
 						name="nip05"
 						type="email"
 						placeholder="username@domain.com"
-						value={profile?.metadata?.nip05 || ''}
+                        value={(profile as any)?.metadata?.nip05 || ''}
 						class="form-input"
 					/>
 					<small class="form-hint">Your verified Nostr address (like email)</small>
@@ -349,12 +419,12 @@ const shortPubkey = $derived(
 				
 				<div class="form-group">
 					<label for="lud16">Lightning Address</label>
-					<input
+                    <input
 						id="lud16"
 						name="lud16"
 						type="email"
 						placeholder="username@lightningprovider.com"
-						value={profile?.metadata?.lud16 || ''}
+                        value={(profile as any)?.metadata?.lud16 || ''}
 						class="form-input"
 					/>
 					<small class="form-hint">For receiving Bitcoin payments</small>
@@ -480,6 +550,16 @@ const shortPubkey = $derived(
 .main-profile-info {
 	margin: 0 var(--spacing-lg);
 }
+
+/* Tabs */
+.profile-tabs { margin: var(--spacing-lg); display:flex; flex-direction: column; gap: var(--spacing-md); }
+.segmented { display:inline-flex; border:1px solid rgba(255,255,255,0.08); border-radius:14px; overflow:hidden; background: rgba(255,255,255,0.04); backdrop-filter: blur(8px); }
+.seg-btn { padding:8px 12px; background:transparent; color:#cbd5e1; border:none; cursor:pointer; font-size:.9rem; }
+.seg-btn.active { background: var(--color-primary); color: var(--color-primary-text); }
+.event-list { display:flex; flex-direction: column; gap: 1rem; }
+.loading-list, .empty-list { color:#94a3b8; padding: .5rem 0; }
+.spinner { width:16px; height:16px; border:2px solid var(--color-border); border-top:2px solid var(--color-primary); border-radius:50%; display:inline-block; animation: spin 1s linear infinite; margin-right:.5rem; }
+@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
 
 .profile-editor-placeholder {
 	padding: var(--spacing-xl);
