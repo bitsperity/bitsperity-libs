@@ -735,7 +735,7 @@ MIT License - see [LICENSE](./LICENSE) file for details.
 
 ### 📖 **Complete Documentation Guide**
 
-[🔍 Query Engine](./docs/query/README.md) • [💬 Direct Messages](./docs/dm/README.md) • [🏪 Stores](./docs/stores/README.md) • [📝 Events](./docs/events/README.md) • [👥 Social](./docs/social/README.md) • [🏗️ Architecture](./docs/architecture/README.md)
+[🔍 Query Engine](./docs/query/README.md) • [💬 Direct Messages](./docs/dm/README.md) • [🏪 Stores](./docs/stores/README.md) • [📝 Events](./docs/events/README.md) • [👥 Social](./docs/social/README.md) • [🔑 Remote Signing](./docs/signing/README.md) • [🏗️ Architecture](./docs/architecture/README.md)
 
 **Start with [Query & Subscription Engine](./docs/query/README.md) to understand the foundation!**
 
