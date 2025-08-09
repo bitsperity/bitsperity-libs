@@ -169,12 +169,16 @@
     </header>
 
 	<!-- Main Content - NostrUnchained powered -->
+{#if showEnc}
+    <div class="enc-popover"><EncodingsPanel /></div>
+{/if}
 	<main class="app-main">
         {#if currentView === 'terminal'}
             <NostrTerminal 
                 {nostr}
                 showRelayInspector={showRelay}
                 on:profileNavigate={(e) => navigateToProfile(e.detail.pubkey)}
+                on:openThread={(e) => { currentThreadId = e.detail.id; currentView = 'thread'; }}
             />
             {#if showEnc}
                 <div style="padding: 0.75rem 1rem;">
@@ -248,6 +252,9 @@
     .ghost-btn.danger { border-color: rgba(239,68,68,0.5); color:#fecaca; }
     .ghost-btn.danger:hover { background: rgba(239,68,68,0.15); }
     .connection-chip { font-size:.85rem; color:#86efac; border:1px solid rgba(34,197,94,0.35); background: rgba(34,197,94,0.1); padding:4px 8px; border-radius:10px; }
+
+    /* Encodings popover */
+    .enc-popover { position: fixed; top: 66px; right: 16px; z-index: 1100; width: 380px; max-width: calc(100% - 32px); }
 
 	.app-main {
 		flex: 1;

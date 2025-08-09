@@ -17,9 +17,10 @@
     showRelayInspector?: boolean;
 	} = $props();
 	
-	const dispatch = createEventDispatcher<{
-		profileNavigate: { pubkey: string };
-	}>();
+  const dispatch = createEventDispatcher<{
+    profileNavigate: { pubkey: string };
+    openThread: { id: string };
+  }>();
 
   // logger intentionally removed to avoid unused warnings
 </script>
@@ -30,6 +31,7 @@
         <DevExplorer 
             {nostr} 
             on:profileNavigate={(e) => dispatch('profileNavigate', e.detail)}
+            on:openThread={(e) => dispatch('openThread', e.detail)}
         />
     {#if showRelayInspector}
       <div class="relay-inspector-wrapper">

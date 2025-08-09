@@ -15,9 +15,10 @@
 	
 	let { nostr }: { nostr: any } = $props();
 	
-	const dispatch = createEventDispatcher<{
-		profileNavigate: { pubkey: string };
-	}>();
+    const dispatch = createEventDispatcher<{
+        profileNavigate: { pubkey: string };
+        openThread: { id: string };
+    }>();
 	
 	// =============================================================================
 	// STATE: Clean and Simple
@@ -815,11 +816,12 @@
 			<!-- Event Cards -->
 			<div class="events-grid">
 				{#each events as event (event.id)}
-					<EventCard 
-						{event} 
-						{nostr}
-						on:profileClick={(e) => handleProfileClick(e.detail)}
-					/>
+                    <EventCard 
+                        {event} 
+                        {nostr}
+                        on:profileClick={(e) => handleProfileClick(e.detail)}
+                        on:openThread={(e) => dispatch('openThread', e.detail)}
+                    />
 				{/each}
 			</div>
 		{/if}
