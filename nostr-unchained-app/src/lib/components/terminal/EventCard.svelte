@@ -236,10 +236,6 @@
 			return;
     }
 
-    // Removed inline copy UI; keep state resets to avoid unused warnings
-    $effect.pre(() => {
-        copySuccess = false; copyMessage = '';
-    });
 		dispatch('tagClick', { type, value });
 	}
 
