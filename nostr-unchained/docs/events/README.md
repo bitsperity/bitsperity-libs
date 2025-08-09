@@ -207,6 +207,26 @@ Client → ["AUTH", { kind:22242, tags:[ ["relay", url], ["challenge", value] ],
 - Keine manuelle Konfiguration nötig – sobald ein Signer aktiv ist, wird der AUTH‑Event erzeugt und gesendet.
 - CLOSED/NOTICE mit `auth-required:`/`restricted:` werden erkannt; die Library versucht automatisch AUTH erneut.
 
+### NIP-65 Relay Lists (Neu)
+
+Kind `10002` (replaceable) mit `r`-Tags und optionalen Markern `read`/`write`.
+
+```ts
+// Publish relay list
+await nostr.relayList
+  .edit()
+  .read('wss://read.example.com')
+  .write('wss://write.example.com')
+  .both('ws://localhost:7777')
+  .publish();
+
+// Reactive read
+const rl = nostr.relayList.get(npubOrHex);
+rl.subscribe((state) => {
+  console.log(state.read, state.write, state.both);
+});
+```
+
 | `7` | Reaction | Likes, dislikes, emoji reactions |
 | `40` | Channel Creation | Chat channel creation |
 | `41` | Channel Metadata | Channel information |

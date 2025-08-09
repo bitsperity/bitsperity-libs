@@ -18,6 +18,7 @@ import { SubscriptionManager } from '../subscription/SubscriptionManager.js';
 import { UniversalEventCache, type CacheStatistics } from '../cache/UniversalEventCache.js';
 import { QueryBuilder, SubBuilder } from '../query/QueryBuilder.js';
 import { ProfileModule } from '../profile/ProfileModule.js';
+import { RelayListModule } from '../relay/RelayListModule.js';
 
 import type {
   NostrUnchainedConfig,
@@ -52,6 +53,8 @@ export class NostrUnchained {
   
   // Profile API (Enhanced)
   private _profile?: ProfileModule;
+  // Relay List API (NIP-65)
+  private _relayList?: RelayListModule;
 
   constructor(config: NostrUnchainedConfig = {}) {
     // Merge with defaults
@@ -221,6 +224,16 @@ export class NostrUnchained {
       });
     }
     return this._profile;
+  }
+
+  /**
+   * Get NIP-65 Relay List module
+   */
+  get relayList(): RelayListModule {
+    if (!this._relayList) {
+      this._relayList = new RelayListModule(this);
+    }
+    return this._relayList;
   }
 
   /**

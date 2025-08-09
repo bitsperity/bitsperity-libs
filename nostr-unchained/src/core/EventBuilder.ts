@@ -159,9 +159,10 @@ export class EventBuilder {
       3,    // NIP-02: Contact list / Follow list (typically has empty content)
       5,    // NIP-09: Event deletion (may have empty content)
       6,    // NIP-18: Repost (requires empty content)
-      7,    // NIP-25: Reaction (may have empty content for simple reactions)
+      7,     // NIP-25: Reaction (may have empty content for simple reactions)
+      10002, // NIP-65: Relay List Metadata (empty content)
       // NOTE: 1059 (Gift wraps) removed - they MUST have encrypted content per NIP-44
-      1984  // NIP-56: Reporting (may have empty content with just tags)
+      1984   // NIP-56: Reporting (may have empty content with just tags)
     ];
     
     return emptyContentKinds.includes(kind);
