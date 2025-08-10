@@ -33,7 +33,7 @@
 
 ## 📖 Documentation Walkthrough
 
-This README provides an overview and quickstart guide. For comprehensive documentation, follow this learning path:
+This README provides an English overview and a quickstart hub. For comprehensive documentation, follow this path:
 
 ### 🚀 **Start Here:** [Universal Query & Subscription Engine](./docs/query/README.md)
 Learn the core architecture with **identical APIs** for cache queries and live subscriptions. This is the foundation everything else builds on.
@@ -48,17 +48,17 @@ Master **reactive profile and follow list management** with intelligent caching:
 - 🔍 **Advanced Discovery**: Search by name, NIP-05, metadata with relevance scoring
 - 📦 **Batch Operations**: Efficient bulk profile fetching and follow management
 
-### 🏪 **Next:** [Universal Store System](./docs/stores/README.md) 
+### 🏪 **Next:** [Universal Store System](./docs/stores/README.md)
 Understand how **reactive Svelte stores** provide automatic UI updates across all data access.
 
 ### 📝 **Build:** [Event Publishing](./docs/events/README.md)
 Master zero-config publishing with **user-controlled signing** providers and fluent event builders.
 
 ### 🏗️ **Architecture:** [Universal Cache Architecture](./docs/architecture/README.md)
-Erfahre die innovative 4-Schichten-Architektur im Detail.
+Deep dive into the 4‑layer architecture.
 
 ### 👥 **Scale:** [Social Media Core](./docs/social/README.md)
-Build complete social apps with profiles, contacts, threading, reactions, and feeds.
+Build complete social apps with profiles, contacts, threading, reactions, feeds.
 
 ### 🔎 Feature Snapshots (TL;DR)
 
