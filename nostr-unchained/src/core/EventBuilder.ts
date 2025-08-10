@@ -165,6 +165,7 @@ export class EventBuilder {
       30001, // NIP-51: Generic Lists
       30002, // NIP-51: Relay Lists
       30003, // NIP-51: Bookmark Lists
+      1985,  // NIP-32: Labeling events may have empty content
       // NOTE: 1059 (Gift wraps) removed - they MUST have encrypted content per NIP-44
       1984   // NIP-56: Reporting (may have empty content with just tags)
     ];

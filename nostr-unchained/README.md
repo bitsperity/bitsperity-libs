@@ -20,6 +20,7 @@
 - **🔐 Relay Auth (NIP-42)** - Automatisches AUTH-Handshake bei Bedarf (Challenge → signiertes AUTH‑Event)
 - **🛰️ Relay Lists (NIP-65)** - Publish & Read Relay-Listen (read/write/both) mit göttlicher DX
 - **🗂️ Lists (NIP-51)** - Generische Listen (30000–30003) mit Fluent Builder und reaktivem Lesen
+- **🏷️ Labels (NIP-32)** - Labeling via `kind:1985` mit `L`/`l` und Ziel‑Tags; reactive Retrieval
 - **💬 Comments (NIP-22)** - Universelle Kommentare (kind 1111) auf Events/Addressables/Externals
  - **🖼️ Media Attachments (NIP-92)** - `attachMedia()` mit `imeta`‑Tags, Parser/Helper exportiert
  - **⚠️ Content Warning (NIP-36)** - `.contentWarning(reason?)` markiert Events als sensibel
@@ -341,6 +342,25 @@ await nostr.lists
 // Reactive read
 const list = nostr.lists.get(await nostr.getPublicKey(), 30003, 'bookmarks');
 list.subscribe(v => console.log(v?.title, v?.p?.length, v?.e?.length));
+```
+
+### 🏷️ NIP-32 Labels (kind 1985)
+
+Labels erlauben Moderation/Organisation über Namespaces (`L`) und Label‑Werte (`l`) an Events/Autoren/Addresses/Relays/Topics.
+
+```ts
+// Event labeln
+await nostr.labels
+  .edit()
+  .namespace('ISO-639-1')       // L‑Tag
+  .label('en', 'ISO-639-1')     // l‑Tag mit Mark (Namespace)
+  .targetEvent('e'.repeat(64))  // Ziel: Event (e‑Tag, optional Relay‑Hint)
+  .reason('language: English')  // Optionaler Freitext
+  .publish();
+
+// Reactive lesen
+const labels = nostr.labels.forEvent('e'.repeat(64));
+labels.subscribe(list => console.log('labels for event', list.length));
 ```
 
 ## 📚 Complete Documentation Guide

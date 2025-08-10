@@ -377,6 +377,30 @@ const bookmarks = nostr.lists.get(await nostr.getPublicKey(), 30003, 'bookmarks'
 bookmarks.subscribe(list => {
   console.log(list?.title, list?.p?.length, list?.e?.length, list?.a?.length);
 });
+```
+
+## 🏷️ Labels (NIP-32)
+
+Labeling gemäß NIP-32 mit `kind:1985`. Unterstützte Ziele: Events (`e`), Autoren (`p`), Addressables (`a`), Relays (`r`), Topics (`t`). Namespaces via `L`‑Tag; Label‑Werte via `l`‑Tag (mit Mark zum passenden Namespace).
+
+```ts
+// Event mit Namespace labeln
+await nostr.labels
+  .edit()
+  .namespace('ISO-639-1')
+  .label('en', 'ISO-639-1')
+  .targetEvent('e'.repeat(64))
+  .reason('language: English')
+  .publish();
+
+// Reactive lesen
+const labelsForEvent = nostr.labels.forEvent('e'.repeat(64));
+labelsForEvent.subscribe(events => console.log('labels', events.length));
+```
+
+Hinweise:
+- `kind:1985` ist als empty‑content erlaubt (Begründung/Text optional über `content`).
+- Für `e`/`p` Ziele wird ein Relay‑Hint empfohlen.
 
 ## 💬 Comments (NIP-22)
 
@@ -399,7 +423,6 @@ await nostr.comments
 // Reactive lesen
 const comments = nostr.comments.getForAddressable(30023, myPubkey, 'article-1');
 comments.subscribe(list => console.log('comments', list.length));
-```
 ```
 
 ### Feed Types

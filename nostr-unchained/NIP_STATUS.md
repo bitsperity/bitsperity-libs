@@ -21,6 +21,7 @@ Quelle: Code, Tests und Doku im Repo (`src/`, `tests-v2/`, `docs/`). Referenz de
 | 25 | Reactions | Social | `ReactionModule` (Kind 7), Unreact via NIP‑09; Tests |
 | 44 | Versioned Encryption | Crypto | NIP‑44 v2 (ChaCha20‑Poly1305), offizielle Testvektoren in `tests-v2` |
 | 59 | Gift Wrap | Privacy | Auto‑Unwrap im Cache, Lazy Subscription, `publishSigned` für bereits signierte Wraps |
+| 32 | Labeling | Moderation/Organisation | `kind:1985` Builder + reaktives Lesen (`nostr.labels`), `L`/`l` + Ziel‑Tags |
 
 ### Teilweise/indirekt abgedeckt
 - NIP‑14 (Subject Tag): In DMs (NIP‑17) genutzt für Threading (Subject‑Tags), kein separater Note‑Subject‑Support.
@@ -39,7 +40,7 @@ Quelle: Code, Tests und Doku im Repo (`src/`, `tests-v2/`, `docs/`). Referenz de
 6. NIP‑46 (Nostr Connect) – Passt zur „no raw keys“-Policy; Remote‑Signing erhöht Sicherheit deutlich.
 7. NIP‑50 (Search Capability) – Serverseitige Suche; verbessert Discovery über lokale/Feed‑Suche hinaus.
 8. NIP‑36 (Content Warning) – UX/Mediation; wichtig für Social‑Feeds.
-9. NIP‑32 (Labeling) – Moderation/Organisation; Grundlage für Trust/Filtering.
+9. NIP‑32 (Labeling) – Moderation/Organisation; Grundlage für Trust/Filtering. (JETZT IMPLEMENTIERT)
 10. NIP‑28 (Public Chat) – Realtime‑Chats; Social‑Feature mit breiter Nutzung.
 11. NIP‑72 (Moderated Communities) – Größerer Funktionsblock; wichtig für Gruppen/Moderation.
 12. NIP‑21 (URI Scheme) – Interop/Deep‑Links (`nostr:`) für App‑Integration.

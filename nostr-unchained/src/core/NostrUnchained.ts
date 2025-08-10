@@ -16,6 +16,7 @@ import { UniversalDMModule } from '../dm/api/UniversalDMModule.js';
 import { SocialModule } from '../social/api/SocialModule.js';
 import { CommentsModule } from '../social/comments/CommentsModule.js';
 import { ListModule } from '../social/lists/ListModule.js';
+import { LabelsModule } from '../social/labels/LabelsModule.js';
 import { SubscriptionManager } from '../subscription/SubscriptionManager.js';
 import { UniversalEventCache, type CacheStatistics } from '../cache/UniversalEventCache.js';
 import { QueryBuilder, SubBuilder } from '../query/QueryBuilder.js';
@@ -57,6 +58,8 @@ export class NostrUnchained {
   private _comments?: CommentsModule;
   // Lists API (NIP-51)
   private _lists?: ListModule;
+  // Labels API (NIP-32)
+  private _labels?: LabelsModule;
   
   // Profile API (Enhanced)
   private _profile?: ProfileModule;
@@ -258,6 +261,14 @@ export class NostrUnchained {
       this._lists = new ListModule(this);
     }
     return this._lists;
+  }
+
+  /** NIP-32 Labels module */
+  get labels(): LabelsModule {
+    if (!this._labels) {
+      this._labels = new LabelsModule(this);
+    }
+    return this._labels;
   }
 
   /** NIP-22 Comments module */
