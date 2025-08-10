@@ -1,4 +1,4 @@
-## NIP-Implementierungsstatus für @nostr-unchained
+## NIP-Implementierungsstatus für @nostr-unchained (kept in DE by request)
 
 ### Überblick
 Dieses Dokument fasst zusammen, welche NIPs in der Bibliothek bereits implementiert sind, welche teilweise abgedeckt sind und welche fehlen. Zudem enthält es eine Priorisierung der fehlenden NIPs für die Roadmap von Nostr Unchained.

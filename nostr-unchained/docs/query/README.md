@@ -1,8 +1,8 @@
 # 🔍 Universal Query & Subscription Engine
 
-Die **Universal Query Engine** stellt **identische APIs** für Cache-Queries und Live-Subscriptions bereit, basierend auf der **Subscription-First Universal Cache Architecture**.
+The Universal Query Engine provides identical APIs for cache queries and live subscriptions, built on the subscription‑first Universal Cache Architecture.
 
-> **Kernkonzept**: "Im Cache landen nur Sachen die subscribed werden" + identische APIs für Cache und Live-Daten.
+> Core concept: subscription‑first cache + identical fluent APIs for cache and live data.
 
 ## Table of Contents
 
@@ -42,24 +42,24 @@ liveStore.subscribe(posts => {
 });
 ```
 
-## Subscription-First Cache Architecture
+## Subscription‑First Cache Architecture
 
-### Das Kernprinzip: "Im Cache landen nur Sachen die subscribed werden"
+### Core principle: subscription‑first
 
-**WICHTIG**: Der Cache füllt sich NICHT automatisch. Events landen nur im Cache wenn:
-1. Eine aktive Subscription sie empfängt
-2. Manuell über `addEvent()` hinzugefügt (selten)
+Cache does not fill automatically. Events enter the cache only when:
+1) An active subscription receives them
+2) Manually added via `addEvent()` (rare)
 
 **Same API, different data sources:**
 
 ```typescript
-// STEP 1: Subscription f\u00fcllt Cache (Live von Relays)
+// STEP 1: Subscription fills cache (live from relays)
 const subscription = nostr.sub()
   .kinds([1])
   .authors(['alice-pubkey'])
   .execute();
 
-// STEP 2: Query liest aus Cache (Sofort verf\u00fcgbar)  
+// STEP 2: Query reads from cache (instant)  
 const cached = nostr.query()
   .kinds([1])
   .authors(['alice-pubkey'])
@@ -67,22 +67,22 @@ const cached = nostr.query()
 
 console.log(`Cache contains: ${cached.current.length} posts`);
 
-// OHNE Subscription w\u00e4re Cache leer!
+// Without subscription, cache would be empty!
 ```
 
-### Die Subscription-First Logik
+### Subscription‑first flow
 
-**Subscription → Cache → Query**
+Subscription → Cache → Query
 
 1. **sub()** startet Live-Subscription zu Relays
 2. Empfangene Events landen automatisch im Cache 
 3. **query()** findet sie sofort im Cache (<10ms)
 
-**Darum ist das genial:**
-- **Performance**: Cache-Zugriffe sind sofort verf\u00fcgbar
-- **User Control**: Keine automatischen Subscriptions
-- **Privacy**: Subscriptions nur wenn explizit gew\u00fcnscht
-- **Reliability**: Offline-f\u00e4hige Apps durch lokalen Cache
+Why this matters:
+- Performance: instant cache access
+- User control: no automatic subscriptions
+- Privacy: subscribe only when explicit
+- Reliability: offline‑friendly via local cache
 
 ```typescript
 // IDENTICAL fluent APIs

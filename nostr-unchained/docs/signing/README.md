@@ -1,32 +1,32 @@
-# 🔑 Remote Signing mit Nostr Connect (NIP‑46)
+# 🔑 Remote Signing with Nostr Connect (NIP‑46)
 
-Dieses Kapitel erklärt Schritt für Schritt, was Nostr Connect ist, warum es nützlich ist, und wie du es mit Nostr Unchained verwendest – ohne Vorwissen.
+This chapter explains what Nostr Connect is, why it’s useful, and how to use it with Nostr Unchained — no prior knowledge required.
 
-## Was ist Nostr Connect (NIP‑46)?
+## What is Nostr Connect (NIP‑46)?
 
-- "Remote Signing" bedeutet: Deine App signiert Events nicht selbst, sondern beauftragt einen getrennten "Remote‑Signer" (z. B. deine Wallet/App) über einen Relay‑Kanal.
-- Die App sieht niemals deinen Private Key. Sie sendet nur eine Signaturanfrage, der Remote‑Signer antwortet mit einer Signatur.
-- Transport ist Nostr‑nativ: Anfragen/Antworten laufen als Events vom Typ `kind: 24133` und sind mit NIP‑44 Ende‑zu‑Ende verschlüsselt.
+- Remote signing: your app delegates signing to a remote signer (e.g., wallet) via relays.
+- The app never sees your private key — it sends a signing request, the signer returns a signature.
+- Transport is Nostr‑native: requests/responses are `kind: 24133` events encrypted with NIP‑44.
 
-## Warum ist das gut?
+## Why it’s great
 
-- Sicherheit: Kein Private Key im Browser/Frontend. Minimiert Angriffsfläche.
-- Geräte‑/App‑Flexibilität: Du kannst einen vertrauenswürdigen Signer (z. B. Mobile Wallet) verwenden und mehrere Clients anbinden.
-- Compliance: Standardisiertes Protokoll (NIP‑46), verbreitet in modernen Nostr‑Apps.
+- Security: no private key in the client, reduced attack surface
+- Flexibility: use trusted signers (mobile wallets), connect multiple clients
+- Compliance: standardized protocol (NIP‑46)
 
-## Wie funktioniert das technisch?
+## How it works
 
-- Die App erzeugt eine signierte Anfrage (Event `kind: 24133`) an den Remote‑Signer. Inhalt (JSON‑RPC ähnlich) wird mit NIP‑44 verschlüsselt.
-- Der Remote‑Signer liest diese Anfrage (über Relay), prüft Berechtigungen und antwortet ebenfalls mit `kind: 24133` (verschlüsselt) zurück.
-- Übliche Methoden: `get_public_key`, `sign_event`, optional `nip44_encrypt`/`nip44_decrypt`, `ping` usw.
+- The app creates a signed request (`kind: 24133`) to the signer; payload is NIP‑44 encrypted.
+- The signer processes the request (via relay) and replies with `kind: 24133` (encrypted).
+- Common RPCs: `get_public_key`, `sign_event`, optional `nip44_encrypt`/`nip44_decrypt`, `ping`.
 
-## Was brauchst du vom Remote‑Signer?
+## Requirements from the remote signer
 
-- Seine `pubkey` (64‑stellige Hex).
-- Eine oder mehrere Relay‑URLs, auf denen er Nachrichten empfängt.
-- Häufig stellt der Signer einen Verbindungs‑URI bereit (z. B. `nostrconnect://...`), aus dem du `pubkey` und `relay` Werte ausliest.
+- Signer `pubkey` (64‑hex)
+- One or more relay URLs
+- Often a `nostrconnect://...` URI that includes both
 
-## Quickstart mit Nostr Unchained
+## Quickstart with Nostr Unchained
 
 1) Installation/Setup wie üblich
 
@@ -37,32 +37,32 @@ const nostr = new NostrUnchained({ relays: ['wss://relay.example'] });
 await nostr.connect();
 ```
 
-2) Remote‑Signer konfigurieren
+2) Configure the remote signer
 
 ```ts
-// Diese Werte kommen vom Remote‑Signer (App/Wallet)
+// Provided by remote signer (wallet/app)
 const remoteSignerPubkey = 'fa984b...';
 const signerRelays = ['wss://relay1.example', 'wss://relay2.example'];
 
-// Minimaler NIP‑46‑Client: nutzt eine interne Transport‑Identität (ephemeral)
+// Minimal NIP‑46 client: uses an internal transport identity (ephemeral)
 const remoteSigner = new NostrConnectSigner({
   remoteSignerPubkey,
   relays: signerRelays,
   nostr
 });
 
-// App auf Remote‑Signatur umstellen
+// Switch app to remote signer
 await nostr.useCustomSigner(remoteSigner);
 ```
 
-3) Normal weiterarbeiten – publizieren, lesen, etc.
+3) Continue as normal — publish, read, etc.
 
 ```ts
 // Hinweis: publish() nutzt nun den Remote‑Signer
 await nostr.events.note('Hallo aus Remote‑Signing!').publish();
 ```
 
-## Client‑initiierter Flow: nostrconnect:// Token erzeugen
+## Client‑initiated flow: create nostrconnect:// token
 
 Du kannst einen Verbindungs‑Token erzeugen, den der Remote‑Signer konsumiert. Damit können Permissions/Relays vorab kommuniziert werden.
 
@@ -73,12 +73,12 @@ const token = await remoteSigner.createClientToken({
   perms: ['sign_event:1','sign_event:14','nip44_encrypt','nip44_decrypt']
 });
 
-// Anzeige als QR oder Link
+// Show as QR or link
 console.log(token);
-// z.B. nostrconnect://<client-pubkey>?relay=wss%3A%2F%2Frelay1.example&...
+// e.g. nostrconnect://<client-pubkey>?relay=wss%3A%2F%2Frelay1.example&...
 ```
 
-## Vollständiges Beispiel inkl. Parse eines nostrconnect:// URIs
+## Full example including nostrconnect:// URI parsing
 
 Einige Signer geben eine `nostrconnect://` URL aus. Hier ein simples Beispiel, wie du `pubkey` und `relays` extrahierst:
 
@@ -100,30 +100,30 @@ const signer = new NostrConnectSigner({ remoteSignerPubkey: pubkey, relays, nost
 await nostr.useCustomSigner(signer);
 ```
 
-## Fehlerbilder & Timeouts
+## Errors & timeouts
 
-- Kein echter Remote‑Signer online → Anfragen laufen ins Timeout (Default ~10s) mit Fehlermeldung `NIP-46 request timeout`.
-- Falsche `pubkey`/Relay‑Liste → Der Signer sieht die Anfrage nicht, ebenfalls Timeout.
-- Fehlermeldung vom Signer → Die RPC‑Antwort enthält `error`; die Library wirft einen Fehler mit dieser Nachricht.
+- No signer online → request timeout (~10s)
+- Wrong `pubkey`/relays → signer never sees the request
+- Signer error → RPC response contains `error`; library throws with that message
 
-## Grenzen dieser ersten Implementierung
+## Current limitations
 
-- Fokus: Minimal‑Flow `get_public_key` & `sign_event`.
-- Noch nicht implementiert:
-  - `connect`‑Handshake/Permissions (Secret, Permission Strings).
-  - Auth‑Challenges/Redirect‑Flows.
-  - Zusätzliche Methoden (`nip04_*`, `nip44_*`) via Remote‑Signer.
-- Sicherheit/Produktionsbetrieb: Für echte Produktions‑Remote‑Signer bitte Handshake/Permissions ergänzen (Roadmap).
+- Focus: minimal flow `get_public_key` & `sign_event`.
+- Not yet implemented:
+  - `connect` handshake/permissions
+  - Auth challenges/redirect flows
+  - Additional RPCs (`nip04_*`, `nip44_*`)
+- Production: implement handshake/permissions for real deployments.
 
-## Best Practices
+## Best practices
 
-- Verwende Remote‑Signer aus vertrauenswürdigen Quellen (Wallets/Apps), ideal mit NIP‑05/NIP‑89 Discovery.
-- Nutze mehrere Relays (Redundanz).
-- Zeige dem User klar an, wenn Requests warten/abgelehnt wurden.
-- Kombiniere mit NIP‑42 (Relay Auth), wenn deine Relays Auth erzwingen.
+- Use trusted signers, ideally with NIP‑05/NIP‑89
+- Use multiple relays (redundancy)
+- Clear UX for pending/denied requests
+- Combine with NIP‑42 if relays require auth
 
 ## TL;DR
 
-- Nostr Connect = Remote‑Signing via Nostr (Events `24133` + NIP‑44 Verschlüsselung).
-- In Nostr Unchained: `new NostrConnectSigner({ remoteSignerPubkey, relays, nostr })` → `nostr.useCustomSigner(...)` → fertig.
-- App sieht nie den Private Key – bessere Sicherheit, bessere DX.
+- Nostr Connect = remote signing via Nostr (`24133` + NIP‑44)
+- In Nostr Unchained: `new NostrConnectSigner({ remoteSignerPubkey, relays, nostr })` → `nostr.useCustomSigner(...)`
+- App never sees the private key — better security, better DX

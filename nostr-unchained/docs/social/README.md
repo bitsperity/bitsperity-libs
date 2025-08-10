@@ -1,36 +1,36 @@
 # 👥 Social Media Core
 
-Das **Social Media Core** bietet umfassende soziale Features für Nostr-Anwendungen - von Profilen über Kontakten bis zu kompletten sozialen Feeds. Basiert vollständig auf der Universal Cache Architecture.
+The Social Media Core provides end‑to‑end social features for Nostr apps — profiles, contacts, threads, reactions, feeds — built on the Universal Cache Architecture.
 
-## 🎯 Kernfeatures
+## 🎯 Core Features
 
 ### 👤 Profile Management
-- **Cache-First Profile Loading** mit <10ms Response-Zeiten
-- **Automatische NIP-05 Verifikation** mit DNS-basierter Validierung
-- **Fluent Profile Builders** für intuitive Profil-Erstellung
-- **Batch Operations** für effiziente Bulk-Verarbeitung
+- Cache‑first profile loading (<10ms)
+- Automatic NIP‑05 verification (DNS based)
+- Fluent profile builders
+- Batch operations
 
 ### 👥 Contact Management  
-- **Follow/Unfollow APIs** mit optimistischen Updates
-- **Contact List Synchronisation** (NIP-02)
-- **Petname Support** für persönliche Aliase
-- **Relay-spezifische Kontakte** für erweiterte Organisation
+- Follow/Unfollow with optimistic updates
+- Contact list synchronization (NIP‑02)
+- Petnames
+- Relay‑specific contacts
 
 ### 💬 Threading & Conversations
-- **Nested Thread Support** mit korrekter Reply-Verkettung
-- **Thread Root Detection** für saubere Konversations-Struktur
-- **Real-Time Thread Updates** durch Cache-Synchronisation
+- Nested threads with proper reply markers
+- Thread root detection
+- Real‑time updates via cache synchronization
 
 ### ❤️ Reactions & Engagement
-- **NIP-25 Reactions** mit Emoji und Custom-Reactions
-- **Like/Dislike Aggregation** mit Benutzer-Listen
-- **Reaction Counts** mit Performance-optimierter Zählung
+- NIP‑25 reactions (emoji/custom)
+- Like/dislike aggregation
+- Reaction counts
 
 ### 📰 Social Feeds
-- **Global Timeline** für alle öffentlichen Posts
-- **Following Feed** für Kontakte
-- **Custom Feeds** mit erweiterten Filtern
-- **Real-Time Feed Updates** durch Live-Subscriptions
+- Global timeline
+- Following feed
+- Custom feeds with advanced filters
+- Real‑time updates
 
 ## 🚀 Quick Start
 
@@ -99,9 +99,9 @@ nostr.social.
 └── content.            // Content creation helpers
 ```
 
-### Query-Based Implementation
+### Query‑Based Implementation
 
-Alle Social Features sind **Query-Wrapper** ohne direkte Netzwerk-Zugriffe:
+All social features are query wrappers – no direct network access:
 
 ```typescript
 // Social Feed = Cache Query für Posts + Profile-Enrichment
@@ -349,16 +349,16 @@ topReactors.subscribe(reactors => {
 
 ## 📰 Social Feeds
 
-## 🗂️ Lists (NIP-51)
+## 🗂️ Lists (NIP‑51)
 
-Unterstützung für Listen (30000–30003) als addressable Events:
+Addressable lists (30000–30003):
 
-- 30000: Follow‑Kategorien
-- 30001: Generische Listen
-- 30002: Relay‑Sammlungen
+- 30000: Follow categories
+- 30001: Generic lists
+- 30002: Relay collections
 - 30003: Bookmarks
 
-Publish und Lesen mit Fluent‑API und Subscription‑First Caching:
+Publish and read with fluent API (subscription‑first caching):
 
 ```ts
 // Bookmark-Liste anlegen
@@ -379,9 +379,9 @@ bookmarks.subscribe(list => {
 });
 ```
 
-## 🏷️ Labels (NIP-32)
+## 🏷️ Labels (NIP‑32)
 
-Labeling gemäß NIP-32 mit `kind:1985`. Unterstützte Ziele: Events (`e`), Autoren (`p`), Addressables (`a`), Relays (`r`), Topics (`t`). Namespaces via `L`‑Tag; Label‑Werte via `l`‑Tag (mit Mark zum passenden Namespace).
+Labeling via `kind:1985`. Targets: Events (`e`), Authors (`p`), Addressables (`a`), Relays (`r`), Topics (`t`). Namespaces with `L` tag; label values with `l` tag (with namespace mark).
 
 ```ts
 // Event mit Namespace labeln
@@ -398,13 +398,13 @@ const labelsForEvent = nostr.labels.forEvent('e'.repeat(64));
 labelsForEvent.subscribe(events => console.log('labels', events.length));
 ```
 
-Hinweise:
-- `kind:1985` ist als empty‑content erlaubt (Begründung/Text optional über `content`).
-- Für `e`/`p` Ziele wird ein Relay‑Hint empfohlen.
+Notes:
+- `kind:1985` allows empty content (reason text is optional via `content`).
+- Relay hints on `e`/`p` targets are recommended.
 
 ## 💬 Comments (NIP-22)
 
-Universelle Kommentare (kind 1111) auf Addressables, Events oder externe Inhalte – mit klarer Trennung von Root‑ und Parent‑Referenzen gemäß Groß/Kleinschreibung der Tags.
+Universal comments (`kind: 1111`) on addressables, events or external content — with clear root/parent separation via tag case.
 
 ```ts
 // Addressable (z. B. Artikel) kommentieren
@@ -835,7 +835,7 @@ await nostr.social.contacts.unfollow('npub1old...');
 
 ---
 
-**Das Social Media Core macht Nostr Unchained zur vollständigsten Lösung für dezentrale soziale Anwendungen im Nostr-Ökosystem.**
+Nostr Unchained’s Social Media Core powers robust, modern Nostr apps with an elegant, cache‑first architecture.
 
 ## 🔗 Related Documentation
 

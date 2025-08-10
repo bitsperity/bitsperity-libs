@@ -1,16 +1,14 @@
 # 💬 Direct Messages Module
 
-Das DM-Modul bietet 100% protokoll-konforme Ende-zu-Ende-verschlüsselte Nachrichten mit **NIP-17** (Private Direct Messages), **NIP-44 v2** (ChaCha20-Poly1305 Encryption) und **NIP-59** (Gift Wrap Protocol).
+End‑to‑end encrypted messaging, 100% protocol compliant: **NIP‑17** (Private DMs), **NIP‑44 v2** (ChaCha20‑Poly1305), **NIP‑59** (Gift Wrap). Built on the **subscription‑first Universal Cache Architecture** with SOLID principles.
 
-Basiert auf der **Subscription-First Universal Cache Architecture** mit SOLID-Prinzipien.
+## 🔐 Cryptographic Excellence (100% NIP‑Compliant)
 
-## 🔐 Kryptographische Excellence (100% NIP-Compliant)
-
-- **3-Layer-Verschlüsselung**: Rumor → Seal → Gift Wrap (NIP-59)
-- **NIP-44 v2 Compliance**: ChaCha20-Poly1305 mit HKDF Key Derivation
-- **Perfect Forward Secrecy**: Ephemeral Keys mit publishSigned() Support
-- **Gift Wrap Handling**: Automatische Kind 1059 Verarbeitung (Decryptor-only über Signer)
-- **Tag Filtering**: Vollständige #p Tag-Filterung für targeted Messages
+- 3‑layer encryption: Rumor → Seal → Gift Wrap (NIP‑59)
+- NIP‑44 v2: ChaCha20‑Poly1305 with HKDF
+- Perfect Forward Secrecy: Ephemeral keys with `publishSigned()` support
+- Gift wrap handling: automatic kind 1059 processing (decryptor‑only via signer)
+- Tag filtering: complete `#p` filtering for targeted messages
 
 ## Table of Contents
 
@@ -48,25 +46,25 @@ chat.subscribe(messages => {
 });
 ```
 
-## Subscription-First Cache Architecture
+## Subscription‑First Cache Architecture
 
-Das DM-System basiert auf der SOLID-implementierten 3-Schichten-Architektur:
+The DM system uses a SOLID 3‑layer architecture:
 
-### Schicht 0: Universal Event Cache
-- **Subscription-First**: "Im Cache landen nur Sachen die subscribed werden"
-- **Gift Wrap Storage**: Events werden unabhängig von Decryption Success gespeichert
-- **Tag-basierte Filterung**: Vollständige #p, #e, #t Filter-Implementation
+### Layer 0: Universal Event Cache
+- Subscription‑first storage
+- Gift wrap storage regardless of decryption success
+- Tag filtering: full `#p`, `#e`, `#t` support
 
-### Schicht 1: Core Layer (pub/sub/query/delete)
-- **publish()**: Standard Event Publishing mit automatischem Signing
-- **publishSigned()**: Spezielle Methode für pre-signed Gift Wrap Events
-- **sub()**: Live Subscriptions die den Cache füllen
-- **query()**: Sofortige Cache-Abfragen
+### Layer 1: Core (pub/sub/query/delete)
+- `publish()`: standard publishing with signing
+- `publishSigned()`: pre‑signed gift wraps
+- `sub()`: live subscriptions fill the cache
+- `query()`: instant cache lookups
 
-### Schicht 2: High-Level DM Module
-- **UniversalDMConversation**: Auto-Subscribe für Message Conversion
-- **GiftWrapProtocol**: 3-Layer Encryption mit Ephemeral Keys
-- **DMMessage Interface**: Einheitliche Message-Struktur mit sender Alias
+### Layer 2: High‑Level DM Module
+- UniversalDMConversation: auto‑subscribe for message conversion
+- GiftWrapProtocol: 3‑layer encryption with ephemeral keys
+- DMMessage: unified message shape
 
 ```typescript
 // Schicht 2: High-Level DM API
@@ -87,7 +85,7 @@ const cache = nostr.getCache(); // Direkte Cache-Manipulation
 ## Lazy Loading & User Control
 
 ### Perfect User Control
-DM subscriptions start **only when you need them**:
+DM subscriptions start only when needed:
 
 ```typescript
 // Step 1: Connect (NO automatic DM subscriptions)
@@ -102,7 +100,7 @@ const posts = nostr.query().kinds([1]).execute(); // ✅ Works without DMs
 const chat = nostr.dm.with(pubkey); // 🎁 NOW gift wrap subscription starts
 ```
 
-## DM‑Ready Flow (Empfohlene Reihenfolge)
+## DM‑Ready Flow (Recommended order)
 
 Um Race‑Conditions zu vermeiden und sofort eine funktionierende DM‑Inbox zu haben:
 
@@ -117,7 +115,7 @@ await nostr.initializeSigning(provider);
 const chat = nostr.getDM()?.with(recipientHexOrNpub);
 ```
 
-Hinweis: `getDM()` kann vor erfolgreicher Signer‑Initialisierung `undefined` sein. Nach `initializeSigning()` ist die DM‑API verfügbar und die erste Nutzung startet die Inbox automatisch (Lazy Loading).
+Note: `getDM()` can be `undefined` before successful signer initialization. After `initializeSigning()` the DM API is available and first use starts the inbox (lazy loading).
 
 ### Zero Technical Complexity
 Users never need to know about:
@@ -130,13 +128,13 @@ Users never need to know about:
 Everything happens automatically in the background.
 
 ### Performance Benefits
-- **No wasted subscriptions**: Only active when DMs are used
-- **Automatic cleanup**: Subscriptions managed efficiently  
-- **Privacy protection**: DM visibility only when requested
+- No wasted subscriptions
+- Automatic cleanup
+- Privacy by design
 
 ## Sending Messages
 
-### Simple Messages (Signer-basiert)
+### Simple Messages (signer‑based)
 
 ```typescript
 // Get conversation (auto-subscribes for message conversion)

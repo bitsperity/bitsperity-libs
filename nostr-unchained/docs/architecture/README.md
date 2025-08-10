@@ -1,10 +1,10 @@
 # 🏗️ Universal Cache Architecture (SOLID)
 
-Die **Universal Cache Architecture** ist das Herzstück von Nostr Unchained - eine SOLID-implementierte 3-Schichten-Architektur mit subscription-basiertem Caching, die Komplexität abstrahiert und außergewöhnliche Performance mit eleganter Developer Experience kombiniert.
+The Universal Cache Architecture is the heart of Nostr Unchained — a SOLID 3‑layer design with subscription‑first caching that abstracts complexity while delivering exceptional performance and developer experience.
 
-## 📖 Architektur-Überblick
+## 📖 Architecture Overview
 
-### Die 3 SOLID-Schichten im Detail
+### The 3 SOLID layers
 
 ```
 ┌─────────────────────────────────────────┐
@@ -16,17 +16,17 @@ Die **Universal Cache Architecture** ist das Herzstück von Nostr Unchained - ei
 └─────────────────────────────────────────┘
 ```
 
-**Kernprinzip**: "Im Cache landen nur Sachen die subscribed werden"
+Core principle: subscription‑first — only subscribed data enters the cache.
 
-## 🗃️ Schicht 0: Universal Event Cache (Subscription-First)
+## 🗃️ Layer 0: Universal Event Cache (subscription‑first)
 
-**Kernkomponenten:**
+Core components:
 - `UniversalEventCache.ts` (446 Zeilen) - Hauptcache-Engine  
 - **Subscription-First**: "Im Cache landen nur Sachen die subscribed werden"
 - **Gift Wrap Storage**: Events unabhängig von Decryption Success
 - **Tag-basierte Filterung**: Vollständige #p, #e, #t Implementation
 
-### Cache-Optimierungen (Recent Critical Fixes)
+### Cache optimizations (recent critical fixes)
 
 ```typescript
 // Effiziente Indexierung
@@ -58,14 +58,14 @@ async addEvent(event: NostrEvent): Promise<void> {
 }
 ```
 
-**Performance-Metriken (Post-Fixes):**
+Performance metrics (post‑fixes):
 - **<10ms** Cache-Zugriffe mit vollständiger Tag-Filterung
 - **>10.000** Events Standard-Kapazität
 - **O(1)** LRU-Operationen
 - **100%** Gift Wrap Storage Success (unabhängig von Decryption)
 - **Auto-Subscribe** verhindert verlorene Message Conversions
 
-## 🛠️ Schicht 1: Core Layer (pub/sub/query/delete)
+## 🛠️ Layer 1: Core (pub/sub/query/delete)
 
 **Kernkomponenten:**
 - **publish()**: Standard Event Publishing mit automatischem Signing
@@ -74,7 +74,7 @@ async addEvent(event: NostrEvent): Promise<void> {
 - **query()**: Sofortige Cache-Abfragen
 - **delete()**: Event-Deletion mit Broadcast
 
-### API-Symmetrie
+### API symmetry
 
 ```typescript
 // IDENTISCHE Fluent APIs
@@ -88,7 +88,7 @@ const subBuilder = nostr.sub()        // Live-Subscription
 .execute() // Beide returnieren UniversalNostrStore<NostrEvent[]>
 ```
 
-### Query-Performance
+### Query performance
 
 ```typescript
 // Cache-First Queries (sofortige Ergebnisse)
@@ -106,11 +106,11 @@ const liveSubscription = nostr.sub()
   .execute();
 ```
 
-## 🎨 Schicht 2: High-Level APIs (DM, Profile, Social)
+## 🎨 Layer 2: High‑level APIs (DM, Profile, Social)
 
-APIs sind **SOLID-implementierte Module** die den Core Layer verwenden:
+APIs are SOLID modules built on the core layer:
 
-### DM Module - Subscription-First Implementation (Fixed)
+### DM module — subscription‑first implementation (fixed)
 
 ```typescript
 // UniversalDMConversation mit Auto-Subscribe (NEW!)
@@ -132,7 +132,7 @@ const dmQuery = nostr.query()
   .execute();
 ```
 
-### Profile Module - Cache-Optimiert
+### Profile module — cache‑optimized
 
 ```typescript
 // <10ms Profile-Zugriff durch Cache
@@ -150,11 +150,11 @@ get(pubkey: string): UniversalNostrStore<UserProfile | null> {
 }
 ```
 
-## 🚀 Schicht 4: Zero-Config Developer API
+## 🚀 Layer 4: Zero‑config developer API
 
 **Hauptklasse**: `NostrUnchained.ts` (568 Zeilen)
 
-### Orchestrierung der Komponenten
+### Orchestration
 
 ```typescript
 export class NostrUnchained {
@@ -172,9 +172,9 @@ export class NostrUnchained {
 }
 ```
 
-## 🔄 Datenfluss-Architektur
+## 🔄 Data flow
 
-### Cache-First mit Live-Updates
+### Cache‑first with live updates
 
 ```
 📡 Relays → 🔔 Subscriptions → 💾 Universal Cache → 🔍 Queries → 📱 UI
@@ -182,7 +182,7 @@ export class NostrUnchained {
         Live-Updates             Sofortiger Zugriff
 ```
 
-### Reaktive Synchronisation
+### Reactive synchronization
 
 ```typescript
 // Cache-Änderungen triggern Store-Updates
@@ -201,34 +201,34 @@ class UniversalNostrStore<T> {
 }
 ```
 
-## 🎯 Architektur-Vorteile
+## 🎯 Architecture benefits
 
-### 🚀 Performance Excellence
+### 🚀 Performance excellence
 - **Cache-First**: <10ms Response-Zeiten
 - **Smart Deduplication**: Keine doppelten Network-Calls
 - **Shared Subscriptions**: Optimierte Relay-Verbindungen
 - **O(log n) Queries**: Effiziente Datenstrukturen
 
-### 🎛️ User Control & Privacy
+### 🎛️ User control & privacy
 - **Lazy Loading**: Features aktivieren sich bei Bedarf
 - **Explizite Kontrolle**: Benutzer entscheiden über Signing-Provider
 - **Privacy by Design**: DM-Subscriptions nur bei Nutzung
 
-### 🔧 Developer Experience
+### 🔧 Developer experience
 - **Zero-Config**: Funktioniert sofort ohne Setup
 - **Identische APIs**: Eine Lernkurve für alles
 - **TypeScript-First**: Vollständige Typsicherheit
 - **Framework-Agnostic**: React, Vue, Svelte, Vanilla JS
 
-### 🔐 Security & Reliability
+### 🔐 Security & reliability
 - **Multi-Layer-Verschlüsselung**: NIP-17/44/59 transparent
 - **Automatic Gift-Wrap-Handling**: Keine technischen Details für User
 - **Noble.js Crypto**: Industriestandard-Kryptographie
 - **Perfect Forward Secrecy**: Ephemeral Keys pro Nachricht
 
-## 🧪 Architektur-Testing
+## 🧪 Architecture testing
 
-### 4-Schichten-Integration-Tests
+### 4‑layer integration tests
 
 ```typescript
 describe('Universal Cache Architecture', () => {
@@ -262,9 +262,9 @@ describe('Universal Cache Architecture', () => {
 });
 ```
 
-## 📊 Performance-Benchmarks
+## 📊 Performance benchmarks
 
-### Cache-Performance
+### Cache performance
 ```
 Cache-Zugriffe:           <10ms  (O(log n))
 LRU-Operationen:          <1ms   (O(1))
@@ -272,26 +272,26 @@ Gift-Wrap-Entschlüsselung: ~5ms   (NIP-44 v2)
 Event-Deduplication:      <1ms   (Hash-basiert)
 ```
 
-### Netzwerk-Effizienz
+### Network efficiency
 ```
 Shared Subscriptions:     -80% redundante Connections
 Lazy DM Loading:          -90% unnötige Gift-Wrap-Subs
 Cache-First Queries:      -95% unnötige Netzwerk-Anfragen
 ```
 
-## 🔮 Zukunftserweiterungen
+## 🔮 Future work
 
-### Geplante Optimierungen
+### Planned optimizations
 - **Persistent Cache**: IndexedDB für Offline-First
 - **Query Planning**: Intelligente Query-Optimierung
 - **WebRTC Integration**: Direkte Peer-to-Peer-Kommunikation
 - **Advanced Metrics**: Runtime-Performance-Monitoring
 
-### NIP-Erweiterungen
+### NIP extensions
 - **NIP-46**: Remote Signing für erweiterte Sicherheit
 - **NIP-65**: Relay List Metadata für optimale Relay-Auswahl
 - **NIP-78**: Arbitrary Custom App Data für spezialisierte Anwendungen
 
 ---
 
-**Die Universal Cache Architecture macht Nostr Unchained zur performantesten und benutzerfreundlichsten Nostr-Bibliothek im Ökosystem.**
+The Universal Cache Architecture makes Nostr Unchained a high‑performance, developer‑friendly Nostr library.

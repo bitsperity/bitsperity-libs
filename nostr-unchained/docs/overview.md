@@ -15,14 +15,14 @@ When to use
 - You prefer real‑relay tests over mocks, predictable performance, and a minimal surface that scales.
 
 Learn next
-- Getting Started: ../getting-started.md
-- Query & Subscriptions: ../docs/query/README.md
-- Events & Publishing: ../docs/events/README.md
-- Direct Messages: ../docs/dm/README.md
-- Social Core: ../docs/social/README.md
-- Relay Lists & Routing: ../docs/events/README.md#relay-and-routing
-- Signing (NIP‑46): ../docs/signing/README.md
-- Architecture: ../docs/architecture/README.md
-- NIP Status: ../docs/status/nip-status.md
+- Getting Started: ../README.md#-documentation-walkthrough
+- Query & Subscriptions: ./query/README.md
+- Events & Publishing: ./events/README.md
+- Direct Messages: ./dm/README.md
+- Social Core: ./social/README.md
+- Relay Lists & Routing: ./events/README.md#relay-and-routing
+- Signing (NIP‑46): ./signing/README.md
+- Architecture: ./architecture/README.md
+- NIP Status: ../NIP_STATUS.md
 
 
