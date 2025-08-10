@@ -18,41 +18,38 @@ Quelle: Code, Tests und Doku im Repo (`src/`, `tests-v2/`, `docs/`). Referenz de
 | 17 | Private Direct Messages | DMs | Voller Flow (Kind 14 + Subject) auf Basis NIP‑44/59; Giftwrap‑Handling |
 | 18 | Reposts | Social | `ContentModule` (Kind 6) inkl. Struktur nach NIP‑18; Tests |
 | 19 | Bech32 Entities | Encoding | `src/utils/encoding-utils.ts`; Tests (npub/…​) |
+| 22 | Comments | Social | `CommentsModule` (Kind 1111) mit Wurzeln/Replies; reaktives Lesen |
 | 25 | Reactions | Social | `ReactionModule` (Kind 7), Unreact via NIP‑09; Tests |
-| 44 | Versioned Encryption | Crypto | NIP‑44 v2 (ChaCha20‑Poly1305), offizielle Testvektoren in `tests-v2` |
-| 59 | Gift Wrap | Privacy | Auto‑Unwrap im Cache, Lazy Subscription, `publishSigned` für bereits signierte Wraps |
-| 32 | Labeling | Moderation/Organisation | `kind:1985` Builder + reaktives Lesen (`nostr.labels`), `L`/`l` + Ziel‑Tags |
 | 28 | Public Chat | Chat | Channels (40/41) & Messages (42), Hide (43), Mute (44) via `nostr.channels` |
+| 32 | Labeling | Moderation/Organisation | `kind:1985` Builder + reaktives Lesen (`nostr.labels`), `L`/`l` + Ziel‑Tags |
+| 36 | Content Warning | Moderation | `.contentWarning(reason?)` im Fluent Builder; E2E‑Test |
+| 42 | Client Auth | Relay/Auth | Automatisches AUTH‑Handling (Challenge, AUTH‑Event); E2E‑Tests |
+| 44 | Versioned Encryption | Crypto | NIP‑44 v2 (ChaCha20‑Poly1305), offizielle Testvektoren in `tests-v2` |
+| 46 | Nostr Connect | Signing | `NostrConnectSigner` + in‑process Test‑Harness; E2E‑Tests |
+| 59 | Gift Wrap | Privacy | Auto‑Unwrap im Cache, Lazy Subscription, `publishSigned` für bereits signierte Wraps |
+| 65 | Relay List Metadata | Relay/Routing | `RelayListModule` (Kind 10002) + `Nip65RelayRouter` (opt‑in Routing) |
+| 51 | Lists | Social | `ListModule` (30000–30003) inkl. Bookmark‑Beispiel und reaktivem Lesen |
+| 92 | Media Attachments | Content | `attachMedia()` + `imeta` Parser/Helper; E2E‑Test |
 
 ### Teilweise/indirekt abgedeckt
 - NIP‑14 (Subject Tag): In DMs (NIP‑17) genutzt für Threading (Subject‑Tags), kein separater Note‑Subject‑Support.
 - NIP‑39 (External Identities): Profile-Metadaten (GitHub/Twitter/Telegram) im `ProfileBuilder` unterstützt; keine vollständige End‑to‑End‑Flows.
 
 ### Nicht implementiert (oder nur erwähnt/geplant)
-- 21, 22, 23, 29, 30, 31, 36, 37, 40, 42, 43, 45, 46, 47, 50, 51, 52, 53, 54, 57, 58, 60, 61, 65, 66, 68, 69, 70, 71, 72, 73, 75, 77, 78, 84, 86, 88, 89, 90, 92, 94, 96, 98
-  - Hinweise: Roadmap dynamisch; bereits implementierte NIPs werden aus der Liste entfernt.
+- 21, 23, 29, 30, 31, 37, 40, 43, 45, 47, 50, 52, 53, 54, 57, 58, 60, 61, 66, 68, 69, 70, 71, 72, 73, 75, 77, 78, 84, 86, 88, 89, 90, 94, 96, 98
+  - Hinweise: Roadmap dynamisch; bereits implementierte NIPs werden laufend entfernt.
 
 ### Priorisierte Roadmap der fehlenden NIPs
-1. NIP‑42 (Client Auth) – Authentifizierung gegenüber Relays; in Tests als fehlend notiert. Kritisch für reale Schreib-/Admin‑Relays.
-2. NIP‑65 (Relay List Metadata) – Inbox/Outbox/General Relay‑Listen; wichtig für zuverlässige DM‑Zustellung und Discovery.
-3. NIP‑51 (Lists) – Grundlage für Mutes/Bookmarks/Kuratoren‑Listen; Social‑Core (ListModule TODO).
-4. NIP‑22 (Comments) – Ergänzt Threads (NIP‑10); weit verbreitet in Clients.
-5. NIP‑92 (Media Attachments) – Häufige Social‑Usecases; saubere Media‑Metadaten in Feeds.
-6. NIP‑46 (Nostr Connect) – Passt zur „no raw keys“-Policy; Remote‑Signing erhöht Sicherheit deutlich.
-7. NIP‑50 (Search Capability) – Serverseitige Suche; verbessert Discovery über lokale/Feed‑Suche hinaus.
-8. NIP‑36 (Content Warning) – UX/Mediation; wichtig für Social‑Feeds.
-9. NIP‑32 (Labeling) – Moderation/Organisation; Grundlage für Trust/Filtering. (JETZT IMPLEMENTIERT)
-10. NIP‑28 (Public Chat) – Realtime‑Chats; Social‑Feature mit breiter Nutzung. (JETZT IMPLEMENTIERT)
-11. NIP‑72 (Moderated Communities) – Größerer Funktionsblock; wichtig für Gruppen/Moderation.
-12. NIP‑21 (URI Scheme) – Interop/Deep‑Links (`nostr:`) für App‑Integration.
-13. NIP‑23 (Long‑form Content) – Artikel/Blog‑Usecases.
-14. NIP‑66 (Relay Discovery & Liveness) – Autom. Health/Discovery über bestehende Health‑Checks hinaus.
-15. NIP‑57 (Lightning Zaps) – Payments/Engagement; produktabhängig, aber verbreitet.
-16. NIP‑98 (HTTP Auth) – Für HTTP‑APIs/Dienste; weniger zentral für WS‑Flow.
-17. NIP‑70 (Protected Events) – Spezialfälle/Privacy.
-18. NIP‑94/96 (File Metadata/HTTP File Storage) – Medien/Dateien; nach NIP‑92 sinnvoll.
-19. NIP‑78 (Custom App Data) – App‑spezifische Datenhaltung.
-20. Rest (29, 30, 31, 37, 40, 43, 45, 47, 52, 53, 54, 58, 60, 61, 68, 69, 71, 73, 75, 77, 84, 86, 88, 89, 90) – abhängig von Produktvision.
+1. NIP‑50 (Search Capability) – Serverseitige Suche; ergänzt lokale/Feed‑Suche, wichtig für Discovery.
+2. NIP‑72 (Moderated Communities) – Moderation auf Gruppenebene.
+3. NIP‑21 (URI Scheme) – `nostr:` Deep‑Links/Interop.
+4. NIP‑23 (Long‑form Content) – Artikel/Blog‑Usecases.
+5. NIP‑66 (Relay Discovery & Liveness) – Autom. Discovery/Health.
+6. NIP‑57 (Lightning Zaps) – Payments/Engagement.
+7. NIP‑98 (HTTP Auth) – HTTP‑APIs/Dienste.
+8. NIP‑70 (Protected Events) – Spezialfälle/Privacy.
+9. NIP‑94/96 (File Metadata/HTTP File Storage) – Medien/Dateien (nach NIP‑92).
+10. NIP‑78 (Custom App Data) – App‑spezifische Datenhaltung.
 
 ### Kurze Begründung der Gewichtung
 - Sicherheit/Interop zuerst (NIP‑42, 46), dann Infrastruktur/Delivery (NIP‑65, 66), dann Social‑Core (NIP‑51, 22, 92), gefolgt von Moderation (NIP‑36, 32) und verbreiteten Social‑Features (NIP‑28, 72, 23, 21). Payments/HTTP/Auth und Medien‑Erweiterungen anschließend.

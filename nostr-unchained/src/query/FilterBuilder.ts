@@ -57,6 +57,12 @@ export abstract class FilterBuilder {
     return this.clone(newFilter);
   }
   
+  // NIP-50: Server-side search capability (also used for local cache search)
+  search(query: string): this {
+    const newFilter = this.ensureLimit({ ...this.filter, search: String(query ?? '') });
+    return this.clone(newFilter);
+  }
+
   ids(ids: string[]): this {
     const newFilter = { ...this.filter, ids };
     return this.clone(newFilter);

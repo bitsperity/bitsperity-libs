@@ -410,6 +410,13 @@ export class UniversalEventCache {
     // Check IDs filter
     if (filter.ids && filter.ids.length > 0 && !filter.ids.includes(event.id)) return false;
     
+    // NIP-50 server-side/local content search (simple substring match)
+    if (typeof (filter as any).search === 'string' && (filter as any).search.length > 0) {
+      const q = ((filter as any).search as string).toLowerCase();
+      const content = (event.content || '').toLowerCase();
+      if (!content.includes(q)) return false;
+    }
+
     // All other checks passed via indexes
     return true;
   }

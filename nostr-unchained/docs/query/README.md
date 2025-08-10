@@ -13,6 +13,7 @@ The Universal Query Engine provides identical APIs for cache queries and live su
 - [Reactive Stores](#reactive-stores)
 - [Advanced Patterns](#advanced-patterns)
 - [API Reference](#api-reference)
+ - [NIP-50 Search](#nip-50-search)
 
 ## Quick Start
 
@@ -481,3 +482,29 @@ nostr.sub(): UniversalSubBuilder        // Live subscriptions
 - [Direct Messages](../dm/README.md) - Built on query/sub architecture
 - [Stores](../stores/README.md) - Reactive data management  
 - [Social Media](../social/README.md) - Social features using queries
+
+## NIP-50 Search
+
+NIP-50 introduces a `search` filter field in REQ messages. In Nostr Unchained you can use the same fluent method on both builders:
+
+```ts
+// Local cache search (no network): case-insensitive substring match on content
+const cached = nostr.query()
+  .kinds([1])
+  .search('bitcoin nostr')
+  .execute();
+
+// Server-side search (Relay executes NIP-50): results flow into the cache
+const live = await nostr.sub()
+  .kinds([1])
+  .search('bitcoin nostr')
+  .execute();
+```
+
+Notes:
+- query().search(): local fallback, deterministic and fast; currently simple substring on `content` combined with other filters.
+- sub().search(): sends REQ with `{ search: '...' }`; relays that support NIP-50 perform ranking/scoring and return matching events.
+- Both return reactive stores; server results populate the central cache as usual (subscription-first principle remains intact).
+
+Best practice:
+- Prefer `sub().search()` when Relay ranking/recall matters; use `query().search()` for instant local filtering and offline UX.
