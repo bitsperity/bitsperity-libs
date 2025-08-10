@@ -21,20 +21,20 @@ Core principle: subscription‑first — only subscribed data enters the cache.
 ## 🗃️ Layer 0: Universal Event Cache (subscription‑first)
 
 Core components:
-- `UniversalEventCache.ts` (446 Zeilen) - Hauptcache-Engine  
-- **Subscription-First**: "Im Cache landen nur Sachen die subscribed werden"
-- **Gift Wrap Storage**: Events unabhängig von Decryption Success
-- **Tag-basierte Filterung**: Vollständige #p, #e, #t Implementation
+- `UniversalEventCache.ts` (core cache engine)
+- Subscription‑first: only subscribed data enters the cache
+- Gift‑wrap storage independent from decryption success
+- Tag filtering: complete #p/#e/#t implementation
 
 ### Cache optimizations (recent critical fixes)
 
 ```typescript
-// Effiziente Indexierung
+// Efficient indexing
 private eventsByKind = new Map<number, Set<string>>();
 private eventsByAuthor = new Map<string, Set<string>>();
 private eventsByTag = new Map<string, Map<string, Set<string>>>();
 
-// CRITICAL FIX: Gift Wrap Storage unabhängig von Decryption
+// CRITICAL FIX: Gift wrap storage independent from decryption
 async addEvent(event: NostrEvent): Promise<void> {
   if (event.kind === 1059) {
     // Store the Gift Wrap event itself in cache
@@ -49,30 +49,30 @@ async addEvent(event: NostrEvent): Promise<void> {
         await this.addEvent(decrypted); // Recursive: add unwrapped content
       }
     } catch (error) {
-      // Failed to decrypt - that's fine, we still stored the Gift Wrap
+      // Failed to decrypt — that's fine, we still stored the gift wrap
       console.debug('Failed to unwrap gift wrap (stored anyway):', error);
     }
     return;
   }
-  // Alle anderen Events direkt in Cache
+  // All other events go directly to cache
 }
 ```
 
 Performance metrics (post‑fixes):
-- **<10ms** Cache-Zugriffe mit vollständiger Tag-Filterung
-- **>10.000** Events Standard-Kapazität
-- **O(1)** LRU-Operationen
-- **100%** Gift Wrap Storage Success (unabhängig von Decryption)
-- **Auto-Subscribe** verhindert verlorene Message Conversions
+- <10ms cache lookups with full tag filtering
+- >10,000 events default capacity
+- O(1) LRU operations
+- 100% gift‑wrap storage success (independent from decryption)
+- Auto‑subscribe prevents lost message conversions
 
 ## 🛠️ Layer 1: Core (pub/sub/query/delete)
 
-**Kernkomponenten:**
-- **publish()**: Standard Event Publishing mit automatischem Signing
-- **publishSigned()**: Spezielle Methode für pre-signed Events (Gift Wraps)
-- **sub()**: Live Subscriptions die den Cache füllen
-- **query()**: Sofortige Cache-Abfragen
-- **delete()**: Event-Deletion mit Broadcast
+Core components:
+- publish(): standard event publishing
+- publishSigned(): pre‑signed events (gift wraps)
+- sub(): live subscriptions that fill the cache
+- query(): instant cache lookups
+- delete(): event deletion with broadcast
 
 ### API symmetry
 
@@ -204,27 +204,27 @@ class UniversalNostrStore<T> {
 ## 🎯 Architecture benefits
 
 ### 🚀 Performance excellence
-- **Cache-First**: <10ms Response-Zeiten
-- **Smart Deduplication**: Keine doppelten Network-Calls
-- **Shared Subscriptions**: Optimierte Relay-Verbindungen
-- **O(log n) Queries**: Effiziente Datenstrukturen
+- Cache‑first: <10ms response times
+- Smart deduplication: no duplicate network calls
+- Shared subscriptions: optimized relay connections
+- O(log n) queries: efficient data structures
 
 ### 🎛️ User control & privacy
-- **Lazy Loading**: Features aktivieren sich bei Bedarf
-- **Explizite Kontrolle**: Benutzer entscheiden über Signing-Provider
-- **Privacy by Design**: DM-Subscriptions nur bei Nutzung
+- Lazy loading: features activate on demand
+- Explicit control: users choose signing provider
+- Privacy by design: DM subscriptions only when used
 
 ### 🔧 Developer experience
-- **Zero-Config**: Funktioniert sofort ohne Setup
-- **Identische APIs**: Eine Lernkurve für alles
-- **TypeScript-First**: Vollständige Typsicherheit
-- **Framework-Agnostic**: React, Vue, Svelte, Vanilla JS
+- Zero‑config: works out of the box
+- Identical APIs: one learning curve
+- TypeScript‑first: full type safety
+- Framework‑agnostic: React, Vue, Svelte, Vanilla JS
 
 ### 🔐 Security & reliability
-- **Multi-Layer-Verschlüsselung**: NIP-17/44/59 transparent
-- **Automatic Gift-Wrap-Handling**: Keine technischen Details für User
-- **Noble.js Crypto**: Industriestandard-Kryptographie
-- **Perfect Forward Secrecy**: Ephemeral Keys pro Nachricht
+- Multi‑layer encryption: NIP‑17/44/59 transparent
+- Automatic gift‑wrap handling: no protocol details for users
+- Noble.js crypto
+- Perfect forward secrecy: ephemeral keys per message
 
 ## 🧪 Architecture testing
 
@@ -232,10 +232,10 @@ class UniversalNostrStore<T> {
 
 ```typescript
 describe('Universal Cache Architecture', () => {
-  test('Schicht 1: Cache Gift-Wrap-Handling', async () => {
+  test('Layer 1: Cache gift‑wrap handling', async () => {
     // Gift Wrap (1059) → DM (14) Transformation
-    await cache.addEvent(giftWrapEvent); // Kind 1059
-    const dmEvents = cache.query({ kinds: [14] }); // Findet entschlüsselte DM
+    await cache.addEvent(giftWrapEvent); // kind 1059
+    const dmEvents = cache.query({ kinds: [14] }); // finds decrypted DM
     expect(dmEvents).toHaveLength(1);
   });
   

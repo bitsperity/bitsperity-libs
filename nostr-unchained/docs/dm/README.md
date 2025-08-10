@@ -73,7 +73,7 @@ const chat = nostr.getDM()?.with(pubkey); // SOLID DM Module
 // Automatische Features:
 // 1. Gift Wrap Subscription wird gestartet
 // 2. Auto-subscribe for message conversion
-// 3. publishSigned() für Gift Wrap Events
+// 3. publishSigned() for gift wrap events
 
 // Layer 1: core layer (if needed)
 const giftWraps = nostr.query().kinds([1059]).execute();
@@ -450,9 +450,8 @@ const sub = await nostr.sub().kinds([1059]).tags('p', [myPubkey]).execute();
 sub.store.subscribe(events => console.log('Live Gift Wraps:', events.length));
 
 // Manuelle Decryption (DEV-Hinweis)
-// Ab v0.2.0 gibt es keinen Raw-Key-Zugriff mehr. Die Decryption erfolgt ausschließlich
-// über den vom Signer bereitgestellten Decryptor (NIP-44) und wird vom Cache automatisch
-// ausgeführt. Für manuelle Debug-Zwecke nutze bitte die vorhandenen Debug-Tests unter
+// From v0.2.0 onward there is no raw key access. Decryption is done via signer (NIP-44)
+// and handled automatically by the cache. For manual debugging prefer the tests under
 // tests-v2/debug/* oder Signer-spezifische Tools. Ein direkter Private-Key-Workflow ist deprecated.
 ```
 

@@ -104,19 +104,19 @@ nostr.social.
 All social features are query wrappers – no direct network access:
 
 ```typescript
-// Social Feed = Cache Query für Posts + Profile-Enrichment
+// Social feed = cache query for posts + profile enrichment
 const feed = nostr.query()
   .kinds([1])                           // Text posts
   .authors(followingList)               // From contacts
   .execute();
 
-// Reactions = Cache Query für Kind 7 Events  
+// Reactions = cache query for kind 7 events  
 const reactions = nostr.query()
   .kinds([7])                           // Reaction events
   .tags('e', [postId])                  // For specific post
   .execute();
 
-// Profiles = Cache Query für Kind 0 Events
+// Profiles = cache query for kind 0 events
 const profiles = nostr.query()
   .kinds([0])                           // Profile metadata
   .authors([...authorPubkeys])          // For post authors
