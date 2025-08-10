@@ -11,6 +11,7 @@ The Events module provides zero-config publishing and fluent event builders for 
 - [Signing Providers](#signing-providers)
 - [Error Handling](#error-handling)
 - [API Reference](#api-reference)
+ - [NIP-21 URIs](#nip-21-uris)
 
 ## Quick Start
 
@@ -298,6 +299,26 @@ DM events (gift wrap, kind 1059) contain `p` tags; routing applies automatically
 | `44` | Channel Mute User | Mute users in channels |
 
 ### Custom Event Kinds
+## NIP-21 URIs
+
+Nostr Unchained understands `nostr:` URIs (NIP‑21) and provides small helpers to parse/build them.
+
+```ts
+import { isNostrUri, parseNostrUri, toNostrUri, neventEncode } from 'nostr-unchained';
+
+// Parse
+const uri = 'nostr:' + neventEncode({ id: 'a'.repeat(64) }) + '?relay=wss%3A%2F%2Fnos.lol&foo=bar&foo=baz';
+if (isNostrUri(uri)) {
+  const { decoded, params } = parseNostrUri(uri);
+  console.log(decoded.type, params.relay, params.foo); // 'nevent', 'wss://nos.lol', ['bar','baz']
+}
+
+// Build
+const code = neventEncode({ id: 'a'.repeat(64) });
+const built = toNostrUri(code, { relay: 'wss://nos.lol' });
+// => 'nostr:nevent1...?...'
+```
+
 
 ```typescript
 // Custom application-specific event

@@ -94,6 +94,10 @@ export {
   naddrEncode,
   // Universal decoder
   decode,
+  // NIP-21 helpers
+  isNostrUri,
+  parseNostrUri,
+  toNostrUri,
   // Validation helpers
   isValidHexKey,
   isValidNpub,

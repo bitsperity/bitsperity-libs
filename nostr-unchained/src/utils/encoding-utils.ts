@@ -159,6 +159,12 @@ function encodeBytes<Prefix extends string>(prefix: Prefix, bytes: Uint8Array): 
  * Dekodiert alle NIP-19 Formate
  */
 export function decode(code: string): DecodedResult {
+  // Allow NIP-21 passthrough: nostr:{nip19}[?query]
+  if (code.toLowerCase().startsWith('nostr:')) {
+    const withoutScheme = code.slice(6);
+    const core = withoutScheme.split('?')[0];
+    return decode(core);
+  }
   const { prefix, words } = bech32.decode(code, BECH32_MAX_SIZE);
   const data = new Uint8Array(bech32.fromWords(words));
 
@@ -219,6 +225,53 @@ export function decode(code: string): DecodedResult {
     default:
       throw new Error(`Unknown prefix ${prefix}`);
   }
+}
+
+// === NIP-21 URI helpers ===
+
+export interface NostrUri {
+  decoded: DecodedResult;
+  params: Record<string, string | string[]>;
+}
+
+export function isNostrUri(input: string): boolean {
+  return typeof input === 'string' && input.toLowerCase().startsWith('nostr:');
+}
+
+export function parseNostrUri(uri: string): NostrUri {
+  if (!isNostrUri(uri)) throw new Error('Invalid Nostr URI: must start with nostr:');
+  const without = uri.slice(6);
+  const [code, query = ''] = without.split('?');
+  const decoded = decode(code);
+  const params: Record<string, string | string[]> = {};
+  if (query.length > 0) {
+    for (const part of query.split('&')) {
+      if (!part) continue;
+      const eq = part.indexOf('=');
+      const key = decodeURIComponent(eq >= 0 ? part.slice(0, eq) : part);
+      const val = decodeURIComponent(eq >= 0 ? part.slice(eq + 1) : '');
+      if (params[key] === undefined) params[key] = val;
+      else if (Array.isArray(params[key])) (params[key] as string[]).push(val);
+      else params[key] = [params[key] as string, val];
+    }
+  }
+  return { decoded, params };
+}
+
+export function toNostrUri(codeOrDecoded: string | DecodedResult, params?: Record<string, string | string[]>): string {
+  const code = typeof codeOrDecoded === 'string' ? codeOrDecoded : (() => {
+    switch (codeOrDecoded.type) {
+      case 'npub': return `npub1${codeOrDecoded.data.slice(4)}`; // won't happen; keep fallback
+      case 'nsec': return 'nsec1';
+      case 'note': return `note1${codeOrDecoded.data.slice(4)}`;
+      case 'nprofile': return nprofileEncode(codeOrDecoded.data);
+      case 'nevent': return neventEncode(codeOrDecoded.data);
+      case 'naddr': return naddrEncode(codeOrDecoded.data);
+      default: throw new Error('Unsupported DecodedResult');
+    }
+  })();
+  const qs = params ? Object.entries(params).flatMap(([k, v]) => Array.isArray(v) ? v.map(x => `${encodeURIComponent(k)}=${encodeURIComponent(x)}`) : [`${encodeURIComponent(k)}=${encodeURIComponent(v)}`]).join('&') : '';
+  return qs ? `nostr:${code}?${qs}` : `nostr:${code}`;
 }
 
 /**
