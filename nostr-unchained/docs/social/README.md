@@ -486,6 +486,22 @@ approved.subscribe(list => console.log('approved count', list.length));
 approvedByMods.subscribe(list => console.log('approved by mods', list.length));
 ```
 
+Revoke approvals (NIP‑09):
+
+```ts
+// Find approvals for a post
+const approvals = nostr.communities.approvals(author, 'dev-community', firstPost?.id);
+approvals.subscribe(list => console.log('approvals', list.length));
+
+// Revoke an approval via NIP-09 deletion (kind 5)
+const firstApproval = approvals.current?.[0];
+if (firstApproval) {
+  await nostr.communities.revokeApproval(firstApproval.id, 'moderation update');
+}
+
+// approvedOnly filters automatically ignore revoked approvals
+```
+
 ### Feed Types
 
 ```typescript

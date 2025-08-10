@@ -129,6 +129,16 @@ export class CommunitiesModule {
     return new CommunityApprovalBuilder(this.nostr, community);
   }
 
+  // Revoke an approval via NIP-09 deletion (kind 5)
+  async revokeApproval(approvalEventId: string, reason?: string): Promise<{ success: boolean; eventId?: string; error?: string }> {
+    return await this.nostr.events
+      .create()
+      .kind(5)
+      .content(reason || '')
+      .tag('e', approvalEventId, '', 'deletion')
+      .publish();
+  }
+
   // Readers (subscription-first: we start subs narrowly by kind)
   getCommunity(authorPubkey: string, identifier: string) {
     const d = identifier;
@@ -154,6 +164,7 @@ export class CommunitiesModule {
       // ensure approvals and community defs are flowing
       this.nostr.sub().kinds([4550]).execute().catch(() => {});
       this.nostr.sub().kinds([34550]).authors([authorPubkey]).execute().catch(() => {});
+      this.nostr.sub().kinds([5]).execute().catch(() => {});
     }
     return this.nostr
       .query()
@@ -167,12 +178,18 @@ export class CommunitiesModule {
             // Snapshot approvals and moderators from cache
             const approvalsStore = this.nostr.query().kinds([4550]).execute();
             const approvals = approvalsStore.current || [];
+            const deletionsStore = this.nostr.query().kinds([5]).execute();
+            const deletions = deletionsStore.current || [];
+            // Exclude approvals that have a matching deletion (kind 5 referencing approval id)
+            const isRevoked = (ap: NostrEvent) =>
+              deletions.some((d: NostrEvent) => d.tags.some((t) => t[0] === 'e' && t[1] === ap.id));
             const modsStore = this.moderators(authorPubkey, identifier);
             const moderators = new Set((modsStore as any).current || []);
             posts = posts.filter((post) => {
               const relevant = approvals.filter((ap: NostrEvent) =>
                 ap.tags.some((t) => t[0] === 'a' && t[1] === address) &&
-                ap.tags.some((t) => t[0] === 'e' && t[1] === post.id)
+                ap.tags.some((t) => t[0] === 'e' && t[1] === post.id) &&
+                !isRevoked(ap)
               );
               if (relevant.length === 0) return false;
               if (options?.moderatorsOnly) {
