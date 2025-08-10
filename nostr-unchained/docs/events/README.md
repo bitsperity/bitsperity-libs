@@ -251,6 +251,21 @@ await nostr.publish({
 });
 ```
 
+### NIP-66 Relay Discovery & Health
+
+Discovery combines NIP‑65 relay lists (kind 10002) and recommended relays (kind 2). A lightweight health monitor checks basic liveness/latency.
+
+```ts
+// Discover relays for a user
+const relays = nostr.relayDiscovery.discoverForUser(pubkey);
+console.log(relays); // [ 'wss://nos.lol', 'wss://relay.damus.io', ... ]
+
+// Health checks
+const h1 = await nostr.relayHealth.check('wss://nos.lol');
+const many = await nostr.relayHealth.bulkCheck(relays, 2000);
+console.log(h1.ok, h1.latencyMs);
+```
+
 ### NIP-92 Media Attachments
 
 Attach media (images/video/audio/files) by placing the URL in content and adding an `imeta` tag.

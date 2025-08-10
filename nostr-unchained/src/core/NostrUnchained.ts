@@ -26,6 +26,7 @@ import { QueryBuilder, SubBuilder } from '../query/QueryBuilder.js';
 import { ProfileModule } from '../profile/ProfileModule.js';
 import { RelayListModule } from '../relay/RelayListModule.js';
 import { Nip65RelayRouter, type RelayRoutingStrategy } from '../relay/Nip65RelayRouter.js';
+import { RelayDiscovery, RelayHealthMonitor } from '../relay/RelayDiscovery.js';
 
 import type {
   NostrUnchainedConfig,
@@ -76,6 +77,8 @@ export class NostrUnchained {
   private _relayList?: RelayListModule;
   // Optional routing strategy (NIP-65)
   private relayRouter?: RelayRoutingStrategy;
+  private _relayDiscovery?: RelayDiscovery;
+  private _relayHealth?: RelayHealthMonitor;
 
   constructor(config: NostrUnchainedConfig = {}) {
     // Merge with defaults
@@ -262,6 +265,16 @@ export class NostrUnchained {
       this._relayList = new RelayListModule(this);
     }
     return this._relayList;
+  }
+
+  // NIP-66 Discovery & Health (lightweight helpers)
+  get relayDiscovery(): RelayDiscovery {
+    if (!this._relayDiscovery) this._relayDiscovery = new RelayDiscovery(this);
+    return this._relayDiscovery;
+  }
+  get relayHealth(): RelayHealthMonitor {
+    if (!this._relayHealth) this._relayHealth = new RelayHealthMonitor(this);
+    return this._relayHealth;
   }
 
   /** NIP-51 Lists module */
