@@ -29,6 +29,7 @@ Quelle: Code, Tests und Doku im Repo (`src/`, `tests-v2/`, `docs/`). Referenz de
 | 59 | Gift Wrap | Privacy | Auto‑Unwrap im Cache, Lazy Subscription, `publishSigned` für bereits signierte Wraps |
 | 65 | Relay List Metadata | Relay/Routing | `RelayListModule` (Kind 10002) + `Nip65RelayRouter` (opt‑in Routing) |
 | 51 | Lists | Social | `ListModule` (30000–30003) inkl. Bookmark‑Beispiel und reaktivem Lesen |
+| 50 | Search Capability | Query/Infra | `search`‑Filter in `query()` (lokal) und `sub()` (Relay‑Suche). Lokale Suche: case‑insensitive Substring auf `content`; serverseitige Suche: über REQ mit `{ search: '…' }` (Ranking durch Relay). Doku/Tests vorhanden |
 | 92 | Media Attachments | Content | `attachMedia()` + `imeta` Parser/Helper; E2E‑Test |
 
 ### Teilweise/indirekt abgedeckt
@@ -36,20 +37,19 @@ Quelle: Code, Tests und Doku im Repo (`src/`, `tests-v2/`, `docs/`). Referenz de
 - NIP‑39 (External Identities): Profile-Metadaten (GitHub/Twitter/Telegram) im `ProfileBuilder` unterstützt; keine vollständige End‑to‑End‑Flows.
 
 ### Nicht implementiert (oder nur erwähnt/geplant)
-- 21, 23, 29, 30, 31, 37, 40, 43, 45, 47, 50, 52, 53, 54, 57, 58, 60, 61, 66, 68, 69, 70, 71, 72, 73, 75, 77, 78, 84, 86, 88, 89, 90, 94, 96, 98
+- 21, 23, 29, 30, 31, 37, 40, 43, 45, 47, 52, 53, 54, 57, 58, 60, 61, 66, 68, 69, 70, 71, 72, 73, 75, 77, 78, 84, 86, 88, 89, 90, 94, 96, 98
   - Hinweise: Roadmap dynamisch; bereits implementierte NIPs werden laufend entfernt.
 
 ### Priorisierte Roadmap der fehlenden NIPs
-1. NIP‑50 (Search Capability) – Serverseitige Suche; ergänzt lokale/Feed‑Suche, wichtig für Discovery.
-2. NIP‑72 (Moderated Communities) – Moderation auf Gruppenebene.
-3. NIP‑21 (URI Scheme) – `nostr:` Deep‑Links/Interop.
-4. NIP‑23 (Long‑form Content) – Artikel/Blog‑Usecases.
-5. NIP‑66 (Relay Discovery & Liveness) – Autom. Discovery/Health.
-6. NIP‑57 (Lightning Zaps) – Payments/Engagement.
-7. NIP‑98 (HTTP Auth) – HTTP‑APIs/Dienste.
-8. NIP‑70 (Protected Events) – Spezialfälle/Privacy.
-9. NIP‑94/96 (File Metadata/HTTP File Storage) – Medien/Dateien (nach NIP‑92).
-10. NIP‑78 (Custom App Data) – App‑spezifische Datenhaltung.
+1. NIP‑72 (Moderated Communities) – Moderation auf Gruppenebene.
+2. NIP‑21 (URI Scheme) – `nostr:` Deep‑Links/Interop.
+3. NIP‑23 (Long‑form Content) – Artikel/Blog‑Usecases.
+4. NIP‑66 (Relay Discovery & Liveness) – Autom. Discovery/Health.
+5. NIP‑57 (Lightning Zaps) – Payments/Engagement.
+6. NIP‑98 (HTTP Auth) – HTTP‑APIs/Dienste.
+7. NIP‑70 (Protected Events) – Spezialfälle/Privacy.
+8. NIP‑94/96 (File Metadata/HTTP File Storage) – Medien/Dateien (nach NIP‑92).
+9. NIP‑78 (Custom App Data) – App‑spezifische Datenhaltung.
 
 ### Kurze Begründung der Gewichtung
 - Sicherheit/Interop zuerst (NIP‑42, 46), dann Infrastruktur/Delivery (NIP‑65, 66), dann Social‑Core (NIP‑51, 22, 92), gefolgt von Moderation (NIP‑36, 32) und verbreiteten Social‑Features (NIP‑28, 72, 23, 21). Payments/HTTP/Auth und Medien‑Erweiterungen anschließend.
