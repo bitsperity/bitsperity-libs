@@ -11,6 +11,7 @@
 import type { NostrUnchained } from '../../core/NostrUnchained.js';
 import type { UniversalNostrStore } from '../../store/UniversalNostrStore.js';
 import type { NostrEvent } from '../../core/types.js';
+import { createNaddr } from '../../utils/encoding-utils.js';
 
 export interface ContentSummary {
   totalNotes: number;
@@ -27,11 +28,73 @@ export interface ContentFilters {
   kinds?: number[];
 }
 
+export interface ArticleMeta {
+  identifier: string; // d tag
+  title?: string;
+  summary?: string;
+  image?: string;
+}
+
+export class ArticleBuilder {
+  private _d?: string;
+  private _title?: string;
+  private _summary?: string;
+  private _image?: string;
+  private _content?: string;
+  private _hashtags: string[] = [];
+
+  constructor(private nostr: NostrUnchained) {}
+
+  identifier(d: string): this { this._d = d; return this; }
+  title(t: string): this { this._title = t; return this; }
+  summary(s: string): this { this._summary = s; return this; }
+  image(url: string): this { this._image = url; return this; }
+  content(body: string): this { this._content = body ?? ''; return this; }
+  hashtag(tag: string): this { if (tag) this._hashtags.push(tag); return this; }
+
+  async publish(): Promise<{ success: boolean; eventId?: string; error?: string }> {
+    if (!this._d) throw new Error('Article identifier (d) is required');
+    if (!this._content) throw new Error('Article content must not be empty');
+    const b = this.nostr.events.create().kind(30023).content(this._content).tag('d', this._d);
+    if (this._title) b.tag('title', this._title);
+    if (this._summary) b.tag('summary', this._summary);
+    if (this._image) b.tag('image', this._image);
+    for (const t of this._hashtags) b.hashtag(t);
+    return await b.publish();
+  }
+}
+
 export class ContentModule {
   constructor(private nostr: NostrUnchained, private debug?: boolean) {
     if (this.debug) {
       console.log('📝 ContentModule initialized with Clean Architecture');
     }
+  }
+
+  /** NIP-23: create/edit long-form article (kind 30023) */
+  article(): ArticleBuilder { return new ArticleBuilder(this.nostr); }
+
+  /** NIP-23: get latest article by author and identifier */
+  getArticle(authorPubkey: string, identifier: string): UniversalNostrStore<NostrEvent | null> {
+    // subscription-first
+    this.nostr.sub().kinds([30023]).authors([authorPubkey]).execute().catch(() => {});
+    return this.nostr.query().kinds([30023]).authors([authorPubkey]).execute().map((events: NostrEvent[]) => {
+      const filtered = events.filter(e => e.tags.some(t => t[0] === 'd' && t[1] === identifier));
+      return filtered.sort((a, b) => b.created_at - a.created_at)[0] ?? null;
+    });
+  }
+
+  /** NIP-23: list articles by author (reactive) */
+  articles(authorPubkey: string, opts?: { limit?: number }): UniversalNostrStore<NostrEvent[]> {
+    this.nostr.sub().kinds([30023]).authors([authorPubkey]).execute().catch(() => {});
+    let qb = this.nostr.query().kinds([30023]).authors([authorPubkey]);
+    if (opts?.limit) qb = qb.limit(opts.limit);
+    return qb.execute().map((events: NostrEvent[]) => events.sort((a, b) => b.created_at - a.created_at));
+  }
+
+  /** Convenience: build naddr for an article */
+  async naddrForArticle(authorPubkey: string, identifier: string, relays?: string[]): Promise<string> {
+    return createNaddr(identifier, authorPubkey, 30023, relays);
   }
 
   /**

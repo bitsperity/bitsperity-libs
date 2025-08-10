@@ -32,6 +32,8 @@ Quelle: Code, Tests und Doku im Repo (`src/`, `tests-v2/`, `docs/`). Referenz de
 | 50 | Search Capability | Query/Infra | `search`‑Filter in `query()` (lokal) und `sub()` (Relay‑Suche). Lokale Suche: case‑insensitive Substring auf `content`; serverseitige Suche: über REQ mit `{ search: '…' }` (Ranking durch Relay). Doku/Tests vorhanden |
 | 72 | Moderated Communities | Social/Moderation | `kind:34550` Community‑Definition (d/name/description/image, p=moderator), Posts `kind:1111` mit `A/a/P/p/K/k`‑Tags; Approvals `kind:4550`; Revoke via NIP‑09 (`kind:5`). Reader: `getCommunity()`, `posts({ approvedOnly, moderatorsOnly })`, `approvals()`, `moderators()`. E2E‑Tests (inkl. Edge‑Cases) |
 | 92 | Media Attachments | Content | `attachMedia()` + `imeta` Parser/Helper; E2E‑Test |
+| 21 | URI Scheme | Interop | `nostr:` URI Support: `decode(nostr:...)`, `isNostrUri`, `parseNostrUri`, `toNostrUri`; Doku/Tests |
+| 23 | Long‑form Content | Content | `kind:30023` Builder/Reader in `content.article()/getArticle()/articles()`; `naddr` Helper; E2E‑Test |
 
 ### Teilweise/indirekt abgedeckt
 - NIP‑14 (Subject Tag): In DMs (NIP‑17) genutzt für Threading (Subject‑Tags), kein separater Note‑Subject‑Support.
@@ -42,9 +44,7 @@ Quelle: Code, Tests und Doku im Repo (`src/`, `tests-v2/`, `docs/`). Referenz de
   - Hinweise: Roadmap dynamisch; bereits implementierte NIPs werden laufend entfernt.
 
 ### Priorisierte Roadmap der fehlenden NIPs
-1. NIP‑21 (URI Scheme) – `nostr:` Deep‑Links/Interop.
-2. NIP‑23 (Long‑form Content) – Artikel/Blog‑Usecases.
-3. NIP‑66 (Relay Discovery & Liveness) – Autom. Discovery/Health.
+1. NIP‑66 (Relay Discovery & Liveness) – Autom. Discovery/Health.
 4. NIP‑57 (Lightning Zaps) – Payments/Engagement.
 5. NIP‑98 (HTTP Auth) – HTTP‑APIs/Dienste.
 6. NIP‑70 (Protected Events) – Spezialfälle/Privacy.

@@ -19,6 +19,7 @@ import { ListModule } from '../social/lists/ListModule.js';
 import { LabelsModule } from '../social/labels/LabelsModule.js';
 import { ChannelsModule } from '../social/chat/ChannelsModule.js';
 import { CommunitiesModule } from '../social/communities/CommunitiesModule.js';
+import { ContentModule } from '../social/content/ContentModule.js';
 import { SubscriptionManager } from '../subscription/SubscriptionManager.js';
 import { UniversalEventCache, type CacheStatistics } from '../cache/UniversalEventCache.js';
 import { QueryBuilder, SubBuilder } from '../query/QueryBuilder.js';
@@ -66,6 +67,8 @@ export class NostrUnchained {
   private _channels?: ChannelsModule;
   // Communities API (NIP-72)
   private _communities?: CommunitiesModule;
+  // Content API (NIP-23/18/01 consolidated)
+  private _content?: ContentModule;
   
   // Profile API (Enhanced)
   private _profile?: ProfileModule;
@@ -299,6 +302,14 @@ export class NostrUnchained {
       this._communities = new CommunitiesModule(this);
     }
     return this._communities;
+  }
+
+  /** Content module (NIP-23/18/01) */
+  get content(): ContentModule {
+    if (!this._content) {
+      this._content = new ContentModule(this, this.config.debug);
+    }
+    return this._content;
   }
 
   /**

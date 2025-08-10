@@ -291,6 +291,33 @@ Best practices:
 
 DM events (gift wrap, kind 1059) contain `p` tags; routing applies automatically when using `publishSigned()`.
 
+### NIP-23 Long-form Content (Articles)
+
+Long-form content uses replaceable `kind:30023` with a stable `d` identifier and optional metadata tags (`title`, `summary`, `image`).
+
+```ts
+// Publish article (replaceable by same author + d)
+await nostr.content.article()
+  .identifier('my-article')
+  .title('Nostr Unchained: Architecture Overview')
+  .summary('Universal cache, subscription-first, SOLID design')
+  .image('https://example.com/banner.jpg')
+  .content('# Intro...\nLong body...')
+  .hashtag('nostr')
+  .publish();
+
+// Read latest article version
+const latest = nostr.content.getArticle(authorPubkey, 'my-article');
+latest.subscribe(a => console.log(a?.tags.find(t=>t[0]==='title')?.[1]));
+
+// List articles
+const list = nostr.content.articles(authorPubkey, { limit: 10 });
+list.subscribe(items => console.log('articles:', items.length));
+
+// Build naddr for deep links (NIP-21 interop)
+const naddr = await nostr.content.naddrForArticle(authorPubkey, 'my-article');
+```
+
 | `7` | Reaction | Likes, dislikes, emoji reactions |
 | `40` | Channel Creation | Chat channel creation |
 | `41` | Channel Metadata | Channel information |
