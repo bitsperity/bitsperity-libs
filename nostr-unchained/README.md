@@ -47,6 +47,7 @@ This README is the only entry point. For comprehensive documentation, follow thi
 - Labels (NIP‑32): see [Social → Labels](./docs/social/README.md#-labels-nip-32)
 - Comments (NIP‑22): see [Social → Comments](./docs/social/README.md#-comments-nip-22)
 - Lists (NIP‑51): see [Social → Lists](./docs/social/README.md#-lists-nip-51)
+- Communities (NIP‑72): see [Social → Communities](./docs/social/README.md#-communities-nip72)
 - Search (NIP‑50): see [Query Engine → NIP‑50](./docs/query/README.md#nip-50-search)
 - Media Attachments (NIP‑92): see [Events](./docs/events/README.md#-nip-92-media-attachments)
 - Content Warning (NIP‑36): see [Events](./docs/events/README.md#-nip-36-content-warning)

@@ -425,6 +425,48 @@ const comments = nostr.comments.getForAddressable(30023, myPubkey, 'article-1');
 comments.subscribe(list => console.log('comments', list.length));
 ```
 
+## 🧩 Communities (NIP‑72)
+
+Moderated communities with replaceable definitions (`kind:34550`), posts (`kind:1111`), and approvals (`kind:4550`). This implementation uses the clean, modern NIP‑72 form (no legacy `kind:1` fallback).
+
+```ts
+// Create a community (34550)
+const author = await nostr.getPublicKey();
+await nostr.communities
+  .create(author)
+  .identifier('dev-community')
+  .name('Dev Community')
+  .description('All about Nostr dev')
+  .moderator(author) // add moderators via p-tags with role=moderator
+  .publish();
+
+// Post into a community (1111) with proper NIP-72 tags (A/a, P/p, K/k)
+await nostr.communities
+  .postTo(author, 'dev-community')
+  .content('Hello community!')
+  .publish();
+
+// Approve a post (4550) as moderator
+const posts = nostr.communities.posts(author, 'dev-community');
+const firstPost = posts.current?.[0];
+if (firstPost) {
+  await nostr.communities
+    .approve({ authorPubkey: author, identifier: 'dev-community' })
+    .post(firstPost)
+    .publish();
+}
+
+// Readers
+const community = nostr.communities.getCommunity(author, 'dev-community');
+const moderators = nostr.communities.moderators(author, 'dev-community');
+const approvals = nostr.communities.approvals(author, 'dev-community', firstPost?.id);
+```
+
+Notes:
+- Community posts and replies carry community context via uppercase tags (`A/P/K`) and use lowercase tags (`e/p/k`) to reference parent posts.
+- Replaceable community definitions use `d` identifiers; latest `created_at` wins.
+- Approvals are normal events (`4550`); consumer logic can restrict to moderator pubkeys.
+
 ### Feed Types
 
 ```typescript

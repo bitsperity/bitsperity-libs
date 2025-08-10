@@ -161,6 +161,8 @@ export class EventBuilder {
       6,    // NIP-18: Repost (requires empty content)
       7,     // NIP-25: Reaction (may have empty content for simple reactions)
       10002, // NIP-65: Relay List Metadata (empty content)
+      34550, // NIP-72: Community definition (replaceable, tags carry metadata)
+      4550,  // NIP-72: Approval event (content may embed JSON, but can be empty by clients)
       30000, // NIP-51: Follow Categorization (addressable list)
       30001, // NIP-51: Generic Lists
       30002, // NIP-51: Relay Lists
