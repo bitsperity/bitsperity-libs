@@ -1,34 +1,34 @@
 # 👤 Profile Management API
 
-Die **Profile Management API** bietet ein umfassendes, reaktives System zur Verwaltung von Nostr-Profilen und Follow-Listen mit intelligenter Cache-Optimierung und <10ms Response-Zeiten.
+The Profile Management API provides a comprehensive, reactive system to manage Nostr profiles and follow lists with intelligent cache optimization and <10ms response times.
 
-Basiert auf **NIP-01** (Profile), **NIP-02** (Follow Lists) und **NIP-05** (DNS-basierte Identitäts-Verifikation).
+Based on **NIP‑01** (profiles), **NIP‑02** (follow lists) and **NIP‑05** (DNS‑based identity verification).
 
-## 🎯 Kernfeatures
+## 🎯 Core features
 
-### ⚡ Cache-First Performance
-- **<10ms Response-Zeiten** für gecachte Profile
-- **O(log n) Queries** durch UniversalEventCache-Indexierung
-- **Intelligente LRU-Eviction** für optimale Speichernutzung
-- **Shared Subscriptions** reduzieren Netzwerk-Traffic
+### ⚡ Cache‑first performance
+- <10ms response times for cached profiles
+- O(log n) queries via cache indexing
+- Smart LRU eviction
+- Shared subscriptions reduce network traffic
 
-### 🔄 Reaktive Datenflüsse  
-- **Svelte Store Integration** mit automatischen UI-Updates
-- **Real-Time Updates** bei Profil-Änderungen
-- **Optimistic Updates** für sofortiges UI-Feedback
-- **Framework-agnostisch** (React, Vue, Vanilla JS)
+### 🔄 Reactive data flow
+- Svelte store integration (automatic UI updates)
+- Real‑time updates on profile changes
+- Optimistic updates for instant UI feedback
+- Framework agnostic (React, Vue, Vanilla JS)
 
-### 🛠️ Developer Experience Excellence
-- **Fluent Builder APIs** mit Method Chaining
-- **TypeScript-First** mit vollständiger Typsicherheit
-- **Zero-Config Setup** funktioniert sofort
-- **Batch Operations** für effiziente Bulk-Verarbeitung
+### 🛠️ Developer experience
+- Fluent builder APIs
+- TypeScript‑first
+- Zero‑config setup
+- Batch operations
 
-### 🔍 Advanced Profile Discovery
-- **Multi-Kriterien-Suche** (Name, NIP-05, Metadata)
-- **Relevance Scoring** für beste Suchergebnisse
-- **NIP-05 Verification** mit DNS-basierter Validierung
-- **Pagination Support** für große Ergebnismengen
+### 🔍 Advanced profile discovery
+- Multi‑criteria search (name, NIP‑05, metadata)
+- Relevance scoring
+- NIP‑05 verification (DNS)
+- Pagination support
 
 ## Quick Start
 

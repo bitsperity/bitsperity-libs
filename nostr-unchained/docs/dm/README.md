@@ -72,10 +72,10 @@ const chat = nostr.getDM()?.with(pubkey); // SOLID DM Module
 
 // Automatische Features:
 // 1. Gift Wrap Subscription wird gestartet
-// 2. Auto-Subscribe für Message Conversion
+// 2. Auto-subscribe for message conversion
 // 3. publishSigned() für Gift Wrap Events
 
-// Schicht 1: Core Layer (wenn benötigt)
+// Layer 1: core layer (if needed)
 const giftWraps = nostr.query().kinds([1059]).execute();
 
 // Schicht 0: Cache Access (Advanced)
@@ -140,7 +140,7 @@ Everything happens automatically in the background.
 // Get conversation (auto-subscribes for message conversion)
 const chat = nostr.getDM()?.with('pubkey-here');
 
-// Send encrypted message (Signer führt NIP-44 aus, keine Raw-Keys im Code)
+// Send encrypted message (signer executes NIP-44; no raw keys in code)
 await chat.send('Hello there! 👋');
 
 // Send with custom options
@@ -292,11 +292,11 @@ Gift wraps hide message metadata:
 // Your real message metadata is encrypted inside
 ```
 
-## Rumor‑ID vs. Wrap‑ID (Wichtig für Debugging)
+## Rumor‑ID vs. Wrap‑ID (for debugging)
 
-- Gift Wrap Events (Kind 1059) tragen eine eigene Event‑ID (Wrap‑ID). Nach erfolgreicher Entschlüsselung wird der enthaltene Rumor (Kind 13) zu einem DM‑Event (Kind 14) normalisiert und erhält dabei eine eigene ID (Rumor/DM‑ID), da der DM‑Eventinhalt und die Struktur eigenständig sind.
-- Konsequenz: In Stores/Cache tauchen DM‑Events (Kind 14) mit einer anderen ID auf als die korrespondierenden Gift Wraps (Kind 1059). Das ist beabsichtigt und protokollkonform.
-- Empfehlung: Für UI/Threading stets die 14er‑Events verwenden. Gift Wraps dienen nur als Transport/Verpackung und werden unabhängig vom Decrypt‑Erfolg im Cache gespeichert.
+- Gift‑wrap events (kind 1059) have their own event ID (wrap ID). After successful decryption, the contained rumor (kind 13) is normalized to a DM event (kind 14) with its own ID (rumor/DM ID).
+- Consequence: in stores/cache, kind‑14 DM events appear with different IDs than the corresponding kind‑1059 wraps. This is expected and spec‑compliant.
+- Recommendation: for UI/threading always use kind‑14 events. Gift wraps are transport only and are cached regardless of decryption.
 
 ## API Reference
 

@@ -28,7 +28,7 @@ This chapter explains what Nostr Connect is, why it’s useful, and how to use i
 
 ## Quickstart with Nostr Unchained
 
-1) Installation/Setup wie üblich
+1) Install & setup
 
 ```ts
 import { NostrUnchained, NostrConnectSigner } from 'nostr-unchained';
@@ -64,7 +64,7 @@ await nostr.events.note('Hello from remote signing!').publish();
 
 ## Client‑initiated flow: create nostrconnect:// token
 
-Du kannst einen Verbindungs‑Token erzeugen, den der Remote‑Signer konsumiert. Damit können Permissions/Relays vorab kommuniziert werden.
+You can generate a connection token consumed by the remote signer to pre‑communicate permissions/relays.
 
 ```ts
 const token = await remoteSigner.createClientToken({

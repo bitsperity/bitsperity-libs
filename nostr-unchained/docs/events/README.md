@@ -195,21 +195,21 @@ Nostr Unchained supports all standard event kinds:
 | `3` | Contact List | Following/followers |
 | `4` | Encrypted DM | Private messages (deprecated, use NIP-17) |
 | `5` | Event Deletion | Delete events |
-### NIP-42 Relay Authentication (Neu)
+### NIP-42 Relay Authentication
 
-Die Library antwortet automatisch auf Relay-Herausforderungen:
+The library automatically responds to relay challenges:
 
 ```text
 Relay → ["AUTH", "<challenge>"]
 Client → ["AUTH", { kind:22242, tags:[ ["relay", url], ["challenge", value] ], ... }]
 ```
 
-- Keine manuelle Konfiguration nötig – sobald ein Signer aktiv ist, wird der AUTH‑Event erzeugt und gesendet.
-- CLOSED/NOTICE mit `auth-required:`/`restricted:` werden erkannt; die Library versucht automatisch AUTH erneut.
+- No manual configuration required — once a signer is available, the AUTH event is created and sent.
+- CLOSED/NOTICE with `auth-required:`/`restricted:` are detected; the library retries AUTH.
 
-### NIP-65 Relay Lists (Neu)
+### NIP-65 Relay Lists
 
-Kind `10002` (replaceable) mit `r`-Tags und optionalen Markern `read`/`write`.
+Kind `10002` (replaceable) with `r` tags and optional markers `read`/`write`.
 
 ```ts
 // Publish relay list
@@ -227,20 +227,20 @@ rl.subscribe((state) => {
 });
 ```
 
-### NIP-65 Relay Routing (Opt-in)
+### NIP-65 Relay Routing (opt‑in)
 
-Routing gemäß NIP-65 ist optional. Wenn aktiv, wird beim Publish die Zielmenge aus
-- Autoren‑Write/Beide‑Relays,
-- Read/Beide‑Relays aller in `p`‑Tags erwähnten Nutzer,
-- plus den konfigurierten Default‑Relays
-gebildet. So bleiben Publishes robust und erreichen relevante Empfänger‑Relays.
+Routing per NIP‑65 is optional. When enabled, target relays are selected from:
+- author write/both relays,
+- mentioned users’ read/both relays from `p` tags,
+- plus configured default relays.
+This keeps publishes robust and reaches relevant recipient relays.
 
 ```ts
 const nostr = new NostrUnchained({ relays: ['wss://relay.example'], routing: 'nip65' });
 await nostr.useLocalKeySigner();
 await nostr.connect();
 
-// Mention-Note (ersetzt DM‑Flow im Beispiel)
+// Mention note
 await nostr.publish({
   pubkey: await nostr.getPublicKey(),
   created_at: Math.floor(Date.now() / 1000),
@@ -250,9 +250,9 @@ await nostr.publish({
 });
 ```
 
-### NIP-92 Media Attachments (Neu)
+### NIP-92 Media Attachments
 
-Füge Medien (Bilder/Videos/Audio/Dateien) zu Events hinzu, indem du die URL im Content platzierst und eine passende `imeta`‑Tag mitgibst.
+Attach media (images/video/audio/files) by placing the URL in content and adding an `imeta` tag.
 
 ```ts
 import { NostrUnchained } from 'nostr-unchained';
@@ -273,22 +273,22 @@ await nostr.events
   })
   .publish();
 
-// Lesen: Events mit imeta finden
+// Read: find events with imeta
 const posts = nostr.sub().kinds([1]).execute();
 posts.subscribe((events) => {
   events.forEach((e) => {
     const imetas = e.tags.filter(t => t[0] === 'imeta');
-    // oder: parseImetaTags(e) aus dem Package verwenden
+    // or use parseImetaTags(e) from the package
   });
 });
 ```
 
-Best Practices:
-- Jede `imeta` gehört zu genau einer URL, die auch im `content` steht.
-- Felder: `url`, optional `m` (MIME), `alt`, `dim` (Breite×Höhe), `blurhash`, `x` (sha256 aus NIP‑94), mehrere `fallback` URLs.
-- Beim Upload: Metadaten nach Upload ergänzen, vor Publish.
+Best practices:
+- Each `imeta` refers to exactly one URL present in `content`.
+- Fields: `url`, optional `m` (MIME), `alt`, `dim`, `blurhash`, `x` (NIP‑94 sha256), multiple `fallback` URLs.
+- After upload: enrich metadata before publish.
 
-DM‑Events (Gift Wrap, kind 1059) enthalten `p`‑Tags; dadurch greift das Routing automatisch bei `publishSigned()`.
+DM events (gift wrap, kind 1059) contain `p` tags; routing applies automatically when using `publishSigned()`.
 
 | `7` | Reaction | Likes, dislikes, emoji reactions |
 | `40` | Channel Creation | Chat channel creation |
@@ -348,9 +348,9 @@ if (result.success) {
 
 ### Deprecations & Migration (→ v0.2.0)
 
-- Raw‑Key APIs werden entfernt. Verwende ausschließlich `nip44Encrypt/Decrypt` deines Signers.
-- Der Universal Cache arbeitet decryptor‑only; ein Private‑Key‑Pfad wird nicht mehr unterstützt.
-- Migration: Stelle sicher, dass dein Signer `capabilities()` mit `{ nip44Encrypt, nip44Decrypt }` liefert.
+- Raw‑key APIs will be removed. Use signer `nip44Encrypt/Decrypt` only.
+- Universal cache is decryptor‑only; private‑key path is not supported.
+- Migration: ensure signer `capabilities()` exposes `{ nip44Encrypt, nip44Decrypt }`.
 
 ### Custom Signing Provider
 
@@ -472,7 +472,7 @@ publish(content: string, kind?: number): Promise<PublishResult>
 
 **Returns:** `PublishResult` with success status and relay details
 
-Hinweis: Das Overload `publish(content, kind=1)` ist eine DX‑Abkürzung für einfache Textevents. Für komplexe Events nutze den Fluent Builder unter `nostr.events`.
+Note: The overload `publish(content, kind=1)` is a DX shorthand for simple text events. For complex events use the fluent builder under `nostr.events`.
 
 ### NostrUnchained.events
 

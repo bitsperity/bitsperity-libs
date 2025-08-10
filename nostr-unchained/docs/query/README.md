@@ -59,7 +59,7 @@ const subscription = nostr.sub()
   .authors(['alice-pubkey'])
   .execute();
 
-// STEP 2: Query reads from cache (instant)  
+// STEP 2: Query reads from cache (instant)
 const cached = nostr.query()
   .kinds([1])
   .authors(['alice-pubkey'])
