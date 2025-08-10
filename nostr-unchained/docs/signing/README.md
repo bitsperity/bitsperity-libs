@@ -59,7 +59,7 @@ await nostr.useCustomSigner(remoteSigner);
 
 ```ts
 // Hinweis: publish() nutzt nun den Remote‑Signer
-await nostr.events.note('Hallo aus Remote‑Signing!').publish();
+await nostr.events.note('Hello from remote signing!').publish();
 ```
 
 ## Client‑initiated flow: create nostrconnect:// token
