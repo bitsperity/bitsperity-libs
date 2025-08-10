@@ -5,35 +5,56 @@
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Test Coverage](https://img.shields.io/badge/Coverage-90%25-brightgreen)](#testing)
 
-> **SOLID Universal Cache Architecture für das Nostr-Protokoll.**  
-> Subscription-First Caching, 100% NIP-Compliance, Zero-Config DX mit reaktiven Datenflüssen.
+> SOLID universal cache architecture for the Nostr protocol.  
+> Subscription‑first caching, 100% NIP compliance, zero‑config DX with reactive data flows.
 
-**Nostr Unchained** ist eine SOLID-implementierte TypeScript-First Nostr-Bibliothek, die auf der **Universal Cache Architecture** basiert - einem eleganten 3-Schichten-System (Cache, Core, High-Level APIs), das subscription-basiertes Caching mit Live-Relay-Synchronisation kombiniert. Perfekt für Entwickler, die robuste Nostr-Anwendungen mit exzellenter DX erstellen wollen.
+**Nostr Unchained** is a SOLID TypeScript‑first Nostr library built on the **Universal Cache Architecture** — a clean 3‑layer system (cache, core, high‑level APIs) that combines subscription‑first caching with live relay synchronization. Ideal for building robust Nostr apps with outstanding DX.
 
-## 🚀 Kernmerkmale
+## 🚀 Key features
 
-- **🏗️ Universal Cache Architecture** - Subscription-First 3-Schichten-System (Cache, Core, High-Level)
-- **⚡ SOLID Implementation** - Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion
-- **🔄 Subscription-First Caching** - "Im Cache landen nur Sachen die subscribed werden"
-- **🎛️ Excellent DX** - Zero-Config mit intuitiven APIs und reaktiven Stores
-- **📊 100% Protocol Compliance** - Vollständige NIP-17/NIP-44/NIP-59 Implementierung
-- **🔐 Relay Auth (NIP-42)** - Automatisches AUTH-Handshake bei Bedarf (Challenge → signiertes AUTH‑Event)
-- **🛰️ Relay Lists (NIP-65)** - Publish & Read Relay-Listen (read/write/both) mit göttlicher DX
-- **🗂️ Lists (NIP-51)** - Generische Listen (30000–30003) mit Fluent Builder und reaktivem Lesen
-- **💬 Public Chat (NIP-28)** - Channels (40/41) & Messages (42) inkl. Hide (43)/Mute (44)
-- **🏷️ Labels (NIP-32)** - Labeling via `kind:1985` mit `L`/`l` und Ziel‑Tags; reactive Retrieval
-- **💬 Comments (NIP-22)** - Universelle Kommentare (kind 1111) auf Events/Addressables/Externals
- - **🖼️ Media Attachments (NIP-92)** - `attachMedia()` mit `imeta`‑Tags, Parser/Helper exportiert
- - **⚠️ Content Warning (NIP-36)** - `.contentWarning(reason?)` markiert Events als sensibel
-- **🔐 Advanced Cryptography** - ChaCha20-Poly1305, HKDF, Perfect Forward Secrecy
-- **🎁 Pre-Signed Event Support** - `publishSigned()` für Gift Wrap Events ohne Re-Signing
-- **🧪 Real Relay Testing** - Keine Mocks, nur echte Protokoll-Validierung
+- 🏗️ Universal Cache Architecture — subscription‑first (cache, core, high‑level)
+- ⚡ SOLID implementation — SRP, OCP, LSP, ISP, DIP
+- 🔄 Subscription‑first caching — only subscribed data enters the cache
+- 🎛️ Excellent DX — zero‑config, intuitive fluent APIs, reactive stores
+- 📊 100% protocol compliance — NIP‑17/44/59, and more
+- 🔐 Relay Auth (NIP‑42) — automatic AUTH handshake on challenge
+- 🛰️ Relay Lists (NIP‑65) — publish/read read/write/both relay lists
+- 🗂️ Lists (NIP‑51) — generic lists (30000–30003) with fluent builder and reactive reads
+- 💬 Public Chat (NIP‑28) — channels (40/41) & messages (42), hide (43), mute (44)
+- 🏷️ Labels (NIP‑32) — `kind:1985` with `L`/`l` and target tags; reactive retrieval
+- 💬 Comments (NIP‑22) — universal comments on events/addressables/externals
+- 🖼️ Media Attachments (NIP‑92) — `attachMedia()` + `imeta` helpers
+- ⚠️ Content Warning (NIP‑36) — `.contentWarning(reason?)`
+- 🔐 Advanced cryptography — ChaCha20‑Poly1305, HKDF, PFS
+- 🎁 Pre‑signed event support — `publishSigned()` for gift wraps
+- 🧪 Real relay testing — no mocks, only protocol‑true validation
 
 ---
 
 ## 📖 Documentation Walkthrough
 
-This README provides an English overview and a quickstart hub. For comprehensive documentation, follow this path:
+This README is the only entry point. For comprehensive documentation, follow this path:
+
+### 🔎 Feature Index (Overview)
+
+- Notes & Events: see [Events & Publishing](./docs/events/README.md)
+- Direct Messages (NIP‑17/44/59): see [Direct Messages](./docs/dm/README.md)
+- Profiles & Contacts (NIP‑02): see [Social](./docs/social/README.md)
+- Threads & Replies (NIP‑10): see [Social](./docs/social/README.md)
+- Reactions (NIP‑25): see [Social](./docs/social/README.md)
+- Feeds: see [Social](./docs/social/README.md)
+- Public Chat (NIP‑28): see [Social → Public Chat](./docs/social/README.md#-public-chat-nip-28)
+- Labels (NIP‑32): see [Social → Labels](./docs/social/README.md#-labels-nip-32)
+- Comments (NIP‑22): see [Social → Comments](./docs/social/README.md#-comments-nip-22)
+- Lists (NIP‑51): see [Social → Lists](./docs/social/README.md#-lists-nip-51)
+- Media Attachments (NIP‑92): see [Events](./docs/events/README.md#-nip-92-media-attachments)
+- Content Warning (NIP‑36): see [Events](./docs/events/README.md#-nip-36-content-warning)
+- Relay Auth (NIP‑42): see [Events](./docs/events/README.md#-nip-42-relay-authentication)
+- Relay Lists (NIP‑65): see [Events](./docs/events/README.md#-nip-65-relay-lists)
+- NIP‑65 Routing (opt‑in): see [Events](./docs/events/README.md#-nip-65-routing-opt-in)
+- Remote Signing (NIP‑46): see [Remote Signing](./docs/signing/README.md)
+- Query & Subscription Engine: see [Query Engine](./docs/query/README.md)
+- Universal Stores (Svelte‑compatible): see [Stores](./docs/stores/README.md)
 
 ### 🚀 **Start Here:** [Universal Query & Subscription Engine](./docs/query/README.md)
 Learn the core architecture with **identical APIs** for cache queries and live subscriptions. This is the foundation everything else builds on.
@@ -66,78 +87,76 @@ Build complete social apps with profiles, contacts, threading, reactions, feeds.
   ```ts
   const ch = await nostr.channels.create().name('Demo').publish();
   await nostr.channels.message(ch.eventId).content('Hi!').publish();
-  const msgs = nostr.channels.messagesFor(ch.eventId);
-  // Mehr: docs/social/README.md#-public-chat-nip-28
+   const msgs = nostr.channels.messagesFor(ch.eventId);
+   // See: docs/social/README.md#-public-chat-nip-28
   ```
 - Labels (NIP‑32):
   ```ts
-  await nostr.labels.edit().namespace('ISO-639-1').label('en','ISO-639-1').targetEvent('e'.repeat(64)).publish();
-  // Mehr: docs/social/README.md#-labels-nip-32
+   await nostr.labels.edit().namespace('ISO-639-1').label('en','ISO-639-1').targetEvent('e'.repeat(64)).publish();
+   // See: docs/social/README.md#-labels-nip-32
   ```
 - Relay Auth (NIP‑42) & Relay Lists (NIP‑65):
   ```ts
-  const nostr = new NostrUnchained({ routing: 'nip65' });
-  await nostr.connect(); // AUTH bei Bedarf automatisch
-  // Mehr: docs/events/README.md und docs/social/README.md
+   const nostr = new NostrUnchained({ routing: 'nip65' });
+   await nostr.connect(); // AUTH happens automatically if required
+   // See: docs/events/README.md and docs/social/README.md
   ```
 
 ---
 
-## ✨ Design-Philosophie
+## ✨ Design philosophy
 
-**Universal, Reaktiv, Benutzer-Kontrolliert**
+Universal, reactive, user‑controlled.
 
-Nostr Unchained folgt einer klaren Design-Philosophie, die auf drei Säulen basiert:
-
-### 🏗️ Universal Cache Architecture (3-Schichten-System)
-SOLID-implementierte Architektur mit klarer Trennung:
+### 🏗️ Universal Cache Architecture (3‑layer system)
+SOLID architecture with clear separation:
 ```
 ┌─────────────────────────────────────────┐
-│  Schicht 2: High-Level APIs            │ ← DM, Profile, Social Modules
+│  Layer 2: High‑level APIs              │ ← DM, Profile, Social Modules
 ├─────────────────────────────────────────┤
-│  Schicht 1: Core (pub/sub/query/delete)│ ← NostrUnchained Core Layer
+│  Layer 1: Core (pub/sub/query/delete)  │ ← NostrUnchained Core Layer
 ├─────────────────────────────────────────┤
-│  Schicht 0: Universal Event Cache      │ ← Subscription-First Caching
+│  Layer 0: Universal Event Cache        │ ← Subscription‑first caching
 └─────────────────────────────────────────┘
 ```
 
-**Wichtiges Prinzip**: "Im Cache landen nur Sachen die subscribed werden" - keine automatischen Subscriptions, volle User-Kontrolle.
+Core principle: only subscribed data enters the cache. No automatic subscriptions; full user control.
 
-### ⚡ Performance-First Design
-- **Cache-First**: Sofortige Antworten mit Live-Updates im Hintergrund
-- **O(log n) Queries**: Effiziente Indexierung nach Kind, Autor und Tags
-- **Intelligente Deduplication**: Keine doppelten Events in Stores
-- **LRU-Eviction**: Optimale Speicherverwaltung
+### ⚡ Performance‑first design
+- Cache‑first: instant responses with background live updates
+- O(log n) queries: efficient indexing by kind, author, and tags
+- Smart deduplication: no duplicate events in stores
+- LRU eviction: optimal memory management
 
-### 🎛️ Benutzer-Kontrolle
-- **Lazy Loading**: Features aktivieren sich nur bei Bedarf
-- **Explizite Signing-Provider-Wahl**: Keine versteckten Überraschungen
-- **Privacy by Design**: DM-Subscriptions nur bei expliziter Nutzung
+### 🎛️ User control
+- Lazy loading: features activate only when needed
+- Explicit signer choice: no hidden surprises
+- Privacy by design: DM subscriptions only on explicit use
 
 ```typescript
-// Das ist alles, was du für eine vollständige Nostr-App brauchst
+// Everything you need for a full Nostr app
 import { NostrUnchained } from 'nostr-unchained';
 
 const nostr = new NostrUnchained();
 await nostr.connect();
 
-// 📝 Publishing - Zero Config
-await nostr.events.note("Hallo, dezentrale Welt! 🌍");
+// 📝 Publishing — zero config
+await nostr.events.note("Hello, decentralized world! 🌍");
 
-// 🔍 Cache Queries - Sofortiger Zugriff (<10ms)
+// 🔍 Cache queries — instant access (<10ms)
 const cachedPosts = nostr.query().kinds([1]).execute();
-console.log(`${cachedPosts.current.length} Posts aus Cache`);
+console.log(`${cachedPosts.current.length} posts from cache`);
 
-// 📡 Live Subscriptions - Identische API!
+// 📡 Live subscriptions — identical API!
 const livePosts = nostr.sub().kinds([1]).execute();
 livePosts.subscribe(posts => console.log(`Live: ${posts.length} Posts`));
 
-// 💬 Direct Messages - NIP-44 Encryption mit Gift Wrap Protocol
+// 💬 Direct Messages — NIP‑44 encryption with gift‑wrap protocol
 const chat = nostr.getDM().with('recipient-pubkey');
-await chat.send('Verschlüsselte Nachricht! 🔐'); // Automatisch Gift-Wrapped
-chat.subscribe(messages => console.log(`${messages.length} Nachrichten`));
+await chat.send('Encrypted message! 🔐'); // Auto gift‑wrapped
+chat.subscribe(messages => console.log(`${messages.length} messages`));
 
-// 👤 Profile Management - Cache-First mit <10ms Response
+// 👤 Profile management — cache‑first with <10ms response
 const profile = nostr.profile.get('npub1...');
 await nostr.profile.edit()
   .name('Alice Cooper')
@@ -145,13 +164,13 @@ await nostr.profile.edit()
   .nip05('alice@domain.com')
   .publish();
 
-// 🔗 Follow Management - Fluent Builder APIs
+// 🔗 Follow management — fluent builder APIs
 await nostr.profile.follows.add('npub1...')
   .petname('Bob')
   .relay('wss://relay.example.com')
   .publish();
 
-// 📊 Alle APIs returnieren reaktive Svelte Stores
+// 📊 All APIs return reactive Svelte stores
 cachedPosts.subscribe(posts => updateUI(posts));
 profile.subscribe(state => displayProfile(state.profile));
 ```
@@ -228,46 +247,46 @@ const results = await nostr.profile.discover()
 
 ## 🏗️ Universal Cache Architecture im Detail
 
-Nostr Unchained implementiert eine **SOLID 3-Schichten-Architektur** mit subscription-basiertem Caching:
+Nostr Unchained implements a **SOLID 3‑layer architecture** with subscription‑first caching:
 
-### Architektur-Überblick
+### Architecture overview
 ```
 ┌─────────────────────────────────────────┐
-│  Schicht 2: High-Level APIs            │ ← DM, Profile, Social Modules
+│  Layer 2: High‑level APIs              │ ← DM, Profile, Social Modules
 ├─────────────────────────────────────────┤
-│  Schicht 1: Core Layer                 │ ← pub/sub/query/delete + publishSigned()
+│  Layer 1: Core layer                   │ ← pub/sub/query/delete + publishSigned()
 ├─────────────────────────────────────────┤
-│  Schicht 0: Universal Event Cache      │ ← Subscription-First Storage
+│  Layer 0: Universal Event Cache        │ ← Subscription‑first storage
 └─────────────────────────────────────────┘
 ```
 
-**Kernprinzip**: Subscription-First Caching - Events landen nur im Cache wenn sie subscribed werden!
+Core principle: subscription‑first caching — only subscribed events enter the cache.
 
-### Kernvorteile der Architektur
+### Key architecture benefits
 
-#### ⚡ Performance Excellence
-- **<10ms Cache-Zugriffe** durch O(log n) Indexierung
-- **Tag-Filter Support** - Vollständige #p, #e, #t Tag-Filterung
-- **Gift Wrap Storage** - Events werden unabhängig von Decryption gespeichert
-- **Auto-Subscribe DM** - Automatische Message-Conversion ohne manuelle Subscription
+#### ⚡ Performance excellence
+- <10ms cache hits via O(log n) indexing
+- Tag‑filter support — complete #p/#e/#t filtering
+- Gift‑wrap storage — independent of decryption success
+- Auto‑subscribe DM — automatic message conversion
 
-#### 🔄 API-Konsistenz
+#### 🔄 API consistency
 ```typescript
-// IDENTISCHE APIs für Cache und Live-Daten
+// IDENTICAL APIs for cache and live data
 const cached = nostr.query().kinds([1]).authors(['alice']).execute();
 const live = nostr.sub().kinds([1]).authors(['alice']).execute();
 
-// Beide returnieren reaktive Stores mit identischer API
+// Both return reactive stores with identical API
 cached.subscribe(posts => console.log('Cache:', posts.length));
 live.subscribe(posts => console.log('Live:', posts.length));
 ```
 
-#### 🎁 100% NIP-Compliant Encryption
-- **NIP-44 v2**: ChaCha20-Poly1305 mit HKDF Key Derivation
-- **NIP-59 Gift Wrap**: 3-Layer Encryption (Rumor → Seal → Gift Wrap)
-- **NIP-17 Private DMs**: Vollständige Protokoll-Compliance
-- **publishSigned()**: Spezielle Methode für pre-signed Gift Wrap Events
-- **bytesToHex() Fix**: Korrekte Hex-Conversion für Ephemeral Keys
+#### 🎁 100% NIP‑compliant encryption
+- NIP‑44 v2: ChaCha20‑Poly1305 with HKDF
+- NIP‑59 gift wrap: 3‑layer pipeline (Rumor → Seal → Gift Wrap)
+- NIP‑17 private DMs: full compliance
+- publishSigned(): pre‑signed gift‑wrap events
+- bytesToHex() fix: correct hex conversion for ephemeral keys
 
 > **Deep Dive:** Read the [Query & Subscription Engine](./docs/query/README.md) guide to understand how this elegant architecture works.
 
@@ -287,7 +306,7 @@ const info = nostr.getSigningInfo();
 console.log(`Using: ${info.method}`);
 ```
 
-### ⚡ Lazy Loading
+### ⚡ Lazy loading
 ```typescript
 // ✅ Connect = relay connections only
 await nostr.connect(); 
@@ -304,7 +323,7 @@ const chat = nostr.dm.with(pubkey);
 
 ### 🛰️ NIP-65 Relay Routing (opt-in)
 
-Aktiviere optionales Routing gemäß NIP-65. Events werden an deine Write‑Relays sowie an Read‑Relays der Erwähnten (p‑Tags) gesendet; Default‑Relays bleiben stets enthalten (robust).
+Enable optional routing per NIP‑65. Events are sent to your write relays as well as mentioned recipients' read relays (p‑tags); default relays are always included (robust).
 
 ```typescript
 import { NostrUnchained } from 'nostr-unchained';
@@ -317,13 +336,13 @@ const nostr = new NostrUnchained({
 await nostr.useExtensionSigner();
 await nostr.connect();
 
-// 2) (Optional) Eigene/Empfänger-Relays pflegen
+// 2) (Optional) maintain own/recipient relay lists
 await nostr.relayList.edit()
   .read('wss://read.example.com')
   .write('wss://write.example.com')
   .publish();
 
-// 3) Routing in Aktion: Mention-Note → auch Empfänger-Read-Relays
+// 3) Routing in action: mention note → also recipient read relays
 const result = await nostr.publish({
   pubkey: await nostr.getPublicKey(),
   created_at: Math.floor(Date.now() / 1000),
@@ -331,7 +350,7 @@ const result = await nostr.publish({
   tags: [['p', 'abcdef...peerhex...']],
   content: 'Hello with routing!'
 });
-// Debug enthält die tatsächlich genutzten Ziel-Relays
+// Debug contains the actual target relays used
 console.log(result.debug?.targetRelays);
 
 // 4) DMs profitieren automatisch
@@ -340,14 +359,14 @@ const chat = nostr.dm.with('abcdef...peerhex...');
 await chat.send('Hi there!');
 ```
 
-Hinweise:
-- Standard bleibt unverändert (`routing: 'none'`).
-- Routing ist rein additiv: Default‑Relays werden immer berücksichtigt.
-- URL‑Normalisierung: Schema ergänzt, Trailing Slashes entfernt.
+Notes:
+- Default remains unchanged (`routing: 'none'`).
+- Routing is additive: default relays are always considered.
+- URL normalization: scheme added, trailing slashes removed.
 
-### 🗂️ NIP-51 Lists (30000–30003)
+### 🗂️ NIP‑51 Lists (30000–30003)
 
-Erstelle und lese Listen (Follow‑Kategorien, generische Listen, Relay‑Sammlungen, Bookmarks). Subscription‑First sorgt für Cache‑Fill ohne Schichtenbruch.
+Create and read lists (follow categories, generic lists, relay collections, bookmarks). Subscription‑first ensures cache fill without breaking layers.
 
 ```ts
 // Publish Bookmark‑Liste (30003)
@@ -366,9 +385,9 @@ const list = nostr.lists.get(await nostr.getPublicKey(), 30003, 'bookmarks');
 list.subscribe(v => console.log(v?.title, v?.p?.length, v?.e?.length));
 ```
 
-### 🏷️ NIP-32 Labels (kind 1985)
+### 🏷️ NIP‑32 Labels (kind 1985)
 
-Labels erlauben Moderation/Organisation über Namespaces (`L`) und Label‑Werte (`l`) an Events/Autoren/Addresses/Relays/Topics.
+Labels enable moderation/organization using namespaces (`L`) and label values (`l`) on events/authors/addresses/relays/topics.
 
 ```ts
 // Event labeln
@@ -430,11 +449,11 @@ Scale to **full social applications**:
 - 📰 **Feeds**: Global and following timelines
 
 #### 🏗️ **Deep Dive:** [Universal Cache Architecture](./docs/architecture/README.md)
-Verstehe die **innovative 4-Schichten-Architektur** im Detail:
-- 🎯 **Schicht-für-Schicht-Analyse** der Universal Cache Architecture
-- ⚡ **Performance-Optimierungen** und O(log n) Implementierungen
-- 🔐 **Kryptographische Details** der Gift-Wrap-Behandlung
-- 📊 **Architektur-Testing** mit Real-Relay-Validierung
+Understand the innovative 4‑layer architecture in detail:
+- Layer‑by‑layer analysis of the Universal Cache Architecture
+- Performance optimizations and O(log n) implementations
+- Cryptographic details of gift‑wrap handling
+- Architecture testing with real relays
 
 ---
 
@@ -458,25 +477,25 @@ Verstehe die **innovative 4-Schichten-Architektur** im Detail:
 - ✅ **Secure**: End-to-end encryption with perfect forward secrecy
 - ✅ **Fast**: Instant cache access with background updates
 
-## 🎯 Technische Highlights
+## 🎯 Technical highlights
 
 ### 🏗️ **Universal Cache Architecture Excellence**
 
-**Intelligente 4-Schichten-Trennung:**
-- **Schicht 1 (Cache)**: O(log n) Performance mit LRU-Eviction und automatischer Gift-Wrap-Entschlüsselung
-- **Schicht 2 (Query/Sub)**: Identische APIs für Cache-Zugriff und Live-Subscriptions
-- **Schicht 3 (APIs)**: Spezialisierte Module (DM, Profile, Social) basierend auf Query-Engine
-- **Schicht 4 (DX)**: Zero-Config Developer Experience ohne technische Details
+**Intelligent 4‑layer separation:**
+- Layer 1 (Cache): O(log n) performance with LRU eviction and automatic gift‑wrap decryption
+- Layer 2 (Query/Sub): identical APIs for cache access and live subscriptions
+- Layer 3 (APIs): specialized modules (DM, Profile, Social) built on the query engine
+- Layer 4 (DX): zero‑config developer experience without protocol details
 
-**Performance-Optimierungen:**
+**Performance optimizations:**
 ```typescript
-// Cache-Performance: <10ms für gecachte Daten
-const profile = nostr.profile.get(pubkey); // Sofortiger Cache-Zugriff
-console.log(profile.current?.name); // Synchroner Zugriff möglich
+// Cache performance: <10ms for cached data
+const profile = nostr.profile.get(pubkey); // instant cache access
+console.log(profile.current?.name); // synchronous access possible
 
-// Intelligente Deduplication
-const sub1 = nostr.sub().kinds([1]).execute(); // Startet Subscription
-const sub2 = nostr.sub().kinds([1]).execute(); // Nutzt dieselbe Subscription!
+// Smart deduplication
+const sub1 = nostr.sub().kinds([1]).execute(); // starts subscription
+const sub2 = nostr.sub().kinds([1]).execute(); // reuses the same subscription
 ```
 
 ### 🖼️ NIP-92 Media Attachments
@@ -496,74 +515,74 @@ const posts = nostr.query().kinds([1]).execute();
 const imetas = posts.current.flatMap(e => parseImetaTags(e));
 ```
 
-### 🎛️ **Benutzer-Kontrolle & Privacy by Design**
+### 🎛️ **User control & privacy by design**
 
-**Explizite Signing-Provider-Wahl:**
+**Explicit signer choice:**
 ```typescript
-// Benutzer entscheidet bewusst
-await nostr.useExtensionSigner();  // Browser Extension (empfohlen)
-await nostr.useLocalKeySigner();   // Lokale Keys (Development)
-await nostr.useCustomSigner(customSigner); // Custom Provider
+// User decides explicitly
+await nostr.useExtensionSigner();  // browser extension (recommended)
+await nostr.useLocalKeySigner();   // local keys (development)
+await nostr.useCustomSigner(customSigner); // custom provider
 
-// Transparenter Status
+// Transparent status
 const info = nostr.getSigningInfo();
-console.log(`Aktiv: ${info.method}, Pubkey: ${info.pubkey}`);
+console.log(`Active: ${info.method}, Pubkey: ${info.pubkey}`);
 ```
 
-**Lazy Loading für maximale Privacy:**
+**Lazy loading for maximum privacy:**
 ```typescript
-// Phase 1: Verbindung ohne DM-Overhead
-await nostr.connect(); // Nur Relay-Verbindungen
+// Phase 1: connect without DM overhead
+await nostr.connect(); // only relay connections
 
-// Phase 2: Normale Nutzung ohne DM-Subscriptions
-await nostr.publish('Hallo Welt!'); // Funktioniert ohne DMs
-// Subscription-First: publish() füllt den Cache NICHT automatisch.
-// Verwende sub() um reaktive Daten zu erhalten und den Cache zu füllen.
+// Phase 2: normal usage without DM subscriptions
+await nostr.publish('Hello world!'); // works without DMs
+// Subscription‑first: publish() does NOT fill the cache automatically.
+// Use sub() to receive reactive data and fill the cache.
 const posts = nostr.query().kinds([1]).execute();
 
-// Phase 3: Erste DM-Nutzung startet Gift-Wrap-Subscription
-const chat = nostr.dm.with(pubkey); // JETZT startet DM-Subscription
+// Phase 3: first DM usage starts gift‑wrap subscription
+const chat = nostr.dm.with(pubkey); // DM subscription starts now
 ```
 
-### 🔐 **Kryptographische Exzellenz**
+### 🔐 **Cryptographic excellence**
 
-**Multi-Layer-Verschlüsselung (NIP-17/NIP-44/NIP-59):**
-- **3-Layer-Verschlüsselung**: Rumor → Seal → Gift Wrap
-- **NIP-44 v2**: ChaCha20-Poly1305 mit HKDF-Schlüsselableitung
-- **Perfect Forward Secrecy**: Ephemeral Keys für jede Nachricht
-- **Noble.js Integration**: Industriestandard-Kryptographie
+**Multi‑layer encryption (NIP‑17/NIP‑44/NIP‑59):**
+- 3‑layer pipeline: Rumor → Seal → Gift Wrap
+- NIP‑44 v2: ChaCha20‑Poly1305 with HKDF key derivation
+- Perfect forward secrecy: ephemeral keys per message
+- Noble.js integration
 
-**Automatische Gift-Wrap-Behandlung:**
+**Automatic gift‑wrap handling:**
 ```typescript
-// User sieht nur die einfache API
+// User sees only the simple API
 const chat = nostr.dm.with(pubkey);
-await chat.send('Geheime Nachricht');
+await chat.send('Secret message');
 
-// Cache behandelt automatisch:
-// 1. Verschlüsselung (NIP-44)
-// 2. Seal Creation (NIP-59)
-// 3. Gift Wrap Creation (Kind 1059)
-// 4. Entschlüsselung eingehender Gift Wraps
-// 5. Kind 1059 → Kind 14 Transformation
+// Cache automatically handles:
+// 1. NIP‑44 encryption
+// 2. NIP‑59 seal creation
+// 3. Gift wrap creation (kind 1059)
+// 4. Decryption of incoming gift wraps
+// 5. 1059 → 14 transformation
 ```
 
-### 💻 **Developer Experience der Spitzenklasse**
+### 💻 **Developer experience excellence**
 
-**TypeScript-First mit intelligenter Typisierung:**
+**TypeScript‑first with strong typing:**
 ```typescript
-// Vollständige Typsicherheit
+// Full type safety
 const posts: UniversalNostrStore<NostrEvent[]> = nostr.query().kinds([1]).execute();
 const profile: UniversalNostrStore<UserProfile | null> = nostr.profile.get(pubkey);
 
-// Fluent Builders mit Autocompletion
+// Fluent builders with autocompletion
 const result = await nostr.profile.edit()
   .name('Alice') // string
   .about('Bio')  // string
-  .nip05('alice@domain.com') // validierte Email
+  .nip05('alice@domain.com') // validated email
   .publish(); // PublishResult
 ```
 
-**Framework-agnostische Reaktivität:**
+**Framework‑agnostic reactivity:**
 ```svelte
 <!-- Svelte (native) -->
 <script>
@@ -575,7 +594,7 @@ const result = await nostr.profile.edit()
 ```
 
 ```tsx
-// React Hook Pattern
+// React hook pattern
 function useNostrStore(store) {
   const [data, setData] = useState(store.current);
   useEffect(() => store.subscribe(setData), [store]);
@@ -586,76 +605,76 @@ function useNostrStore(store) {
 ## 🔧 Recent Critical Fixes (v2.0+)
 
 ### Gift Wrap Protocol Compliance
-- **publishSigned() Method**: Neue Methode für pre-signed Events (Gift Wraps)
-  - Problem: `publish()` hat Gift Wrap Events re-signed und damit invalidiert
-  - Lösung: `publishSigned()` behält Original-Signatur mit Ephemeral Keys
-- **Tag Filter Implementation**: Vollständige #p, #e, #t Tag-Filterung
-  - Problem: `matchesFilter()` hatte KEINE Tag-Filterung implementiert  
-  - Lösung: Komplette Tag-Filter-Logik für alle Standard-Tags
-- **Gift Wrap Caching**: Events werden unabhängig von Decryption gespeichert
-  - Problem: Gift Wraps wurden verworfen wenn Decryption fehlschlug
-  - Lösung: Alle Gift Wraps landen im Cache, Decryption ist optional
-- **Auto-Subscribe Fix**: DMConversation subscribed automatisch
-  - Problem: `convertEventsToMessages()` wurde nie aufgerufen
-  - Lösung: Auto-Subscribe im Constructor für Message-Conversion
+- publishSigned() method
+  - Issue: `publish()` re-signed gift-wrap events and invalidated them
+  - Fix: `publishSigned()` keeps original signature with ephemeral keys
+- Tag filter implementation: full #p/#e/#t filtering
+  - Issue: `matchesFilter()` had no tag filtering implemented
+  - Fix: complete tag-filter logic for all standard tags
+- Gift-wrap caching: events stored regardless of decryption
+  - Issue: gift wraps were dropped when decryption failed
+  - Fix: all gift wraps are cached; decryption is optional
+- Auto-subscribe fix: DMConversation now subscribes automatically
+  - Issue: `convertEventsToMessages()` was never called
+  - Fix: auto-subscribe in constructor for message conversion
 
 ### API Improvements
-- **DMMessage.sender**: Neues Alias-Property für bessere Kompatibilität
-- **getDM() Method**: Explizite Getter-Methode statt direkter Property
-- **Hex Conversion Fix**: `bytesToHex()` statt manueller Conversion
+- DMMessage.sender: new alias property for better compatibility
+- getDM() method: explicit getter instead of direct property
+- Hex conversion fix: `bytesToHex()` instead of manual conversion
 
 ## 🧪 Testing Philosophy: Real Relay Validation
 
-Nostr Unchained verwendet **KEINE MOCKS** - nur echte Relay-Tests für authentische Protokoll-Validierung:
+Nostr Unchained uses NO MOCKS — only real relay tests for authentic protocol validation:
 
-### Test-Philosophie
+### Test philosophy
 
-**Mock-First ist FALSCH für Protokoll-Libraries!**
-- **Real Relay Testing**: Alle Tests laufen gegen echte Nostr-Relays
-- **Container-Based Relays**: Ephemeral Test-Relays ohne Persistenz
-- **Protocol Compliance**: Offizielle NIP Test Vectors (NIP-44 v2)
-- **End-to-End Validation**: Multi-User DM Flows mit echter Kryptographie
-- **Subscription-First**: Tests validieren Cache-Population durch Subscriptions
+Mock-first is wrong for protocol libraries.
+- Real relay testing: all tests run against real Nostr relays
+- Container-based relays: ephemeral test relays without persistence
+- Protocol compliance: official NIP test vectors (NIP-44 v2)
+- End-to-end validation: multi-user DM flows with real cryptography
+- Subscription-first: tests validate cache population via subscriptions
 
-**Test-Struktur (v2):**
+Test structure (v2):
 ```
 tests-v2/
-├── 00-infrastructure/   # Relay Health, Container Setup
-├── 01-core/            # Cache, Pub/Sub, Query Tests
-├── 02-high-level/      # DM, Profile, Social Module Tests  
-├── 03-integration/     # Multi-User End-to-End Flows
-├── 04-protocol-compliance/ # NIP-44, NIP-59 Official Vectors
-└── debug/              # Deep Debugging Tests
+├── 00-infrastructure/   # Relay health, container setup
+├── 01-core/            # Cache, Pub/Sub, Query tests
+├── 02-high-level/      # DM, Profile, Social module tests  
+├── 03-integration/     # Multi-user end-to-end flows
+├── 04-protocol-compliance/ # NIP-44, NIP-59 official vectors
+└── debug/              # Deep debugging tests
 ```
 
-**Beispiel für Test-Qualität:**
+Example of test quality:
 ```typescript
-// Echte Signer, echte Relay-Verbindungen
+// Real signers, real relay connections
 const alice = new NostrUnchained({ relays: [LIVE_RELAY_URL] });
 const bob = new NostrUnchained({ relays: [LIVE_RELAY_URL] });
 
-// End-to-End DM Test
+// End-to-end DM test
 const aliceChat = alice.dm.with(bobPubkey);
 const bobChat = bob.dm.with(alicePubkey);
 
-await aliceChat.send('Hallo Bob! 🔐');
+await aliceChat.send('Hello Bob! 🔐');
 const messages = await bobChat.messages.waitFor(1);
-assert(messages[0].content === 'Hallo Bob! 🔐');
+assert(messages[0].content === 'Hello Bob! 🔐');
 ```
 
-### Architektur-Tests
+### Architecture tests
 
-**4-Schichten-Architektur Testing:**
-- **Layer 1**: UniversalEventCache mit O(log n) Performance-Tests
-- **Layer 2**: Query/Sub Engine mit identischen APIs
-- **Layer 3**: DM/Profile/Social Module Integration
-- **Layer 4**: Zero-Config Developer Experience
+4-layer architecture testing:
+- Layer 1: UniversalEventCache with O(log n) performance tests
+- Layer 2: Query/Sub engine with identical APIs
+- Layer 3: DM/Profile/Social module integration
+- Layer 4: Zero-config developer experience
 
-**Performance & Security Testing:**
-- **Cache Performance**: >100 Events/Sekunde Verarbeitung
-- **Memory Management**: LRU-Eviction und Memory-Leak-Tests
-- **Kryptographie**: NIP-44 Official Test Vectors Compliance
-- **Gift Wrap Handling**: Automatische 1059 → 14 Transformation
+Performance & security testing:
+- Cache performance: >100 events/second processing
+- Memory management: LRU eviction and memory leak tests
+- Cryptography: NIP-44 official test vectors compliance
+- Gift wrap handling: automatic 1059 → 14 transformation
 
 ## ⚙️ Configuration
 
