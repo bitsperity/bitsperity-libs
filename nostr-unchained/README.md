@@ -20,6 +20,7 @@
 - **🔐 Relay Auth (NIP-42)** - Automatisches AUTH-Handshake bei Bedarf (Challenge → signiertes AUTH‑Event)
 - **🛰️ Relay Lists (NIP-65)** - Publish & Read Relay-Listen (read/write/both) mit göttlicher DX
 - **🗂️ Lists (NIP-51)** - Generische Listen (30000–30003) mit Fluent Builder und reaktivem Lesen
+- **💬 Public Chat (NIP-28)** - Channels (40/41) & Messages (42) inkl. Hide (43)/Mute (44)
 - **🏷️ Labels (NIP-32)** - Labeling via `kind:1985` mit `L`/`l` und Ziel‑Tags; reactive Retrieval
 - **💬 Comments (NIP-22)** - Universelle Kommentare (kind 1111) auf Events/Addressables/Externals
  - **🖼️ Media Attachments (NIP-92)** - `attachMedia()` mit `imeta`‑Tags, Parser/Helper exportiert
@@ -58,6 +59,27 @@ Erfahre die innovative 4-Schichten-Architektur im Detail.
 
 ### 👥 **Scale:** [Social Media Core](./docs/social/README.md)
 Build complete social apps with profiles, contacts, threading, reactions, and feeds.
+
+### 🔎 Feature Snapshots (TL;DR)
+
+- Public Chat (NIP‑28):
+  ```ts
+  const ch = await nostr.channels.create().name('Demo').publish();
+  await nostr.channels.message(ch.eventId).content('Hi!').publish();
+  const msgs = nostr.channels.messagesFor(ch.eventId);
+  // Mehr: docs/social/README.md#-public-chat-nip-28
+  ```
+- Labels (NIP‑32):
+  ```ts
+  await nostr.labels.edit().namespace('ISO-639-1').label('en','ISO-639-1').targetEvent('e'.repeat(64)).publish();
+  // Mehr: docs/social/README.md#-labels-nip-32
+  ```
+- Relay Auth (NIP‑42) & Relay Lists (NIP‑65):
+  ```ts
+  const nostr = new NostrUnchained({ routing: 'nip65' });
+  await nostr.connect(); // AUTH bei Bedarf automatisch
+  // Mehr: docs/events/README.md und docs/social/README.md
+  ```
 
 ---
 

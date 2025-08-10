@@ -22,14 +22,15 @@ Quelle: Code, Tests und Doku im Repo (`src/`, `tests-v2/`, `docs/`). Referenz de
 | 44 | Versioned Encryption | Crypto | NIP‑44 v2 (ChaCha20‑Poly1305), offizielle Testvektoren in `tests-v2` |
 | 59 | Gift Wrap | Privacy | Auto‑Unwrap im Cache, Lazy Subscription, `publishSigned` für bereits signierte Wraps |
 | 32 | Labeling | Moderation/Organisation | `kind:1985` Builder + reaktives Lesen (`nostr.labels`), `L`/`l` + Ziel‑Tags |
+| 28 | Public Chat | Chat | Channels (40/41) & Messages (42), Hide (43), Mute (44) via `nostr.channels` |
 
 ### Teilweise/indirekt abgedeckt
 - NIP‑14 (Subject Tag): In DMs (NIP‑17) genutzt für Threading (Subject‑Tags), kein separater Note‑Subject‑Support.
 - NIP‑39 (External Identities): Profile-Metadaten (GitHub/Twitter/Telegram) im `ProfileBuilder` unterstützt; keine vollständige End‑to‑End‑Flows.
 
 ### Nicht implementiert (oder nur erwähnt/geplant)
-- 21, 22, 23, 28, 29, 30, 31, 32, 36, 37, 40, 42, 43, 45, 46, 47, 50, 51, 52, 53, 54, 57, 58, 60, 61, 65, 66, 68, 69, 70, 71, 72, 73, 75, 77, 78, 84, 86, 88, 89, 90, 92, 94, 96, 98
-  - Hinweise: NIP‑51/28/72 sind im Social‑Module als TODO notiert; NIP‑65/78 in Doku erwähnt; NIP‑42 als fehlend in Test-Fixes markiert.
+- 21, 22, 23, 29, 30, 31, 36, 37, 40, 42, 43, 45, 46, 47, 50, 51, 52, 53, 54, 57, 58, 60, 61, 65, 66, 68, 69, 70, 71, 72, 73, 75, 77, 78, 84, 86, 88, 89, 90, 92, 94, 96, 98
+  - Hinweise: Roadmap dynamisch; bereits implementierte NIPs werden aus der Liste entfernt.
 
 ### Priorisierte Roadmap der fehlenden NIPs
 1. NIP‑42 (Client Auth) – Authentifizierung gegenüber Relays; in Tests als fehlend notiert. Kritisch für reale Schreib-/Admin‑Relays.
@@ -41,7 +42,7 @@ Quelle: Code, Tests und Doku im Repo (`src/`, `tests-v2/`, `docs/`). Referenz de
 7. NIP‑50 (Search Capability) – Serverseitige Suche; verbessert Discovery über lokale/Feed‑Suche hinaus.
 8. NIP‑36 (Content Warning) – UX/Mediation; wichtig für Social‑Feeds.
 9. NIP‑32 (Labeling) – Moderation/Organisation; Grundlage für Trust/Filtering. (JETZT IMPLEMENTIERT)
-10. NIP‑28 (Public Chat) – Realtime‑Chats; Social‑Feature mit breiter Nutzung.
+10. NIP‑28 (Public Chat) – Realtime‑Chats; Social‑Feature mit breiter Nutzung. (JETZT IMPLEMENTIERT)
 11. NIP‑72 (Moderated Communities) – Größerer Funktionsblock; wichtig für Gruppen/Moderation.
 12. NIP‑21 (URI Scheme) – Interop/Deep‑Links (`nostr:`) für App‑Integration.
 13. NIP‑23 (Long‑form Content) – Artikel/Blog‑Usecases.
