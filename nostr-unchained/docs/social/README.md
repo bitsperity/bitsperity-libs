@@ -467,6 +467,25 @@ Notes:
 - Replaceable community definitions use `d` identifiers; latest `created_at` wins.
 - Approvals are normal events (`4550`); consumer logic can restrict to moderator pubkeys.
 
+Filtering approved posts:
+
+```ts
+// All posts in community
+const allPosts = nostr.communities.posts(author, 'dev-community');
+
+// Only approved posts (approved by anyone)
+const approved = nostr.communities.posts(author, 'dev-community', { approvedOnly: true });
+
+// Only posts approved by moderators
+const approvedByMods = nostr.communities.posts(author, 'dev-community', {
+  approvedOnly: true,
+  moderatorsOnly: true
+});
+
+approved.subscribe(list => console.log('approved count', list.length));
+approvedByMods.subscribe(list => console.log('approved by mods', list.length));
+```
+
 ### Feed Types
 
 ```typescript

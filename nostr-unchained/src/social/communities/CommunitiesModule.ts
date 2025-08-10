@@ -146,18 +146,43 @@ export class CommunitiesModule {
     });
   }
 
-  posts(authorPubkey: string, identifier: string) {
+  posts(authorPubkey: string, identifier: string, options?: { approvedOnly?: boolean; moderatorsOnly?: boolean }) {
     const address = `34550:${authorPubkey}:${identifier}`;
     // subscribe to posts
     this.nostr.sub().kinds([1111]).execute().catch(() => {});
+    if (options?.approvedOnly) {
+      // ensure approvals and community defs are flowing
+      this.nostr.sub().kinds([4550]).execute().catch(() => {});
+      this.nostr.sub().kinds([34550]).authors([authorPubkey]).execute().catch(() => {});
+    }
     return this.nostr
       .query()
       .kinds([1111])
       .execute()
       .map((events: NostrEvent[]) =>
-        events.filter((ev) =>
-          ev.tags.some((t) => (t[0] === 'A' || t[0] === 'a') && t[1] === address)
-        )
+        {
+          // Base: posts in community
+          let posts = events.filter((ev) => ev.tags.some((t) => (t[0] === 'A' || t[0] === 'a') && t[1] === address));
+          if (options?.approvedOnly) {
+            // Snapshot approvals and moderators from cache
+            const approvalsStore = this.nostr.query().kinds([4550]).execute();
+            const approvals = approvalsStore.current || [];
+            const modsStore = this.moderators(authorPubkey, identifier);
+            const moderators = new Set((modsStore as any).current || []);
+            posts = posts.filter((post) => {
+              const relevant = approvals.filter((ap: NostrEvent) =>
+                ap.tags.some((t) => t[0] === 'a' && t[1] === address) &&
+                ap.tags.some((t) => t[0] === 'e' && t[1] === post.id)
+              );
+              if (relevant.length === 0) return false;
+              if (options?.moderatorsOnly) {
+                return relevant.some((ap: NostrEvent) => moderators.has(ap.pubkey));
+              }
+              return true;
+            });
+          }
+          return posts;
+        }
       );
   }
 
