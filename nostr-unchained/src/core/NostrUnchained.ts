@@ -20,6 +20,7 @@ import { LabelsModule } from '../social/labels/LabelsModule.js';
 import { ChannelsModule } from '../social/chat/ChannelsModule.js';
 import { CommunitiesModule } from '../social/communities/CommunitiesModule.js';
 import { ContentModule } from '../social/content/ContentModule.js';
+import { FileModule } from '../social/content/FileModule.js';
 import { SubscriptionManager } from '../subscription/SubscriptionManager.js';
 import { UniversalEventCache, type CacheStatistics } from '../cache/UniversalEventCache.js';
 import { QueryBuilder, SubBuilder } from '../query/QueryBuilder.js';
@@ -27,6 +28,7 @@ import { ProfileModule } from '../profile/ProfileModule.js';
 import { RelayListModule } from '../relay/RelayListModule.js';
 import { Nip65RelayRouter, type RelayRoutingStrategy } from '../relay/Nip65RelayRouter.js';
 import { RelayDiscovery, RelayHealthMonitor } from '../relay/RelayDiscovery.js';
+import { ZapModule } from '../social/payments/ZapModule.js';
 
 import type {
   NostrUnchainedConfig,
@@ -70,6 +72,7 @@ export class NostrUnchained {
   private _communities?: CommunitiesModule;
   // Content API (NIP-23/18/01 consolidated)
   private _content?: ContentModule;
+  private _files?: FileModule;
   
   // Profile API (Enhanced)
   private _profile?: ProfileModule;
@@ -79,6 +82,7 @@ export class NostrUnchained {
   private relayRouter?: RelayRoutingStrategy;
   private _relayDiscovery?: RelayDiscovery;
   private _relayHealth?: RelayHealthMonitor;
+  private _zap?: ZapModule;
 
   constructor(config: NostrUnchainedConfig = {}) {
     // Merge with defaults
@@ -277,6 +281,12 @@ export class NostrUnchained {
     return this._relayHealth;
   }
 
+  /** NIP-57 Zaps */
+  get zaps(): ZapModule {
+    if (!this._zap) this._zap = new ZapModule(this);
+    return this._zap;
+  }
+
   /** NIP-51 Lists module */
   get lists(): ListModule {
     if (!this._lists) {
@@ -323,6 +333,12 @@ export class NostrUnchained {
       this._content = new ContentModule(this, this.config.debug);
     }
     return this._content;
+  }
+
+  /** Files/Attachments helper (NIP-92/94/96) */
+  get files(): FileModule {
+    if (!this._files) this._files = new FileModule(this);
+    return this._files;
   }
 
   /**

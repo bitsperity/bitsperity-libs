@@ -122,5 +122,9 @@ export {
   type DecodedNaddr
 } from './utils/encoding-utils.js';
 
+// NIP-98 HTTP Auth helpers
+export { signHttpAuth, buildHttpAuthHeader, buildHttpAuthEvent } from './http/Nip98HttpAuth.js';
+export { Nip96Client } from './http/Nip96Client.js';
+
 // Version (will be updated by build process)
 export const VERSION = '0.2.0';

@@ -30,6 +30,9 @@ Quelle: Code, Tests und Doku im Repo (`src/`, `tests-v2/`, `docs/`). Referenz de
 | 65 | Relay List Metadata | Relay/Routing | `RelayListModule` (Kind 10002) + `Nip65RelayRouter` (opt‑in Routing) |
 | 51 | Lists | Social | `ListModule` (30000–30003) inkl. Bookmark‑Beispiel und reaktivem Lesen |
 | 50 | Search Capability | Query/Infra | `search`‑Filter in `query()` (lokal) und `sub()` (Relay‑Suche). Lokale Suche: case‑insensitive Substring auf `content`; serverseitige Suche: über REQ mit `{ search: '…' }` (Ranking durch Relay). Doku/Tests vorhanden |
+| 94 | File Metadata | Content/Media | `kind:1063` Unterstützung im Fluent Builder (leer erlaubt), `FileModule.publishNoteWithAttachment()` inkl. `imeta` `x`‑Hash; `Nip96Client.publishNip94()` zum Publizieren von Server‑Antworten. E2E‑Tests vorhanden |
+| 96 | HTTP File Storage | Infra | `Nip96Client` mit Discovery (`/.well-known/nostr/nip96.json`), Upload (multipart) und optionaler NIP‑98 Auth; Response‑Parsing (`nip94_event`). E2E‑Tests mit lokalem HTTP‑Server |
+| 98 | HTTP Auth | HTTP | `signHttpAuth()`, `buildHttpAuthHeader()`, `buildHttpAuthEvent()`; Tests vorhanden |
 | 72 | Moderated Communities | Social/Moderation | `kind:34550` Community‑Definition (d/name/description/image, p=moderator), Posts `kind:1111` mit `A/a/P/p/K/k`‑Tags; Approvals `kind:4550`; Revoke via NIP‑09 (`kind:5`). Reader: `getCommunity()`, `posts({ approvedOnly, moderatorsOnly })`, `approvals()`, `moderators()`. E2E‑Tests (inkl. Edge‑Cases) |
 | 92 | Media Attachments | Content | `attachMedia()` + `imeta` Parser/Helper; E2E‑Test |
 | 21 | URI Scheme | Interop | `nostr:` URI Support: `decode(nostr:...)`, `isNostrUri`, `parseNostrUri`, `toNostrUri`; Doku/Tests |
@@ -40,16 +43,14 @@ Quelle: Code, Tests und Doku im Repo (`src/`, `tests-v2/`, `docs/`). Referenz de
 - NIP‑39 (External Identities): Profile-Metadaten (GitHub/Twitter/Telegram) im `ProfileBuilder` unterstützt; keine vollständige End‑to‑End‑Flows.
 
 ### Nicht implementiert (oder nur erwähnt/geplant)
-- 21, 23, 29, 30, 31, 37, 40, 43, 45, 47, 52, 53, 54, 57, 58, 60, 61, 66, 68, 69, 70, 71, 73, 75, 77, 78, 84, 86, 88, 89, 90, 94, 96, 98
+- 21, 23, 29, 30, 31, 37, 40, 43, 45, 47, 52, 53, 54, 57, 58, 60, 61, 66, 68, 69, 70, 71, 73, 75, 77, 78, 84, 86, 88, 89, 90
   - Hinweise: Roadmap dynamisch; bereits implementierte NIPs werden laufend entfernt.
 
 ### Priorisierte Roadmap der fehlenden NIPs
-1. NIP‑66 (Relay Discovery & Liveness) – Autom. Discovery/Health.
-4. NIP‑57 (Lightning Zaps) – Payments/Engagement.
-5. NIP‑98 (HTTP Auth) – HTTP‑APIs/Dienste.
-6. NIP‑70 (Protected Events) – Spezialfälle/Privacy.
-7. NIP‑94/96 (File Metadata/HTTP File Storage) – Medien/Dateien (nach NIP‑92).
-8. NIP‑78 (Custom App Data) – App‑spezifische Datenhaltung.
+1. NIP‑66 (Relay Discovery & Liveness) – Autom. Discovery/Health (weiter ausbauen: periodische Checks, Failover).
+2. NIP‑57 (Lightning Zaps) – Vollständige LNURL‑Flows, Callback‑Validierung, `payProfile`/`payNote`.
+3. NIP‑70 (Protected Events) – Spezialfälle/Privacy.
+4. NIP‑78 (Custom App Data) – App‑spezifische Datenhaltung.
 
 ### Kurze Begründung der Gewichtung
 - Sicherheit/Interop zuerst (NIP‑42, 46), dann Infrastruktur/Delivery (NIP‑65, 66), dann Social‑Core (NIP‑51, 22, 92), gefolgt von Moderation (NIP‑36, 32) und verbreiteten Social‑Features (NIP‑28, 72, 23, 21). Payments/HTTP/Auth und Medien‑Erweiterungen anschließend.

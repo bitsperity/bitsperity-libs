@@ -168,7 +168,7 @@ export class FluentEventBuilder {
   async sign(): Promise<FluentEventBuilder> {
     // Content validation - some event types allow empty content
     const kind = this.eventData.kind || 1;
-    const emptyAllowedKinds = new Set<number>([3, 5, 6, 7, 10002, 1984, 30000, 30001, 30002, 30003, 34550, 4550]);
+    const emptyAllowedKinds = new Set<number>([3, 5, 6, 7, 10002, 1984, 30000, 30001, 30002, 30003, 34550, 4550, 27235, 1063]);
     const contentRequired = !emptyAllowedKinds.has(kind);
     if (contentRequired && (!this.eventData.content || this.eventData.content.length === 0)) {
       throw new Error('Content is required before signing');
@@ -228,7 +228,7 @@ export class FluentEventBuilder {
   async publish(): Promise<PublishResult> {
     // Content validation - some event types allow empty content
     const kind = this.eventData.kind || 1;
-    const emptyAllowedKinds = new Set<number>([3, 5, 6, 7, 10002, 1984, 30000, 30001, 30002, 30003, 34550, 4550]);
+    const emptyAllowedKinds = new Set<number>([3, 5, 6, 7, 10002, 1984, 30000, 30001, 30002, 30003, 34550, 4550, 27235, 1063]);
     const contentRequired = !emptyAllowedKinds.has(kind);
     if (contentRequired && (!this.eventData.content || this.eventData.content.length === 0)) {
       throw new Error('Content is required before publishing');

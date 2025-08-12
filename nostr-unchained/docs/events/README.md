@@ -306,6 +306,46 @@ Best practices:
 
 DM events (gift wrap, kind 1059) contain `p` tags; routing applies automatically when using `publishSigned()`.
 
+### NIP-94 File Metadata
+
+Kind `1063` events carry file metadata and integrity information. They complement NIP‑92 by standardizing tags like `url`, `m` (MIME), `x` (sha256), `ox` (original sha256), `size`, `dim`, etc. Content may be empty; tags hold the important data.
+
+Two common flows:
+
+1) Note + Attachment (NIP‑92) with integrity hash from NIP‑94:
+
+```ts
+await nostr.files.publishNoteWithAttachment('File attached', 'https://example.com/file.bin', {
+  mimeType: 'application/octet-stream',
+  addHash: true // computes sha256 and adds to imeta as 'x'
+});
+```
+
+2) Dedicated metadata event (kind 1063), often from a NIP‑96 upload response:
+
+```ts
+const nip94 = { tags: [ ['url','https://...'], ['m','image/png'], ['x','<sha256>'] ] };
+await nostr.events.create().kind(1063).content('').tags(nip94.tags).publish();
+```
+
+### NIP-96 HTTP File Storage
+
+Discover file APIs via `/.well-known/nostr/nip96.json`, upload via multipart/form‑data, optionally with NIP‑98 HTTP Auth. Servers may return a ready‑to‑publish `nip94_event`.
+
+```ts
+import { Nip96Client } from 'nostr-unchained';
+
+const client = new Nip96Client(nostr);
+const info = await client.discover('https://files.example');
+const bytes = new Uint8Array([1,2,3]);
+const res = await client.upload('https://files.example', bytes, {
+  filename: 'data.bin',
+  contentType: 'application/octet-stream',
+  requireAuth: true
+});
+if (res.nip94_event) await client.publishNip94(res.nip94_event);
+```
+
 ### NIP-23 Long-form Content (Articles)
 
 Long-form content uses replaceable `kind:30023` with a stable `d` identifier and optional metadata tags (`title`, `summary`, `image`).
