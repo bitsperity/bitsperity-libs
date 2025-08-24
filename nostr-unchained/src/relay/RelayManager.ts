@@ -62,6 +62,8 @@ export class RelayManager {
   // NIP-42: optional provider and hook to create and sign auth events
   private authEventFactory?: (params: { relay: string; challenge: string }) => Promise<NostrEvent>;
   private onAuthStateChange?: (relay: string, state: { authenticated: boolean; challenge?: string; reason?: string }) => void;
+  // Publish timeout (ms) – falls nicht gesetzt, wird DEFAULT_CONFIG.PUBLISH_TIMEOUT verwendet
+  private publishTimeout?: number;
   
   // Reconnection configuration
   private maxReconnectAttempts = 5;
@@ -69,8 +71,9 @@ export class RelayManager {
   private maxReconnectDelay = 30000; // 30 seconds
   private reconnectEnabled = true;
 
-  constructor(relayUrls: string[], options: { debug?: boolean } = {}) {
+  constructor(relayUrls: string[], options: { debug?: boolean; publishTimeout?: number } = {}) {
     this.debug = options.debug ?? false;
+    this.publishTimeout = options.publishTimeout;
     
     // Initialize connections
     relayUrls.forEach(url => {
@@ -211,8 +214,54 @@ export class RelayManager {
   /**
    * Publish event to specific relays
    */
-  async publishToRelays(event: NostrEvent, relayUrls: string[]): Promise<RelayResult[]> {
+  async publishToRelays(
+    event: NostrEvent,
+    relayUrls: string[],
+    options?: { resolveOnFirstOk?: boolean; minAcks?: number; overallTimeoutMs?: number }
+  ): Promise<RelayResult[]> {
     const results: RelayResult[] = [];
+    const resolveEarly = !!options?.resolveOnFirstOk;
+    const minAcks = Math.max(1, options?.minAcks ?? 1);
+    const overallTimeoutMs = options?.overallTimeoutMs ?? (this.publishTimeout ?? DEFAULT_CONFIG.PUBLISH_TIMEOUT);
+
+    // Fast path: resolve as soon as we have the required number of OKs or when the overall timeout elapses
+    if (resolveEarly) {
+      let successCount = 0;
+      let earlyResolve!: (v: RelayResult[]) => void;
+      const earlyPromise = new Promise<RelayResult[]>((resolve) => { earlyResolve = resolve; });
+      const overallTimer = setTimeout(() => {
+        try { earlyResolve(results.slice()); } catch {}
+      }, overallTimeoutMs);
+
+      // Start all publishes without awaiting them
+      relayUrls.forEach(async (url) => {
+        const startTime = Date.now();
+        try {
+          const success = await this.publishToRelay(url, event);
+          const latency = Date.now() - startTime;
+          results.push({ relay: url, success, latency });
+          if (success) {
+            successCount++;
+            if (successCount >= minAcks) {
+              try { clearTimeout(overallTimer); } catch {}
+              earlyResolve(results.slice());
+            }
+          }
+        } catch (error) {
+          const latency = Date.now() - startTime;
+          results.push({
+            relay: url,
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error',
+            latency
+          });
+        }
+      });
+
+      return await earlyPromise;
+    }
+
+    // Default path: wait for all relays to complete
     const publishPromises = relayUrls.map(async (url) => {
       const startTime = Date.now();
       
@@ -287,12 +336,15 @@ export class RelayManager {
       const message: ClientMessage = ['EVENT', event];
       
       const timeout = setTimeout(() => {
+        // On timeout, clean up pending and reject
+        const key = `${event.id}|${url}`;
+        this.pendingPublishes.delete(key);
         reject(new Error('Publish timeout'));
-      }, DEFAULT_CONFIG.PUBLISH_TIMEOUT);
+      }, this.publishTimeout ?? DEFAULT_CONFIG.PUBLISH_TIMEOUT);
 
-      // Store resolve/reject for OK message handling
-      const messageId = event.id;
-      this.pendingPublishes.set(messageId, { resolve, reject, timeout });
+      // Store resolve/reject for OK message handling (flat key)
+      const key = `${event.id}|${url}`;
+      this.pendingPublishes.set(key, { resolve, reject, timeout, originalEvent: event, retries: 0, awaitingAuth: false });
 
       try {
         const messageStr = JSON.stringify(message);
@@ -301,11 +353,12 @@ export class RelayManager {
         if (this.debug) {
           console.log(`📤 Publishing event ${event.id} to ${url}`);
           console.log(`📤 Message:`, messageStr);
-          console.log(`📤 Added to pending:`, messageId);
+          console.log(`📤 Added to pending:`, key);
         }
       } catch (error) {
         clearTimeout(timeout);
-        this.pendingPublishes.delete(messageId);
+        const key2 = `${event.id}|${url}`;
+        this.pendingPublishes.delete(key2);
         reject(error);
       }
     });
@@ -315,7 +368,49 @@ export class RelayManager {
     resolve: (value: boolean) => void;
     reject: (reason: any) => void;
     timeout: NodeJS.Timeout;
+    originalEvent: NostrEvent;
+    retries: number;
+    awaitingAuth: boolean;
   }>();
+
+  /** Detect if an error string indicates NIP-42 auth requirement */
+  private isAuthRequiredError(message: unknown): boolean {
+    if (typeof message !== 'string') return false;
+    const m = message.toLowerCase();
+    return m.includes('auth-required') || m.includes('restricted') || m.includes('nip-42') || m.includes('nip42');
+  }
+
+  /** After successful AUTH, try to re-send all pending events for this relay that awaited auth */
+  private retryPendingAfterAuth(relayUrl: string): void {
+    const connection = this.connections.get(relayUrl);
+    if (!connection || connection.state !== 'connected' || !connection.ws) return;
+    const ws = connection.ws;
+
+    this.pendingPublishes.forEach((entry, key) => {
+      const [eventId, keyRelay] = key.split('|');
+      if (keyRelay !== relayUrl) return;
+      if (!entry.awaitingAuth) return;
+
+      try { clearTimeout(entry.timeout); } catch {}
+      entry.timeout = setTimeout(() => {
+        this.pendingPublishes.delete(key);
+        entry.reject(new Error('Publish timeout after AUTH'));
+      }, this.publishTimeout ?? DEFAULT_CONFIG.PUBLISH_TIMEOUT);
+
+      try {
+        const message: ClientMessage = ['EVENT', entry.originalEvent];
+        ws.send(JSON.stringify(message));
+        entry.awaitingAuth = false;
+        entry.retries = (entry.retries || 0) + 1;
+        if (this.debug) {
+          console.log(`🔁 Re-publishing event ${eventId} to ${relayUrl} after AUTH`);
+        }
+      } catch (error) {
+        this.pendingPublishes.delete(key);
+        entry.reject(error);
+      }
+    });
+  }
 
   /**
    * Handle incoming relay messages
@@ -330,21 +425,48 @@ export class RelayManager {
       
       if (message[0] === 'OK') {
         const [, eventId, success, errorMessage] = message;
-        const pending = this.pendingPublishes.get(eventId);
+        const key = `${eventId}|${relayUrl}`;
+        const pending = this.pendingPublishes.get(key);
         
         if (this.debug) {
-          console.log(`OK for event ${eventId}, success: ${success}, pending: ${!!pending}`);
-          console.log('Pending publishes:', Array.from(this.pendingPublishes.keys()));
+          console.log(`OK for event ${eventId} @ ${relayUrl}, success: ${success}, pending: ${!!pending}`);
+          const keys = Array.from(this.pendingPublishes.keys());
+          console.log('Pending publishes:', keys);
         }
         
         if (pending) {
-          clearTimeout(pending.timeout);
-          this.pendingPublishes.delete(eventId);
-          
           if (success) {
+            // Success: cleanup and resolve
+            clearTimeout(pending.timeout);
+            this.pendingPublishes.delete(key);
             pending.resolve(true);
           } else {
-            pending.reject(new Error(errorMessage || 'Relay rejected event'));
+            // Failure: if auth-required, attempt auth and retry; otherwise reject
+            if (this.isAuthRequiredError(errorMessage)) {
+              if (this.debug) console.log(`🔐 Auth required for ${relayUrl} on event ${eventId}:`, errorMessage);
+              // Avoid infinite loops: only one retry per relay per event
+              if ((pending.retries || 0) >= 1) {
+                clearTimeout(pending.timeout);
+                this.pendingPublishes.delete(key);
+                pending.reject(new Error('Relay requires AUTH but retry already attempted'));
+                return;
+              }
+              pending.awaitingAuth = true;
+              try { clearTimeout(pending.timeout); } catch {}
+              // Create a holding timeout while we perform AUTH; it will be refreshed on retry
+              pending.timeout = setTimeout(() => {
+                // If we never managed to resend/complete after AUTH, reject
+                this.pendingPublishes.delete(key);
+                pending.reject(new Error('Publish timeout waiting for AUTH'));
+              }, this.publishTimeout ?? DEFAULT_CONFIG.PUBLISH_TIMEOUT);
+              // Trigger authentication; once OK for AUTH comes in, we'll retry
+              void this.tryAuthenticate(relayUrl);
+            } else {
+              // Not an auth issue -> cleanup and reject
+              clearTimeout(pending.timeout);
+              this.pendingPublishes.delete(key);
+              pending.reject(new Error(errorMessage || 'Relay rejected event'));
+            }
           }
         } else {
           // Might be an AUTH confirmation (NIP-42)
@@ -355,8 +477,13 @@ export class RelayManager {
               console.log(`🔐 AUTH ${success ? 'succeeded' : 'failed'} for ${relayUrl}${errorMessage ? ' (' + errorMessage + ')' : ''}`);
             }
             this.onAuthStateChange?.(relayUrl, { authenticated: !!success, reason: success ? undefined : errorMessage });
+            if (success) {
+              // After successful AUTH, retry pending publishes that awaited auth
+              this.retryPendingAfterAuth(relayUrl);
+            }
           } else if (this.debug) {
-            console.warn(`No pending publish found for event ID: ${eventId}`);
+            const rationale = success ? 'already resolved (duplicate OK)' : (this.isAuthRequiredError(errorMessage) ? 'AUTH OK not matching pending' : 'late/unsolicited OK');
+            console.log(`ℹ️ OK for ${eventId} @ ${relayUrl} without pending - ${rationale}${errorMessage ? `: ${errorMessage}` : ''}`);
           }
         }
       } else if (message[0] === 'NOTICE') {
@@ -485,10 +612,10 @@ export class RelayManager {
    * Disconnect from all relays
    */
   async disconnect(): Promise<void> {
-    // Clear pending publishes
+    // Clear pending publishes (flat map)
     this.pendingPublishes.forEach(({ timeout, reject }) => {
-      clearTimeout(timeout);
-      reject(new Error('Disconnecting'));
+      try { clearTimeout(timeout); } catch {}
+      try { reject(new Error('Disconnecting')); } catch {}
     });
     this.pendingPublishes.clear();
 

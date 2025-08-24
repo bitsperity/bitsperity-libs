@@ -106,7 +106,8 @@ export class NostrUnchained {
 
     // Initialize relay manager
     this.relayManager = new RelayManager(this.config.relays, {
-      debug: this.config.debug
+      debug: this.config.debug,
+      publishTimeout: this.config.timeout
     });
 
     // Initialize subscription manager

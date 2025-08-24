@@ -7,6 +7,8 @@
 
   let rootEvent: any = $state(null);
   let replies: any[] = $state([]);
+  let comments: any[] = $state([]);
+  let merged: any[] = $state([]);
   let loading = $state(false);
   // Cleanup management for re-navigation
   let cleanupFns: Array<() => void> = [];
@@ -34,15 +36,37 @@
       // Subscribe replies (NIP-10: kind 1 with #e rootId)
       const rep = await nostr.sub().kinds([1]).tags('e', [rootId]).limit(1000).execute();
       const unsubRep = rep.store.subscribe((list: any[]) => {
-        replies = (list || []).slice().sort((a,b) => a.created_at - b.created_at);
-        loading = false;
+        replies = (list || []).slice();
+        updateMerged();
       });
       cleanupFns.push(() => { try { unsubRep?.(); } catch {} });
       cleanupFns.push(() => { try { rep.stop?.(); } catch {} });
+
+      // Subscribe comments (NIP-22: kind 1111, filter client-side by E/e to rootId)
+      const com = await nostr.sub().kinds([1111]).limit(1000).execute();
+      const unsubCom = com.store.subscribe((list: any[]) => {
+        try {
+          const arr = Array.isArray(list) ? list : [];
+          comments = arr.filter((ev: any) => Array.isArray(ev?.tags)).filter((ev: any) => {
+            const t = ev.tags as string[][];
+            return t.some(x => Array.isArray(x) && (x[0] === 'E' || x[0] === 'e') && x[1] === rootId);
+          });
+          updateMerged();
+        } catch {}
+      });
+      cleanupFns.push(() => { try { unsubCom?.(); } catch {} });
+      cleanupFns.push(() => { try { com.stop?.(); } catch {} });
     } catch (e) {
       loading = false;
       console.error('Thread load failed', e);
     }
+  }
+
+  function updateMerged() {
+    const a = Array.isArray(replies) ? replies : [];
+    const b = Array.isArray(comments) ? comments : [];
+    merged = a.concat(b).slice().sort((x: any, y: any) => x.created_at - y.created_at);
+    loading = false;
   }
 
   onMount(load);
@@ -73,7 +97,7 @@
     {#if rootEvent}
       <EventCard event={rootEvent} {nostr} on:openThread={(e)=>openThreadLocal(e.detail.id)} />
       <div class="replies">
-        {#each replies as ev (ev.id)}
+        {#each merged as ev (ev.id)}
           <EventCard event={ev} {nostr} on:openThread={(e)=>openThreadLocal(e.detail.id)} />
         {/each}
       </div>

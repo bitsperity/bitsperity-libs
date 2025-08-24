@@ -97,6 +97,11 @@
 	let deletePending = $state(false);
 	let lastPublishResult: any = $state(null);
 
+	// Comment composer (NIP-22)
+	let showCommentComposer = $state(false);
+	let commentText: string = $state('');
+	let commentPending = $state(false);
+
 	// Inline Reply Composer
 	let showReplyComposer = $state(false);
 	let replyText: string = $state('');
@@ -196,6 +201,30 @@
 
 	function toggleReplyComposer() {
 		showReplyComposer = !showReplyComposer;
+	}
+
+	async function doComment() {
+		if (!(nostr as any)?.comments) return;
+		if (!commentText || commentText.trim().length === 0) {
+			showCommentComposer = true;
+			return;
+		}
+		commentPending = true;
+		try {
+			const res = await (nostr as any).comments
+				.create()
+				.onEventRoot(event.id)
+				.replyToEvent(event.id)
+				.content(commentText)
+				.publish();
+			lastPublishResult = res;
+			commentText = '';
+			showCommentComposer = false;
+		} catch (e) {
+			console.error('Comment failed', e);
+		} finally {
+			commentPending = false;
+		}
 	}
 
 	async function doReply() {
@@ -396,7 +425,7 @@
 		return hashtags.map(tag => tag.substring(1)); // Remove #
 	}
 
-	function hasContentWarning(): { enabled: boolean; reason?: string } {
+	function hasContentWarning(): { enabled: boolean; reason?: string | undefined } {
 		try {
 			const t = Array.isArray(event.tags) ? (event.tags as string[][]) : [];
 			const cw = t.find(x => Array.isArray(x) && x[0] === 'content-warning');
@@ -533,6 +562,8 @@
         onRepost={doRepost}
         onReply={toggleReplyComposer}
         onDelete={doDelete}
+        onComment={() => { showCommentComposer = !showCommentComposer; }}
+        commentPending={commentPending}
     />
 
 	{#if showReplyComposer}
@@ -542,6 +573,18 @@
 				<button class="ghost" onclick={() => { showReplyComposer = false; replyText = ''; }} disabled={replyPending}>Abbrechen</button>
 				<button class="ghost primary" onclick={doReply} disabled={replyPending || !replyText.trim()}>
 					{#if replyPending}<span class="spinner"></span> Senden…{:else}Senden{/if}
+				</button>
+			</div>
+		</div>
+	{/if}
+
+	{#if showCommentComposer}
+		<div class="reply-composer">
+			<textarea rows="3" placeholder="Kommentar schreiben…" bind:value={commentText} disabled={commentPending}></textarea>
+			<div class="reply-actions">
+				<button class="ghost" onclick={() => { showCommentComposer = false; commentText = ''; }} disabled={commentPending}>Abbrechen</button>
+				<button class="ghost primary" onclick={doComment} disabled={commentPending || !commentText.trim()}>
+					{#if commentPending}<span class="spinner"></span> Kommentieren…{:else}Kommentieren{/if}
 				</button>
 			</div>
 		</div>

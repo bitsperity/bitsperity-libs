@@ -202,7 +202,7 @@ registerService('nostr', async () => {
   return createNostrService({
     relays: ['ws://umbrel.local:4848'],
     debug: isTempAccount ? true : true, // Always debug for now
-    timeout: 10000,
+    timeout: 20000,
     routing: 'nip65'
   });
 }, true);

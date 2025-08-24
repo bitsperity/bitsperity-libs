@@ -22,6 +22,8 @@
     import EncodingsPanel from './ui/EncodingsPanel.svelte';
     import RelaysPanel from './relay/RelaysPanel.svelte';
     import ListsView from './lists/ListsView.svelte';
+    import { getService } from '../services/ServiceContainer.js';
+    import { onMount } from 'svelte';
 
     interface Props {
         nostr: any;
@@ -44,6 +46,26 @@
 	});
   let showRelay = $state(false);
   let showEnc = $state(false);
+
+  // Keep connection chip and instance in sync with the service (single source of truth)
+  let connectedCount = $state(0);
+  let headerMonitor: any = null;
+
+  onMount(async () => {
+    async function refreshFromService() {
+      try {
+        const svc: any = await getService('nostr');
+        const inst = svc?.getInstance?.();
+        if (inst && nostr !== inst) {
+          nostr = inst; // adopt updated instance e.g. after setRelays/routing
+        }
+        connectedCount = Array.isArray(inst?.connectedRelays) ? inst.connectedRelays.length : 0;
+      } catch {}
+    }
+    await refreshFromService();
+    headerMonitor = setInterval(refreshFromService, 1500);
+  });
+  $effect(() => () => { try { if (headerMonitor) clearInterval(headerMonitor); } catch {} });
 
 	// Initialize ProfileSubscriptionManager when NostrUnchained is ready
 	$effect(() => {
@@ -170,9 +192,9 @@
         </nav>
 
         <div class="header-right">
-            <div class="connection-chip" title={nostr?.connectedRelays?.length ? `${nostr.connectedRelays.length} relay(s)` : 'No relay'}>
-                {#if nostr?.connectedRelays?.length}
-                    🟢 Connected to {nostr.connectedRelays.length} relays
+            <div class="connection-chip" title={connectedCount ? `${connectedCount} relay(s)` : 'No relay'}>
+                {#if connectedCount}
+                    🟢 Connected to {connectedCount} relays
                 {:else}
                     🔴 Connecting…
                 {/if}

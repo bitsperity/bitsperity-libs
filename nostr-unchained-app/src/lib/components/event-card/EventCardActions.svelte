@@ -1,7 +1,7 @@
 <script lang="ts">
   import { getService } from '$lib/services/ServiceContainer.js';
   import { onMount } from 'svelte';
-  let { event, nostr, reactionSummary, likePending = false, repostPending = false, replyPending = false, deletePending = false, repostCount = 0, replyCount = 0, onLike, onRepost, onReply, onDelete }: any = $props();
+  let { event, nostr, reactionSummary, likePending = false, repostPending = false, replyPending = false, deletePending = false, repostCount = 0, replyCount = 0, onLike, onRepost, onReply, onDelete, onComment, commentPending = false }: any = $props();
   let isBookmarked = $state(false);
   let bookmarking = $state(false);
   let unsubscribeBookmarks: (() => void) | null = null;
@@ -17,33 +17,35 @@
 
   // initial state handled in onMount; live updates via list subscription
 
-  onMount(async () => {
-    try {
-      const nostrService: any = await getService('nostr');
-      // Initialize from local snapshot immediately
+  onMount(() => {
+    (async () => {
       try {
-        const snap = nostrService.getBookmarksSnapshot?.();
-        isBookmarked = Array.isArray(snap?.items) && snap.items.includes(event?.id);
+        const nostrService: any = await getService('nostr');
+        // Initialize from local snapshot immediately
+        try {
+          const snap = nostrService.getBookmarksSnapshot?.();
+          isBookmarked = Array.isArray(snap?.items) && snap.items.includes(event?.id);
+        } catch {}
+        // Ensure a fresh sync to avoid stale local snapshot, then mark ready
+        try { await nostrService.syncBookmarks(); } catch {}
+        try {
+          const snap2 = nostrService.getBookmarksSnapshot?.();
+          isBookmarked = Array.isArray(snap2?.items) && snap2.items.includes(event?.id);
+        } catch {}
+        bookmarkReady = true;
+        // Subscribe to remote bookmarks to keep UI in sync like reactions
+        const me = await (nostr as any)?.getPublicKey?.();
+        if (me && (nostr as any)?.lists?.get) {
+          const store = (nostr as any).lists.get(me, 30003, 'bookmarks');
+          unsubscribeBookmarks = store.subscribe((list: any) => {
+            try {
+              const ids = Array.isArray(list?.e) ? list.e.map((x: any) => x.id) : [];
+              isBookmarked = ids.includes(event?.id);
+            } catch {}
+          });
+        }
       } catch {}
-      // Ensure a fresh sync to avoid stale local snapshot, then mark ready
-      try { await nostrService.syncBookmarks(); } catch {}
-      try {
-        const snap2 = nostrService.getBookmarksSnapshot?.();
-        isBookmarked = Array.isArray(snap2?.items) && snap2.items.includes(event?.id);
-      } catch {}
-      bookmarkReady = true;
-      // Subscribe to remote bookmarks to keep UI in sync like reactions
-      const me = await (nostr as any)?.getPublicKey?.();
-      if (me && (nostr as any)?.lists?.get) {
-        const store = (nostr as any).lists.get(me, 30003, 'bookmarks');
-        unsubscribeBookmarks = store.subscribe((list: any) => {
-          try {
-            const ids = Array.isArray(list?.e) ? list.e.map((x: any) => x.id) : [];
-            isBookmarked = ids.includes(event?.id);
-          } catch {}
-        });
-      }
-    } catch {}
+    })();
     return () => { try { unsubscribeBookmarks && unsubscribeBookmarks(); } catch {} };
   });
 
@@ -153,6 +155,12 @@
         <span class="badge">{replyCount}</span>
       {/if}
       {#if replyPending}<span class="spinner" aria-hidden="true"></span>{/if}
+    </button>
+
+    <!-- Comment (NIP-22) -->
+    <button class="ghost" aria-label="Comment" title="Comment" onclick={onComment} disabled={commentPending} aria-busy={commentPending}>
+      <span class="icon">💭</span>
+      {#if commentPending}<span class="spinner" aria-hidden="true"></span>{/if}
     </button>
 
     {#if (nostr as any)?.me === event.pubkey}

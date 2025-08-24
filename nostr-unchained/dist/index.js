@@ -42,7 +42,7 @@ function pt(...o) {
 function Ut(o) {
   return new DataView(o.buffer, o.byteOffset, o.byteLength);
 }
-function Q(o, t) {
+function tt(o, t) {
   return o << 32 - t | o >>> t;
 }
 const Ee = /* @ts-ignore */ typeof Uint8Array.from([]).toHex == "function" && typeof Uint8Array.fromHex == "function", ss = /* @__PURE__ */ Array.from({ length: 256 }, (o, t) => t.toString(16).padStart(2, "0"));
@@ -54,14 +54,14 @@ function D(o) {
     t += ss[o[e]];
   return t;
 }
-const et = { _0: 48, _9: 57, A: 65, F: 70, a: 97, f: 102 };
+const st = { _0: 48, _9: 57, A: 65, F: 70, a: 97, f: 102 };
 function oe(o) {
-  if (o >= et._0 && o <= et._9)
-    return o - et._0;
-  if (o >= et.A && o <= et.F)
-    return o - (et.A - 10);
-  if (o >= et.a && o <= et.f)
-    return o - (et.a - 10);
+  if (o >= st._0 && o <= st._9)
+    return o - st._0;
+  if (o >= st.A && o <= st.F)
+    return o - (st.A - 10);
+  if (o >= st.a && o <= st.f)
+    return o - (st.a - 10);
 }
 function ct(o) {
   if (typeof o != "string")
@@ -179,7 +179,7 @@ class cs extends ke {
     return this._cloneInto();
   }
 }
-const st = /* @__PURE__ */ Uint32Array.from([
+const it = /* @__PURE__ */ Uint32Array.from([
   1779033703,
   3144134277,
   1013904242,
@@ -253,10 +253,10 @@ const st = /* @__PURE__ */ Uint32Array.from([
   2756734187,
   3204031479,
   3329325298
-]), it = /* @__PURE__ */ new Uint32Array(64);
+]), rt = /* @__PURE__ */ new Uint32Array(64);
 class ls extends cs {
   constructor(t = 32) {
-    super(64, t, 8, !1), this.A = st[0] | 0, this.B = st[1] | 0, this.C = st[2] | 0, this.D = st[3] | 0, this.E = st[4] | 0, this.F = st[5] | 0, this.G = st[6] | 0, this.H = st[7] | 0;
+    super(64, t, 8, !1), this.A = it[0] | 0, this.B = it[1] | 0, this.C = it[2] | 0, this.D = it[3] | 0, this.E = it[4] | 0, this.F = it[5] | 0, this.G = it[6] | 0, this.H = it[7] | 0;
   }
   get() {
     const { A: t, B: e, C: s, D: i, E: r, F: n, G: a, H: c } = this;
@@ -268,31 +268,31 @@ class ls extends cs {
   }
   process(t, e) {
     for (let h = 0; h < 16; h++, e += 4)
-      it[h] = t.getUint32(e, !1);
+      rt[h] = t.getUint32(e, !1);
     for (let h = 16; h < 64; h++) {
-      const f = it[h - 15], p = it[h - 2], g = Q(f, 7) ^ Q(f, 18) ^ f >>> 3, y = Q(p, 17) ^ Q(p, 19) ^ p >>> 10;
-      it[h] = y + it[h - 7] + g + it[h - 16] | 0;
+      const f = rt[h - 15], p = rt[h - 2], g = tt(f, 7) ^ tt(f, 18) ^ f >>> 3, y = tt(p, 17) ^ tt(p, 19) ^ p >>> 10;
+      rt[h] = y + rt[h - 7] + g + rt[h - 16] | 0;
     }
     let { A: s, B: i, C: r, D: n, E: a, F: c, G: u, H: d } = this;
     for (let h = 0; h < 64; h++) {
-      const f = Q(a, 6) ^ Q(a, 11) ^ Q(a, 25), p = d + f + os(a, c, u) + us[h] + it[h] | 0, y = (Q(s, 2) ^ Q(s, 13) ^ Q(s, 22)) + as(s, i, r) | 0;
+      const f = tt(a, 6) ^ tt(a, 11) ^ tt(a, 25), p = d + f + os(a, c, u) + us[h] + rt[h] | 0, y = (tt(s, 2) ^ tt(s, 13) ^ tt(s, 22)) + as(s, i, r) | 0;
       d = u, u = c, c = a, a = n + p | 0, n = r, r = i, i = s, s = p + y | 0;
     }
     s = s + this.A | 0, i = i + this.B | 0, r = r + this.C | 0, n = n + this.D | 0, a = a + this.E | 0, c = c + this.F | 0, u = u + this.G | 0, d = d + this.H | 0, this.set(s, i, r, n, a, c, u, d);
   }
   roundClean() {
-    pt(it);
+    pt(rt);
   }
   destroy() {
     this.set(0, 0, 0, 0, 0, 0, 0, 0), pt(this.buffer);
   }
 }
-const hs = /* @__PURE__ */ rs(() => new ls()), tt = hs, ds = [
+const hs = /* @__PURE__ */ rs(() => new ls()), et = hs, ds = [
   "ws://umbrel.local:4848",
   // Local testing relay (highest priority)
   "wss://relay.damus.io"
   // Single public relay fallback
-], nt = {
+], Z = {
   RELAY_TIMEOUT: 1e4,
   // 10 seconds
   PUBLISH_TIMEOUT: 3e4,
@@ -322,7 +322,7 @@ const hs = /* @__PURE__ */ rs(() => new ls()), tt = hs, ds = [
   INVALID_EVENT: "Invalid event structure"
 }, ft = {
   EMPTY_CONTENT: "Add some content to your message",
-  CONTENT_TOO_LONG: `Keep your message under ${nt.MAX_CONTENT_LENGTH} characters`,
+  CONTENT_TOO_LONG: `Keep your message under ${Z.MAX_CONTENT_LENGTH} characters`,
   CONNECTION_FAILED: "Check your internet connection and try again",
   NO_EXTENSION: "Install a Nostr browser extension or the library will use a temporary key",
   PUBLISH_FAILED: "Try again or check if your relays are accessible"
@@ -362,7 +362,7 @@ class M {
       t.kind,
       t.tags,
       t.content
-    ]), s = new TextEncoder().encode(e), i = tt(s);
+    ]), s = new TextEncoder().encode(e), i = et(s);
     return D(i);
   }
   /**
@@ -377,7 +377,7 @@ class M {
    */
   static validateEvent(t) {
     const e = [];
-    if (t.pubkey || e.push("Missing pubkey"), t.created_at || e.push("Missing created_at"), typeof t.kind != "number" && e.push("Missing or invalid kind"), Array.isArray(t.tags) || e.push("Missing or invalid tags"), typeof t.content != "string" && e.push("Missing or invalid content"), t.pubkey && !It.HEX_64.test(t.pubkey) && e.push("Invalid pubkey format (must be 64-character hex string)"), t.id && !It.HEX_64.test(t.id) && e.push("Invalid event ID format (must be 64-character hex string)"), t.sig && !It.HEX_128.test(t.sig) && e.push("Invalid signature format (must be 128-character hex string)"), t.content === "" && !this.isEmptyContentAllowed(t.kind) && e.push(O.EMPTY_CONTENT), t.content && t.content.length > nt.MAX_CONTENT_LENGTH && e.push(O.CONTENT_TOO_LONG), t.created_at) {
+    if (t.pubkey || e.push("Missing pubkey"), t.created_at || e.push("Missing created_at"), typeof t.kind != "number" && e.push("Missing or invalid kind"), Array.isArray(t.tags) || e.push("Missing or invalid tags"), typeof t.content != "string" && e.push("Missing or invalid content"), t.pubkey && !It.HEX_64.test(t.pubkey) && e.push("Invalid pubkey format (must be 64-character hex string)"), t.id && !It.HEX_64.test(t.id) && e.push("Invalid event ID format (must be 64-character hex string)"), t.sig && !It.HEX_128.test(t.sig) && e.push("Invalid signature format (must be 128-character hex string)"), t.content === "" && !this.isEmptyContentAllowed(t.kind) && e.push(O.EMPTY_CONTENT), t.content && t.content.length > Z.MAX_CONTENT_LENGTH && e.push(O.CONTENT_TOO_LONG), t.created_at) {
       const s = Math.floor(Date.now() / 1e3), i = s - 3600, r = s + 3600;
       (t.created_at < i || t.created_at > r) && e.push("Timestamp is too far in the past or future");
     }
@@ -395,7 +395,7 @@ class M {
    */
   static validateContent(t, e) {
     const s = [];
-    return t === "" && !this.isEmptyContentAllowed(e) && s.push(O.EMPTY_CONTENT), t.length > nt.MAX_CONTENT_LENGTH && s.push(O.CONTENT_TOO_LONG), {
+    return t === "" && !this.isEmptyContentAllowed(e) && s.push(O.EMPTY_CONTENT), t.length > Z.MAX_CONTENT_LENGTH && s.push(O.CONTENT_TOO_LONG), {
       valid: s.length === 0,
       errors: s
     };
@@ -486,6 +486,8 @@ class fs {
     // NIP-42: optional provider and hook to create and sign auth events
     l(this, "authEventFactory");
     l(this, "onAuthStateChange");
+    // Publish timeout (ms) – falls nicht gesetzt, wird DEFAULT_CONFIG.PUBLISH_TIMEOUT verwendet
+    l(this, "publishTimeout");
     // Reconnection configuration
     l(this, "maxReconnectAttempts", 5);
     l(this, "baseReconnectDelay", 1e3);
@@ -494,7 +496,7 @@ class fs {
     // 30 seconds
     l(this, "reconnectEnabled", !0);
     l(this, "pendingPublishes", /* @__PURE__ */ new Map());
-    this.debug = e.debug ?? !1, t.forEach((s) => {
+    this.debug = e.debug ?? !1, this.publishTimeout = e.publishTimeout, t.forEach((s) => {
       this.connections.set(s, {
         url: s,
         state: "disconnected"
@@ -540,7 +542,7 @@ class fs {
       try {
         const r = await gs(), n = new r(t), a = setTimeout(() => {
           n.close(), e.state = "error", e.error = "Connection timeout", i(new Error(`Connection to ${t} timed out`));
-        }, nt.CONNECTION_TIMEOUT);
+        }, Z.CONNECTION_TIMEOUT);
         n.onopen = () => {
           clearTimeout(a), e.ws = n, e.state = "connected", e.lastConnected = Date.now(), e.error = void 0, this.debug && console.log(`Connected to relay: ${t}`), s(!0);
         }, n.onerror = (c) => {
@@ -558,27 +560,60 @@ class fs {
   /**
    * Publish event to specific relays
    */
-  async publishToRelays(t, e) {
-    const s = [], i = e.map(async (r) => {
-      const n = Date.now();
+  async publishToRelays(t, e, s) {
+    const i = [], r = !!(s != null && s.resolveOnFirstOk), n = Math.max(1, (s == null ? void 0 : s.minAcks) ?? 1), a = (s == null ? void 0 : s.overallTimeoutMs) ?? this.publishTimeout ?? Z.PUBLISH_TIMEOUT;
+    if (r) {
+      let u = 0, d;
+      const h = new Promise((p) => {
+        d = p;
+      }), f = setTimeout(() => {
+        try {
+          d(i.slice());
+        } catch {
+        }
+      }, a);
+      return e.forEach(async (p) => {
+        const g = Date.now();
+        try {
+          const y = await this.publishToRelay(p, t), m = Date.now() - g;
+          if (i.push({ relay: p, success: y, latency: m }), y && (u++, u >= n)) {
+            try {
+              clearTimeout(f);
+            } catch {
+            }
+            d(i.slice());
+          }
+        } catch (y) {
+          const m = Date.now() - g;
+          i.push({
+            relay: p,
+            success: !1,
+            error: y instanceof Error ? y.message : "Unknown error",
+            latency: m
+          });
+        }
+      }), await h;
+    }
+    const c = e.map(async (u) => {
+      const d = Date.now();
       try {
-        const a = await this.publishToRelay(r, t), c = Date.now() - n;
-        s.push({
-          relay: r,
-          success: a,
-          latency: c
+        const h = await this.publishToRelay(u, t), f = Date.now() - d;
+        i.push({
+          relay: u,
+          success: h,
+          latency: f
         });
-      } catch (a) {
-        const c = Date.now() - n;
-        s.push({
-          relay: r,
+      } catch (h) {
+        const f = Date.now() - d;
+        i.push({
+          relay: u,
           success: !1,
-          error: a instanceof Error ? a.message : "Unknown error",
-          latency: c
+          error: h instanceof Error ? h.message : "Unknown error",
+          latency: f
         });
       }
     });
-    return await Promise.allSettled(i), s;
+    return await Promise.allSettled(c), i;
   }
   /**
    * Publish event to all connected relays
@@ -614,14 +649,47 @@ class fs {
       throw new Error(`Not connected to relay: ${t}`);
     return new Promise((i, r) => {
       const n = s.ws, a = ["EVENT", e], c = setTimeout(() => {
-        r(new Error("Publish timeout"));
-      }, nt.PUBLISH_TIMEOUT), u = e.id;
-      this.pendingPublishes.set(u, { resolve: i, reject: r, timeout: c });
+        const d = `${e.id}|${t}`;
+        this.pendingPublishes.delete(d), r(new Error("Publish timeout"));
+      }, this.publishTimeout ?? Z.PUBLISH_TIMEOUT), u = `${e.id}|${t}`;
+      this.pendingPublishes.set(u, { resolve: i, reject: r, timeout: c, originalEvent: e, retries: 0, awaitingAuth: !1 });
       try {
         const d = JSON.stringify(a);
         n.send(d), this.debug && (console.log(`📤 Publishing event ${e.id} to ${t}`), console.log("📤 Message:", d), console.log("📤 Added to pending:", u));
       } catch (d) {
-        clearTimeout(c), this.pendingPublishes.delete(u), r(d);
+        clearTimeout(c);
+        const h = `${e.id}|${t}`;
+        this.pendingPublishes.delete(h), r(d);
+      }
+    });
+  }
+  /** Detect if an error string indicates NIP-42 auth requirement */
+  isAuthRequiredError(t) {
+    if (typeof t != "string") return !1;
+    const e = t.toLowerCase();
+    return e.includes("auth-required") || e.includes("restricted") || e.includes("nip-42") || e.includes("nip42");
+  }
+  /** After successful AUTH, try to re-send all pending events for this relay that awaited auth */
+  retryPendingAfterAuth(t) {
+    const e = this.connections.get(t);
+    if (!e || e.state !== "connected" || !e.ws) return;
+    const s = e.ws;
+    this.pendingPublishes.forEach((i, r) => {
+      const [n, a] = r.split("|");
+      if (a === t && i.awaitingAuth) {
+        try {
+          clearTimeout(i.timeout);
+        } catch {
+        }
+        i.timeout = setTimeout(() => {
+          this.pendingPublishes.delete(r), i.reject(new Error("Publish timeout after AUTH"));
+        }, this.publishTimeout ?? Z.PUBLISH_TIMEOUT);
+        try {
+          const c = ["EVENT", i.originalEvent];
+          s.send(JSON.stringify(c)), i.awaitingAuth = !1, i.retries = (i.retries || 0) + 1, this.debug && console.log(`🔁 Re-publishing event ${n} to ${t} after AUTH`);
+        } catch (c) {
+          this.pendingPublishes.delete(r), i.reject(c);
+        }
       }
     });
   }
@@ -633,12 +701,38 @@ class fs {
     try {
       const i = JSON.parse(e);
       if (this.debug && console.log(`📥 Message from ${t}:`, i), i[0] === "OK") {
-        const [, r, n, a] = i, c = this.pendingPublishes.get(r);
-        if (this.debug && (console.log(`OK for event ${r}, success: ${n}, pending: ${!!c}`), console.log("Pending publishes:", Array.from(this.pendingPublishes.keys()))), c)
-          clearTimeout(c.timeout), this.pendingPublishes.delete(r), n ? c.resolve(!0) : c.reject(new Error(a || "Relay rejected event"));
+        const [, r, n, a] = i, c = `${r}|${t}`, u = this.pendingPublishes.get(c);
+        if (this.debug) {
+          console.log(`OK for event ${r} @ ${t}, success: ${n}, pending: ${!!u}`);
+          const d = Array.from(this.pendingPublishes.keys());
+          console.log("Pending publishes:", d);
+        }
+        if (u)
+          if (n)
+            clearTimeout(u.timeout), this.pendingPublishes.delete(c), u.resolve(!0);
+          else if (this.isAuthRequiredError(a)) {
+            if (this.debug && console.log(`🔐 Auth required for ${t} on event ${r}:`, a), (u.retries || 0) >= 1) {
+              clearTimeout(u.timeout), this.pendingPublishes.delete(c), u.reject(new Error("Relay requires AUTH but retry already attempted"));
+              return;
+            }
+            u.awaitingAuth = !0;
+            try {
+              clearTimeout(u.timeout);
+            } catch {
+            }
+            u.timeout = setTimeout(() => {
+              this.pendingPublishes.delete(c), u.reject(new Error("Publish timeout waiting for AUTH"));
+            }, this.publishTimeout ?? Z.PUBLISH_TIMEOUT), this.tryAuthenticate(t);
+          } else
+            clearTimeout(u.timeout), this.pendingPublishes.delete(c), u.reject(new Error(a || "Relay rejected event"));
         else {
-          const u = this.connections.get(t);
-          u && u.lastAuthEventId === r ? (u.isAuthenticated = !!n, this.debug && console.log(`🔐 AUTH ${n ? "succeeded" : "failed"} for ${t}${a ? " (" + a + ")" : ""}`), (s = this.onAuthStateChange) == null || s.call(this, t, { authenticated: !!n, reason: n ? void 0 : a })) : this.debug && console.warn(`No pending publish found for event ID: ${r}`);
+          const d = this.connections.get(t);
+          if (d && d.lastAuthEventId === r)
+            d.isAuthenticated = !!n, this.debug && console.log(`🔐 AUTH ${n ? "succeeded" : "failed"} for ${t}${a ? " (" + a + ")" : ""}`), (s = this.onAuthStateChange) == null || s.call(this, t, { authenticated: !!n, reason: n ? void 0 : a }), n && this.retryPendingAfterAuth(t);
+          else if (this.debug) {
+            const h = n ? "already resolved (duplicate OK)" : this.isAuthRequiredError(a) ? "AUTH OK not matching pending" : "late/unsolicited OK";
+            console.log(`ℹ️ OK for ${r} @ ${t} without pending - ${h}${a ? `: ${a}` : ""}`);
+          }
         }
       } else if (i[0] === "NOTICE") {
         const [, r] = i;
@@ -715,7 +809,14 @@ class fs {
    */
   async disconnect() {
     this.pendingPublishes.forEach(({ timeout: t, reject: e }) => {
-      clearTimeout(t), e(new Error("Disconnecting"));
+      try {
+        clearTimeout(t);
+      } catch {
+      }
+      try {
+        e(new Error("Disconnecting"));
+      } catch {
+      }
     }), this.pendingPublishes.clear(), this.connections.forEach((t) => {
       t.ws && (t.ws.close(), t.ws = void 0), t.state = "disconnected";
     });
@@ -1320,7 +1421,7 @@ class ps {
     return await this.nostrInstance.publish(t);
   }
 }
-function rt(o) {
+function nt(o) {
   const t = /* @__PURE__ */ new Set();
   let e = o;
   return {
@@ -1464,11 +1565,11 @@ class mt {
 }
 class te {
   constructor(t, e, s = {}, i = {}) {
-    l(this, "_events", rt([]));
-    l(this, "_status", rt("connecting"));
-    l(this, "_error", rt(null));
-    l(this, "_loading", rt(!1));
-    l(this, "_count", rt(0));
+    l(this, "_events", nt([]));
+    l(this, "_status", nt("connecting"));
+    l(this, "_error", nt(null));
+    l(this, "_loading", nt(!1));
+    l(this, "_count", nt(0));
     l(this, "_readIds", /* @__PURE__ */ new Set());
     l(this, "subscription");
     l(this, "subscriptionManager");
@@ -1699,7 +1800,7 @@ class v extends Error {
   }
 }
 var E = /* @__PURE__ */ ((o) => (o.INVALID_RUMOR = "INVALID_RUMOR", o.SEAL_CREATION_FAILED = "SEAL_CREATION_FAILED", o.GIFT_WRAP_CREATION_FAILED = "GIFT_WRAP_CREATION_FAILED", o.EPHEMERAL_KEY_GENERATION_FAILED = "EPHEMERAL_KEY_GENERATION_FAILED", o.TIMESTAMP_RANDOMIZATION_FAILED = "TIMESTAMP_RANDOMIZATION_FAILED", o.DECRYPTION_FAILED = "DECRYPTION_FAILED", o.INVALID_GIFT_WRAP = "INVALID_GIFT_WRAP", o.INVALID_SEAL = "INVALID_SEAL", o.NO_RECIPIENTS = "NO_RECIPIENTS", o.INVALID_RECIPIENT = "INVALID_RECIPIENT", o.INVALID_PRIVATE_KEY = "INVALID_PRIVATE_KEY", o))(E || {});
-const Z = {
+const Q = {
   SEAL_KIND: 13,
   GIFT_WRAP_KIND: 1059,
   MAX_TIMESTAMP_AGE_SECONDS: 2 * 24 * 60 * 60,
@@ -1727,7 +1828,7 @@ class Dt {
       const i = JSON.stringify(t), r = await e.nip44Encrypt(s, i), n = t.pubkey, a = {
         pubkey: n,
         created_at: Math.floor(Date.now() / 1e3),
-        kind: Z.SEAL_KIND,
+        kind: Q.SEAL_KIND,
         tags: [],
         content: r
       }, c = this.calculateEventId(a), u = { ...a, id: c }, d = await e.signEvent(u);
@@ -1735,7 +1836,7 @@ class Dt {
         id: c,
         pubkey: n,
         created_at: a.created_at,
-        kind: Z.SEAL_KIND,
+        kind: Q.SEAL_KIND,
         tags: [],
         content: r,
         sig: d
@@ -1820,7 +1921,7 @@ class Dt {
       t.kind,
       t.tags,
       t.content
-    ]), s = tt(new TextEncoder().encode(e));
+    ]), s = et(new TextEncoder().encode(e));
     return Array.from(s).map((i) => i.toString(16).padStart(2, "0")).join("");
   }
   /**
@@ -2036,7 +2137,7 @@ class X {
       for (let u = 0; u < 32; u++)
         r[u] = parseInt(s.substr(u * 2, 2), 16);
       const a = Qe(r, "02" + i).subarray(1, 33);
-      return ws(tt, a, "nip44-v2");
+      return ws(et, a, "nip44-v2");
     } catch (s) {
       throw s instanceof G ? s : new G(
         `Key derivation failed: ${s.message}`,
@@ -2060,7 +2161,7 @@ class X {
           "Invalid nonce length",
           Y.INVALID_NONCE
         );
-      const s = vs(tt, t, e, 76);
+      const s = vs(et, t, e, 76);
       return {
         chachaKey: s.subarray(0, 32),
         // bytes 0-31
@@ -2159,7 +2260,7 @@ class X {
         n.chachaKey,
         n.chachaNonce,
         a
-      ), u = Pt(r, c), d = wt(tt, n.hmacKey, u), h = new Uint8Array([this.VERSION]), f = Pt(h, r, c, d);
+      ), u = Pt(r, c), d = wt(et, n.hmacKey, u), h = new Uint8Array([this.VERSION]), f = Pt(h, r, c, d);
       return {
         payload: typeof Buffer < "u" ? Buffer.from(f).toString("base64") : btoa(String.fromCharCode(...f)),
         nonce: r
@@ -2196,7 +2297,7 @@ class X {
         );
       const a = s.slice(r, r + this.NONCE_SIZE);
       r += this.NONCE_SIZE;
-      const c = s.slice(r, -this.MAC_SIZE), u = s.slice(-this.MAC_SIZE), d = this.deriveMessageKeys(e, a), h = Pt(a, c), f = wt(tt, d.hmacKey, h);
+      const c = s.slice(r, -this.MAC_SIZE), u = s.slice(-this.MAC_SIZE), d = this.deriveMessageKeys(e, a), h = Pt(a, c), f = wt(et, d.hmacKey, h);
       if (!_s(f, u))
         return {
           plaintext: "",
@@ -2318,7 +2419,7 @@ class Gt {
    * Generate a randomized timestamp for gift wrap creation
    * The timestamp will be between current time and maxAgeSeconds in the past
    */
-  static generateRandomizedTimestamp(t = Z.MAX_TIMESTAMP_AGE_SECONDS) {
+  static generateRandomizedTimestamp(t = Q.MAX_TIMESTAMP_AGE_SECONDS) {
     try {
       if (t < 0)
         throw new v(
@@ -2349,7 +2450,7 @@ class Gt {
    * Generate multiple randomized timestamps for batch gift wrap creation
    * Each timestamp is independently randomized
    */
-  static generateMultipleRandomizedTimestamps(t, e = Z.MAX_TIMESTAMP_AGE_SECONDS) {
+  static generateMultipleRandomizedTimestamps(t, e = Q.MAX_TIMESTAMP_AGE_SECONDS) {
     if (t <= 0)
       throw new v(
         "Timestamp count must be greater than 0",
@@ -2363,7 +2464,7 @@ class Gt {
   /**
    * Validate that a timestamp is within acceptable bounds for gift wraps
    */
-  static validateGiftWrapTimestamp(t, e = Z.MAX_TIMESTAMP_AGE_SECONDS) {
+  static validateGiftWrapTimestamp(t, e = Q.MAX_TIMESTAMP_AGE_SECONDS) {
     try {
       const s = Math.floor(Date.now() / 1e3), i = s - e, r = s + 60;
       return t >= i && t <= r;
@@ -2375,7 +2476,7 @@ class Gt {
    * Get the recommended timestamp randomization window for NIP-59
    */
   static getRecommendedMaxAge() {
-    return Z.MAX_TIMESTAMP_AGE_SECONDS;
+    return Q.MAX_TIMESTAMP_AGE_SECONDS;
   }
   /**
    * Calculate entropy bits for timestamp randomization
@@ -2417,7 +2518,7 @@ class Lt {
       ), u = X.encrypt(a, c), d = e.relayHint ? ["p", e.pubkey, e.relayHint] : ["p", e.pubkey], h = {
         pubkey: r.publicKey,
         created_at: n,
-        kind: Z.GIFT_WRAP_KIND,
+        kind: Q.GIFT_WRAP_KIND,
         tags: [d],
         content: u.payload
       }, f = this.calculateEventId(h), p = await this.signEvent(h, f, r.privateKey);
@@ -2426,7 +2527,7 @@ class Lt {
           id: f,
           pubkey: r.publicKey,
           created_at: n,
-          kind: Z.GIFT_WRAP_KIND,
+          kind: Q.GIFT_WRAP_KIND,
           tags: [d],
           content: u.payload,
           sig: p
@@ -2481,7 +2582,7 @@ class Lt {
         "Seal must be a valid object",
         E.INVALID_SEAL
       );
-    if (t.kind !== Z.SEAL_KIND)
+    if (t.kind !== Q.SEAL_KIND)
       throw new v(
         "Seal must have kind 13",
         E.INVALID_SEAL
@@ -2521,13 +2622,13 @@ class Lt {
    * Check if an object is a valid gift wrap (for decryption)
    */
   static isValidGiftWrap(t) {
-    return t && typeof t == "object" && t.kind === Z.GIFT_WRAP_KIND && typeof t.pubkey == "string" && typeof t.content == "string" && Array.isArray(t.tags) && t.tags.length > 0 && Array.isArray(t.tags[0]) && t.tags[0][0] === "p" && typeof t.tags[0][1] == "string";
+    return t && typeof t == "object" && t.kind === Q.GIFT_WRAP_KIND && typeof t.pubkey == "string" && typeof t.content == "string" && Array.isArray(t.tags) && t.tags.length > 0 && Array.isArray(t.tags[0]) && t.tags[0][0] === "p" && typeof t.tags[0][1] == "string";
   }
   /**
    * Check if an object is a valid seal (for decryption)
    */
   static isValidSeal(t) {
-    return t && typeof t == "object" && t.kind === Z.SEAL_KIND && typeof t.pubkey == "string" && typeof t.content == "string" && Array.isArray(t.tags) && t.tags.length === 0;
+    return t && typeof t == "object" && t.kind === Q.SEAL_KIND && typeof t.pubkey == "string" && typeof t.content == "string" && Array.isArray(t.tags) && t.tags.length === 0;
   }
   /**
    * Calculate event ID according to NIP-01
@@ -2541,7 +2642,7 @@ class Lt {
       t.kind,
       t.tags,
       t.content
-    ]), s = new TextEncoder().encode(e), i = tt(s);
+    ]), s = new TextEncoder().encode(e), i = et(s);
     return D(i);
   }
   /**
@@ -2816,7 +2917,7 @@ class Pe {
     l(this, "latest");
     l(this, "error");
     l(this, "subject");
-    this.config = t, this._state = rt({
+    this.config = t, this._state = nt({
       messages: [],
       status: "connecting",
       latest: null,
@@ -3079,7 +3180,7 @@ class Ie {
     l(this, "participants");
     l(this, "error");
     var e;
-    this.config = t, this.roomId = this.generateRoomId(), this._state = rt({
+    this.config = t, this.roomId = this.generateRoomId(), this._state = nt({
       messages: [],
       status: "connecting",
       latest: null,
@@ -3343,7 +3444,7 @@ class Te {
     l(this, "parentNostr");
     // Reference to NostrUnchained instance
     // Reactive stores
-    l(this, "_conversationList", rt([]));
+    l(this, "_conversationList", nt([]));
     l(this, "conversations$");
     this.config = t, this.parentNostr = t.parent, this.conversations$ = this._conversationList, this.config.signingProvider && this.initializeSender();
   }
@@ -5804,7 +5905,7 @@ class ki {
   }
   async hashHex(t) {
     const e = t instanceof Uint8Array ? t : new Uint8Array(t);
-    return D(tt(e));
+    return D(et(e));
   }
   async publishNoteWithAttachment(t, e, s = {}) {
     const i = this.nostr.events.create().kind(1).content(t), r = { mimeType: s.mimeType, alt: s.alt, dim: s.dim };
@@ -8318,13 +8419,14 @@ class tr {
     const e = {
       relays: t.relays ?? ds,
       debug: t.debug ?? !1,
-      retryAttempts: t.retryAttempts ?? nt.RETRY_ATTEMPTS,
-      retryDelay: t.retryDelay ?? nt.RETRY_DELAY,
-      timeout: t.timeout ?? nt.PUBLISH_TIMEOUT,
+      retryAttempts: t.retryAttempts ?? Z.RETRY_ATTEMPTS,
+      retryDelay: t.retryDelay ?? Z.RETRY_DELAY,
+      timeout: t.timeout ?? Z.PUBLISH_TIMEOUT,
       routing: t.routing ?? "none"
     };
     if (t.signingProvider && (e.signingProvider = t.signingProvider), this.config = e, this.config.debug && console.log("🔥 NostrUnchained v0.1.0-FIX (build:", (/* @__PURE__ */ new Date()).toISOString().substring(0, 19) + "Z)"), this.relayManager = new fs(this.config.relays, {
-      debug: this.config.debug
+      debug: this.config.debug,
+      publishTimeout: this.config.timeout
     }), this.subscriptionManager = new _i(this.relayManager), this.relayManager.configureAuth({
       authEventFactory: async ({ relay: i, challenge: r }) => {
         if (!this.signingProvider) throw new Error("No signing provider for AUTH");
@@ -9026,7 +9128,7 @@ function Ni(o) {
 async function Di(o, t) {
   const e = t.method.toUpperCase(), s = t.url;
   let i;
-  t.payload && typeof t.payload == "string" ? i = D(tt(new TextEncoder().encode(t.payload))) : t.payload && (i = D(tt(t.payload)));
+  t.payload && typeof t.payload == "string" ? i = D(et(new TextEncoder().encode(t.payload))) : t.payload && (i = D(et(t.payload)));
   const r = o.events.create().kind(27235).content("").tag("u", s).tag("method", e);
   return i && r.tag("payload", i), await (await r.sign()).build();
 }
@@ -9135,5 +9237,5 @@ export {
   Ki as setDefaultSubscriptionManager,
   Fi as signHttpAuth,
   qi as toNostrUri,
-  rt as writable
+  nt as writable
 };
