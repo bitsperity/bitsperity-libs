@@ -145,7 +145,11 @@ export class NostrUnchained {
     // PERFECT DX: If signing provider is provided, initialize EVERYTHING immediately
     if (config.signingProvider) {
       this.signingProvider = config.signingProvider;
-      this.signingMethod = config.signingProvider.constructor.name.includes('Extension') ? 'extension' : 'temporary';
+      try {
+        this.signingMethod = ((config.signingProvider as any)?.isExtension || config.signingProvider.constructor.name.includes('Extension')) ? 'extension' : 'temporary';
+      } catch {
+        this.signingMethod = 'temporary';
+      }
       
       // Initialize cache synchronously first with empty key
       this.cache = new UniversalEventCache('', { debug: this.config.debug });
@@ -188,10 +192,36 @@ export class NostrUnchained {
       console.log('NostrUnchained initialized with relays:', this.config.relays);
     }
 
-    // Initialize optional router (nip65)
+    // Initialize optional router (nip65) and proactively adopt user's NIP‑65 on startup
     if (this.config.routing === 'nip65') {
-      // RelayListModule will be lazily created in getter; create router now
+      // Router
       this.relayRouter = new Nip65RelayRouter(this.relayList, (u) => this.normalizeRelayUrl(u));
+      // If signer is present, subscribe to my 10002 and adopt list for routing hints
+      const tryAdopt = async () => {
+        try {
+          if (!this.signingProvider) return;
+          const me = await this.signingProvider.getPublicKey();
+          // Kick off a one-shot sub so cache fills
+          await this.sub().kinds([10002]).authors([me]).limit(1).execute();
+          // Read once from cache and update relayRouter hints
+          const store: any = this.query().kinds([10002]).authors([me]).limit(1).execute();
+          if (store && typeof store.subscribe === 'function') {
+            let first = true;
+            const unsub = store.subscribe((events: any[]) => {
+              try {
+                if (!first) return; first = false; unsub && unsub();
+              } catch {}
+              const latest = Array.isArray(events) && events.length ? events[0] : null;
+              if (latest && Array.isArray(latest.tags)) {
+                const urls = latest.tags.filter((t: string[]) => t[0] === 'r').map((t: string[]) => t[1]).filter(Boolean);
+                // Router receives latest list for future selections; we do nicht hart umkonfigurieren
+                try { (this.relayRouter as any)?.setAuthorRelayHints?.(me, urls); } catch {}
+              }
+            });
+          }
+        } catch {}
+      };
+      tryAdopt();
     }
   }
 
@@ -372,10 +402,18 @@ export class NostrUnchained {
     // Use provided provider or auto-detect
     if (provider) {
       this.signingProvider = provider;
-      this.signingMethod = provider.constructor.name.includes('Extension') ? 'extension' : 'temporary';
+      try {
+        this.signingMethod = ((provider as any)?.isExtension || provider.constructor.name.includes('Extension')) ? 'extension' : 'temporary';
+      } catch {
+        this.signingMethod = 'temporary';
+      }
     } else if (this.config.signingProvider) {
       this.signingProvider = this.config.signingProvider;
-      this.signingMethod = this.config.signingProvider.constructor.name.includes('Extension') ? 'extension' : 'temporary';
+      try {
+        this.signingMethod = (((this.config.signingProvider as any)?.isExtension) || this.config.signingProvider.constructor.name.includes('Extension')) ? 'extension' : 'temporary';
+      } catch {
+        this.signingMethod = 'temporary';
+      }
     } else {
       // Auto-detect the best available signing provider
       const { provider: detectedProvider, method } = await SigningProviderFactory.createBestAvailable();
@@ -857,7 +895,18 @@ export class NostrUnchained {
    */
   async updateSigningProvider(signingProvider: SigningProvider): Promise<void> {
     this.signingProvider = signingProvider;
-    this.signingMethod = 'temporary'; // Assume temporary for now
+    // Derive signing method from provider type for accurate DX reporting
+    try {
+      const isExt = (signingProvider as any)?.isExtension === true;
+      if (isExt) {
+        this.signingMethod = 'extension';
+      } else {
+        const name = (signingProvider as any)?.constructor?.name || '';
+        this.signingMethod = name.includes('Extension') ? 'extension' : 'temporary';
+      }
+    } catch {
+      this.signingMethod = 'temporary';
+    }
     
     // Update all modules that need signing capability
     if (this.dm) {

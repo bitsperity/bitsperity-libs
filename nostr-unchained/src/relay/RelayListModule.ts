@@ -48,9 +48,28 @@ export class RelayListBuilder {
   }
 
   async publish(): Promise<any> {
-    // Build kind 10002 with r tags
+    // Normalize and de-duplicate URLs for robustness
+    const normalize = (url: string) => {
+      if (!url) return url;
+      let u = url.trim();
+      // preserve provided scheme; default scheme based on host (includes *.local)
+      if (!/^wss?:\/\//i.test(u)) {
+        const host = u.replace(/^[\/]+/, '');
+        const isLocal = /(^localhost(?::\d+)?$)|(^127\.0\.0\.1(?::\d+)?$)|((?:^|\.)local(?::\d+)?$)/i.test(host);
+        u = (isLocal ? 'ws://' : 'wss://') + host;
+      }
+      // strip trailing slashes only
+      u = u.replace(/\/+$/, '');
+      return u;
+    };
+    const seen = new Set<string>();
+    const entries = this.list
+      .map(e => ({ url: normalize(e.url), mode: e.mode }))
+      .filter(e => e.url && !seen.has(e.url) && (seen.add(e.url), true));
+
+    // Build kind 10002 with r tags (explicit empty content for strict clients)
     const builder = this.nostr.events.kind(10002).content('');
-    for (const entry of this.list) {
+    for (const entry of entries) {
       if (entry.mode === 'read') builder.tag('r', entry.url, 'read');
       else if (entry.mode === 'write') builder.tag('r', entry.url, 'write');
       else builder.tag('r', entry.url);

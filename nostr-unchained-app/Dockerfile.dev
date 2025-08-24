@@ -7,12 +7,12 @@ RUN apk add --no-cache python3 make g++
 # Set working directory
 WORKDIR /app
 
-# Copy nostr-unchained library
+## Copy nostr-unchained library source (for local build inside container)
 COPY ../nostr-unchained ./nostr-unchained
 WORKDIR /app/nostr-unchained
 
-# Build nostr-unchained
-RUN npm ci
+# Prefer reproducible install; DO NOT omit optional deps (rollup native)
+RUN npm ci --no-audit || npm install --no-audit
 RUN npm run build
 
 # Copy app source
@@ -29,7 +29,7 @@ COPY ./nostr-unchained-app/tsconfig.json ./tsconfig.json
 COPY ./nostr-unchained-app/vitest.config.ts ./vitest.config.ts
 
 # Install local nostr-unchained after copying source
-RUN npm install ../nostr-unchained
+RUN npm install ../nostr-unchained --no-audit
 
 # Create node_modules/.vite directory for caching
 RUN mkdir -p node_modules/.vite

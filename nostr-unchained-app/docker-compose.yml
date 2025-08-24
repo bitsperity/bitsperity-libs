@@ -16,7 +16,8 @@ services:
       - ./src:/app/nostr-unchained-app/src
       - ./static:/app/nostr-unchained-app/static
       - ./vite.config.ts:/app/nostr-unchained-app/vite.config.ts
-      - ../nostr-unchained/dist:/app/nostr-unchained/dist
+      # Ensure container uses host-built library dist
+      - ../nostr-unchained/dist:/app/nostr-unchained-app/node_modules/nostr-unchained/dist
     networks:
       - nostr-network
 

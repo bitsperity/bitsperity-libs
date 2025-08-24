@@ -396,6 +396,15 @@
 		return hashtags.map(tag => tag.substring(1)); // Remove #
 	}
 
+	function hasContentWarning(): { enabled: boolean; reason?: string } {
+		try {
+			const t = Array.isArray(event.tags) ? (event.tags as string[][]) : [];
+			const cw = t.find(x => Array.isArray(x) && x[0] === 'content-warning');
+			if (!cw) return { enabled: false };
+			return { enabled: true, reason: cw[1] };
+		} catch { return { enabled: false }; }
+	}
+	
     // Clipboard-Funktionalität entfernt (wird später in eigenem UI-Element ergänzt)
 </script>
 
@@ -415,7 +424,13 @@
 	<div class="card-content">
 		{#if isTextNote()}
 			<!-- Text Note -->
-            <div class="text-note" role="button" tabindex="0" onclick={openThread} onkeydown={(e)=> (e.key==='Enter'||e.key===' ') && openThread()} title="Open thread">
+            <div class="text-note" class:cw-active={hasContentWarning().enabled} role="button" tabindex="0" onclick={openThread} onkeydown={(e)=> (e.key==='Enter'||e.key===' ') && openThread()} title="Open thread">
+				{#if hasContentWarning().enabled}
+					<div class="cw-banner">
+						⚠️ Sensitive content {#if hasContentWarning().reason}- {hasContentWarning().reason}{/if}
+						<button class="ghost small" onclick={(e)=>{ e.stopPropagation(); (e.currentTarget as any).closest('.text-note')?.classList.toggle('show-content'); }}>Show</button>
+					</div>
+				{/if}
 				<p class="note-content">{formatContent(event.content)}</p>
 				
 				{#if extractHashtags(event.content).length > 0}
@@ -669,6 +684,11 @@
 		color: #ffffff;
 		word-wrap: break-word;
 	}
+
+	/* NIP-36 banner */
+	.cw-banner { display:flex; align-items:center; gap:.5rem; padding:.25rem .5rem; margin-bottom:.5rem; border:1px solid rgba(234,179,8,.35); background: rgba(234,179,8,.12); color:#fde68a; border-radius:8px; font-size:.9rem; }
+	/* Blur nur aktiv, wenn content warning aktiv ist und nicht explizit angezeigt wird */
+	.text-note.cw-active:not(.show-content) .note-content { filter: blur(6px); }
 
 	.hashtags {
 		display: flex;

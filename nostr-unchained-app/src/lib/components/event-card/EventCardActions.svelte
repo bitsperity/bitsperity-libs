@@ -1,5 +1,78 @@
 <script lang="ts">
+  import { getService } from '$lib/services/ServiceContainer.js';
+  import { onMount } from 'svelte';
   let { event, nostr, reactionSummary, likePending = false, repostPending = false, replyPending = false, deletePending = false, repostCount = 0, replyCount = 0, onLike, onRepost, onReply, onDelete }: any = $props();
+  let isBookmarked = $state(false);
+  let bookmarking = $state(false);
+  let unsubscribeBookmarks: (() => void) | null = null;
+  let bookmarkReady = $state(false);
+
+  async function refreshBookmarkState() {
+    try {
+      const nostrService: any = await getService('nostr');
+      const snap = nostrService?.getBookmarksSnapshot?.();
+      isBookmarked = Array.isArray(snap?.items) && snap.items.includes(event?.id);
+    } catch {}
+  }
+
+  // initial state handled in onMount; live updates via list subscription
+
+  onMount(async () => {
+    try {
+      const nostrService: any = await getService('nostr');
+      // Initialize from local snapshot immediately
+      try {
+        const snap = nostrService.getBookmarksSnapshot?.();
+        isBookmarked = Array.isArray(snap?.items) && snap.items.includes(event?.id);
+      } catch {}
+      // Ensure a fresh sync to avoid stale local snapshot, then mark ready
+      try { await nostrService.syncBookmarks(); } catch {}
+      try {
+        const snap2 = nostrService.getBookmarksSnapshot?.();
+        isBookmarked = Array.isArray(snap2?.items) && snap2.items.includes(event?.id);
+      } catch {}
+      bookmarkReady = true;
+      // Subscribe to remote bookmarks to keep UI in sync like reactions
+      const me = await (nostr as any)?.getPublicKey?.();
+      if (me && (nostr as any)?.lists?.get) {
+        const store = (nostr as any).lists.get(me, 30003, 'bookmarks');
+        unsubscribeBookmarks = store.subscribe((list: any) => {
+          try {
+            const ids = Array.isArray(list?.e) ? list.e.map((x: any) => x.id) : [];
+            isBookmarked = ids.includes(event?.id);
+          } catch {}
+        });
+      }
+    } catch {}
+    return () => { try { unsubscribeBookmarks && unsubscribeBookmarks(); } catch {} };
+  });
+
+  async function toggleBookmark() {
+    bookmarking = true;
+    const previous = isBookmarked;
+    // Optimistic UI
+    isBookmarked = !previous;
+    try {
+      const nostrService: any = await getService('nostr');
+      // Trust remote state: if remote says already bookmarked/not, enforce that to choose add/remove
+      let remoteSays = previous;
+      try { remoteSays = await nostrService.hasBookmark(event.id, 1200); } catch {}
+      const shouldRemove = remoteSays === true;
+      if (shouldRemove) {
+        await nostrService.removeBookmark(event.id);
+      } else {
+        await nostrService.addBookmark(event.id);
+      }
+      // Refresh local snapshot
+      await nostrService.syncBookmarks();
+      await refreshBookmarkState();
+    } catch {
+      // Revert on failure
+      isBookmarked = previous;
+    } finally {
+      bookmarking = false;
+    }
+  }
 
   // Share menu state
   import { hexToNote, isValidHexKey } from '../../utils/keyDisplay.js';
@@ -61,6 +134,11 @@
       {#if likePending}<span class="spinner" aria-hidden="true"></span>{/if}
     </button>
 
+    <!-- Bookmark -->
+    <button class="ghost {isBookmarked ? 'active' : ''}" aria-label="Bookmark" title="Bookmark" onclick={toggleBookmark} disabled={bookmarking || !bookmarkReady} aria-busy={bookmarking || !bookmarkReady}>
+      <span class="icon">🔖</span>
+    </button>
+
     <button class="ghost" aria-label="Repost" title="Repost" onclick={onRepost} disabled={repostPending} aria-busy={repostPending}>
       <span class="icon">🔄</span>
       {#if repostCount}
@@ -118,6 +196,7 @@
   .ghost:hover { transform: translateY(-1px); background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); }
   .ghost[disabled] { opacity: 0.6; cursor: default; }
   .ghost.active { color: #ef4444; border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.08); }
+  .ghost.active .icon { filter: drop-shadow(0 0 4px rgba(239,68,68,.35)); }
   .ghost.danger { color: #ef4444; }
   .icon { line-height: 1; }
   .badge { font-size: 0.7rem; background: rgba(255,255,255,0.06); padding: 0.05rem 0.4rem; border-radius: 9999px; }

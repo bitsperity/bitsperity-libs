@@ -20,6 +20,8 @@
     import FeedView from './feed/FeedView.svelte';
     import EventThread from './thread/EventThread.svelte';
     import EncodingsPanel from './ui/EncodingsPanel.svelte';
+    import RelaysPanel from './relay/RelaysPanel.svelte';
+    import ListsView from './lists/ListsView.svelte';
 
     interface Props {
         nostr: any;
@@ -32,7 +34,7 @@
 	// App State - Reactive and Clean
 	// =============================================================================
 	
-    let currentView = $state<'terminal' | 'messages' | 'publish' | 'profile' | 'feed' | 'thread'>('terminal');
+    let currentView = $state<'terminal' | 'messages' | 'publish' | 'profile' | 'feed' | 'thread' | 'relays' | 'lists'>('terminal');
 	let currentProfilePubkey = $state<string | null>(null); // For viewing other profiles
     let currentThreadId = $state<string | null>(null);
   let historyStack: string[] = $state([]);
@@ -149,6 +151,18 @@
             >📝 Publish</button>
             <button 
                 class="seg-btn"
+                class:active={currentView === 'relays'}
+                onclick={() => currentView = 'relays'}
+                title="Relays"
+            >🔗 Relays</button>
+            <button 
+                class="seg-btn"
+                class:active={currentView === 'lists'}
+                onclick={() => currentView = 'lists'}
+                title="Lists"
+            >🗂️ Lists</button>
+            <button 
+                class="seg-btn"
                 class:active={currentView === 'profile'}
                 onclick={navigateToOwnProfile}
                 title="Profile"
@@ -220,6 +234,10 @@
                   }}
                 />
             {/if}
+        {:else if currentView === 'relays'}
+            <RelaysPanel />
+        {:else if currentView === 'lists'}
+            <ListsView {nostr} />
 		{/if}
 	</main>
 </div>

@@ -28,6 +28,10 @@
 	let result = $state<PublishResult | null>(null);
 	let error = $state<string | null>(null);
 
+	// NIP-36 Content Warning
+	let contentWarningEnabled = $state(false);
+	let contentWarningReason = $state('');
+
 	const logger = createContextLogger('PublishCard');
 
 	// Parse tags
@@ -88,6 +92,19 @@
 				.kind(data.kind)
 				.content(data.content);
 
+			// Apply content warning if enabled (NIP-36)
+			try {
+				if (contentWarningEnabled) {
+					if (typeof builder.contentWarning === 'function') {
+						builder.contentWarning(contentWarningReason?.trim() ? contentWarningReason.trim() : undefined);
+					} else {
+						// Fallback: add tag directly
+						if (contentWarningReason?.trim()) builder.tag('content-warning', contentWarningReason.trim());
+						else builder.tag('content-warning');
+					}
+				}
+			} catch {}
+
 			if (data.created_at) {
 				builder.timestamp(data.created_at);
 			}
@@ -106,6 +123,8 @@
 					content = '';
 					tagsJson = '[]';
 					timestamp = null;
+					contentWarningEnabled = false;
+					contentWarningReason = '';
 				}
 			} else {
 				error = result?.error?.message || 'Failed to publish';
@@ -193,6 +212,25 @@
 						placeholder='[["e", "event-id"], ["p", "pubkey"]]'
 					></textarea>
 					<small class="field-help">JSON array format: [["key", "value1", "value2"]]</small>
+				</div>
+
+				<!-- NIP-36 Content Warning -->
+				<div class="field">
+					<label>Content Warning (NIP‑36)</label>
+					<div class="cw-row">
+						<label class="switch">
+							<input type="checkbox" bind:checked={contentWarningEnabled} />
+							<span>Enable</span>
+						</label>
+						<input 
+							type="text" 
+							placeholder="Reason (optional)"
+							class="cw-reason"
+							bind:value={contentWarningReason}
+							disabled={!contentWarningEnabled}
+						/>
+					</div>
+					<small class="field-help">Adds a content-warning tag and optional reason</small>
 				</div>
 
 				<div class="field">
@@ -687,4 +725,9 @@
 			border-width: 2px;
 		}
 	}
+
+	/* ===== NIP-36 styles ===== */
+	.cw-row { display:flex; gap:.5rem; align-items:center; }
+	.switch { display:flex; align-items:center; gap:.35rem; font-size: var(--text-sm); color:#cbd5e1; }
+	.cw-reason { flex:1; padding: var(--spacing-md); border:2px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-background); color: var(--color-text); }
 </style>

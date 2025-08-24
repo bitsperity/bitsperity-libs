@@ -197,12 +197,14 @@ registerService('nostr', async () => {
 	// Check if we should create a temporary account service
 	const isTempAccount = typeof window !== 'undefined' && 
 		sessionStorage.getItem('temp_signer_active') === 'true';
-	
-	return createNostrService({
-		relays: ['ws://umbrel.local:4848'],
-		debug: isTempAccount ? true : true, // Always debug for now
-		timeout: 10000
-	});
+
+  // Minimal Bootstrap: lokale Startverbindung; tatsächliche Liste kommt via NIP-65 vom Relay
+  return createNostrService({
+    relays: ['ws://umbrel.local:4848'],
+    debug: isTempAccount ? true : true, // Always debug for now
+    timeout: 10000,
+    routing: 'nip65'
+  });
 }, true);
 
 // Register AuthService  

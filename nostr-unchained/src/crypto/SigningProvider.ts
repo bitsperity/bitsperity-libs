@@ -16,6 +16,7 @@ import { ERROR_MESSAGES } from '../utils/constants.js';
  * NIP-07 Browser Extension Signer
  */
 export class ExtensionSigner implements SigningProvider {
+  public readonly isExtension: boolean = true;
   private cachedPublicKey?: string;
 
   async getPublicKey(): Promise<string> {
@@ -24,6 +25,12 @@ export class ExtensionSigner implements SigningProvider {
     }
 
     try {
+      // Request permission if the provider exposes enable()
+      try {
+        if (typeof (window.nostr as any).enable === 'function') {
+          await (window.nostr as any).enable();
+        }
+      } catch {}
       const pubkey = await window.nostr.getPublicKey();
       this.cachedPublicKey = pubkey; // Cache for sync access
       return pubkey;
