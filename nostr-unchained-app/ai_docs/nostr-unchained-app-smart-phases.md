@@ -13,6 +13,22 @@ Hinweis: Bezug auf Analyse in `ai_docs/nostr-unchained-app-integration-analysis.
 
 ---
 
+### Aktueller Stand (Live‑Projekt)
+
+- Abgeschlossen (DONE):
+  - Phase 1 – Relays/Routing/Health‑Basics. Header/Relays‑View mit Single‑Source‑of‑Truth für Connected‑Count; Health‑Probes basic. (Commit: f1f95a4)
+  - Phase 3 – Listen/Bookmarks (NIP‑51). `/lists` + Bookmark‑Aktionen inkl. 30003‑Sync. (Commit: f1f95a4)
+  - Phase 4 – Comments (NIP‑22). „Kommentieren“ in Karten; Thread rendert Replies (kind 1) + Comments (kind 1111) zusammengeführt. (Commit: f1f95a4)
+  - Phase 5 – Content Warning (NIP‑36). Toggle in `PublishCard`; Banner in `EventCard`. (Commit: f1f95a4)
+
+- Depriorisiert (ON HOLD):
+  - Phase 2 – Suche (NIP‑50) vorerst zurückgestellt.
+
+- Nächstes Ziel (NEXT):
+  - Phase 8 – Labels (NIP‑32): Route `/labels` + Label‑Aktion in Karten. ETA: 0.5–1 Tag.
+
+---
+
 ### Phase 1: Relays, Routing und Health‑Basics (NIP‑65, Grundstein NIP‑66)
 
 - Ziel (S):
@@ -34,6 +50,7 @@ Hinweis: Bezug auf Analyse in `ai_docs/nostr-unchained-app-integration-analysis.
 - Zeit (T): 0.5–1.5 Tage.
 - Keine Mocks: alle Aktionen nutzen echte Relays (lokal oder öffentlich).
 - Risiken/Abhängigkeiten: vorhandene Umbrel‑Relay; Fallback auf öffentliche Relays möglich.
+- Status: DONE (f1f95a4)
 
 ---
 
@@ -52,6 +69,7 @@ Hinweis: Bezug auf Analyse in `ai_docs/nostr-unchained-app-integration-analysis.
   - Serverseitig gleiche Suche liefert (mindestens) ähnliche Resultate je Relay.
 - Zeit (T): 0.5–1 Tag.
 - Keine Mocks: echte `query/sub` gegen aktuelle Relays.
+- Status: ON HOLD
 
 ---
 
@@ -71,6 +89,7 @@ Hinweis: Bezug auf Analyse in `ai_docs/nostr-unchained-app-integration-analysis.
   - Unbookmark → verschwindet reaktiv.
 - Zeit (T): 0.5–1 Tag.
 - Keine Mocks.
+- Status: DONE (f1f95a4)
 
 ---
 
@@ -88,6 +107,7 @@ Hinweis: Bezug auf Analyse in `ai_docs/nostr-unchained-app-integration-analysis.
   - Comment auf beliebiges Event publizieren → sofort sichtbar über Reader.
 - Zeit (T): 0.5–1 Tag.
 - Keine Mocks; echter Publish.
+- Status: DONE (f1f95a4)
 
 ---
 
@@ -102,6 +122,7 @@ Hinweis: Bezug auf Analyse in `ai_docs/nostr-unchained-app-integration-analysis.
 - Manuelle Tests: Publish mit/ohne CW; Rendering prüfen.
 - Zeit (T): 0.25–0.5 Tag.
 - Keine Mocks.
+- Status: DONE (integriert)
 
 ---
 
@@ -142,9 +163,14 @@ Hinweis: Bezug auf Analyse in `ai_docs/nostr-unchained-app-integration-analysis.
 - Abnahmekriterien (M):
   - Label‑Events werden publiziert und reaktiv angezeigt; Namespace/Mark korrekt.
 - Deliverables: `/labels` + Action in Karten.
+- Implementierungsnotizen (A):
+  - UI: Neue Route `/labels` mit Namespace‑Filter und Zieltyp (Event/Profile). Liste aus Cache; Live‑Update via `sub().kinds([1985,1984]).execute()` optional.
+  - Action: `EventCardActions` → `labels.edit().namespace(ns).label(label).targetEvent(eventId).publish()`; Ergebnisanzeige wie bei Publish‑Result.
+  - Service: kleine Helper in `NostrService` für gängige Label‑Flows (optional).
 - Manuelle Tests: Label setzen/anzeigen; Wechsel Namespace.
 - Zeit (T): 0.5–1 Tag.
 - Keine Mocks.
+- Status: NEXT
 
 ---
 
