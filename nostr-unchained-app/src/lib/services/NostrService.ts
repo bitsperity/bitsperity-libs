@@ -816,8 +816,18 @@ export class NostrService {
 	 * Expose the single NostrUnchained instance
 	 */
     getInstance(): any {
-		return this.nostr;
-	}
+        if (!this.nostr) {
+            const base: any = {
+                relays: this.config.relays,
+                debug: this.config.debug,
+                timeout: this.config.timeout,
+                routing: this.routingMode
+            };
+            this.nostr = new NostrUnchained(base as any);
+            try { (this.nostr as any).connect?.(); } catch {}
+        }
+        return this.nostr;
+    }
 }
 
 // =============================================================================

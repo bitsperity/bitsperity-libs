@@ -1,7 +1,7 @@
 <script lang="ts">
   import { getService } from '$lib/services/ServiceContainer.js';
   import { onMount } from 'svelte';
-  let { event, nostr, reactionSummary, likePending = false, repostPending = false, replyPending = false, deletePending = false, repostCount = 0, replyCount = 0, onLike, onRepost, onReply, onDelete, onComment, commentPending = false }: any = $props();
+  let { event, nostr, reactionSummary, likePending = false, repostPending = false, replyPending = false, deletePending = false, repostCount = 0, replyCount = 0, onLike, onRepost, onReply, onDelete, onComment, commentPending = false, onLabel, labelPending = false }: any = $props();
   let isBookmarked = $state(false);
   let bookmarking = $state(false);
   let unsubscribeBookmarks: (() => void) | null = null;
@@ -161,6 +161,12 @@
     <button class="ghost" aria-label="Comment" title="Comment" onclick={onComment} disabled={commentPending} aria-busy={commentPending}>
       <span class="icon">💭</span>
       {#if commentPending}<span class="spinner" aria-hidden="true"></span>{/if}
+    </button>
+
+    <!-- Label (NIP-32) -->
+    <button class="ghost" aria-label="Label" title="Label" onclick={onLabel} disabled={labelPending} aria-busy={labelPending}>
+      <span class="icon">🏷️</span>
+      {#if labelPending}<span class="spinner" aria-hidden="true"></span>{/if}
     </button>
 
     {#if (nostr as any)?.me === event.pubkey}

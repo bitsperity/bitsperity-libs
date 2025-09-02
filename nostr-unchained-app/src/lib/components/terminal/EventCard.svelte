@@ -14,6 +14,7 @@
     import EventCardTags from '../event-card/EventCardTags.svelte';
     import EventCardMeta from '../event-card/EventCardMeta.svelte';
     import EventCardJson from '../event-card/EventCardJson.svelte';
+    import LabelComposer from '../labels/LabelComposer.svelte';
     
     let { event, nostr }: { event: any; nostr?: any } = $props();
     
@@ -102,6 +103,37 @@
 	let commentText: string = $state('');
 	let commentPending = $state(false);
 
+	// Label composer (NIP-32)
+	let showLabelComposer = $state(false);
+	let labelNamespace: string = $state('app');
+	let labelValue: string = $state('star');
+	let labelMark: string = $state('');
+	let labelReason: string = $state('');
+	let labelPending = $state(false);
+	let knownNamespaces: string[] = $state(['app','content','moderation']);
+	let knownLabels: string[] = $state(['star','bookmark','nsfw','spoiler','quality']);
+
+	// Label chips (reader)
+	let labelChips: Array<{ text: string }> = $state([]);
+
+	function computeLabelChips(events: any[]): Array<{ text: string }> {
+		try {
+			const chips: string[] = [];
+			for (const ev of events || []) {
+				const t = Array.isArray(ev?.tags) ? (ev.tags as string[][]) : [];
+				const ns = (t.find((x) => x[0] === 'L')?.[1]) || '';
+				const labels = t.filter((x) => x[0] === 'l');
+				for (const l of labels) {
+					const val = l[1] || '';
+					const mark = l[2] || '';
+					const txt = ns ? (mark ? `${ns}:${val}(${mark})` : `${ns}:${val}`) : (mark ? `${val}(${mark})` : val);
+					if (txt && !chips.includes(txt)) chips.push(txt);
+				}
+			}
+			return chips.map((text) => ({ text }));
+		} catch { return []; }
+	}
+
 	// Inline Reply Composer
 	let showReplyComposer = $state(false);
 	let replyText: string = $state('');
@@ -155,6 +187,30 @@
 						const cnt = events.length;
 						if (cnt !== replyCount) replyCount = cnt;
 					}
+				});
+				unsubscribers.push(unsub);
+			}
+		} catch {}
+
+		try {
+			// Labels reader subscription for this event
+			const store = (nostr as any)?.labels?.forEvent?.(event.id);
+			if (store && typeof store.subscribe === 'function') {
+				const unsub = store.subscribe((events: any[]) => {
+					const evs = Array.isArray(events) ? events : [];
+					labelChips = computeLabelChips(evs);
+					const nsSet = new Set<string>();
+					const lSet = new Set<string>();
+					for (const ev of evs) {
+						const t = Array.isArray(ev?.tags) ? (ev.tags as string[][]) : [];
+						const ns = (t.find((x) => x[0] === 'L')?.[1]) || '';
+						if (ns) nsSet.add(ns);
+						for (const l of t.filter((x)=>x[0]==='l')) {
+							if (l[1]) lSet.add(l[1]);
+						}
+					}
+					if (nsSet.size) knownNamespaces = Array.from(nsSet);
+					if (lSet.size) knownLabels = Array.from(lSet);
 				});
 				unsubscribers.push(unsub);
 			}
@@ -248,6 +304,36 @@
 		} finally {
 			replyPending = false;
 		}
+	}
+
+	async function doLabel() {
+		if (!(nostr as any)?.labels) return;
+		labelPending = true;
+		try {
+			const b = (nostr as any).labels
+				.edit()
+				.namespace(labelNamespace?.trim() || 'app')
+				.label(labelValue?.trim() || 'tag', labelMark?.trim() || undefined)
+				.targetEvent(event.id);
+			if (labelReason?.trim()) (b as any).reason(labelReason.trim());
+			const res = await b.publish();
+			lastPublishResult = res;
+			showLabelComposer = false;
+			labelReason = '';
+		} catch (e) {
+			console.error('Label failed', e);
+		} finally {
+			labelPending = false;
+		}
+	}
+
+	function submitLabel(e: CustomEvent<{ namespace: string; label: string; mark?: string; reason?: string }>) {
+		const { namespace, label, mark, reason } = e.detail;
+		labelNamespace = namespace;
+		labelValue = label;
+		labelMark = mark || '';
+		labelReason = reason || '';
+		doLabel();
 	}
 
 	async function doDelete() {
@@ -526,6 +612,17 @@
 
         <EventCardTags tags={event.tags} on:tagClick={(e)=>handleTagClick([e.detail.type, e.detail.value])} />
 
+		{#if labelChips.length > 0}
+			<div class="label-chips">
+				{#each labelChips as c}
+					<span class="label-chip" title={c.text}>
+						<span class="chip-dot" aria-hidden="true"></span>
+						{c.text}
+					</span>
+				{/each}
+			</div>
+		{/if}
+
         {#if expandedEventRefId}
             <div class="ref-panel">
                 <div class="ref-header">
@@ -564,6 +661,8 @@
         onDelete={doDelete}
         onComment={() => { showCommentComposer = !showCommentComposer; }}
         commentPending={commentPending}
+		onLabel={() => { showLabelComposer = !showLabelComposer; }}
+		labelPending={labelPending}
     />
 
 	{#if showReplyComposer}
@@ -587,6 +686,22 @@
 					{#if commentPending}<span class="spinner"></span> Kommentieren…{:else}Kommentieren{/if}
 				</button>
 			</div>
+		</div>
+	{/if}
+
+	{#if showLabelComposer}
+		<div class="reply-composer">
+			<LabelComposer 
+				pending={labelPending}
+				namespace={labelNamespace}
+				label={labelValue}
+				mark={labelMark}
+				reason={labelReason}
+				knownNamespaces={knownNamespaces}
+				knownLabels={knownLabels}
+				on:cancel={() => { showLabelComposer = false; }}
+				on:submit={submitLabel}
+			/>
 		</div>
 	{/if}
 
@@ -895,6 +1010,19 @@
 		border-top: 1px dashed rgba(255, 255, 255, 0.1);
 		padding-top: 0.5rem;
 	}
+
+	/* Labels */
+	.label-chips { display:flex; flex-wrap:wrap; gap:.375rem; margin-top:.25rem; }
+	.label-chip {
+		font-size: .75rem;
+		color: #0ea5e9;
+		background: rgba(14,165,233,0.10);
+		padding: 0.25rem 0.6rem 0.25rem 0.35rem;
+		border-radius: 999px;
+		border: 1px solid rgba(14,165,233,0.25);
+		display:inline-flex; align-items:center; gap:.35rem;
+	}
+	.chip-dot { width:6px; height:6px; border-radius:50%; background:#0ea5e9; opacity:.9; }
 
 	/* Reply composer */
 	.reply-composer { display:flex; flex-direction: column; gap:.5rem; margin-top:.5rem; }

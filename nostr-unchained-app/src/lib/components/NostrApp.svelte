@@ -36,7 +36,7 @@
 	// App State - Reactive and Clean
 	// =============================================================================
 	
-    let currentView = $state<'terminal' | 'messages' | 'publish' | 'profile' | 'feed' | 'thread' | 'relays' | 'lists'>('terminal');
+    let currentView = $state<'terminal' | 'messages' | 'publish' | 'profile' | 'feed' | 'thread' | 'relays' | 'lists' | 'labels'>('terminal');
 	let currentProfilePubkey = $state<string | null>(null); // For viewing other profiles
     let currentThreadId = $state<string | null>(null);
   let historyStack: string[] = $state([]);
@@ -64,6 +64,20 @@
     }
     await refreshFromService();
     headerMonitor = setInterval(refreshFromService, 1500);
+
+    // Deep-link handling: /?thread=<id> or /?profile=<hex>
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const thread = params.get('thread');
+      const profile = params.get('profile');
+      if (thread) {
+        currentThreadId = thread;
+        currentView = 'thread';
+      } else if (profile) {
+        currentProfilePubkey = profile;
+        currentView = 'profile';
+      }
+    } catch {}
   });
   $effect(() => () => { try { if (headerMonitor) clearInterval(headerMonitor); } catch {} });
 
@@ -183,6 +197,12 @@
                 onclick={() => currentView = 'lists'}
                 title="Lists"
             >🗂️ Lists</button>
+            <button 
+                class="seg-btn"
+                class:active={currentView === 'labels'}
+                onclick={() => { try { window.location.href = '/labels'; } catch { currentView = 'labels'; } }}
+                title="Labels"
+            >🏷️ Labels</button>
             <button 
                 class="seg-btn"
                 class:active={currentView === 'profile'}

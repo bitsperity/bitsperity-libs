@@ -1287,7 +1287,7 @@ class Kt {
    */
   async sign() {
     const t = this.eventData.kind || 1;
-    if (!(/* @__PURE__ */ new Set([3, 5, 6, 7, 10002, 1984, 3e4, 30001, 30002, 30003, 34550, 4550, 27235, 1063])).has(t) && (!this.eventData.content || this.eventData.content.length === 0))
+    if (!(/* @__PURE__ */ new Set([3, 5, 6, 7, 10002, 1984, 1985, 3e4, 30001, 30002, 30003, 34550, 4550, 27235, 1063])).has(t) && (!this.eventData.content || this.eventData.content.length === 0))
       throw new Error("Content is required before signing");
     const i = this.nostrInstance.signingProvider;
     if (!i)
@@ -1319,7 +1319,7 @@ class Kt {
    */
   async publish() {
     const t = this.eventData.kind || 1;
-    if (!(/* @__PURE__ */ new Set([3, 5, 6, 7, 10002, 1984, 3e4, 30001, 30002, 30003, 34550, 4550, 27235, 1063])).has(t) && (!this.eventData.content || this.eventData.content.length === 0))
+    if (!(/* @__PURE__ */ new Set([3, 5, 6, 7, 10002, 1984, 1985, 3e4, 30001, 30002, 30003, 34550, 4550, 27235, 1063])).has(t) && (!this.eventData.content || this.eventData.content.length === 0))
       throw new Error("Content is required before publishing");
     if (this.signed && this.signedEvent) {
       const a = this.targetRelays ? await this.nostrInstance.relayManager.publishToRelays(this.signedEvent, this.targetRelays) : await this.nostrInstance.relayManager.publishToAll(this.signedEvent), c = a.some((u) => u.success);
