@@ -20,12 +20,13 @@ Hinweis: Bezug auf Analyse in `ai_docs/nostr-unchained-app-integration-analysis.
   - Phase 3 – Listen/Bookmarks (NIP‑51). `/lists` + Bookmark‑Aktionen inkl. 30003‑Sync. (Commit: f1f95a4)
   - Phase 4 – Comments (NIP‑22). „Kommentieren“ in Karten; Thread rendert Replies (kind 1) + Comments (kind 1111) zusammengeführt. (Commit: f1f95a4)
   - Phase 5 – Content Warning (NIP‑36). Toggle in `PublishCard`; Banner in `EventCard`. (Commit: f1f95a4)
+  - Phase 8 – Labels (NIP‑32). Route `/labels` mit Namespace‑/Typ‑Filter, Avatare, Navigation zu Profil/Event, Zurück‑Button; Label‑Aktion in Karten. Deep‑Links `/?thread`/`/?profile`. (Commit: ebe913d)
 
 - Depriorisiert (ON HOLD):
   - Phase 2 – Suche (NIP‑50) vorerst zurückgestellt.
 
 - Nächstes Ziel (NEXT):
-  - Phase 8 – Labels (NIP‑32): Route `/labels` + Label‑Aktion in Karten. ETA: 0.5–1 Tag.
+  - Phase 6 – Media Upload & Attachments (NIP‑92/94/96): `/media/upload` (NIP‑96 Discovery/Upload, optional NIP‑98), Attachments in `PublishCard` und Rendering in `EventCard`. ETA: 1–2 Tage.
 
 ---
 
@@ -170,7 +171,7 @@ Hinweis: Bezug auf Analyse in `ai_docs/nostr-unchained-app-integration-analysis.
 - Manuelle Tests: Label setzen/anzeigen; Wechsel Namespace.
 - Zeit (T): 0.5–1 Tag.
 - Keine Mocks.
-- Status: NEXT
+- Status: DONE (ebe913d)
 
 ---
 
