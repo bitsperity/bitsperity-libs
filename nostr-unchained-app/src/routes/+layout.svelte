@@ -5,9 +5,9 @@
   Imports global CSS and ensures dark theme is applied properly.
 -->
 
-<script>
-	// Import global CSS - this is crucial for SvelteKit!
+<script lang="ts">
 	import '../app.css';
+	// Keine clientseitigen Redirects – alles über hooks.server.ts
 </script>
 
 <!-- The slot where page content gets rendered -->

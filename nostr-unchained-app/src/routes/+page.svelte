@@ -39,6 +39,22 @@
             await nostr.connect();
 
             signerChoice = signerType;
+			// Persistente Wahl für serverseitigen Guard
+			try {
+				document.cookie = `signer_selected=${signerType}; Path=/; SameSite=Lax`;
+				if (signerType === 'temporary') document.cookie = `temp_signer_active=true; Path=/; SameSite=Lax`;
+				document.cookie = 'signed_now=1; Path=/; SameSite=Lax';
+			} catch {}
+			// Direkt zurück zur Zielroute navigieren (ohne Reload), Server-Hook ist Fallback
+			// Direkt zur Zielroute navigieren; One-Time-Pass setzen, damit die
+			// Zielroute nicht erneut zur Landing umleitet
+			const cookieRt = (() => { try { const c = document.cookie.split('; ').find((x) => x.startsWith('rt=')); return c ? decodeURIComponent(c.split('=')[1] || '') : ''; } catch { return ''; } })();
+			const paramRt = (() => { try { const p = new URLSearchParams(location.search).get('rt'); return p ? decodeURIComponent(p) : ''; } catch { return ''; } })();
+			const rt = cookieRt || paramRt || '/';
+			// Nur umleiten, wenn eine Zielroute vorhanden ist und nicht Root ist
+			if (rt && rt !== '/') {
+				location.replace(`/?rt=${encodeURIComponent(rt)}`);
+			}
         } catch (err) {
 			error = err instanceof Error ? err.message : 'Failed to initialize';
 			nostr = null;

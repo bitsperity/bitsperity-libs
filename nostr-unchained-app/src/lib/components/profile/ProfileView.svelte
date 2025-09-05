@@ -12,6 +12,7 @@ import { onDestroy, createEventDispatcher } from 'svelte';
 type ProfileViewProps = any;
 import ProfileHeader from './ProfileHeader.svelte';
 import ProfileInfo from './ProfileInfo.svelte';
+import ProfileArticlesWidget from './ProfileArticlesWidget.svelte';
 import ProfileActions from './ProfileActions.svelte';
 import { getProfileStore, unsubscribeFromProfile } from '../../utils/ProfileSubscriptionManager.js';
 import EventCard from '../terminal/EventCard.svelte';
@@ -343,6 +344,11 @@ async function loadMore() {
 				{compact}
 				className="main-profile-info"
 			/>
+
+			<!-- Profile Widgets -->
+			<div class="profile-widgets">
+				<ProfileArticlesWidget {nostr} pubkey={profilePubkey} />
+			</div>
 
 			<!-- Profile Tabs -->
 			<div class="profile-tabs">

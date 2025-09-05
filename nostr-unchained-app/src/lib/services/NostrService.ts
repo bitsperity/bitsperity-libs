@@ -94,6 +94,19 @@ export class NostrService {
 	async setSigningProvider(provider: any): Promise<void> {
 		try {
 			this.signingProvider = provider;
+			// Persist chosen signer type for lazy rehydration across routes/reloads
+			try {
+				const isExt = typeof provider === 'object' && provider?.constructor?.name === 'ExtensionSigner';
+				const isTemp = typeof provider === 'object' && provider?.constructor?.name === 'TemporarySigner';
+				if (isExt) {
+					sessionStorage.setItem('selected_signer', 'extension');
+					sessionStorage.removeItem('temp_signer_active');
+				}
+				if (isTemp) {
+					sessionStorage.setItem('selected_signer', 'temporary');
+					sessionStorage.setItem('temp_signer_active', 'true');
+				}
+			} catch {}
 			if (!this.nostr) {
 				await this.createInstance(provider);
 			} else {
@@ -824,8 +837,75 @@ export class NostrService {
                 routing: this.routingMode
             };
             this.nostr = new NostrUnchained(base as any);
+            // If a signing provider was set earlier, re-initialize signing on lazy init
+            try {
+                if (this.signingProvider) {
+                    (this.nostr as any).initializeSigning?.(this.signingProvider);
+                } else {
+                    // Try to restore from sessionStorage
+                    const sel = sessionStorage.getItem('selected_signer');
+                    if (sel === 'temporary' || sessionStorage.getItem('temp_signer_active') === 'true') {
+                        try {
+                            const temp = new TemporarySigner();
+                            this.signingProvider = temp as any;
+                            (this.nostr as any).initializeSigning?.(temp);
+                        } catch {}
+                    } else if (sel === 'extension') {
+                        try {
+                            const ext = new ExtensionSigner();
+                            this.signingProvider = ext as any;
+                            (this.nostr as any).initializeSigning?.(ext);
+                        } catch {}
+                    }
+                }
+            } catch {}
             try { (this.nostr as any).connect?.(); } catch {}
         }
+        return this.nostr;
+    }
+
+    /** True if a signing provider is active or can be detected */
+    hasSigner(): boolean {
+        if (this.signingProvider) return true;
+        try {
+            const info = (this.nostr as any)?.getSigningInfo?.();
+            if (info?.method && info.method !== 'unknown') return true;
+        } catch {}
+        return false;
+    }
+
+    /** Ensure instance exists, signing is initialized and connection is up */
+    async getReadyInstance(): Promise<any> {
+        if (!this.nostr) {
+            await this.createInstance();
+        }
+        try {
+            if (this.signingProvider) {
+                await (this.nostr as any).initializeSigning?.(this.signingProvider);
+            } else {
+                const sel = sessionStorage.getItem('selected_signer');
+                const tempFlag = sessionStorage.getItem('temp_signer_active') === 'true';
+                if (sel === 'temporary' || tempFlag) {
+                    try {
+                        const temp = new TemporarySigner();
+                        this.signingProvider = temp as any;
+                        await (this.nostr as any).initializeSigning?.(temp);
+                        sessionStorage.setItem('selected_signer', 'temporary');
+                        sessionStorage.setItem('temp_signer_active', 'true');
+                    } catch {}
+                } else if (sel === 'extension') {
+                    try {
+                        const ext = new ExtensionSigner();
+                        try { await (ext as any).getPublicKey?.(); } catch {}
+                        this.signingProvider = ext as any;
+                        await (this.nostr as any).initializeSigning?.(ext);
+                        sessionStorage.setItem('selected_signer', 'extension');
+                    } catch {}
+                }
+                // Wichtig: Keine Auto-Auswahl ohne persistierte Entscheidung
+            }
+        } catch {}
+        try { await (this.nostr as any).connect?.(); } catch {}
         return this.nostr;
     }
 }

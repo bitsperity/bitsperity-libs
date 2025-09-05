@@ -24,6 +24,7 @@
     import ListsView from './lists/ListsView.svelte';
     import { getService } from '../services/ServiceContainer.js';
     import { onMount } from 'svelte';
+    import { goto } from '$app/navigation';
 
     interface Props {
         nostr: any;
@@ -200,7 +201,7 @@
             <button 
                 class="seg-btn"
                 class:active={currentView === 'labels'}
-                onclick={() => { try { window.location.href = '/labels'; } catch { currentView = 'labels'; } }}
+                onclick={() => { try { goto('/labels'); } catch { currentView = 'labels'; } }}
                 title="Labels"
             >🏷️ Labels</button>
             <button 
