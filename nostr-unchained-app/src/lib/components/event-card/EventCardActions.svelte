@@ -80,9 +80,34 @@
   import { hexToNote, isValidHexKey } from '../../utils/keyDisplay.js';
   let shareOpen = $state(false);
   let copying = $state<null | 'hex' | 'note' | 'uri'>(null);
+  let zapping = $state(false);
+  let zapOk = $state<boolean | null>(null);
 
   function toggleShare() {
     shareOpen = !shareOpen;
+  }
+
+  async function doZap() {
+    if (!nostr) return;
+    zapping = true; zapOk = null;
+    try {
+      // Prefer native ZapModule if exposed
+      const zapMod = (nostr as any)?.zaps || (nostr as any)?.payments?.zaps;
+      if (zapMod?.requestZap) {
+        const res = await zapMod.requestZap(event.pubkey, { noteId: event.id, amountMsat: 1000 });
+        zapOk = !!res?.success;
+      } else if ((nostr as any)?.events?.create) {
+        // Fallback: publish minimal 9734 request (no LNURL resolve here)
+        const builder = (nostr as any).events.create().kind(9734).content('');
+        builder.tag('p', event.pubkey);
+        builder.tag('e', event.id);
+        const res = await builder.publish();
+        zapOk = !!res?.success;
+      } else {
+        zapOk = false;
+      }
+    } catch { zapOk = false; }
+    finally { zapping = false; setTimeout(()=> zapOk=null, 1500); }
   }
 
   async function copyHex() {
@@ -128,6 +153,13 @@
 
 <div class="card-actions">
   <div class="left-actions">
+    <!-- Zap (NIP-57) -->
+    <button class="ghost" aria-label="Zap" title="Zap" onclick={doZap} disabled={zapping} aria-busy={zapping} data-prevent-nav>
+      <span class="icon">⚡</span>
+      {#if zapping}<span class="spinner" aria-hidden="true"></span>{/if}
+      {#if zapOk === true}<span class="badge">OK</span>{/if}
+      {#if zapOk === false}<span class="badge">ERR</span>{/if}
+    </button>
     <button class="ghost {reactionSummary.userReactionType ? 'active' : ''}" aria-label="Like" title="Like/Unlike" onclick={onLike} disabled={likePending} aria-busy={likePending}>
       <span class="icon">❤️</span>
       {#if reactionSummary.totalCount}

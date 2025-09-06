@@ -15,6 +15,7 @@
     import EventCardMeta from '../event-card/EventCardMeta.svelte';
     import EventCardJson from '../event-card/EventCardJson.svelte';
     import LabelComposer from '../labels/LabelComposer.svelte';
+    import { goto } from '$app/navigation';
     
     let { event, nostr }: { event: any; nostr?: any } = $props();
     
@@ -495,10 +496,19 @@
 		return event.content || '❤️';
 	}
 
-    // Open Thread navigation
+    // Open Thread navigation (unified app behavior)
     function openThread() {
-        // Dispatch upwards so the app can switch to thread view
+        try { goto(`/threads/${event.id}`); } catch {}
+        // Keep dispatch for backwards-compat listeners
         dispatch('openThread', { id: event.id });
+    }
+
+    function handleCardClick(e: MouseEvent) {
+        const target = e.target as HTMLElement;
+        // Avoid hijacking clicks on interactive elements or avatar area
+        if (target && (target.closest('button, a, input, textarea, select, [data-prevent-nav], .avatar-wrap'))) return;
+        // Navigate to thread for the whole card
+        openThread();
     }
 
 	function extractMentions(content: string): string[] {
@@ -509,6 +519,10 @@
 	function extractHashtags(content: string): string[] {
 		const hashtags = content.match(/#[a-zA-Z0-9_]+/g) || [];
 		return hashtags.map(tag => tag.substring(1)); // Remove #
+	}
+
+	function openHashtag(tag: string) {
+		try { goto(`/feed?tab=hashtags&tag=${encodeURIComponent(tag)}`); } catch {}
 	}
 
 	function hasContentWarning(): { enabled: boolean; reason?: string | undefined } {
@@ -528,6 +542,7 @@
     class="event-card {isPressed ? 'pressed' : ''} event-type-{event.kind}"
     ontouchstart={handleTouchStart}
     ontouchend={handleTouchEnd}
+    onclick={handleCardClick}
     role="article"
 >
     <!-- Card Header -->
@@ -551,7 +566,7 @@
 				{#if extractHashtags(event.content).length > 0}
 					<div class="hashtags">
 						{#each extractHashtags(event.content) as hashtag}
-							<span class="hashtag">#{hashtag}</span>
+							<button class="hashtag" onclick={(e)=>{ e.stopPropagation(); openHashtag(hashtag); }}>#{hashtag}</button>
 						{/each}
 					</div>
 				{/if}

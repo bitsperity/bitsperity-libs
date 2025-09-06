@@ -451,6 +451,15 @@ export class NostrUnchained {
       console.log(`Initialized signing with method: ${this.signingMethod}`);
     }
 
+    // Emit a global signer-changed signal for host apps (browser) and an auth-changed for backward-compat
+    try {
+      const method = this.getSigningInfo().method;
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('nostr:signer-changed', { detail: { method } }));
+        window.dispatchEvent(new CustomEvent('nostr:auth-changed', { detail: { method } }));
+      }
+    } catch {}
+
     // Auto-start universal gift wrap subscription after signing init
     // This ensures receiver side decrypts DMs without needing to open a conversation first
     try {

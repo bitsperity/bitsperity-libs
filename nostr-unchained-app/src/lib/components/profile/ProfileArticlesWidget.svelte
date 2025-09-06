@@ -1,6 +1,6 @@
 <script lang="ts">
+  // @ts-nocheck
   import { onMount } from 'svelte';
-  import { goto } from '$app/navigation';
 
   let { nostr, pubkey, limit = 3, className = '' }: { nostr: any; pubkey: string; limit?: number; className?: string } = $props();
 
@@ -37,12 +37,8 @@
     }
   }
 
-  function openAll() {
-    try { goto(`/articles?author=${pubkey}`); } catch {}
-  }
-  function openArticle(it: { d: string }) {
-    try { goto(`/articles/${pubkey}/${encodeURIComponent(it.d)}`); } catch {}
-  }
+  function openAll() { try { location.assign(`/articles?author=${pubkey}`); } catch {} }
+  function openArticle(it: { d: string }) { try { location.assign(`/articles/${pubkey}/${encodeURIComponent(it.d)}`); } catch {} }
 
   onMount(() => { load(); return () => { try { unsubscribe?.(); } catch {} }; });
 </script>

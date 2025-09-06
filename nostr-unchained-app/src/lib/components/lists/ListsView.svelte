@@ -57,7 +57,7 @@
       activeItems = [];
       if (ids.length === 0) return;
       activeLoading = true;
-      try { await nostr.sub().ids(ids).limit(ids.length).execute(); } catch {}
+      try { await nostr.sub().ids(ids).limit(ids.length).executeOnce({ closeOn: 'eose' }); } catch {}
       try { unsubItems && unsubItems(); } catch {}
       const q = nostr.query().ids(ids).limit(ids.length).execute();
       unsubItems = q.subscribe((evs: any[]) => { activeItems = evs || []; activeLoading = false; });

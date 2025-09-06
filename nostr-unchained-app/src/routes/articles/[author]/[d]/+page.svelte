@@ -1,14 +1,14 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { getService } from '$lib/services/ServiceContainer.js';
-  import { goto } from '$app/navigation';
-  import { renderMarkdownSafe } from '$lib/utils/markdown.ts';
+  import { renderMarkdownSafe } from '$lib/utils/markdown';
+  import BackHeader from '$lib/components/ui/BackHeader.svelte';
 
-  let { params }: { params: { author: string; d: string } } = $props();
+  export let params: { author: string; d: string };
 
-  let loading = $state(false);
-  let article: any = $state(null);
-  let html: string = $state('');
+  let loading = false;
+  let article: any = null;
+  let html: string = '';
   let notFoundTimer: any = null;
 
   function getTag(ev: any, key: string): string | undefined {
@@ -29,7 +29,8 @@
       const inst: any = await svc.getReadyInstance();
       try { await inst.connect?.(); } catch {}
       // Live subscription (narrowed by d tag)
-      try { await inst.sub().kinds([30023]).authors([params.author]).tags('d', [d]).execute(); } catch {}
+      // Single-shot: nur Cache füllen und dann schließen
+      try { await inst.sub().kinds([30023]).authors([params.author]).tags('d', [d]).executeOnce({ closeOn: 'eose' }); } catch {}
       const store = inst.query().kinds([30023]).authors([params.author]).execute();
       const unsub = store.subscribe(async (arr: any[]) => {
         const list = Array.isArray(arr) ? arr : [];
@@ -46,7 +47,11 @@
       try { if (notFoundTimer) clearTimeout(notFoundTimer); } catch {}
       notFoundTimer = setTimeout(() => { if (!article) loading = false; }, 1200);
       // auto unsubscribe on destroy
-      $effect(() => () => { try { unsub?.(); } catch {} });
+      // unsubscribe on destroy
+      // svelte5: use cleanup return
+      // but we keep simple try/catch for compatibility
+      // @ts-ignore
+      onDestroy(() => { try { unsub?.(); } catch {} });
     } catch { loading = false; }
   }
 
@@ -54,10 +59,7 @@
 </script>
 
 <div class="article-page">
-  <header class="article-header">
-    <button class="ghost" onclick={() => history.length > 1 ? history.back() : goto('/articles')}>←</button>
-    <h1>{article ? titleOf(article) : 'Article'}</h1>
-  </header>
+  <BackHeader title={article ? titleOf(article) : 'Article'} fallbackHref="/articles" sticky />
 
   {#if loading}
     <div class="hint">Loading…</div>
@@ -98,8 +100,7 @@
 
 <style>
   .article-page { padding: 0 0 2rem 0; display:flex; flex-direction:column; gap:1rem; }
-  .article-header { position:sticky; top:0; z-index:5; display:flex; align-items:center; gap:.75rem; padding: .75rem 1rem; backdrop-filter: blur(6px); background: rgba(2,6,23,0.45); }
-  .ghost { border:1px solid rgba(255,255,255,0.12); background: transparent; color:#cbd5e1; border-radius:8px; padding:4px 8px; cursor:pointer; }
+  /* Header styles consolidated in BackHeader */
   .hero { position:relative; min-height: 280px; display:flex; align-items:flex-end; }
   .hero .overlay { position:absolute; inset:0; background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.65) 100%); }
   .hero:not(.no-image) { background-image: var(--hero); background-size: cover; background-position: center; }

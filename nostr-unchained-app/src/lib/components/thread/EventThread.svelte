@@ -3,7 +3,7 @@
   import EventCard from '../terminal/EventCard.svelte';
   import { createEventDispatcher } from 'svelte';
 
-  let { nostr, rootId }: { nostr: any; rootId: string } = $props();
+  let { nostr, rootId, showToolbar = false }: { nostr: any; rootId: string; showToolbar?: boolean } = $props();
 
   let rootEvent: any = $state(null);
   let replies: any[] = $state([]);
@@ -25,15 +25,15 @@
     loading = true;
     cleanup();
     try {
-      // Fetch root
-      const rootHandle = await nostr.sub().ids([rootId]).limit(1).execute();
+      // Fetch root (single-shot, füllt Cache; UI liest aus Store)
+      const rootHandle = await nostr.sub().ids([rootId]).limit(1).executeOnce({ closeOn: 'eose' });
       const unsubRoot = rootHandle.store.subscribe((list: any[]) => {
         rootEvent = (list || [])[0] || null;
       });
       cleanupFns.push(() => { try { unsubRoot?.(); } catch {} });
       cleanupFns.push(() => { try { rootHandle.stop?.(); } catch {} });
 
-      // Subscribe replies (NIP-10: kind 1 with #e rootId)
+      // Subscribe replies (NIP-10: kind 1 with #e rootId) – live ist sinnvoll
       const rep = await nostr.sub().kinds([1]).tags('e', [rootId]).limit(1000).execute();
       const unsubRep = rep.store.subscribe((list: any[]) => {
         replies = (list || []).slice();
@@ -42,8 +42,9 @@
       cleanupFns.push(() => { try { unsubRep?.(); } catch {} });
       cleanupFns.push(() => { try { rep.stop?.(); } catch {} });
 
-      // Subscribe comments (NIP-22: kind 1111, filter client-side by E/e to rootId)
-      const com = await nostr.sub().kinds([1111]).limit(1000).execute();
+      // Comments (NIP-22): single-shot Cache-Fill reicht; UI zieht aus Store
+      try { await nostr.sub().kinds([1111]).limit(1000).executeOnce({ closeOn: 'eose' }); } catch {}
+      const com = { store: nostr.query().kinds([1111]).limit(1000).execute() } as any;
       const unsubCom = com.store.subscribe((list: any[]) => {
         try {
           const arr = Array.isArray(list) ? list : [];
@@ -85,12 +86,14 @@
 </script>
 
 <div class="thread">
-  <div class="thread-toolbar">
-    <button class="ghost-btn" onclick={() => dispatch('back', {})} title="Zurück">← Back</button>
-    {#if rootEvent}
-      <div class="toolbar-title">Thread · {rootEvent.id.slice(0,8)}…</div>
-    {/if}
-  </div>
+  {#if showToolbar}
+    <div class="thread-toolbar">
+      <button class="ghost-btn" onclick={() => dispatch('back', {})} title="Zurück">← Back</button>
+      {#if rootEvent}
+        <div class="toolbar-title">Thread · {rootEvent.id.slice(0,8)}…</div>
+      {/if}
+    </div>
+  {/if}
   {#if loading}
     <div class="loading"><div class="spinner"></div> <span>lädt…</span></div>
   {:else}

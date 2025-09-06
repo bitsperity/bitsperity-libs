@@ -7,11 +7,42 @@
 
 <script lang="ts">
 	import '../app.css';
-	// Keine clientseitigen Redirects – alles über hooks.server.ts
+	import AppShell from '$lib/components/ui/AppShell.svelte';
+	import { onMount } from 'svelte';
+	// Statische, globale Sidebar (einheitlich über alle Routen)
+	const sidebar = [
+		{ label: 'Feed', href: '/feed', icon: '📰' },
+		{ label: 'Explore', href: '/explore', icon: '🌐' },
+		{ label: 'Labels', href: '/labels', icon: '🏷️' },
+		{ label: 'Articles', href: '/articles', icon: '📚' },
+		{ label: 'Relays', href: '/relays', icon: '🔗' },
+		{ label: 'Compose', href: '/compose', icon: '📝' },
+		{ label: 'Messages', href: '/messages', icon: '💬' },
+		{ label: 'Lists', href: '/lists', icon: '🗂️' }
+	];
+	const topActions: Array<{ label: string; href: string }> = [];
+
+	// Backwards-compat: support old deep-links like ?thread=... or ?profile=...
+	onMount(() => {
+		try {
+			const params = new URLSearchParams(location.search);
+			const thread = params.get('thread');
+			const profile = params.get('profile');
+			if (thread) {
+				location.replace(`/threads/${thread}`);
+				return;
+			}
+			if (profile) {
+				location.replace(`/profiles/${profile}`);
+				return;
+			}
+		} catch {}
+	});
 </script>
 
-<!-- The slot where page content gets rendered -->
-<slot />
+<AppShell title="Nostr Unchained" {sidebar} {topActions}>
+	<slot />
+</AppShell>
 
 <style>
 	/* Global body styles - must use :global() in SvelteKit */

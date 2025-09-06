@@ -8,6 +8,7 @@
  */
 
 import { createEventDispatcher, onDestroy } from 'svelte';
+import { goto } from '$app/navigation';
 import { formatPubkey } from '../../utils/nostr.js';
 import { getProfileStore, unsubscribeFromProfile } from '../../utils/ProfileSubscriptionManager.js';
 
@@ -17,15 +18,19 @@ let {
   nostr = null, 
   size = 'md', 
   clickable = true, 
+  navigateOnClick = true,
   showOnlineStatus = false, 
-  className = '' 
+  className = '',
+  initialProfile = null
 }: {
   pubkey: string;
   nostr?: any;
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   clickable?: boolean;
+  navigateOnClick?: boolean;
   showOnlineStatus?: boolean;
   className?: string;
+  initialProfile?: any;
 } = $props();
 
 // Event dispatcher
@@ -34,7 +39,7 @@ const dispatch = createEventDispatcher<{
 }>();
 
 // Profile state
-let profile = $state(null);
+let profile = $state(initialProfile || null);
 let isLoading = $state(true);
 let error = $state(null);
 let profileStore: any = null;
@@ -45,12 +50,12 @@ const subscriberId = `avatar-${pubkey}-${Math.random().toString(36).substring(7)
 
 // Load profile data using aggregated subscription manager
 $effect(() => {
-  if (pubkey && nostr) {
+  if (pubkey) {
     try {
       isLoading = true;
       error = null;
       
-      // Use ProfileSubscriptionManager for optimized subscriptions
+      // For lightweight use (avatars), we prefer single-shot cache fill to avoid permanent subs
       profileStore = getProfileStore(pubkey, subscriberId);
       
       // Subscribe to profile changes
@@ -131,6 +136,9 @@ const fontSizeMap = {
 function handleClick() {
   if (!clickable || !pubkey) return;
   dispatch('profileClick', { pubkey });
+  if (navigateOnClick) {
+    try { goto(`/profiles/${pubkey}`); } catch {}
+  }
 }
 
 function handleKeydown(event: KeyboardEvent) {

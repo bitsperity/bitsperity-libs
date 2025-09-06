@@ -1,7 +1,6 @@
-import type { LayoutLoad } from './$types';
-
+/* @ts-nocheck */
 // Keine clientseitigen Redirects mehr – Server-Hook ist die Single Source of Truth
-export const load: LayoutLoad = async () => {
+export const load = async () => {
   return {};
 };
 

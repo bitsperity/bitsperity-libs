@@ -11,6 +11,7 @@ import type { ServiceResult } from '../types/app.js';
 import { createNostrError, createValidationError, errorProcessor } from '../utils/ErrorHandler.js';
 import { normalizeRecipientToHex } from '../utils/nostr.js';
 import { createContextLogger } from '../utils/Logger.js';
+import { initializeProfileManager } from '../utils/ProfileSubscriptionManager.js';
 
 // =============================================================================
 // Nostr Service Types
@@ -84,9 +85,19 @@ export class NostrService {
             ...(provider ? { signingProvider: provider } : {})
         };
         this.nostr = new NostrUnchained(base as any);
+        // Initialize shared profile subscription manager with the active instance
+        try { initializeProfileManager(this.nostr); } catch {}
         if (provider) {
             this.signingProvider = provider;
             try { await (this.nostr as any).initializeSigning(provider); } catch {}
+            // Broadcast signer-changed at creation time
+            try {
+                const method = (this.nostr as any)?.getSigningInfo?.()?.method || 'unknown';
+                if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('nostr:signer-changed', { detail: { method } }));
+                    window.dispatchEvent(new CustomEvent('nostr:auth-changed', { detail: { method } }));
+                }
+            } catch {}
         }
         try { await this.nostr.connect(); } catch {}
     }
@@ -111,6 +122,14 @@ export class NostrService {
 				await this.createInstance(provider);
 			} else {
 				await (this.nostr as any).initializeSigning(provider);
+				// Broadcast after updating existing instance
+				try {
+					const method = (this.nostr as any)?.getSigningInfo?.()?.method || 'unknown';
+					if (typeof window !== 'undefined') {
+						window.dispatchEvent(new CustomEvent('nostr:signer-changed', { detail: { method } }));
+						window.dispatchEvent(new CustomEvent('nostr:auth-changed', { detail: { method } }));
+					}
+				} catch {}
 			}
 			// Optional: connect eagerly; inbox subscription wird lazy via getDM().with() gestartet
 			try {
@@ -121,6 +140,14 @@ export class NostrService {
 					const info = (this.nostr as any)?.getSigningInfo?.();
 					if (info?.method && info.method !== 'unknown') {
 						this.logger.info(`Signer method active: ${info.method}`);
+						// Fire explicit auth change signals for UI reactivity
+						try {
+							if (typeof window !== 'undefined') {
+								window.dispatchEvent(new CustomEvent('nostr:signer-changed', { detail: { method: info.method } }));
+								window.dispatchEvent(new CustomEvent('nostr:auth-changed', { detail: { method: info.method } }));
+								try { localStorage.setItem('auth_changed', String(Date.now())); } catch {}
+							}
+						} catch {}
 					}
 				} catch {}
 		} catch (error) {
@@ -837,6 +864,8 @@ export class NostrService {
                 routing: this.routingMode
             };
             this.nostr = new NostrUnchained(base as any);
+            // Initialize shared profile subscription manager with the active instance
+            try { initializeProfileManager(this.nostr); } catch {}
             // If a signing provider was set earlier, re-initialize signing on lazy init
             try {
                 if (this.signingProvider) {
@@ -861,6 +890,8 @@ export class NostrService {
             } catch {}
             try { (this.nostr as any).connect?.(); } catch {}
         }
+        // Ensure profile manager is initialized even if instance already existed
+        try { initializeProfileManager(this.nostr); } catch {}
         return this.nostr;
     }
 
@@ -906,6 +937,8 @@ export class NostrService {
             }
         } catch {}
         try { await (this.nostr as any).connect?.(); } catch {}
+        // Ensure shared profile subscription manager is always initialized
+        try { initializeProfileManager(this.nostr); } catch {}
         return this.nostr;
     }
 }

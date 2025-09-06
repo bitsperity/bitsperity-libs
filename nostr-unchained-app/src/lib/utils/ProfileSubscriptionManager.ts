@@ -75,17 +75,19 @@ class ProfileSubscriptionManager {
   requestProfile(pubkey: string, subscriberId: string) {
     if (!this.nostr) {
       logger.warn('NostrUnchained not initialized');
-      return writable(null);
+      // Use undefined to signal loading to consumers
+      return writable(undefined);
     }
 
     // Ensure cache bucket exists with ONE shared store per pubkey
     let cached = this.profileCache[pubkey];
     if (!cached) {
       cached = this.profileCache[pubkey] = {
-        data: null,
+        data: undefined,
         timestamp: 0,
         lastRequested: Date.now(),
-        subscription: writable(null)
+        // Start with undefined to indicate loading state for new subscribers
+        subscription: writable(undefined)
       };
     } else {
       cached.lastRequested = Date.now();

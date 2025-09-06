@@ -237,6 +237,58 @@ export class SubBuilder extends FilterBuilder {
     };
   }
 
+  /**
+   * Execute a single-shot subscription that auto-unsubscribes.
+   * closeOn:
+   *  - 'eose' (default): unsubscribe after EOSE is received
+   *  - 'first-event': unsubscribe after the first matching event arrives
+   */
+  async executeOnce(opts?: { closeOn?: 'eose' | 'first-event' }): Promise<SubscriptionHandle> {
+    const closeOn = opts?.closeOn || 'eose';
+    const targetRelays = this.relayUrls.length > 0 ? this.relayUrls : undefined;
+
+    // Reuse shared subscription for deduplication and batching benefits
+    const sharedSub = await this.subscriptionManager.getOrCreateSubscription([this.filter], targetRelays);
+
+    // Local listener which will remove itself and trigger cleanup
+    const listenerId = sharedSub.addListener({
+      onEvent: (event: any) => {
+        // Add to cache immediately
+        this.cache.addEvent(event);
+        if (closeOn === 'first-event') {
+          // Remove our listener and cleanup; underlying sub stays if others listen
+          const noListeners = sharedSub.removeListener(listenerId);
+          if (noListeners && this.subscriptionManager?.cleanupSharedSubscriptions) {
+            this.subscriptionManager.cleanupSharedSubscriptions().catch(()=>{});
+          }
+        }
+      },
+      onEose: (_relay: string) => {
+        if (closeOn === 'eose') {
+          const noListeners = sharedSub.removeListener(listenerId);
+          if (noListeners && this.subscriptionManager?.cleanupSharedSubscriptions) {
+            this.subscriptionManager.cleanupSharedSubscriptions().catch(()=>{});
+          }
+        }
+      }
+    });
+
+    // Build a cache-backed store for consumers
+    const store = new UniversalNostrStore(this.cache, this.filter);
+
+    return {
+      id: sharedSub.key,
+      store,
+      stop: async () => {
+        const noListeners = sharedSub.removeListener(listenerId);
+        if (noListeners && this.subscriptionManager?.cleanupSharedSubscriptions) {
+          await this.subscriptionManager.cleanupSharedSubscriptions();
+        }
+      },
+      isActive: () => sharedSub.hasListeners()
+    };
+  }
+
   private async executeNonBatched(targetRelays?: string[]): Promise<SubscriptionHandle> {
     const sharedSub = await this.subscriptionManager.getOrCreateSubscription([this.filter], targetRelays);
     const listenerId = sharedSub.addListener({

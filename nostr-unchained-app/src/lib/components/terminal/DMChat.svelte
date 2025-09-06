@@ -47,7 +47,7 @@
 			}
 			try { await nostr.connect(); } catch {}
 			await nostr.startUniversalGiftWrapSubscription();
-			console.log('🎁 Gift wrap subscription already active - skipping');
+			if (localStorage.getItem('nostr_debug') === '1') console.log('🎁 Gift wrap subscription already active - skipping');
 		} catch {}
 		
 		// No need to manually decrypt – UniversalEventCache liefert bereits entpackte Rumors (kind 14)
@@ -61,7 +61,7 @@
             (dmChatElement as any).addEventListener('openConversation', (event: any) => {
                 const { pubkey } = event?.detail || {};
 				if (pubkey) {
-					console.log('🎯 Auto-opening conversation with:', pubkey);
+					if (localStorage.getItem('nostr_debug') === '1') console.log('🎯 Auto-opening conversation with:', pubkey);
 					// Add to conversations if not already there
 					if (!conversations.find(c => c.partnerId === pubkey)) {
 						conversations.unshift({
@@ -95,11 +95,11 @@
 
 			// Initiale Füllung aus Cache
 			updateConversationsFromEvents(inboxStore.current || []);
-			console.log('📥 Inbox (kind14) initial:', inboxStore.current?.length || 0);
+			if (localStorage.getItem('nostr_debug') === '1') console.log('📥 Inbox (kind14) initial:', inboxStore.current?.length || 0);
 
 			// Live-Updates
 			inboxStore.subscribe((events: any[]) => {
-				console.log('📨 Inbox (kind14) update:', events?.length || 0);
+				if (localStorage.getItem('nostr_debug') === '1') console.log('📨 Inbox (kind14) update:', events?.length || 0);
 				updateConversationsFromEvents(events);
 			});
         } catch (error) {
@@ -137,13 +137,15 @@
 				.tags('p', [authState.publicKey])
 				.execute();
 			lastWrapCount = wrapStore.current?.length || 0;
-			console.log('📥 GiftWraps (1059) initial:', lastWrapCount);
+			if (localStorage.getItem('nostr_debug') === '1') console.log('📥 GiftWraps (1059) initial:', lastWrapCount);
 			wrapStore.subscribe((events: any[]) => {
 				const count = events?.length || 0;
 				if (count !== lastWrapCount) {
 					const recent = (events || []).slice(-3);
-					console.log('📨 GiftWraps (1059) update:', count);
-					recent.forEach((e: any, i: number) => console.log(`   • wrap#${count-3+i+1}: ${String(e.id).slice(0,8)}.. from ${String(e.pubkey).slice(0,8)}..`));
+					if (localStorage.getItem('nostr_debug') === '1') {
+						console.log('📨 GiftWraps (1059) update:', count);
+						recent.forEach((e: any, i: number) => console.log(`   • wrap#${count-3+i+1}: ${String(e.id).slice(0,8)}.. from ${String(e.pubkey).slice(0,8)}..`));
+					}
 					lastWrapCount = count;
 				}
 			});
@@ -156,7 +158,7 @@
 					.tags('p', [authState.publicKey])
 					.limit(100)
 					.execute();
-				console.log('📡 Live 1059 sub (component) started');
+				if (localStorage.getItem('nostr_debug') === '1') console.log('📡 Live 1059 sub (component) started');
 			} catch (e) {
 				console.warn('Live 1059 sub failed:', e);
 			}
@@ -204,7 +206,7 @@
 		try {
 			// 🎁 SHOWCASE: Lazy Loading Magic! 
 			// This is when gift wrap subscription starts!
-			console.log('🎁 Triggering lazy gift wrap subscription with getDM().with()');
+			if (localStorage.getItem('nostr_debug') === '1') console.log('🎁 Triggering lazy gift wrap subscription with getDM().with()');
 			
 			// Use the correct API: getDM() returns DMModule or undefined
 			const dmModule = nostr.getDM();
@@ -218,7 +220,7 @@
 			// Subscribe to the reactive conversation store  
 			if (conversation) {
 				conversation.subscribe((conversationMessages: any[]) => {
-					console.log('💬 Reactive DM messages:', conversationMessages.length);
+					if (localStorage.getItem('nostr_debug') === '1') console.log('💬 Reactive DM messages:', conversationMessages.length);
 					
 					// Convert DMMessage format to our UI format
 					messages = conversationMessages.map((msg: any) => ({
@@ -251,17 +253,17 @@
 		if (!newMessage.trim() || !activeConversation || !activeConversationInstance) return;
 		
 		try {
-			console.log('🔍 DMChat sendMessage debug:', {
+			if (localStorage.getItem('nostr_debug') === '1') console.log('🔍 DMChat sendMessage debug:', {
 				hasActiveConversation: !!activeConversationInstance,
 				hasSendMethod: !!(activeConversationInstance?.send),
 				messageToSend: newMessage.trim()
 			});
 			
 			// Use the reactive conversation instance to send message
-			console.log('🚀 Sending message via conversation instance...');
+			if (localStorage.getItem('nostr_debug') === '1') console.log('🚀 Sending message via conversation instance...');
 			const result = await activeConversationInstance.send(newMessage.trim());
 			
-			console.log('📤 Send result:', result);
+			if (localStorage.getItem('nostr_debug') === '1') console.log('📤 Send result:', result);
 			
 			if (result && result.success) {
 				newMessage = '';

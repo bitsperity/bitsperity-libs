@@ -303,6 +303,45 @@ export class SubscriptionManager {
   }
 
   /**
+   * Get an overview of all shared subscriptions for diagnostics
+   * Returns minimal, high-signal data only (no bloat)
+   */
+  getSharedSubscriptionsOverview(): Array<{
+    key: string;
+    subscriptionId?: string;
+    stats: {
+      listenerCount: number;
+      eventCount: number;
+      age: number;
+    };
+    filters: Filter[];
+    relays: string[];
+  }> {
+    const list: Array<{
+      key: string;
+      subscriptionId?: string;
+      stats: { listenerCount: number; eventCount: number; age: number };
+      filters: Filter[];
+      relays: string[];
+    }> = [];
+
+    for (const [key, shared] of this.sharedSubscriptions.entries()) {
+      const s = shared.getStats();
+      list.push({
+        key,
+        subscriptionId: shared.getSubscriptionId(),
+        stats: { listenerCount: s.listenerCount, eventCount: s.eventCount, age: s.age },
+        filters: s.filters,
+        relays: s.relays,
+      });
+    }
+
+    // Sort by listener count desc
+    list.sort((a, b) => b.stats.listenerCount - a.stats.listenerCount);
+    return list;
+  }
+
+  /**
    * Create a new subscription with given filters
    * Performance requirement: <100ms subscription creation
    */

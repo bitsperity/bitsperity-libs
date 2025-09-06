@@ -424,6 +424,39 @@
 	function removeTag(tag: string) {
 		selectedTags = selectedTags.filter(t => t !== tag);
 	}
+
+	// Smart single-field tag parser (e.g. #bitcoin, @npub..., e:ID, a:ADDR, t:value, p:hex)
+	let smartTagInput = $state('');
+	function addSmartTag() {
+		const raw = (smartTagInput || '').trim();
+		if (!raw) return;
+		let type = '';
+		let value = '';
+		try {
+			if (raw.startsWith('#')) {
+				type = 't';
+				value = raw.slice(1);
+			} else if (raw.startsWith('@')) {
+				const key = raw.slice(1);
+				const norm = normalizeRecipientToHex(key);
+				if (!norm.ok || !norm.hex) return;
+				type = 'p';
+				value = norm.hex;
+			} else if (/^[a-zA-Z]:/.test(raw)) {
+				const idx = raw.indexOf(':');
+				type = raw.slice(0, idx);
+				value = raw.slice(idx + 1);
+			} else {
+				// fallback: use current or default to t
+				type = customTagType || tagType || 't';
+				value = raw;
+			}
+			if (!type || !value) return;
+			customTagType = type;
+			addTag(value);
+			smartTagInput = '';
+		} catch {}
+	}
 	
 	function handleProfileClick(detail: { pubkey: string }) {
         console.log('🎯 Profile click in DevExplorer', { pubkey: detail.pubkey });
@@ -597,6 +630,13 @@
         <div class="filter-section">
             <label class="filter-label" for="tag-value-input">Tags (any tag type + values)</label>
 			<div class="input-group">
+				<input
+					type="text"
+					placeholder="#tag, @npub..., e:ID, a:ADDR"
+					class="filter-input"
+					bind:value={smartTagInput}
+					onkeydown={(e)=> e.key==='Enter' && addSmartTag()}
+				/>
 				<input
 					type="text"
 					bind:value={customTagType}
@@ -1181,6 +1221,11 @@
 		cursor: pointer;
 		font-size: var(--text-xs);
 		transition: all var(--transition-fast);
+	}
+
+	/* Smart tag input first field spans full width on small screens */
+	@media (max-width: 768px) {
+		.input-group > .filter-input:first-child { width: 100%; }
 	}
 
 	.quick-tag:hover {

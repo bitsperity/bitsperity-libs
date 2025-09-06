@@ -197,11 +197,14 @@ async function startLive() {
     let b = nostr.sub();
     if (currentTab === 'reposts') {
       b = b.kinds([6]).authors([profilePubkey]); // NIP-18
+      try { await nostr.sub().kinds([6]).authors([profilePubkey]).limit(PAGE_SIZE).executeOnce({ closeOn: 'eose' }); } catch {}
     } else if (currentTab === 'likes') {
       b = b.kinds([7]).authors([profilePubkey]); // NIP-25
+      try { await nostr.sub().kinds([7]).authors([profilePubkey]).limit(PAGE_SIZE).executeOnce({ closeOn: 'eose' }); } catch {}
     } else {
       // notes / replies are both kind 1; split in UI
       b = b.kinds([1]).authors([profilePubkey]); // NIP-01
+      try { await nostr.sub().kinds([1]).authors([profilePubkey]).limit(PAGE_SIZE).executeOnce({ closeOn: 'eose' }); } catch {}
     }
     b = b.limit(PAGE_SIZE);
     const handle = await b.execute();

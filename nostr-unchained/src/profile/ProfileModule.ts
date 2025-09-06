@@ -53,10 +53,32 @@ export class ProfileModule {
    * Returns UniversalNostrStore with automatic caching and live updates
    */
   get(pubkey: string): UniversalNostrStore<UserProfile | null> {
-    // Start subscription for live updates - deduplication handled by SubscriptionManager
+    // Default: live mode – subscribe to updates
     this.startProfileSubscription(pubkey);
-    
-    // Return reactive store based on cache
+    return this.config.nostr.query()
+      .kinds([0])
+      .authors([pubkey])
+      .limit(1)
+      .execute()
+      .map(events => this.parseProfileEvents(events, pubkey));
+  }
+
+  /**
+   * Single-shot profile fetch (cache-fill, then auto-unsubscribe)
+   * Returns a reactive store fed from cache, but the underlying subscription
+   * is closed automatically (EOSE-based) to avoid hitting relay sub limits.
+   */
+  getOnce(pubkey: string): UniversalNostrStore<UserProfile | null> {
+    // Start an EOSE-based once subscription to fill cache
+    try {
+      this.config.nostr.sub()
+        .kinds([0])
+        .authors([pubkey])
+        .limit(1)
+        .executeOnce({ closeOn: 'eose' })
+        .catch(()=>{});
+    } catch {}
+
     return this.config.nostr.query()
       .kinds([0])
       .authors([pubkey])

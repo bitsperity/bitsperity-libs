@@ -27,6 +27,9 @@ export interface CacheStatistics {
   totalEvents: number;
   memoryUsageMB: number;
   subscribersCount: number;
+  // Distribution metrics
+  byKind?: Record<number, number>; // counts per kind
+  profileCount?: number; // convenience: number of kind 0 profiles
   
   // Index metrics
   kindIndexSize: number;
@@ -246,12 +249,21 @@ export class UniversalEventCache {
   getStatistics(): CacheStatistics {
     const now = Date.now();
     const totalQueries = this.stats.queryCount;
+    // Build byKind distribution
+    const byKind: Record<number, number> = {};
+    this.eventsByKind.forEach((set, kind) => {
+      byKind[kind] = set.size;
+    });
+    const profileCount = byKind[0] || 0;
     
     return {
       // Basic metrics
       totalEvents: this.events.size,
       memoryUsageMB: this.estimateMemoryUsage(),
       subscribersCount: this.subscribers.size,
+      // Distribution metrics
+      byKind,
+      profileCount,
       
       // Index metrics
       kindIndexSize: this.eventsByKind.size,

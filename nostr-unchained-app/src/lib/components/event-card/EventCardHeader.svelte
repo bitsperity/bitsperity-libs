@@ -78,13 +78,16 @@
   </button>
 </div>
 <div class="author-info">
-  <ProfileAvatar 
-    pubkey={event.pubkey}
-    {nostr}
-    size="sm"
-    clickable={true}
-    on:profileClick={(e) => dispatch('profileClick', e.detail)}
-  />
+  <div class="avatar-wrap" data-prevent-nav on:click|stopPropagation>
+    <ProfileAvatar 
+      pubkey={event.pubkey}
+      {nostr}
+      size="sm"
+      clickable={true}
+      navigateOnClick={true}
+      on:profileClick={(e) => dispatch('profileClick', e.detail)}
+    />
+  </div>
   <KeyDisplay 
     hexKey={event.pubkey}
     variant="compact"
