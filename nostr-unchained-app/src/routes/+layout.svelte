@@ -15,6 +15,7 @@
 		{ label: 'Explore', href: '/explore', icon: '🌐' },
 		{ label: 'Labels', href: '/labels', icon: '🏷️' },
 		{ label: 'Articles', href: '/articles', icon: '📚' },
+		{ label: 'Chat', href: '/chat/public', icon: '💬' },
 		{ label: 'Relays', href: '/relays', icon: '🔗' },
 		{ label: 'Compose', href: '/compose', icon: '📝' },
 		{ label: 'Messages', href: '/messages', icon: '💬' },
