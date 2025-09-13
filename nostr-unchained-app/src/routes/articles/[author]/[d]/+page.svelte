@@ -4,7 +4,7 @@
   import { renderMarkdownSafe } from '$lib/utils/markdown';
   import BackHeader from '$lib/components/ui/BackHeader.svelte';
 
-  export let params: { author: string; d: string };
+  let { params }: { params: { author: string; d: string } } = $props();
 
   let loading = false;
   let article: any = null;

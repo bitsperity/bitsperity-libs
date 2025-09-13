@@ -3,7 +3,7 @@
   import EventThread from '$lib/components/thread/EventThread.svelte';
   import BackHeader from '$lib/components/ui/BackHeader.svelte';
   import { getService } from '$lib/services/ServiceContainer.js';
-  export let params: { id: string };
+  let { params }: { params: { id: string } } = $props();
 
   let nostr: any = null;
   onMount(async () => { try { const svc: any = await getService('nostr'); nostr = svc.getInstance(); await nostr.connect?.(); } catch {} });

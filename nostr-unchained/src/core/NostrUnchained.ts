@@ -593,6 +593,63 @@ export class NostrUnchained {
   }
 
   /**
+   * Smart publish to specific relays: ensures connections (one-shot) and cleans up afterwards
+   */
+  async publishToRelaysSmart(
+    event: UnsignedEvent,
+    relayUrls: string[],
+    options?: { resolveOnFirstOk?: boolean; minAcks?: number; overallTimeoutMs?: number; removeAfter?: boolean }
+  ): Promise<PublishResult> {
+    if (!this.signingProvider) {
+      throw new Error('No signing provider available. Call initializeSigning() first.');
+    }
+
+    // Validate and sign
+    const validation = EventBuilder.validateEvent(event);
+    if (!validation.valid) {
+      throw new Error(`Invalid event: ${validation.errors.join(', ')}`);
+    }
+    const id = EventBuilder.calculateEventId(event);
+    const signature = await this.signingProvider.signEvent(event);
+    const signedEvent: NostrEvent = { ...event, id, sig: signature };
+
+    // Normalize relay urls (strip trailing slashes handled by router elsewhere; here trust caller)
+    const targets = Array.from(new Set(relayUrls.filter(Boolean)));
+
+    // Track which were added as temporary
+    const preExisting = new Set(this.relayManager['relayUrls']);
+    const newlyAdded = targets.filter((u) => !preExisting.has(u));
+    if (newlyAdded.length) {
+      this.relayManager.addRelays(newlyAdded, { temporary: true });
+    }
+
+    // Ensure connections are up (for one-shot semantics)
+    await this.relayManager.ensureConnected(targets);
+
+    // Publish
+    const relayResults = await (this.relayManager as any).publishToRelays(signedEvent, targets, options);
+    const success = relayResults.some((r: any) => r.success);
+
+    // Cleanup temporary connections (disconnect and remove) if requested or by default for newly added
+    const toCleanup = targets.filter((u) => newlyAdded.includes(u));
+    if (toCleanup.length) {
+      try { await this.relayManager.disconnectRelays(toCleanup); } catch {}
+      try { this.relayManager.removeRelays(toCleanup); } catch {}
+    }
+
+    const base = {
+      success,
+      eventId: success ? signedEvent.id : undefined,
+      event: success ? signedEvent : undefined,
+      relayResults,
+      timestamp: Date.now(),
+      error: success ? undefined : { message: 'Failed to publish to any relay', retryable: true }
+    } as any;
+    if (this.config.debug) base.debug = { targetRelays: targets };
+    return base;
+  }
+
+  /**
    * Publish an event
    */
   async publish(event: UnsignedEvent): Promise<PublishResult>;
@@ -620,7 +677,23 @@ export class NostrUnchained {
     const signature = await this.signingProvider.signEvent(event);
     const signedEvent: NostrEvent = { ...event, id, sig: signature };
     
-    // Determine target relays
+    // Auto-select relays for routing-sensitive NIPs (e.g., NIP-72, DMs)
+    let autoTargets: string[] | null = null;
+    try {
+      autoTargets = await this.autoSelectRelaysForEvent(event as any);
+    } catch {}
+
+    // If autoTargets were found, use smart one-shot publish to those
+    if (Array.isArray(autoTargets) && autoTargets.length > 0) {
+      return await this.publishToRelaysSmart(event, autoTargets);
+    }
+
+    // If event kind is routing-sensitive and we could not determine relays → error (DX: fail fast)
+    if (this.isRoutingSensitiveEventKind((event as any).kind)) {
+      throw new Error('No target relay known for routing-sensitive event. Ensure markers (NIP-72) or recipient relay list (NIP-65) are available.');
+    }
+
+    // Otherwise, determine target relays from connected set (optionally via router)
     let targetRelays = this.relayManager.connectedRelays;
     try {
       if (this.relayRouter && this.config.routing === 'nip65') {
@@ -675,7 +748,21 @@ export class NostrUnchained {
       throw new Error('Invalid signed event: Missing required fields (id, sig, pubkey)');
     }
     
-    // Determine target relays
+    // Auto-select relays for routing-sensitive NIPs (e.g., NIP-72, DMs)
+    let autoTargets: string[] | null = null;
+    try {
+      autoTargets = await this.autoSelectRelaysForEvent(signedEvent as any);
+    } catch {}
+
+    if (Array.isArray(autoTargets) && autoTargets.length > 0) {
+      return await this.publishSignedToRelaysSmart(signedEvent, autoTargets);
+    }
+
+    if (this.isRoutingSensitiveEventKind((signedEvent as any).kind)) {
+      throw new Error('No target relay known for routing-sensitive event. Ensure markers (NIP-72) or recipient relay list (NIP-65) are available.');
+    }
+
+    // Otherwise, determine target relays from connected set (optionally via router)
     let targetRelays = this.relayManager.connectedRelays;
     try {
       if (this.relayRouter && this.config.routing === 'nip65') {
@@ -716,6 +803,164 @@ export class NostrUnchained {
     }
     
     return result;
+  }
+
+  // Heuristik: automatische Relay-Auswahl für spezielle Kinds (NIP‑72)
+  private async autoSelectRelaysForEvent(ev: { kind: number; tags: string[][]; content?: string }): Promise<string[] | null> {
+    try {
+      if (!ev || !Array.isArray(ev.tags)) return null;
+      // Community definition (34550): use author marker relay if provided
+      if (ev.kind === 34550) {
+        const authorRelay = (ev.tags || []).find((t: string[]) => t[0] === 'relay' && t[2] === 'author')?.[1];
+        if (authorRelay) return [authorRelay];
+        // fallback: any relay tag
+        const anyRelay = (ev.tags || []).find((t: string[]) => t[0] === 'relay')?.[1];
+        return anyRelay ? [anyRelay] : null;
+      }
+      // Community posts (1111): resolve requests relay via community address in tags
+      if (ev.kind === 1111) {
+        const a = (ev.tags || []).find((t: string[]) => t[0] === 'A' || t[0] === 'a');
+        const addr = Array.isArray(a) ? a[1] : null; // 34550:<author>:<d>
+        if (addr && addr.startsWith('34550:')) {
+          const parts = addr.split(':');
+          const author = String(parts[1] || '');
+          const d = String(parts[2] || '');
+          try {
+            const markers = await this.communities.resolveRelays(author, d, 800) as any;
+            if (markers?.requests) return [markers.requests];
+          } catch {}
+        }
+        // fallback: use optional relay url within the A/a tag if present
+        if (Array.isArray(a) && typeof a[2] === 'string' && a[2]) return [a[2]];
+        return null;
+      }
+      // Approvals (4550): resolve approvals relay via community address in tags
+      if (ev.kind === 4550) {
+        const a = (ev.tags || []).find((t: string[]) => t[0] === 'a');
+        const addr = Array.isArray(a) ? a[1] : null;
+        if (addr && addr.startsWith('34550:')) {
+          const [_, authorRaw, dRaw] = addr.split(':');
+          const author = String(authorRaw || '');
+          const d = String(dRaw || '');
+          try {
+            const markers = await this.communities.resolveRelays(author, d, 800) as any;
+            if (markers?.approvals) return [markers.approvals];
+          } catch {}
+        }
+        // fallback: optional relay url in 'a' tag
+        if (Array.isArray(a) && typeof a[2] === 'string' && a[2]) return [a[2]];
+        return null;
+      }
+      // DMs (NIP‑17/legacy/NIP‑59 wraps): prefer recipient relay lists (NIP‑65)
+      if (ev.kind === 4 || ev.kind === 14 || ev.kind === 1059) {
+        const recipients = (ev.tags || [])
+          .filter((t: string[]) => Array.isArray(t) && t[0] === 'p' && typeof t[1] === 'string')
+          .map((t) => String(t[1]))
+          .filter((v) => !!v);
+        if (!recipients.length) return null;
+        const targets = await this.resolveRecipientsPreferredRelays(recipients, 1000);
+        return targets.length ? targets : null;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  private isRoutingSensitiveEventKind(kind: number): boolean {
+    return kind === 34550 || kind === 1111 || kind === 4550 || kind === 4 || kind === 14 || kind === 1059;
+  }
+
+  /** Resolve recipients' preferred relays using their NIP‑65 lists (blocking with timeout). */
+  private async resolveRecipientsPreferredRelays(pubkeys: string[], timeoutMs: number = 1000): Promise<string[]> {
+    const allTargets = new Set<string>();
+    for (const pk of Array.from(new Set(pubkeys || []))) {
+      try {
+        const list = await this.resolveRelayListForAuthor(pk, timeoutMs);
+        // Prefer read and both (where the user likely reads from); include write as well for safety
+        [...(list.read || []), ...(list.both || []), ...(list.write || [])].forEach((u) => { if (u) allTargets.add(String(u)); });
+      } catch {}
+    }
+    return Array.from(allTargets);
+  }
+
+  /** Blockingly resolve NIP‑65 relay list for an author using the RelayListModule store. */
+  private async resolveRelayListForAuthor(pubkey: string, timeoutMs: number = 1000): Promise<{ read: string[]; write: string[]; both: string[] }> {
+    try {
+      const store: any = this.relayList.get(pubkey);
+      // Try current snapshot first
+      let current = (store as any).current;
+      if (current && typeof current === 'object' && (Array.isArray(current.read) || Array.isArray(current.write) || Array.isArray(current.both))) {
+        return { read: current.read || [], write: current.write || [], both: current.both || [] };
+      }
+      // Wait briefly for store to emit
+      return await new Promise((resolve, reject) => {
+        let done = false;
+        let timer: any;
+        try {
+          const unsub = store.subscribe((value: any) => {
+            if (done) return;
+            if (value && (Array.isArray(value.read) || Array.isArray(value.write) || Array.isArray(value.both))) {
+              done = true; try { clearTimeout(timer); } catch {}
+              try { unsub && unsub(); } catch {}
+              resolve({ read: value.read || [], write: value.write || [], both: value.both || [] });
+            }
+          });
+          timer = setTimeout(() => {
+            if (done) return;
+            done = true;
+            try { unsub && unsub(); } catch {}
+            reject(new Error('Timeout resolving relay list'));
+          }, Math.max(200, timeoutMs));
+        } catch (e) {
+          reject(e);
+        }
+      });
+    } catch (e) {
+      throw e;
+    }
+  }
+
+  /**
+   * Smart publish for already signed events to specific relays (one-shot connect/cleanup)
+   */
+  async publishSignedToRelaysSmart(
+    signedEvent: NostrEvent,
+    relayUrls: string[],
+    options?: { resolveOnFirstOk?: boolean; minAcks?: number; overallTimeoutMs?: number }
+  ): Promise<PublishResult> {
+    // Basic validation
+    if (!signedEvent?.id || !signedEvent?.sig || !signedEvent?.pubkey) {
+      throw new Error('Invalid signed event: Missing required fields (id, sig, pubkey)');
+    }
+
+    const targets = Array.from(new Set(relayUrls.filter(Boolean)));
+    const preExisting = new Set(this.relayManager['relayUrls']);
+    const newlyAdded = targets.filter((u) => !preExisting.has(u));
+    if (newlyAdded.length) {
+      this.relayManager.addRelays(newlyAdded, { temporary: true });
+    }
+    await this.relayManager.ensureConnected(targets);
+
+    const relayResults = await (this.relayManager as any).publishToRelays(signedEvent, targets, options);
+    const success = relayResults.some((r: any) => r.success);
+
+    const toCleanup = targets.filter((u) => newlyAdded.includes(u));
+    if (toCleanup.length) {
+      try { await this.relayManager.disconnectRelays(toCleanup); } catch {}
+      try { this.relayManager.removeRelays(toCleanup); } catch {}
+    }
+
+    const base = {
+      success,
+      eventId: success ? signedEvent.id : undefined,
+      event: success ? signedEvent : undefined,
+      relayResults,
+      timestamp: Date.now(),
+      error: success ? undefined : { message: 'Failed to publish to any relay', retryable: true }
+    } as any;
+    if (this.config.debug) base.debug = { targetRelays: targets };
+    return base;
   }
 
   // ------------- Internal helpers -------------

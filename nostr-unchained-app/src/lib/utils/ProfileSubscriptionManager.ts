@@ -40,6 +40,7 @@ interface ProfileCache {
 
 class ProfileSubscriptionManager {
   private nostr: any = null;
+  private initializedWith: any = null;
   private requestQueue = new Set<string>();
   private activeRequests = new Map<string, ProfileRequest>();
   private profileCache: ProfileCache = {};
@@ -65,28 +66,30 @@ class ProfileSubscriptionManager {
    * Initialize with NostrUnchained instance
    */
   initialize(nostrInstance: any) {
+    // Avoid noisy re-initialization and only react when instance actually changes
+    if (this.nostr === nostrInstance && this.initializedWith === nostrInstance) {
+      return;
+    }
     this.nostr = nostrInstance;
+    this.initializedWith = nostrInstance;
     logger.info('ProfileSubscriptionManager initialized');
+    // If there are pending requests from pre-init phase, process them now
+    if (this.requestQueue.size > 0 || this.activeRequests.size > 0) {
+      this.scheduleBatchRequest();
+    }
   }
 
   /**
    * Request a profile - returns a reactive store
    */
   requestProfile(pubkey: string, subscriberId: string) {
-    if (!this.nostr) {
-      logger.warn('NostrUnchained not initialized');
-      // Use undefined to signal loading to consumers
-      return writable(undefined);
-    }
-
-    // Ensure cache bucket exists with ONE shared store per pubkey
+    // Always create or reuse a shared store per pubkey, even before nostr is ready
     let cached = this.profileCache[pubkey];
     if (!cached) {
       cached = this.profileCache[pubkey] = {
         data: undefined,
         timestamp: 0,
         lastRequested: Date.now(),
-        // Start with undefined to indicate loading state for new subscribers
         subscription: writable(undefined)
       };
     } else {
@@ -109,7 +112,7 @@ class ProfileSubscriptionManager {
       active.subscribers.add(subscriberId);
     }
 
-    // Schedule batch processing
+    // Schedule batch processing (will defer until nostr is initialized)
     this.scheduleBatchRequest();
 
     // Serve existing data immediately via the shared store
@@ -158,6 +161,13 @@ class ProfileSubscriptionManager {
    */
   private async processBatchRequest() {
     if (this.requestQueue.size === 0) return;
+
+    // If nostr is not ready yet, try again shortly without clearing the queue
+    if (!this.nostr) {
+      // Re-arm the scheduler to try again soon
+      this.scheduleBatchRequest();
+      return;
+    }
 
     const batch = Array.from(this.requestQueue).slice(0, this.MAX_BATCH_SIZE);
     this.requestQueue.clear();

@@ -53,6 +53,8 @@ export interface RelayConnection {
   isAuthenticated?: boolean;
   // Last AUTH event id sent to this relay
   lastAuthEventId?: string;
+  // Mark connection as temporary (eligible for removal after one-shot publish)
+  temporary?: boolean;
 }
 
 export class RelayManager {
@@ -109,6 +111,91 @@ export class RelayManager {
     return Array.from(this.connections.entries())
       .filter(([_, conn]) => conn.state === 'connected')
       .map(([url, _]) => url);
+  }
+
+  /**
+   * Add a relay to the manager (no connection is opened yet)
+   */
+  addRelay(url: string, options: { temporary?: boolean } = {}): boolean {
+    if (this.connections.has(url)) return false;
+    this.connections.set(url, { url, state: 'disconnected', temporary: !!options.temporary });
+    if (this.debug) {
+      console.log(`Added ${options.temporary ? 'temporary ' : ''}relay: ${url}`);
+    }
+    return true;
+  }
+
+  /**
+   * Add multiple relays; returns the subset that were newly added
+   */
+  addRelays(relayUrls: string[], options: { temporary?: boolean } = {}): string[] {
+    const added: string[] = [];
+    for (const url of relayUrls) {
+      if (!this.connections.has(url)) {
+        this.connections.set(url, { url, state: 'disconnected', temporary: !!options.temporary });
+        added.push(url);
+      }
+    }
+    if (this.debug && added.length) {
+      console.log(`Added ${options.temporary ? 'temporary ' : ''}relays:`, added);
+    }
+    return added;
+  }
+
+  /**
+   * Ensure all given relays are connected (assumes they are configured)
+   */
+  async ensureConnected(relayUrls: string[]): Promise<void> {
+    const tasks = relayUrls.map(async (url) => {
+      const conn = this.connections.get(url);
+      if (!conn) throw new Error(`Relay ${url} not configured`);
+      if (conn.state !== 'connected') {
+        await this.connectToRelay(url);
+      }
+    });
+    await Promise.allSettled(tasks);
+  }
+
+  /**
+   * Disconnect a specific relay (keeps it configured unless removed)
+   */
+  async disconnectRelay(url: string): Promise<void> {
+    const connection = this.connections.get(url);
+    if (!connection) return;
+    if (connection.ws) {
+      try { connection.ws.close(); } catch {}
+      connection.ws = undefined;
+    }
+    connection.state = 'disconnected';
+  }
+
+  /**
+   * Disconnect multiple relays
+   */
+  async disconnectRelays(relayUrls: string[]): Promise<void> {
+    await Promise.allSettled(relayUrls.map((u) => this.disconnectRelay(u)));
+  }
+
+  /**
+   * Remove a relay from the manager (closes connection if open)
+   */
+  removeRelay(url: string): void {
+    const connection = this.connections.get(url);
+    if (!connection) return;
+    try {
+      if (connection.ws) connection.ws.close();
+    } catch {}
+    this.connections.delete(url);
+    if (this.debug) {
+      console.log(`Removed relay: ${url}`);
+    }
+  }
+
+  /**
+   * Remove multiple relays
+   */
+  removeRelays(relayUrls: string[]): void {
+    for (const url of relayUrls) this.removeRelay(url);
   }
 
   /**

@@ -43,6 +43,11 @@ export class CommunityBuilder {
       if (r.marker) b.tag('relay', r.url, r.marker);
       else b.tag('relay', r.url);
     }
+    // Prefer publishing to the explicit author relay if provided
+    try {
+      const authorRelay = this.relays.find((r) => r.marker === 'author')?.url;
+      if (authorRelay) (b as any).toRelays?.(authorRelay);
+    } catch {}
     return await b.publish();
   }
 }
@@ -71,6 +76,19 @@ export class CommunityPostBuilder {
   async publish(): Promise<{ success: boolean; eventId?: string; error?: string }> {
     if (!this._content || this._content.length === 0) throw new Error('Post content must not be empty');
     const b = this.nostr.events.create().kind(1111).content(this._content);
+    if (this.relayHint) { try { (b as any).toRelays?.(this.relayHint); } catch {} }
+    else if (this.community.relay) { try { (b as any).toRelays?.(this.community.relay); } catch {} }
+    else {
+      // Dynamisch Marker auflösen (requests)
+      try {
+        const markers = await (this.nostr.communities as any).resolveRelays(this.community.authorPubkey, this.community.identifier, 800);
+        if (markers?.requests) { try { (b as any).toRelays?.(markers.requests); } catch {} }
+      } catch {}
+    }
+    // Wenn weiterhin kein Ziel gesetzt ist: Fehler werfen (Safety)
+    if (!(b as any).targetRelays || ((b as any).targetRelays?.length || 0) === 0) {
+      throw new Error('No target relay known for community (requests). Set markers or pass relay().');
+    }
     for (const t of this.buildTags()) b.tag(t[0], ...t.slice(1));
     return await b.publish();
   }
@@ -78,12 +96,25 @@ export class CommunityPostBuilder {
 
 export class CommunityReplyBuilder {
   private _content: string | undefined;
+  private relayHint?: string;
   constructor(private nostr: any, private community: CommunityAddress, private parent: { id: string; pubkey: string; relay?: string; kind?: number }) {}
   content(text: string): this { this._content = text ?? ''; return this; }
+  relay(url: string): this { this.relayHint = url; return this; }
   async publish(): Promise<{ success: boolean; eventId?: string; error?: string }> {
     if (!this._content || this._content.length === 0) throw new Error('Reply content must not be empty');
     const A = toAddress(this.community);
     const b = this.nostr.events.create().kind(1111).content(this._content);
+    if (this.relayHint) { try { (b as any).toRelays?.(this.relayHint); } catch {} }
+    else if (this.community.relay) { try { (b as any).toRelays?.(this.community.relay); } catch {} }
+    else {
+      try {
+        const markers = await (this.nostr.communities as any).resolveRelays(this.community.authorPubkey, this.community.identifier, 800);
+        if (markers?.requests) { try { (b as any).toRelays?.(markers.requests); } catch {} }
+      } catch {}
+    }
+    if (!(b as any).targetRelays || ((b as any).targetRelays?.length || 0) === 0) {
+      throw new Error('No target relay known for community (requests). Set markers or pass relay().');
+    }
     // Uppercase root stays on community
     b.tag('A', A, ...(this.community.relay ? [this.community.relay] : []));
     b.tag('P', this.community.authorPubkey, ...(this.community.relay ? [this.community.relay] : []));
@@ -99,34 +130,157 @@ export class CommunityReplyBuilder {
 export class CommunityApprovalBuilder {
   private _post?: NostrEvent;
   private _contentJson?: string;
+  private relayHint?: string;
   constructor(private nostr: any, private community: CommunityAddress) {}
   post(event: NostrEvent): this { this._post = event; this._contentJson = JSON.stringify(event); return this; }
+  relay(url: string): this { this.relayHint = url; return this; }
   async publish(): Promise<{ success: boolean; eventId?: string; error?: string }> {
     if (!this._post) throw new Error('Approval requires a post event');
     const b = this.nostr.events.create().kind(4550).content(this._contentJson!);
+    if (this.relayHint) { try { (b as any).toRelays?.(this.relayHint); } catch {} }
+    else if (this.community.relay) { try { (b as any).toRelays?.(this.community.relay); } catch {} }
+    else {
+      try {
+        const markers = await (this.nostr.communities as any).resolveRelays(this.community.authorPubkey, this.community.identifier, 800);
+        if (markers?.approvals) { try { (b as any).toRelays?.(markers.approvals); } catch {} }
+      } catch {}
+    }
+    if (!(b as any).targetRelays || ((b as any).targetRelays?.length || 0) === 0) {
+      throw new Error('No target relay known for community (approvals). Set markers or pass relay().');
+    }
     const A = toAddress(this.community);
     b.tag('a', A, ...(this.community.relay ? [this.community.relay] : []));
     b.tag('e', this._post.id);
     b.tag('p', this._post.pubkey);
     b.tag('k', String(this._post.kind));
-    const signed = await b.sign();
-    return await this.nostr.publishSigned(await signed.build());
+    return await b.publish();
   }
 }
 
 export class CommunitiesModule {
   constructor(private nostr: any) {}
 
+  private readonly relayMap = new Map<string, { author?: string; requests?: string; approvals?: string }>();
+
+  private getAddress(authorPubkey: string, identifier: string): string {
+    return `34550:${authorPubkey}:${identifier}`;
+  }
+
+  private learnRelaysFromEvent(ev: any): { author?: string; requests?: string; approvals?: string } {
+    const relays = { author: undefined as string | undefined, requests: undefined as string | undefined, approvals: undefined as string | undefined };
+    try {
+      for (const t of ev?.tags || []) {
+        if (t[0] === 'relay') {
+          const url = t[1];
+          const marker = t[2];
+          if (marker === 'author') relays.author = url;
+          else if (marker === 'requests') relays.requests = url;
+          else if (marker === 'approvals') relays.approvals = url;
+        }
+      }
+    } catch {}
+    return relays;
+  }
+
+  private getRelays(authorPubkey: string, identifier: string): { author?: string; requests?: string; approvals?: string } {
+    const addr = this.getAddress(authorPubkey, identifier);
+    const cached = this.relayMap.get(addr);
+    if (cached) return cached;
+    try {
+      const store = this.nostr.query().kinds([34550]).authors([authorPubkey]).execute();
+      const events = (store as any).current || [];
+      let latest: any = null;
+      for (const ev of events) {
+        const d = (ev.tags || []).find((t: string[]) => t[0] === 'd')?.[1];
+        if (d === identifier && (!latest || ev.created_at > latest.created_at)) latest = ev;
+      }
+      if (latest) {
+        const relays = this.learnRelaysFromEvent(latest);
+        this.relayMap.set(addr, relays);
+        return relays;
+      }
+    } catch {}
+    return {};
+  }
+
+  /**
+   * Ensure latest community definition is cached and return its marker relays.
+   */
+  async resolveRelays(authorPubkey: string, identifier: string, timeoutMs: number = 1000): Promise<{ author?: string; requests?: string; approvals?: string }> {
+    const addr = this.getAddress(authorPubkey, identifier);
+    const cached = this.relayMap.get(addr);
+    if (cached && (cached.author || cached.requests || cached.approvals)) return cached;
+
+    try {
+      // Narrow subscription to pull latest 34550 into cache
+      await this.nostr.sub().kinds([34550]).authors([authorPubkey]).limit(1).execute();
+    } catch {}
+
+    const store = this.nostr.query().kinds([34550]).authors([authorPubkey]).execute();
+    const pickLatest = (events: NostrEvent[]) => {
+      const candidates = events.filter((ev: NostrEvent) => (ev.tags || []).some((t: string[]) => t[0] === 'd' && t[1] === identifier));
+      return candidates.sort((a: any, b: any) => b.created_at - a.created_at)[0] || null;
+    };
+
+    // Try current snapshot first
+    let latest: NostrEvent | null = pickLatest((store as any).current || []);
+    if (!latest) {
+      // Wait briefly for cache fill
+      latest = await new Promise<NostrEvent | null>((resolve) => {
+        let done = false;
+        let timer: any;
+        try {
+          const unsub = store.subscribe((events: NostrEvent[]) => {
+            if (done) return;
+            const l = pickLatest(events);
+            if (l) {
+              done = true; try { clearTimeout(timer); } catch {}
+              try { unsub && unsub(); } catch {}
+              resolve(l);
+            }
+          });
+          timer = setTimeout(() => { if (done) return; done = true; try { unsub && unsub(); } catch {}; resolve(null); }, timeoutMs);
+        } catch { resolve(null); }
+      });
+    }
+
+    if (latest) {
+      const relays = this.learnRelaysFromEvent(latest);
+      this.relayMap.set(addr, relays);
+      return relays;
+    }
+    return {};
+  }
+
   // Builders
   create(authorPubkey: string): CommunityBuilder { return new CommunityBuilder(this.nostr, authorPubkey); }
   postTo(authorPubkey: string, identifier: string, relay?: MaybeString): CommunityPostBuilder {
-    return new CommunityPostBuilder(this.nostr, { authorPubkey, identifier, relay: relay || undefined });
+    const builder = new CommunityPostBuilder(this.nostr, { authorPubkey, identifier, relay: relay || undefined });
+    try {
+      if (!relay) {
+        const markers = this.getRelays(authorPubkey, identifier);
+        if (markers?.requests) builder.relay(markers.requests);
+      }
+    } catch {}
+    return builder;
   }
   replyTo(community: CommunityAddress, parent: { id: string; pubkey: string; relay?: string; kind?: number }): CommunityReplyBuilder {
-    return new CommunityReplyBuilder(this.nostr, community, parent);
+    const builder = new CommunityReplyBuilder(this.nostr, community, parent);
+    try {
+      if (!community.relay) {
+        const markers = this.getRelays(community.authorPubkey, community.identifier);
+        if (markers?.requests) builder.relay(markers.requests);
+      }
+    } catch {}
+    return builder;
   }
   approve(community: CommunityAddress): CommunityApprovalBuilder {
-    return new CommunityApprovalBuilder(this.nostr, community);
+    const builder = new CommunityApprovalBuilder(this.nostr, community);
+    try {
+      const markers = this.getRelays(community.authorPubkey, community.identifier);
+      if (markers?.approvals) builder.relay(markers.approvals);
+    } catch {}
+    return builder;
   }
 
   // Revoke an approval via NIP-09 deletion (kind 5)

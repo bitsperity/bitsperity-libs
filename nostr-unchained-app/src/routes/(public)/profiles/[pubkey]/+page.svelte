@@ -6,17 +6,18 @@
   import BackHeader from '$lib/components/ui/BackHeader.svelte';
   import { goto } from '$app/navigation';
   import { authStore } from '$lib/stores/AuthStore.js';
-  export let params: { pubkey: string };
+  let { params }: { params: { pubkey: string } } = $props();
 
-  let nostr: any = null;
+  let nostr: any = $state(null);
   // Effective auth view state (merges AuthStore and signer fallback)
-  let authState: any = { publicKey: '', isAuthenticated: false, signerType: null, user: null, signingMethod: null };
+  let authState: any = $state({ publicKey: '', isAuthenticated: false, signerType: null, user: null, signingMethod: null });
   let unsubAuth: (() => void) | null = null;
 
   onMount(async () => {
     try {
       const svc: any = await getService('nostr');
-      nostr = svc.getInstance();
+      // Ensure instance is initialized, signer rehydrated, and connected
+      nostr = await (svc.getReadyInstance ? svc.getReadyInstance() : svc.getInstance());
       try { await nostr.connect?.(); } catch {}
       // Subscribe to global auth store for reactive state
       try {
@@ -37,8 +38,7 @@
         try {
           const pk = await nostr.getPublicKey?.();
           if (pk) {
-            authState.publicKey = pk;
-            authState.isAuthenticated = true;
+            authState = { ...authState, publicKey: pk, isAuthenticated: true };
           }
         } catch {}
       }

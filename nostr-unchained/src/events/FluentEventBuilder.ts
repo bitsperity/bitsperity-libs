@@ -150,7 +150,9 @@ export class FluentEventBuilder {
    * Specify which relays to publish to (overrides default relays)
    */
   toRelays(...relayUrls: string[]): FluentEventBuilder {
-    this.targetRelays = relayUrls;
+    // Normalize: drop empties, strip trailing slash
+    const cleaned = (relayUrls || []).map(u => (u || '').trim().replace(/\/+$/, '')).filter(Boolean);
+    this.targetRelays = cleaned;
     return this;
   }
 
@@ -158,7 +160,8 @@ export class FluentEventBuilder {
    * Specify which relays to publish to via array
    */
   toRelayList(relayUrls: string[]): FluentEventBuilder {
-    this.targetRelays = relayUrls;
+    const cleaned = (relayUrls || []).map(u => (u || '').trim().replace(/\/+$/, '')).filter(Boolean);
+    this.targetRelays = cleaned;
     return this;
   }
 
@@ -236,9 +239,11 @@ export class FluentEventBuilder {
 
     // If we have a pre-signed event, publish it directly
     if (this.signed && this.signedEvent) {
-      const relayResults = this.targetRelays
-        ? await this.nostrInstance.relayManager.publishToRelays(this.signedEvent, this.targetRelays)
-        : await this.nostrInstance.relayManager.publishToAll(this.signedEvent);
+      if (this.targetRelays && this.targetRelays.length) {
+        // Smart one-shot publish to target relays (connect → publish → cleanup)
+        return await this.nostrInstance.publishSignedToRelaysSmart(this.signedEvent, this.targetRelays);
+      }
+      const relayResults = await this.nostrInstance.relayManager.publishToAll(this.signedEvent);
       const success = relayResults.some(r => r.success);
       return {
         success,
@@ -271,8 +276,8 @@ export class FluentEventBuilder {
       created_at: this.eventData.created_at || Math.floor(Date.now() / 1000)
     };
 
-    return this.targetRelays
-      ? await this.nostrInstance.publishToRelays(eventData, this.targetRelays)
+    return this.targetRelays && this.targetRelays.length
+      ? await this.nostrInstance.publishToRelaysSmart(eventData, this.targetRelays)
       : await this.nostrInstance.publish(eventData);
   }
 

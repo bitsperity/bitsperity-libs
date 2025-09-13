@@ -61,6 +61,8 @@ export class NostrService {
 	private readonly config: NostrConfig;
 	private signingProvider: any = null;
     private routingMode: 'none' | 'nip65' = 'nip65';
+    private lastSignerMethod: string | null = null;
+    private lastSignerPubkey: string | null = null;
 
     constructor(config: NostrConfig) {
         this.config = config;
@@ -89,21 +91,85 @@ export class NostrService {
         try { initializeProfileManager(this.nostr); } catch {}
         if (provider) {
             this.signingProvider = provider;
-            try { await (this.nostr as any).initializeSigning(provider); } catch {}
-            // Broadcast signer-changed at creation time
-            try {
-                const method = (this.nostr as any)?.getSigningInfo?.()?.method || 'unknown';
-                if (typeof window !== 'undefined') {
-                    window.dispatchEvent(new CustomEvent('nostr:signer-changed', { detail: { method } }));
-                    window.dispatchEvent(new CustomEvent('nostr:auth-changed', { detail: { method } }));
-                }
-            } catch {}
+            await this.maybeInitializeSigning();
         }
         try { await this.nostr.connect(); } catch {}
     }
 
+    /**
+     * Initialize signing only if not already initialized with the same signer/method.
+     * Emits signer/auth change events only on effective changes.
+     */
+    private async maybeInitializeSigning(): Promise<void> {
+        if (!this.nostr) return;
+        try {
+            const info = (this.nostr as any)?.getSigningInfo?.();
+            const currentMethod = info?.method || 'unknown';
+            const currentPubkey = info?.pubkey || null;
+
+            // Already initialized and unchanged → skip
+            if (
+                currentMethod !== 'unknown' &&
+                currentMethod === this.lastSignerMethod &&
+                (!!currentPubkey ? currentPubkey === this.lastSignerPubkey : true)
+            ) {
+                return;
+            }
+
+            // Initialize with explicit provider if needed
+            if (this.signingProvider && currentMethod === 'unknown') {
+                try { await (this.nostr as any).initializeSigning(this.signingProvider); } catch {}
+            } else if (!this.signingProvider) {
+                // Try lazy restore from session only once
+                const sel = (typeof sessionStorage !== 'undefined') ? sessionStorage.getItem('selected_signer') : null;
+                const tempFlag = (typeof sessionStorage !== 'undefined') && sessionStorage.getItem('temp_signer_active') === 'true';
+                if (sel === 'temporary' || tempFlag) {
+                    try {
+                        const temp = new TemporarySigner();
+                        this.signingProvider = temp as any;
+                        await (this.nostr as any).initializeSigning?.(temp);
+                        try { sessionStorage.setItem('selected_signer', 'temporary'); sessionStorage.setItem('temp_signer_active', 'true'); } catch {}
+                    } catch {}
+                } else if (sel === 'extension') {
+                    try {
+                        const ext = new ExtensionSigner();
+                        try { await (ext as any).getPublicKey?.(); } catch {}
+                        this.signingProvider = ext as any;
+                        await (this.nostr as any).initializeSigning?.(ext);
+                        try { sessionStorage.setItem('selected_signer', 'extension'); } catch {}
+                    } catch {}
+                }
+            }
+
+            // Compute changes and emit once
+            const after = (this.nostr as any)?.getSigningInfo?.();
+            const afterMethod = after?.method || 'unknown';
+            const afterPubkey = after?.pubkey || null;
+            const changed = afterMethod !== this.lastSignerMethod || (!!afterPubkey && afterPubkey !== this.lastSignerPubkey);
+            this.lastSignerMethod = afterMethod;
+            this.lastSignerPubkey = afterPubkey;
+            if (changed && typeof window !== 'undefined') {
+                try {
+                    window.dispatchEvent(new CustomEvent('nostr:signer-changed', { detail: { method: afterMethod } }));
+                    window.dispatchEvent(new CustomEvent('nostr:auth-changed', { detail: { method: afterMethod } }));
+                    try { localStorage.setItem('auth_changed', String(Date.now())); } catch {}
+                } catch {}
+            }
+        } catch {}
+    }
+
 	async setSigningProvider(provider: any): Promise<void> {
 		try {
+			// If same provider and already active, skip heavy re-init
+			if (this.signingProvider === provider) {
+				try {
+					const info = (this.nostr as any)?.getSigningInfo?.();
+					if (info?.method && info.method !== 'unknown') {
+						this.logger.info('Signing provider already active; skipping re-initialization');
+						return;
+					}
+				} catch {}
+			}
 			this.signingProvider = provider;
 			// Persist chosen signer type for lazy rehydration across routes/reloads
 			try {
@@ -121,35 +187,19 @@ export class NostrService {
 			if (!this.nostr) {
 				await this.createInstance(provider);
 			} else {
-				await (this.nostr as any).initializeSigning(provider);
-				// Broadcast after updating existing instance
-				try {
-					const method = (this.nostr as any)?.getSigningInfo?.()?.method || 'unknown';
-					if (typeof window !== 'undefined') {
-						window.dispatchEvent(new CustomEvent('nostr:signer-changed', { detail: { method } }));
-						window.dispatchEvent(new CustomEvent('nostr:auth-changed', { detail: { method } }));
-					}
-				} catch {}
+				await this.maybeInitializeSigning();
 			}
 			// Optional: connect eagerly; inbox subscription wird lazy via getDM().with() gestartet
 			try {
 				await this.nostr.connect();
 			} catch {}
-				this.logger.info('NostrService updated existing Nostr instance with new signing provider');
-				try {
-					const info = (this.nostr as any)?.getSigningInfo?.();
-					if (info?.method && info.method !== 'unknown') {
-						this.logger.info(`Signer method active: ${info.method}`);
-						// Fire explicit auth change signals for UI reactivity
-						try {
-							if (typeof window !== 'undefined') {
-								window.dispatchEvent(new CustomEvent('nostr:signer-changed', { detail: { method: info.method } }));
-								window.dispatchEvent(new CustomEvent('nostr:auth-changed', { detail: { method: info.method } }));
-								try { localStorage.setItem('auth_changed', String(Date.now())); } catch {}
-							}
-						} catch {}
-					}
-				} catch {}
+			this.logger.info('NostrService updated existing Nostr instance with new signing provider');
+			try {
+				const info = (this.nostr as any)?.getSigningInfo?.();
+				if (info?.method && info.method !== 'unknown') {
+					this.logger.info(`Signer method active: ${info.method}`);
+				}
+			} catch {}
 		} catch (error) {
             this.logger.error('Failed to set signing provider', undefined, { error });
 			throw error;
@@ -866,32 +916,8 @@ export class NostrService {
             this.nostr = new NostrUnchained(base as any);
             // Initialize shared profile subscription manager with the active instance
             try { initializeProfileManager(this.nostr); } catch {}
-            // If a signing provider was set earlier, re-initialize signing on lazy init
-            try {
-                if (this.signingProvider) {
-                    (this.nostr as any).initializeSigning?.(this.signingProvider);
-                } else {
-                    // Try to restore from sessionStorage
-                    const sel = sessionStorage.getItem('selected_signer');
-                    if (sel === 'temporary' || sessionStorage.getItem('temp_signer_active') === 'true') {
-                        try {
-                            const temp = new TemporarySigner();
-                            this.signingProvider = temp as any;
-                            (this.nostr as any).initializeSigning?.(temp);
-                        } catch {}
-                    } else if (sel === 'extension') {
-                        try {
-                            const ext = new ExtensionSigner();
-                            this.signingProvider = ext as any;
-                            (this.nostr as any).initializeSigning?.(ext);
-                        } catch {}
-                    }
-                }
-            } catch {}
             try { (this.nostr as any).connect?.(); } catch {}
         }
-        // Ensure profile manager is initialized even if instance already existed
-        try { initializeProfileManager(this.nostr); } catch {}
         return this.nostr;
     }
 
@@ -910,35 +936,8 @@ export class NostrService {
         if (!this.nostr) {
             await this.createInstance();
         }
-        try {
-            if (this.signingProvider) {
-                await (this.nostr as any).initializeSigning?.(this.signingProvider);
-            } else {
-                const sel = sessionStorage.getItem('selected_signer');
-                const tempFlag = sessionStorage.getItem('temp_signer_active') === 'true';
-                if (sel === 'temporary' || tempFlag) {
-                    try {
-                        const temp = new TemporarySigner();
-                        this.signingProvider = temp as any;
-                        await (this.nostr as any).initializeSigning?.(temp);
-                        sessionStorage.setItem('selected_signer', 'temporary');
-                        sessionStorage.setItem('temp_signer_active', 'true');
-                    } catch {}
-                } else if (sel === 'extension') {
-                    try {
-                        const ext = new ExtensionSigner();
-                        try { await (ext as any).getPublicKey?.(); } catch {}
-                        this.signingProvider = ext as any;
-                        await (this.nostr as any).initializeSigning?.(ext);
-                        sessionStorage.setItem('selected_signer', 'extension');
-                    } catch {}
-                }
-                // Wichtig: Keine Auto-Auswahl ohne persistierte Entscheidung
-            }
-        } catch {}
+        await this.maybeInitializeSigning();
         try { await (this.nostr as any).connect?.(); } catch {}
-        // Ensure shared profile subscription manager is always initialized
-        try { initializeProfileManager(this.nostr); } catch {}
         return this.nostr;
     }
 }
