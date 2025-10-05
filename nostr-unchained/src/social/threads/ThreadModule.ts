@@ -179,14 +179,25 @@ export class ThreadModule {
       // Add reply marker
       eventBuilder = eventBuilder.tag('e', eventId, '', 'reply');
 
-      // Add p-tag for mentioned users (NIP-10)
-      eventBuilder = eventBuilder.tag('p', targetEvent.pubkey);
+      // Add p-tags according to NIP-10:
+      // "the reply event's "p" tags should contain all of E's "p" tags as well as the "pubkey" of the event being replied to"
+      
+      // First, collect all p-tags from target event
+      const existingPTags = targetEvent.tags
+        .filter(tag => tag[0] === 'p' && tag[1])
+        .map(tag => tag[1]);
+      
+      // Add target event's author
+      const allPubkeys = new Set<string>([targetEvent.pubkey, ...existingPTags]);
       
       // Add additional mentioned users
       for (const mentionedPubkey of mentionedPubkeys) {
-        if (mentionedPubkey !== targetEvent.pubkey) {
-          eventBuilder = eventBuilder.tag('p', mentionedPubkey);
-        }
+        allPubkeys.add(mentionedPubkey);
+      }
+      
+      // Add all p-tags (deduplicated)
+      for (const pubkey of allPubkeys) {
+        eventBuilder = eventBuilder.tag('p', pubkey);
       }
 
       const result = await eventBuilder.publish();
