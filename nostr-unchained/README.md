@@ -327,7 +327,47 @@ const chat = nostr.dm.with(pubkey);
 
 > **Complete Guide:** See [Event Publishing](./docs/events/README.md) for all signing options and patterns.
 
-### 🛰️ NIP-65 Relay Routing (opt-in)
+### 🛰️ Relay Management & Routing
+
+Nostr Unchained provides intelligent relay management with **graceful degradation** and **flexible routing strategies**.
+
+#### **Relay Routing Priority** (NEW in v2.1)
+
+The library uses a clear priority system for relay selection:
+
+```typescript
+// Priority Order (highest to lowest):
+// 1. Manual relay specification (via .toRelays())
+// 2. Protocol-specific markers (NIP-72 community relays)
+// 3. NIP-65 routing (if enabled)
+// 4. Connected relays (graceful fallback)
+```
+
+**Manual Relay Control** (Always wins):
+```typescript
+// Explicitly specify target relays - ALWAYS respected
+await nostr.events.note('Manual routing test')
+  .toRelays(['wss://specific-relay.com'])
+  .publish();
+// ✅ Publishes ONLY to specified relay
+```
+
+**Graceful Degradation**:
+```typescript
+// If routing-sensitive events can't determine relays,
+// the library falls back to connected relays with a warning
+// instead of throwing an error.
+
+// Example: Community post without relay markers
+await nostr.communities
+  .post(authorPubkey, communityId)
+  .content('Hello community!')
+  .publish();
+// ⚠️ Warning logged: falling back to connected relays
+// ✅ Event published successfully (robust behavior)
+```
+
+#### **NIP-65 Relay Routing** (opt-in)
 
 Enable optional routing per NIP‑65. Events are sent to your write relays as well as mentioned recipients' read relays (p‑tags); default relays are always included (robust).
 
@@ -365,10 +405,41 @@ const chat = nostr.dm.with('abcdef...peerhex...');
 await chat.send('Hi there!');
 ```
 
+#### **Community Relay Resolution** (NIP-72)
+
+Communities can specify dedicated relays for posts, approvals, and author events:
+
+```typescript
+// Create community with specific relays
+await nostr.communities
+  .create(authorPubkey)
+  .identifier('bitcoin-dev')
+  .name('Bitcoin Development')
+  .relay('wss://community.relay.com', 'requests')  // Posts go here
+  .relay('wss://moderation.relay.com', 'approvals') // Approvals go here
+  .publish();
+
+// Posts automatically use the community's request relay
+await nostr.communities
+  .post(authorPubkey, 'bitcoin-dev')
+  .content('New Bitcoin proposal')
+  .publish();
+// ✅ Automatically published to wss://community.relay.com
+```
+
+**Relay Discovery** (NEW in v2.1):
+- Queries **all configured relays** (not just connected ones)
+- Extended timeout (2000ms) for reliable discovery
+- Comprehensive debug logging for troubleshooting
+- Graceful fallback if community not found
+
 Notes:
-- Default remains unchanged (`routing: 'none'`).
-- Routing is additive: default relays are always considered.
-- URL normalization: scheme added, trailing slashes removed.
+- Default routing: `'none'` (manual + connected relays)
+- Routing is additive: default relays are always considered
+- URL normalization: scheme added, trailing slashes removed
+- Manual relays **always override** automatic selection
+
+> **Deep Dive:** See [RELAY_ROUTING.md](./RELAY_ROUTING.md) for complete relay management guide.
 
 ### 🗂️ NIP‑51 Lists (30000–30003)
 
