@@ -13,6 +13,7 @@ import { ReactionModule } from '../reactions/ReactionModule.js';
 import { ContentModule } from '../content/ContentModule.js';
 import { ThreadModule } from '../threads/ThreadModule.js';
 import { FeedModule } from '../feeds/FeedModule.js';
+import { ListModule } from '../lists/ListModule.js';
 
 export interface SocialModuleConfig {
   nostr: NostrUnchained;
@@ -28,7 +29,7 @@ export class SocialModule {
   private _threads?: ThreadModule;
   private _feeds?: FeedModule;
   private _communities?: any; // CommunityModule;
-  private _lists?: any; // ListModule;
+  private _lists?: ListModule;
   
   // Cleanup synchronization
   private closing = false;
@@ -104,8 +105,7 @@ export class SocialModule {
    */
   get lists() {
     if (!this._lists) {
-      // TODO: Implement ListModule
-      throw new Error('ListModule not yet implemented - Coming in Phase 2');
+      this._lists = new ListModule(this.config.nostr);
     }
     return this._lists;
   }
