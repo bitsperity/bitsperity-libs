@@ -79,15 +79,28 @@ export class CommunityPostBuilder {
     if (this.relayHint) { try { (b as any).toRelays?.(this.relayHint); } catch {} }
     else if (this.community.relay) { try { (b as any).toRelays?.(this.community.relay); } catch {} }
     else {
-      // Dynamisch Marker auflösen (requests)
+      // Dynamisch Marker auflösen (requests) - with longer timeout
       try {
-        const markers = await (this.nostr.communities as any).resolveRelays(this.community.authorPubkey, this.community.identifier, 800);
+        const markers = await (this.nostr.communities as any).resolveRelays(
+          this.community.authorPubkey, 
+          this.community.identifier, 
+          3000  // ✅ Increased from 800ms to 3000ms
+        );
         if (markers?.requests) { try { (b as any).toRelays?.(markers.requests); } catch {} }
       } catch {}
     }
-    // Wenn weiterhin kein Ziel gesetzt ist: Fehler werfen (Safety)
+    // Wenn weiterhin kein Ziel gesetzt ist: Fallback zu connected relays
     if (!(b as any).targetRelays || ((b as any).targetRelays?.length || 0) === 0) {
-      throw new Error('No target relay known for community (requests). Set markers or pass relay().');
+      if (this.nostr.getDebug()) {
+        console.warn(`⚠️ Community post without relay markers. Falling back to connected relays. Consider adding explicit relay markers for better delivery.`);
+      }
+      // Use connected relays as fallback
+      const connected = this.nostr.relayManager.connectedRelays;
+      if (connected.length > 0) {
+        try { (b as any).toRelays?.(connected); } catch {}
+      } else {
+        throw new Error('No connected relays available for community post. Ensure you are connected to at least one relay.');
+      }
     }
     for (const t of this.buildTags()) b.tag(t[0], ...t.slice(1));
     return await b.publish();
@@ -112,8 +125,18 @@ export class CommunityReplyBuilder {
         if (markers?.requests) { try { (b as any).toRelays?.(markers.requests); } catch {} }
       } catch {}
     }
+    // Fallback zu connected relays wenn keine requests-relay gesetzt
     if (!(b as any).targetRelays || ((b as any).targetRelays?.length || 0) === 0) {
-      throw new Error('No target relay known for community (requests). Set markers or pass relay().');
+      if (this.nostr.getDebug()) {
+        console.warn(`⚠️ Community reply without relay markers. Falling back to connected relays. Consider adding explicit relay markers for better delivery.`);
+      }
+      // Use connected relays as fallback
+      const connected = this.nostr.relayManager.connectedRelays;
+      if (connected.length > 0) {
+        try { (b as any).toRelays?.(connected); } catch {}
+      } else {
+        throw new Error('No connected relays available for community reply. Ensure you are connected to at least one relay.');
+      }
     }
     // Uppercase root stays on community
     b.tag('A', A, ...(this.community.relay ? [this.community.relay] : []));
@@ -141,12 +164,26 @@ export class CommunityApprovalBuilder {
     else if (this.community.relay) { try { (b as any).toRelays?.(this.community.relay); } catch {} }
     else {
       try {
-        const markers = await (this.nostr.communities as any).resolveRelays(this.community.authorPubkey, this.community.identifier, 800);
+        const markers = await (this.nostr.communities as any).resolveRelays(
+          this.community.authorPubkey, 
+          this.community.identifier, 
+          3000  // ✅ Increased from 800ms to 3000ms
+        );
         if (markers?.approvals) { try { (b as any).toRelays?.(markers.approvals); } catch {} }
       } catch {}
     }
+    // Fallback zu connected relays wenn keine approvals-relay gesetzt
     if (!(b as any).targetRelays || ((b as any).targetRelays?.length || 0) === 0) {
-      throw new Error('No target relay known for community (approvals). Set markers or pass relay().');
+      if (this.nostr.getDebug()) {
+        console.warn(`⚠️ Community approval without relay markers. Falling back to connected relays. Consider adding explicit relay markers for better delivery.`);
+      }
+      // Use connected relays as fallback
+      const connected = this.nostr.relayManager.connectedRelays;
+      if (connected.length > 0) {
+        try { (b as any).toRelays?.(connected); } catch {}
+      } else {
+        throw new Error('No connected relays available for community approval. Ensure you are connected to at least one relay.');
+      }
     }
     const A = toAddress(this.community);
     b.tag('a', A, ...(this.community.relay ? [this.community.relay] : []));
@@ -206,26 +243,59 @@ export class CommunitiesModule {
   /**
    * Ensure latest community definition is cached and return its marker relays.
    */
-  async resolveRelays(authorPubkey: string, identifier: string, timeoutMs: number = 1000): Promise<{ author?: string; requests?: string; approvals?: string }> {
+  async resolveRelays(authorPubkey: string, identifier: string, timeoutMs: number = 2000): Promise<{ author?: string; requests?: string; approvals?: string }> {
     const addr = this.getAddress(authorPubkey, identifier);
+    
+    // 1. Cache check (quick return)
     const cached = this.relayMap.get(addr);
-    if (cached && (cached.author || cached.requests || cached.approvals)) return cached;
+    if (cached && (cached.author || cached.requests || cached.approvals)) {
+      if (this.nostr.getDebug()) {
+        console.log('✅ Community relays from cache:', { author: authorPubkey.slice(0, 8), identifier, cached });
+      }
+      return cached;
+    }
+
+    // 2. Query ALL relays (not just connected)
+    const allRelays = Array.from(new Set([
+      ...this.nostr.relayManager.connectedRelays,
+      ...this.nostr.config.relays
+    ]));
+    
+    if (this.nostr.getDebug()) {
+      console.log('🔍 Resolving community relays:', {
+        author: authorPubkey.slice(0, 8),
+        identifier,
+        searchingRelays: allRelays
+      });
+    }
 
     try {
-      // Narrow subscription to pull latest 34550 into cache
-      await this.nostr.sub().kinds([34550]).authors([authorPubkey]).limit(1).execute();
-    } catch {}
+      // 3. Start subscription (explicitly to all relays, no limit to find ALL communities)
+      await this.nostr.sub()
+        .kinds([34550])
+        .authors([authorPubkey])
+        .relays(allRelays)
+        .execute();
+    } catch (e) {
+      if (this.nostr.getDebug()) {
+        console.warn('⚠️ Subscription failed:', e);
+      }
+    }
 
+    // 4. Query cache
     const store = this.nostr.query().kinds([34550]).authors([authorPubkey]).execute();
     const pickLatest = (events: NostrEvent[]) => {
-      const candidates = events.filter((ev: NostrEvent) => (ev.tags || []).some((t: string[]) => t[0] === 'd' && t[1] === identifier));
+      const candidates = events.filter((ev: NostrEvent) => 
+        (ev.tags || []).some((t: string[]) => t[0] === 'd' && t[1] === identifier)
+      );
       return candidates.sort((a: any, b: any) => b.created_at - a.created_at)[0] || null;
     };
 
-    // Try current snapshot first
+    // 5. Try current snapshot first
     let latest: NostrEvent | null = pickLatest((store as any).current || []);
+    
     if (!latest) {
-      // Wait briefly for cache fill
+      // 6. Wait for cache fill (with longer timeout)
       latest = await new Promise<NostrEvent | null>((resolve) => {
         let done = false;
         let timer: any;
@@ -234,21 +304,50 @@ export class CommunitiesModule {
             if (done) return;
             const l = pickLatest(events);
             if (l) {
-              done = true; try { clearTimeout(timer); } catch {}
+              done = true;
+              try { clearTimeout(timer); } catch {}
               try { unsub && unsub(); } catch {}
               resolve(l);
             }
           });
-          timer = setTimeout(() => { if (done) return; done = true; try { unsub && unsub(); } catch {}; resolve(null); }, timeoutMs);
-        } catch { resolve(null); }
+          timer = setTimeout(() => {
+            if (done) return;
+            done = true;
+            try { unsub && unsub(); } catch {};
+            resolve(null);
+          }, Math.max(2000, timeoutMs)); // Minimum 2 seconds
+        } catch {
+          resolve(null);
+        }
       });
     }
 
+    // 7. Extract relays or return empty
     if (latest) {
       const relays = this.learnRelaysFromEvent(latest);
       this.relayMap.set(addr, relays);
+      
+      if (this.nostr.getDebug()) {
+        console.log('✅ Resolved community relays:', {
+          author: authorPubkey.slice(0, 8),
+          identifier,
+          relays,
+          cacheSize: (store as any).current?.length || 0
+        });
+      }
+      
       return relays;
     }
+    
+    if (this.nostr.getDebug()) {
+      console.warn('⚠️ Community NOT FOUND:', {
+        author: authorPubkey.slice(0, 8),
+        identifier,
+        searchedRelays: allRelays,
+        cacheSize: (store as any).current?.length || 0
+      });
+    }
+    
     return {};
   }
 
@@ -312,17 +411,18 @@ export class CommunitiesModule {
 
   posts(authorPubkey: string, identifier: string, options?: { approvedOnly?: boolean; moderatorsOnly?: boolean }) {
     const address = `34550:${authorPubkey}:${identifier}`;
-    // subscribe to posts
-    this.nostr.sub().kinds([1111]).execute().catch(() => {});
+    // subscribe to community posts with A-tag filter (NIP-72)
+    this.nostr.sub().kinds([1111]).tags('A', [address]).execute().catch(() => {});
     if (options?.approvedOnly) {
       // ensure approvals and community defs are flowing
-      this.nostr.sub().kinds([4550]).execute().catch(() => {});
+      this.nostr.sub().kinds([4550]).tags('a', [address]).execute().catch(() => {});
       this.nostr.sub().kinds([34550]).authors([authorPubkey]).execute().catch(() => {});
       this.nostr.sub().kinds([5]).execute().catch(() => {});
     }
     return this.nostr
       .query()
       .kinds([1111])
+      .tags('A', [address])
       .execute()
       .map((events: NostrEvent[]) =>
         {

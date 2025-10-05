@@ -30,7 +30,7 @@ wait_for_relay() {
     done
     
     echo "❌ Relay failed to start within $max_attempts seconds"
-    docker-compose -f "$COMPOSE_FILE" logs nostr-relay
+    docker compose -f "$COMPOSE_FILE" logs nostr-relay
     return 1
 }
 
@@ -38,10 +38,10 @@ start_relay() {
     echo "🚀 Starting ephemeral test relay..."
     
     # Cleanup alte Container
-    docker-compose -f "$COMPOSE_FILE" down --remove-orphans >/dev/null 2>&1 || true
+    docker compose -f "$COMPOSE_FILE" down --remove-orphans >/dev/null 2>&1 || true
     
     # Starte neuen Container
-    docker-compose -f "$COMPOSE_FILE" up -d nostr-relay
+    docker compose -f "$COMPOSE_FILE" up -d nostr-relay
     
     # Warte bis Ready
     if wait_for_relay; then
@@ -57,12 +57,12 @@ start_relay() {
 
 stop_relay() {
     echo "🛑 Stopping test relay..."
-    docker-compose -f "$COMPOSE_FILE" down --remove-orphans
+    docker compose -f "$COMPOSE_FILE" down --remove-orphans
     echo "✅ Test relay stopped"
 }
 
 status_relay() {
-    if docker-compose -f "$COMPOSE_FILE" ps nostr-relay | grep -q "Up"; then
+    if docker compose -f "$COMPOSE_FILE" ps nostr-relay | grep -q "Up"; then
         echo "✅ Test relay is running at $RELAY_URL"
         
         # Test Verbindung
@@ -77,7 +77,7 @@ status_relay() {
 }
 
 logs_relay() {
-    docker-compose -f "$COMPOSE_FILE" logs -f nostr-relay
+    docker compose -f "$COMPOSE_FILE" logs -f nostr-relay
 }
 
 case "$1" in

@@ -61,9 +61,11 @@ export class SubscriptionManager {
     filters: Filter[], 
     relays?: string[]
   ): Promise<SharedSubscription> {
-    const targetRelays = relays || this.relayManager.connectedRelays.length > 0 
-      ? this.relayManager.connectedRelays 
-      : this.relayManager.relayUrls;
+    const targetRelays = (relays && relays.length > 0)
+      ? relays
+      : (this.relayManager.connectedRelays.length > 0
+        ? this.relayManager.connectedRelays
+        : this.relayManager.relayUrls);
     
     const key = this.generateFilterHash(filters, targetRelays);
     
@@ -366,9 +368,11 @@ export class SubscriptionManager {
       const now = Date.now();
       
       // Determine target relays
-      const targetRelays = options.relays || this.relayManager.connectedRelays.length > 0 
-        ? this.relayManager.connectedRelays 
-        : this.relayManager.relayUrls;
+      const targetRelays = (options.relays && options.relays.length > 0)
+        ? options.relays
+        : (this.relayManager.connectedRelays.length > 0
+          ? this.relayManager.connectedRelays
+          : this.relayManager.relayUrls);
       
       // Create internal subscription object
       const subscription: InternalSubscription = {
@@ -419,47 +423,39 @@ export class SubscriptionManager {
           // Send REQ message to all target relays
           const reqMessage = ['REQ', subscriptionId, ...filters];
           
-          // Try to send to all relays first (for compatibility with tests)
-          try {
-            await this.relayManager.sendToAll?.(reqMessage);
-            // If sendToAll succeeds, all relays are successful
-            relayResults = targetRelays.map(relay => ({
-              relay,
-              success: true,
-              error: undefined
-            }));
-            break; // Success, exit retry loop
-            
-          } catch (error) {
-            // If sendToAll fails, try individual relays for partial failure handling
+          // If specific relays were requested, ensure connections and send only to those
+          if ((options.relays && options.relays.length > 0)) {
+            // Ensure relays are configured and connected (temporary additions allowed)
+            try {
+              const current = new Set(this.relayManager.relayUrls);
+              const newlyAdded = (options.relays || []).filter((u) => !current.has(u));
+              if (newlyAdded.length && (this.relayManager as any).addRelays) {
+                (this.relayManager as any).addRelays(newlyAdded, { temporary: true });
+              }
+              if ((this.relayManager as any).ensureConnected) {
+                await (this.relayManager as any).ensureConnected(targetRelays);
+              }
+            } catch {}
+
+            // Per-relay send with partial failure handling
             relayResults = [];
             let hasAnySuccess = false;
-            
             for (const relay of targetRelays) {
               try {
                 await this.relayManager.sendToRelays?.([relay], reqMessage);
-                relayResults.push({
-                  relay,
-                  success: true,
-                  error: undefined
-                });
+                relayResults.push({ relay, success: true, subscriptionId });
                 hasAnySuccess = true;
               } catch (relayError) {
-                relayResults.push({
-                  relay,
-                  success: false,
-                  error: relayError instanceof Error ? relayError : new Error('Unknown error')
-                });
+                relayResults.push({ relay, success: false, error: relayError instanceof Error ? relayError.message : 'Unknown error', subscriptionId });
               }
             }
-            
-            // If at least one relay succeeded, break the retry loop
-            if (hasAnySuccess) {
-              break;
-            }
-            
-            // If all relays failed, set last error for retry logic
-            lastError = error instanceof Error ? error : new Error('All relays failed');
+            if (hasAnySuccess) break;
+            lastError = new Error('All relays failed');
+          } else {
+            // Default: send to all connected relays
+            await this.relayManager.sendToAll?.(reqMessage);
+            relayResults = targetRelays.map(relay => ({ relay, success: true } as SubscriptionRelayResult));
+            break;
           }
           
         } catch (error) {

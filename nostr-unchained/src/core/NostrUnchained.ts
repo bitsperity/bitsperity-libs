@@ -29,6 +29,7 @@ import { RelayListModule } from '../relay/RelayListModule.js';
 import { Nip65RelayRouter, type RelayRoutingStrategy } from '../relay/Nip65RelayRouter.js';
 import { RelayDiscovery, RelayHealthMonitor } from '../relay/RelayDiscovery.js';
 import { ZapModule } from '../social/payments/ZapModule.js';
+import { NostrConnectSigner } from '../crypto/NostrConnectSigner.js';
 
 import type {
   NostrUnchainedConfig,
@@ -224,6 +225,51 @@ export class NostrUnchained {
       };
       tryAdopt();
     }
+  }
+
+  /** NIP-46 DX Module: start client-initiated pairing as a managed session */
+  get nip46() {
+    const self = this;
+    return {
+      /**
+       * Startet Pairing und gibt eine Session mit URI/Secret/ClientPub & Helfern zurück.
+       * Die Session hält Transport-Relays verbunden, startet 24133-Sub und bietet onAck/useAsSigner.
+       */
+      startPairing: async (opts: { remoteSignerPubkey?: string; relays: string[]; perms?: string[]; name?: string; url?: string; image?: string; persistClientKey?: boolean }) => {
+        const signer = new NostrConnectSigner({ remoteSignerPubkey: opts.remoteSignerPubkey || '', relays: opts.relays, nostr: self, debug: self.getDebug() } as any);
+        // Generate client-initiated token and start listening immediately
+        const { uri, secret, clientPub } = await (signer as any).createClientTokenWithSecret({ name: opts.name, perms: opts.perms, relays: opts.relays, url: opts.url, image: opts.image });
+        if (self.getDebug()) console.log('[NIP46] Pairing started – listening on relays:', opts.relays, 'clientPub:', clientPub.substring(0,8));
+        // Fallback/compat: einige Remote-Signer erwarten explizites connect-RPC
+        if (opts.remoteSignerPubkey) {
+          try {
+            if (self.getDebug()) console.log('[NIP46] Sending connect RPC to remote-signer:', opts.remoteSignerPubkey.substring(0,8));
+            // Nicht blockierend, ACK wird separat erkannt
+            (async () => {
+              try { await (signer as any).connect(opts.perms, secret); } catch (e) { if (self.getDebug()) console.warn('[NIP46] connect RPC failed (non-fatal):', e); }
+            })();
+          } catch {}
+        }
+        const session = {
+          uri, secret, clientPub, relays: opts.relays.slice(),
+          onAck: async (timeoutMs: number = 15000) => {
+            if (self.getDebug()) console.log('[NIP46] Awaiting ACK/secret on relays:', opts.relays);
+            await (signer as any).waitForConnectAck(secret, timeoutMs);
+            if (self.getDebug()) console.log('[NIP46] ACK received');
+            return true;
+          },
+          useAsSigner: async () => {
+            // After ACK, safe to initialize as active signing provider and resolve user pubkey
+            await (self as any).initializeSigning(signer as any);
+            const userPub = await (self as any).getPublicKey();
+            if (self.getDebug()) console.log('[NIP46] Remote signer initialized. userPub:', userPub.substring(0,8));
+            return userPub;
+          },
+          close: async () => { /* future: detach temp relays if needed */ }
+        };
+        return session;
+      }
+    };
   }
 
   /**
@@ -688,9 +734,11 @@ export class NostrUnchained {
       return await this.publishToRelaysSmart(event, autoTargets);
     }
 
-    // If event kind is routing-sensitive and we could not determine relays → error (DX: fail fast)
+    // If event kind is routing-sensitive and we could not determine relays → warn and fallback to connected
     if (this.isRoutingSensitiveEventKind((event as any).kind)) {
-      throw new Error('No target relay known for routing-sensitive event. Ensure markers (NIP-72) or recipient relay list (NIP-65) are available.');
+      if (this.config.debug) {
+        console.warn(`⚠️ Routing-sensitive event (kind ${(event as any).kind}) without specific relay markers. Falling back to connected relays. Consider adding explicit relay markers for better delivery.`);
+      }
     }
 
     // Otherwise, determine target relays from connected set (optionally via router)
@@ -927,7 +975,7 @@ export class NostrUnchained {
   async publishSignedToRelaysSmart(
     signedEvent: NostrEvent,
     relayUrls: string[],
-    options?: { resolveOnFirstOk?: boolean; minAcks?: number; overallTimeoutMs?: number }
+    options?: { resolveOnFirstOk?: boolean; minAcks?: number; overallTimeoutMs?: number; removeAfter?: boolean }
   ): Promise<PublishResult> {
     // Basic validation
     if (!signedEvent?.id || !signedEvent?.sig || !signedEvent?.pubkey) {
@@ -945,7 +993,7 @@ export class NostrUnchained {
     const relayResults = await (this.relayManager as any).publishToRelays(signedEvent, targets, options);
     const success = relayResults.some((r: any) => r.success);
 
-    const toCleanup = targets.filter((u) => newlyAdded.includes(u));
+    const toCleanup = (options?.removeAfter ?? true) ? targets.filter((u) => newlyAdded.includes(u)) : [];
     if (toCleanup.length) {
       try { await this.relayManager.disconnectRelays(toCleanup); } catch {}
       try { this.relayManager.removeRelays(toCleanup); } catch {}
@@ -1027,6 +1075,11 @@ export class NostrUnchained {
    */
   getRelayStats(): Record<string, any> {
     return this.relayManager.getStats();
+  }
+
+  // Internal helper for debug flag access in subcomponents
+  getDebug(): boolean {
+    try { return Boolean((this.config as any).debug); } catch { return false; }
   }
 
   /**
@@ -1119,6 +1172,30 @@ export class NostrUnchained {
       await this.initializeSigning(signer);
       const pubkey = await signer.getPublicKey();
       return { success: true, pubkey };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  }
+
+  /**
+   * DX convenience: initialize with Nostr Connect (NIP-46) remote signer
+   * Returns a client token for QR pairing and waits for connect ACK if requested.
+   */
+  async useNostrConnect(options: { remoteSignerPubkey: string; relays: string[]; perms?: string[]; name?: string; url?: string; image?: string; waitForAckMs?: number }): Promise<{ success: boolean; pubkey?: string; client?: { uri: string; secret: string; clientPub: string }; error?: string }> {
+    try {
+      const signer = new NostrConnectSigner({ remoteSignerPubkey: options.remoteSignerPubkey, relays: options.relays, nostr: this } as any);
+      // Generate client-initiated pairing token WITHOUT initializing signing (non-blocking)
+      const { uri, secret, clientPub } = await (signer as any).createClientTokenWithSecret({ name: options.name, perms: options.perms, relays: options.relays, url: options.url, image: options.image });
+      // Optionally wait for connect ACK (remote-signer returns our secret). Still no signing init here.
+      const waitMs = typeof options.waitForAckMs === 'number' ? options.waitForAckMs : 0;
+      if (waitMs && waitMs > 0) {
+        try {
+          await (signer as any).waitForConnectAck(secret, waitMs);
+        } catch {
+          // Non-fatal
+        }
+      }
+      return { success: true, client: { uri, secret, clientPub } };
     } catch (error) {
       return { success: false, error: (error as Error).message };
     }
