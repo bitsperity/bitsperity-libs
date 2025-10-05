@@ -160,6 +160,8 @@ export class EventBuilder {
       5,    // NIP-09: Event deletion (may have empty content)
       6,    // NIP-18: Repost (requires empty content)
       7,     // NIP-25: Reaction (may have empty content for simple reactions)
+      43,    // NIP-28: Hide message (optional reason in content)
+      44,    // NIP-28: Mute user (optional reason in content)
       10002, // NIP-65: Relay List Metadata (empty content)
       34550, // NIP-72: Community definition (replaceable, tags carry metadata)
       4550,  // NIP-72: Approval event (content may embed JSON, but can be empty by clients)

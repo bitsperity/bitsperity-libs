@@ -15,6 +15,7 @@ import { ThreadModule } from '../threads/ThreadModule.js';
 import { FeedModule } from '../feeds/FeedModule.js';
 import { ListModule } from '../lists/ListModule.js';
 import { ReportModule } from '../reporting/ReportModule.js';
+import { ChannelsModule } from '../chat/ChannelsModule.js';
 
 export interface SocialModuleConfig {
   nostr: NostrUnchained;
@@ -29,7 +30,8 @@ export class SocialModule {
   private _reactions?: ReactionModule;
   private _threads?: ThreadModule;
   private _feeds?: FeedModule;
-  private _communities?: any; // CommunityModule;
+  private _communities?: any; // CommunitiesModule (NIP-72);
+  private _channels?: ChannelsModule; // NIP-28 Public Chat
   private _lists?: ListModule;
   private _reports?: ReportModule;
   
@@ -90,13 +92,25 @@ export class SocialModule {
   }
 
   /**
-   * Community operations (NIP-28, NIP-72)
-   * Public chat, moderated communities
+   * Public Chat Channels (NIP-28)
+   * Simple public chat channels (kind 40-44)
+   */
+  get channels() {
+    if (!this._channels) {
+      this._channels = new ChannelsModule(this.config.nostr);
+    }
+    return this._channels;
+  }
+
+  /**
+   * Moderated Communities (NIP-72)
+   * Advanced moderated communities (kind 34550, 1111, 4550)
    */
   get communities() {
     if (!this._communities) {
-      // TODO: Implement CommunityModule
-      throw new Error('CommunityModule not yet implemented - Coming in Phase 3');
+      // CommunitiesModule already exists and is integrated
+      // This getter is provided by NostrUnchained.communities
+      throw new Error('Use nostr.communities instead of nostr.social.communities');
     }
     return this._communities;
   }
