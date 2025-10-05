@@ -21,6 +21,7 @@ export interface TestUser {
 
 export interface TestEnvironmentConfig {
   relayUrl?: string;
+  relayUrls?: string[]; // Multi-relay support
   debug?: boolean;
   timeout?: number;
   userCount?: number;
@@ -28,17 +29,26 @@ export interface TestEnvironmentConfig {
 
 export class TestEnvironment {
   public readonly relayUrl: string;
+  public readonly relayUrls: string[];
   public readonly debug: boolean;
   private users: TestUser[] = [];
   private startTime: number = 0;
   
   constructor(config: TestEnvironmentConfig = {}) {
-    this.relayUrl = config.relayUrl || 'ws://localhost:7777';
+    // Support both single and multi-relay configurations
+    if (config.relayUrls && config.relayUrls.length > 0) {
+      this.relayUrls = config.relayUrls;
+      this.relayUrl = config.relayUrls[0]; // Primary relay
+    } else {
+      this.relayUrl = config.relayUrl || 'ws://localhost:7777';
+      this.relayUrls = [this.relayUrl];
+    }
+    
     this.debug = config.debug || false;
     
     if (this.debug) {
       console.log('🧪 Test Environment initialized:', {
-        relayUrl: this.relayUrl,
+        relays: this.relayUrls,
         userCount: config.userCount || 'dynamic'
       });
     }
@@ -47,13 +57,16 @@ export class TestEnvironment {
   /**
    * Create a test user with deterministic keys
    */
-  async createTestUser(name: string): Promise<TestUser> {
+  async createTestUser(name: string, customRelays?: string[]): Promise<TestUser> {
     // Create a new signing provider (generates secure keys automatically)
     const signer = new LocalKeySigner();
     const publicKey = await signer.getPublicKey();
     
+    // Use custom relays if provided, otherwise use environment relays
+    const relays = customRelays || this.relayUrls;
+    
     const nostr = new NostrUnchained({
-      relays: [this.relayUrl],
+      relays: relays,
       debug: this.debug,
       timeout: 15000,
       signingProvider: signer // Provide signer directly
@@ -72,7 +85,7 @@ export class TestEnvironment {
     this.users.push(user);
     
     if (this.debug) {
-      console.log(`👤 Created test user: ${name} (${publicKey.slice(0, 8)}...)`);
+      console.log(`👤 Created test user: ${name} (${publicKey.slice(0, 8)}...) on ${relays.length} relay(s)`);
     }
     
     return user;

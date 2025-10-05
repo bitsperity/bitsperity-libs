@@ -118,10 +118,23 @@ export class FollowBatchBuilder {
       }
 
       // Create kind 3 follow list event
+      // NIP-02 spec: ["p", <pubkey>, <relay>, <petname>]
+      // relay and petname are optional, but relay MUST come before petname
       const tags: string[][] = updatedFollows.map(follow => {
         const tag = ['p', follow.pubkey];
-        if (follow.relayUrl) tag.push(follow.relayUrl);
-        if (follow.petname) tag.push(follow.petname);
+        
+        // If petname is set without relay, add empty string for relay position
+        if (follow.petname && !follow.relayUrl) {
+          tag.push(''); // Reserve position [2] for relay
+          tag.push(follow.petname); // Petname at position [3]
+        } else if (follow.relayUrl && !follow.petname) {
+          tag.push(follow.relayUrl); // Relay at position [2]
+        } else if (follow.relayUrl && follow.petname) {
+          tag.push(follow.relayUrl); // Relay at position [2]
+          tag.push(follow.petname); // Petname at position [3]
+        }
+        // If neither is set, just ["p", pubkey]
+        
         return tag;
       });
 
