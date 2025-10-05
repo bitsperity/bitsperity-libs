@@ -37,7 +37,8 @@ export class CommunityBuilder {
     if (this.descriptionTag) b.tag('description', this.descriptionTag);
     if (this.imageTag) b.tag('image', this.imageTag.url, ...(this.imageTag.dim ? [this.imageTag.dim] : []));
     for (const m of this.moderators) {
-      b.tag('p', m.pubkey, ...(m.relay ? [m.relay] : []), 'moderator');
+      // NIP-72: moderator marker MUST be at position [3], relay at [2] (can be empty)
+      b.tag('p', m.pubkey, m.relay || '', 'moderator');
     }
     for (const r of this.relays) {
       if (r.marker) b.tag('relay', r.url, r.marker);

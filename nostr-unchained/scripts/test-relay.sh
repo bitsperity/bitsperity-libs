@@ -41,7 +41,7 @@ start_relay() {
     docker compose -f "$COMPOSE_FILE" down --remove-orphans >/dev/null 2>&1 || true
     
     # Starte neuen Container
-    docker compose -f "$COMPOSE_FILE" up -d nostr-relay
+    docker compose -f "$COMPOSE_FILE" up -d nostr-relay relay-2 relay-3
     
     # Warte bis Ready
     if wait_for_relay; then

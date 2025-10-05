@@ -14,6 +14,7 @@ import { ContentModule } from '../content/ContentModule.js';
 import { ThreadModule } from '../threads/ThreadModule.js';
 import { FeedModule } from '../feeds/FeedModule.js';
 import { ListModule } from '../lists/ListModule.js';
+import { ReportModule } from '../reporting/ReportModule.js';
 
 export interface SocialModuleConfig {
   nostr: NostrUnchained;
@@ -30,6 +31,7 @@ export class SocialModule {
   private _feeds?: FeedModule;
   private _communities?: any; // CommunityModule;
   private _lists?: ListModule;
+  private _reports?: ReportModule;
   
   // Cleanup synchronization
   private closing = false;
@@ -108,6 +110,17 @@ export class SocialModule {
       this._lists = new ListModule(this.config.nostr);
     }
     return this._lists;
+  }
+
+  /**
+   * Reporting operations (NIP-56)
+   * Content and user reporting for moderation
+   */
+  get reports() {
+    if (!this._reports) {
+      this._reports = new ReportModule(this.config.nostr);
+    }
+    return this._reports;
   }
 
   /**

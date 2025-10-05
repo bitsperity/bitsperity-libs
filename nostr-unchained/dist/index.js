@@ -8,7 +8,7 @@ const lt = typeof globalThis == "object" && "crypto" in globalThis ? globalThis.
 function ss(o) {
   return o instanceof Uint8Array || ArrayBuffer.isView(o) && o.constructor.name === "Uint8Array";
 }
-function qt(o) {
+function zt(o) {
   if (!Number.isSafeInteger(o) || o < 0)
     throw new Error("positive integer expected, got " + o);
 }
@@ -21,9 +21,9 @@ function gt(o, ...t) {
 function Qt(o) {
   if (typeof o != "function" || typeof o.create != "function")
     throw new Error("Hash should be wrapped by utils.createHasher");
-  qt(o.outputLen), qt(o.blockLen);
+  zt(o.outputLen), zt(o.blockLen);
 }
-function xt(o, t = !0) {
+function Ct(o, t = !0) {
   if (o.destroyed)
     throw new Error("Hash instance has been destroyed");
   if (t && o.finished)
@@ -133,7 +133,7 @@ class ls extends ke {
     super(), this.finished = !1, this.length = 0, this.pos = 0, this.destroyed = !1, this.blockLen = t, this.outputLen = e, this.padOffset = s, this.isLE = r, this.buffer = new Uint8Array(t), this.view = Ut(this.buffer);
   }
   update(t) {
-    xt(this), t = bt(t), gt(t);
+    Ct(this), t = bt(t), gt(t);
     const { view: e, buffer: s, blockLen: r } = this, i = t.length;
     for (let n = 0; n < i; ) {
       const a = Math.min(r - this.pos, i - n);
@@ -148,7 +148,7 @@ class ls extends ke {
     return this.length += t.length, this.roundClean(), this;
   }
   digestInto(t) {
-    xt(this), rs(t, this), this.finished = !0;
+    Ct(this), rs(t, this), this.finished = !0;
     const { buffer: e, view: s, blockLen: r, isLE: i } = this;
     let { pos: n } = this;
     e[n++] = 128, mt(this.buffer.subarray(n)), this.padOffset > r - n && (this.process(s, 0), n = 0);
@@ -1098,9 +1098,9 @@ class St {
     return i.plaintext;
   }
 }
-class Ur extends St {
+class Hr extends St {
 }
-class Kr extends St {
+class qr extends St {
 }
 class ms {
   static async createBestAvailable() {
@@ -1846,21 +1846,21 @@ class ws {
   }
 }
 let ut;
-function Hr(o) {
+function Wr(o) {
   ut = o;
 }
-function Wr() {
+function zr() {
   if (!ut)
     throw new Error("Default SubscriptionManager not set. Call setDefaultSubscriptionManager first.");
   return new ws(ut);
 }
-function zr(o) {
+function Vr(o) {
   if (!ut)
     throw new Error("Default SubscriptionManager not set. Call setDefaultSubscriptionManager first.");
   const t = o.toFilter();
   return new te(ut, t);
 }
-function qr(o) {
+function jr(o) {
   if (!ut)
     throw new Error("Default SubscriptionManager not set. Call setDefaultSubscriptionManager first.");
   return new te(ut, [o]);
@@ -2021,10 +2021,10 @@ class _e extends ke {
     this.oHash.update(i), mt(i);
   }
   update(t) {
-    return xt(this), this.iHash.update(t), this;
+    return Ct(this), this.iHash.update(t), this;
   }
   digestInto(t) {
-    xt(this), gt(t, this.outputLen), this.finished = !0, this.iHash.digestInto(t), this.oHash.update(t), this.oHash.digestInto(t), this.destroy();
+    Ct(this), gt(t, this.outputLen), this.finished = !0, this.iHash.digestInto(t), this.oHash.update(t), this.oHash.digestInto(t), this.destroy();
   }
   digest() {
     const t = new Uint8Array(this.oHash.outputLen);
@@ -2049,7 +2049,7 @@ function Es(o, t, e) {
 }
 const Ht = /* @__PURE__ */ Uint8Array.from([0]), ce = /* @__PURE__ */ Uint8Array.of();
 function Ss(o, t, e, s = 32) {
-  Qt(o), qt(s);
+  Qt(o), zt(s);
   const r = o.outputLen;
   if (s > 255 * r)
     throw new Error("Length should be <= 255*HashLen");
@@ -2068,7 +2068,7 @@ function ue(o) {
   if (typeof o != "boolean")
     throw new Error(`boolean expected, not ${o}`);
 }
-function Wt(o) {
+function qt(o) {
   if (!Number.isSafeInteger(o) || o < 0)
     throw new Error("positive integer expected, got " + o);
 }
@@ -2108,8 +2108,8 @@ function S(o, t) {
 function Vt(o) {
   return o.byteOffset % 4 === 0;
 }
-const _t = 64, Cs = 16, Pe = 2 ** 32 - 1, he = new Uint32Array();
-function xs(o, t, e, s, r, i, n, a) {
+const _t = 64, xs = 16, Pe = 2 ** 32 - 1, he = new Uint32Array();
+function Cs(o, t, e, s, r, i, n, a) {
   const c = r.length, u = new Uint8Array(_t), h = ot(u), d = Vt(r) && Vt(i), g = d ? ot(r) : he, p = d ? ot(i) : he;
   for (let f = 0; f < c; n++) {
     if (o(t, e, s, h, n, a), n >= Pe)
@@ -2119,7 +2119,7 @@ function xs(o, t, e, s, r, i, n, a) {
       const b = f / 4;
       if (f % 4 !== 0)
         throw new Error("arx: invalid block position");
-      for (let m = 0, w; m < Cs; m++)
+      for (let m = 0, w; m < xs; m++)
         w = b + m, p[w] = g[w] ^ h[m];
       f += _t;
       continue;
@@ -2133,10 +2133,10 @@ function Ns(o, t) {
   const { allowShortKeys: e, extendNonceFn: s, counterLength: r, counterRight: i, rounds: n } = _s({ allowShortKeys: !1, counterLength: 8, counterRight: !1, rounds: 20 }, t);
   if (typeof o != "function")
     throw new Error("core must be a function");
-  return Wt(r), Wt(n), ue(i), ue(e), (a, c, u, h, d = 0) => {
+  return qt(r), qt(n), ue(i), ue(e), (a, c, u, h, d = 0) => {
     At(a), At(c), At(u);
     const g = u.length;
-    if (h === void 0 && (h = new Uint8Array(g)), At(h), Wt(d), d < 0 || d >= Pe)
+    if (h === void 0 && (h = new Uint8Array(g)), At(h), qt(d), d < 0 || d >= Pe)
       throw new Error("arx: counter overflow");
     if (h.length < g)
       throw new Error(`arx: output (${h.length}) is shorter than data (${g})`);
@@ -2163,15 +2163,15 @@ function Ns(o, t) {
       A.set(c, i ? 0 : 12 - c.length), c = A, p.push(c);
     }
     const k = ot(c);
-    return xs(o, b, m, k, u, h, d, n), As(...p), h;
+    return Cs(o, b, m, k, u, h, d, n), As(...p), h;
   };
 }
 function Ds(o, t, e, s, r, i = 20) {
-  let n = o[0], a = o[1], c = o[2], u = o[3], h = t[0], d = t[1], g = t[2], p = t[3], f = t[4], y = t[5], b = t[6], m = t[7], w = r, k = e[0], A = e[1], M = e[2], P = n, T = a, R = c, C = u, F = h, x = d, N = g, B = p, U = f, K = y, H = b, W = m, z = w, q = k, V = A, j = M;
+  let n = o[0], a = o[1], c = o[2], u = o[3], h = t[0], d = t[1], g = t[2], p = t[3], f = t[4], y = t[5], b = t[6], m = t[7], w = r, k = e[0], A = e[1], M = e[2], P = n, T = a, R = c, x = u, F = h, C = d, N = g, B = p, U = f, K = y, H = b, q = m, W = w, z = k, V = A, j = M;
   for (let ne = 0; ne < i; ne += 2)
-    P = P + F | 0, z = S(z ^ P, 16), U = U + z | 0, F = S(F ^ U, 12), P = P + F | 0, z = S(z ^ P, 8), U = U + z | 0, F = S(F ^ U, 7), T = T + x | 0, q = S(q ^ T, 16), K = K + q | 0, x = S(x ^ K, 12), T = T + x | 0, q = S(q ^ T, 8), K = K + q | 0, x = S(x ^ K, 7), R = R + N | 0, V = S(V ^ R, 16), H = H + V | 0, N = S(N ^ H, 12), R = R + N | 0, V = S(V ^ R, 8), H = H + V | 0, N = S(N ^ H, 7), C = C + B | 0, j = S(j ^ C, 16), W = W + j | 0, B = S(B ^ W, 12), C = C + B | 0, j = S(j ^ C, 8), W = W + j | 0, B = S(B ^ W, 7), P = P + x | 0, j = S(j ^ P, 16), H = H + j | 0, x = S(x ^ H, 12), P = P + x | 0, j = S(j ^ P, 8), H = H + j | 0, x = S(x ^ H, 7), T = T + N | 0, z = S(z ^ T, 16), W = W + z | 0, N = S(N ^ W, 12), T = T + N | 0, z = S(z ^ T, 8), W = W + z | 0, N = S(N ^ W, 7), R = R + B | 0, q = S(q ^ R, 16), U = U + q | 0, B = S(B ^ U, 12), R = R + B | 0, q = S(q ^ R, 8), U = U + q | 0, B = S(B ^ U, 7), C = C + F | 0, V = S(V ^ C, 16), K = K + V | 0, F = S(F ^ K, 12), C = C + F | 0, V = S(V ^ C, 8), K = K + V | 0, F = S(F ^ K, 7);
+    P = P + F | 0, W = S(W ^ P, 16), U = U + W | 0, F = S(F ^ U, 12), P = P + F | 0, W = S(W ^ P, 8), U = U + W | 0, F = S(F ^ U, 7), T = T + C | 0, z = S(z ^ T, 16), K = K + z | 0, C = S(C ^ K, 12), T = T + C | 0, z = S(z ^ T, 8), K = K + z | 0, C = S(C ^ K, 7), R = R + N | 0, V = S(V ^ R, 16), H = H + V | 0, N = S(N ^ H, 12), R = R + N | 0, V = S(V ^ R, 8), H = H + V | 0, N = S(N ^ H, 7), x = x + B | 0, j = S(j ^ x, 16), q = q + j | 0, B = S(B ^ q, 12), x = x + B | 0, j = S(j ^ x, 8), q = q + j | 0, B = S(B ^ q, 7), P = P + C | 0, j = S(j ^ P, 16), H = H + j | 0, C = S(C ^ H, 12), P = P + C | 0, j = S(j ^ P, 8), H = H + j | 0, C = S(C ^ H, 7), T = T + N | 0, W = S(W ^ T, 16), q = q + W | 0, N = S(N ^ q, 12), T = T + N | 0, W = S(W ^ T, 8), q = q + W | 0, N = S(N ^ q, 7), R = R + B | 0, z = S(z ^ R, 16), U = U + z | 0, B = S(B ^ U, 12), R = R + B | 0, z = S(z ^ R, 8), U = U + z | 0, B = S(B ^ U, 7), x = x + F | 0, V = S(V ^ x, 16), K = K + V | 0, F = S(F ^ K, 12), x = x + F | 0, V = S(V ^ x, 8), K = K + V | 0, F = S(F ^ K, 7);
   let L = 0;
-  s[L++] = n + P | 0, s[L++] = a + T | 0, s[L++] = c + R | 0, s[L++] = u + C | 0, s[L++] = h + F | 0, s[L++] = d + x | 0, s[L++] = g + N | 0, s[L++] = p + B | 0, s[L++] = f + U | 0, s[L++] = y + K | 0, s[L++] = b + H | 0, s[L++] = m + W | 0, s[L++] = w + z | 0, s[L++] = k + q | 0, s[L++] = A + V | 0, s[L++] = M + j | 0;
+  s[L++] = n + P | 0, s[L++] = a + T | 0, s[L++] = c + R | 0, s[L++] = u + x | 0, s[L++] = h + F | 0, s[L++] = d + C | 0, s[L++] = g + N | 0, s[L++] = p + B | 0, s[L++] = f + U | 0, s[L++] = y + K | 0, s[L++] = b + H | 0, s[L++] = m + q | 0, s[L++] = w + W | 0, s[L++] = k + z | 0, s[L++] = A + V | 0, s[L++] = M + j | 0;
 }
 const de = /* @__PURE__ */ Ns(Ds, {
   counterRight: !1,
@@ -4004,10 +4004,10 @@ class ge {
   }
 }
 /*! scure-base - MIT License (c) 2022 Paul Miller (paulmillr.com) */
-function Ce(o) {
+function xe(o) {
   return o instanceof Uint8Array || ArrayBuffer.isView(o) && o.constructor.name === "Uint8Array";
 }
-function xe(o, t) {
+function Ce(o, t) {
   return Array.isArray(t) ? t.length === 0 ? !0 : o ? t.every((e) => typeof e == "string") : t.every((e) => Number.isSafeInteger(e)) : !1;
 }
 function Os(o) {
@@ -4029,11 +4029,11 @@ function Yt(o) {
     throw new Error("array expected");
 }
 function De(o, t) {
-  if (!xe(!0, t))
+  if (!Ce(!0, t))
     throw new Error(`${o}: array of strings expected`);
 }
 function Le(o, t) {
-  if (!xe(!1, t))
+  if (!Ce(!1, t))
     throw new Error(`${o}: array of numbers expected`);
 }
 // @__NO_SIDE_EFFECTS__
@@ -4068,7 +4068,7 @@ function Ks(o = "") {
     decode: (t) => (Et("join.decode", t), t.split(o))
   };
 }
-const Fe = (o, t) => t === 0 ? o : Fe(t, o % t), Ft = /* @__NO_SIDE_EFFECTS__ */ (o, t) => o + (t - Fe(o, t)), Ct = /* @__PURE__ */ (() => {
+const Fe = (o, t) => t === 0 ? o : Fe(t, o % t), Ft = /* @__NO_SIDE_EFFECTS__ */ (o, t) => o + (t - Fe(o, t)), xt = /* @__PURE__ */ (() => {
   let o = [];
   for (let t = 0; t < 40; t++)
     o.push(2 ** t);
@@ -4082,7 +4082,7 @@ function Jt(o, t, e, s) {
   if (/* @__PURE__ */ Ft(t, e) > 32)
     throw new Error(`convertRadix2: carry overflow from=${t} to=${e} carryBits=${/* @__PURE__ */ Ft(t, e)}`);
   let r = 0, i = 0;
-  const n = Ct[t], a = Ct[e] - 1, c = [];
+  const n = xt[t], a = xt[e] - 1, c = [];
   for (const u of o) {
     if (Ne(u), u >= n)
       throw new Error(`convertRadix2: invalid data word=${u} from=${t}`);
@@ -4090,7 +4090,7 @@ function Jt(o, t, e, s) {
       throw new Error(`convertRadix2: carry overflow pos=${i} from=${t}`);
     for (i += t; i >= e; i -= e)
       c.push((r >> i - e & a) >>> 0);
-    const h = Ct[i];
+    const h = xt[i];
     if (h === void 0)
       throw new Error("invalid carry");
     r &= h - 1;
@@ -4109,7 +4109,7 @@ function Hs(o, t = !1) {
     throw new Error("radix2: carry overflow");
   return {
     encode: (e) => {
-      if (!Ce(e))
+      if (!xe(e))
         throw new Error("radix2.encode input should be Uint8Array");
       return Jt(Array.from(e), 8, o, !t);
     },
@@ -4148,13 +4148,13 @@ function pe(o, t, e = 1) {
     r = yt(r) ^ i;
   for (let i = 0; i < 6; i++)
     r = yt(r);
-  return r ^= e, Xt.encode(Jt([r % Ct[30]], 30, 5, !1));
+  return r ^= e, Xt.encode(Jt([r % xt[30]], 30, 5, !1));
 }
 // @__NO_SIDE_EFFECTS__
-function Ws(o) {
+function qs(o) {
   const t = o === "bech32" ? 1 : 734539939, e = /* @__PURE__ */ Hs(5), s = e.decode, r = e.encode, i = fe(s);
   function n(d, g, p = 90) {
-    Et("bech32.encode prefix", d), Ce(g) && (g = Array.from(g)), Le("bech32.encode", g);
+    Et("bech32.encode prefix", d), xe(g) && (g = Array.from(g)), Le("bech32.encode", g);
     const f = d.length;
     if (f === 0)
       throw new TypeError(`Invalid prefix length ${f}`);
@@ -4202,12 +4202,12 @@ function Ws(o) {
     toWords: r
   };
 }
-const $t = /* @__PURE__ */ Ws("bech32"), $e = 5e3, Ot = new TextEncoder(), Mt = new TextDecoder();
-function zs(o) {
+const $t = /* @__PURE__ */ qs("bech32"), $e = 5e3, Ot = new TextEncoder(), Mt = new TextDecoder();
+function Ws(o) {
   const t = new Uint8Array(4);
   return t[0] = o >> 24 & 255, t[1] = o >> 16 & 255, t[2] = o >> 8 & 255, t[3] = o & 255, t;
 }
-function zt(o) {
+function Wt(o) {
   const t = {};
   let e = o;
   for (; e.length > 0 && !(e.length < 2); ) {
@@ -4243,7 +4243,7 @@ function kt(o) {
   const { prefix: t, words: e } = $t.decode(o, $e), s = new Uint8Array($t.fromWords(e));
   switch (t) {
     case "nprofile": {
-      const d = zt(s);
+      const d = Wt(s);
       if (!((r = d[0]) != null && r[0])) throw new Error("missing TLV 0 for nprofile");
       if (d[0][0].length !== 32) throw new Error("TLV 0 should be 32 bytes");
       return {
@@ -4255,7 +4255,7 @@ function kt(o) {
       };
     }
     case "nevent": {
-      const d = zt(s);
+      const d = Wt(s);
       if (!((i = d[0]) != null && i[0])) throw new Error("missing TLV 0 for nevent");
       if (d[0][0].length !== 32) throw new Error("TLV 0 should be 32 bytes");
       if (d[2] && d[2][0] && d[2][0].length !== 32) throw new Error("TLV 2 should be 32 bytes");
@@ -4271,7 +4271,7 @@ function kt(o) {
       };
     }
     case "naddr": {
-      const d = zt(s);
+      const d = Wt(s);
       if (!((c = d[0]) != null && c[0])) throw new Error("missing TLV 0 for naddr");
       if (!((u = d[2]) != null && u[0])) throw new Error("missing TLV 2 for naddr");
       if (d[2][0].length !== 32) throw new Error("TLV 2 should be 32 bytes");
@@ -4296,11 +4296,11 @@ function kt(o) {
       throw new Error(`Unknown prefix ${t}`);
   }
 }
-function qs(o) {
+function zs(o) {
   return typeof o == "string" && o.toLowerCase().startsWith("nostr:");
 }
-function Vr(o) {
-  if (!qs(o)) throw new Error("Invalid Nostr URI: must start with nostr:");
+function Gr(o) {
+  if (!zs(o)) throw new Error("Invalid Nostr URI: must start with nostr:");
   const t = o.slice(6), [e, s = ""] = t.split("?"), r = kt(e), i = {};
   if (s.length > 0)
     for (const n of s.split("&")) {
@@ -4310,7 +4310,7 @@ function Vr(o) {
     }
   return { decoded: r, params: i };
 }
-function jr(o, t) {
+function Yr(o, t) {
   const e = typeof o == "string" ? o : (() => {
     switch (o.type) {
       case "npub":
@@ -4349,7 +4349,7 @@ function Oe(o) {
 }
 function Be(o) {
   let t;
-  o.kind !== void 0 && (t = zs(o.kind));
+  o.kind !== void 0 && (t = Ws(o.kind));
   const e = ee({
     0: [ct(o.id)],
     1: (o.relays || []).map((s) => Ot.encode(s)),
@@ -4369,19 +4369,19 @@ function Ue(o) {
   });
   return Bt("naddr", e);
 }
-function Gr(o) {
+function Jr(o) {
   const t = o.startsWith("0x") ? o.slice(2) : o;
   if (!/^[0-9a-fA-F]{64}$/.test(t))
     throw new Error("Invalid hex pubkey: must be 64 hex characters");
   return js(t);
 }
-function Yr(o) {
+function Xr(o) {
   const t = o.startsWith("0x") ? o.slice(2) : o;
   if (!/^[0-9a-fA-F]{64}$/.test(t))
     throw new Error("Invalid hex privkey: must be 64 hex characters");
   return Vs(ct(t));
 }
-function Jr(o) {
+function Zr(o) {
   const t = o.startsWith("0x") ? o.slice(2) : o;
   if (!/^[0-9a-fA-F]{64}$/.test(t))
     throw new Error("Invalid hex event id: must be 64 hex characters");
@@ -4411,13 +4411,13 @@ function Js(o) {
     throw new Error('Invalid note: decoded type is not "note"');
   return t.data;
 }
-function Xr(o, t) {
+function Qr(o, t) {
   const e = o.startsWith("0x") ? o.slice(2) : o;
   if (!/^[0-9a-fA-F]{64}$/.test(e))
     throw new Error("Invalid hex pubkey: must be 64 hex characters");
   return Oe({ pubkey: e, relays: t });
 }
-function Zr(o, t, e, s) {
+function ti(o, t, e, s) {
   const r = o.startsWith("0x") ? o.slice(2) : o;
   if (!/^[0-9a-fA-F]{64}$/.test(r))
     throw new Error("Invalid hex event id: must be 64 hex characters");
@@ -4457,7 +4457,7 @@ function Qs(o) {
     return !1;
   }
 }
-function Qr(o) {
+function ei(o) {
   if (!o || typeof o != "string" || !o.startsWith("nsec1"))
     return !1;
   try {
@@ -4466,7 +4466,7 @@ function Qr(o) {
     return !1;
   }
 }
-function ti(o) {
+function si(o) {
   if (!o || typeof o != "string" || !o.startsWith("note1"))
     return !1;
   try {
@@ -5375,7 +5375,7 @@ class or {
     return t.publish();
   }
 }
-class We {
+class qe {
   constructor(t) {
     this.nostr = t;
   }
@@ -5413,6 +5413,116 @@ class We {
 }
 class ar {
   constructor(t) {
+    l(this, "pubkey");
+    l(this, "eventId");
+    l(this, "reportType");
+    l(this, "content", "");
+    l(this, "labelNamespace");
+    l(this, "labelValue");
+    this.nostr = t;
+  }
+  /**
+   * Set the pubkey being reported (REQUIRED)
+   */
+  user(t) {
+    return this.pubkey = t, this;
+  }
+  /**
+   * Set the event ID being reported (OPTIONAL)
+   */
+  event(t) {
+    return this.eventId = t, this;
+  }
+  /**
+   * Set the report type (REQUIRED)
+   */
+  type(t) {
+    return this.reportType = t, this;
+  }
+  /**
+   * Set the reason for the report (OPTIONAL)
+   */
+  reason(t) {
+    return this.content = t, this;
+  }
+  /**
+   * Add NIP-32 labels (OPTIONAL)
+   */
+  label(t, e) {
+    return this.labelNamespace = t, this.labelValue = e, this;
+  }
+  /**
+   * Publish the report
+   */
+  async publish() {
+    var t;
+    if (!this.pubkey)
+      return { success: !1, error: "Pubkey is required" };
+    if (!this.reportType)
+      return { success: !1, error: "Report type is required" };
+    try {
+      const e = this.nostr.events.create().kind(1984).content(this.content);
+      e.tag("p", this.pubkey, this.reportType), this.eventId && e.tag("e", this.eventId, this.reportType), this.labelNamespace && this.labelValue && (e.tag("L", this.labelNamespace), e.tag("l", this.labelValue, this.labelNamespace));
+      const s = await e.publish();
+      return {
+        success: s.success,
+        eventId: s.eventId,
+        error: (t = s.error) == null ? void 0 : t.message
+      };
+    } catch (e) {
+      return {
+        success: !1,
+        error: e instanceof Error ? e.message : "Failed to publish report"
+      };
+    }
+  }
+}
+class cr {
+  constructor(t) {
+    this.nostr = t;
+  }
+  /**
+   * Create a new report using fluent builder API
+   */
+  create() {
+    return new ar(this.nostr);
+  }
+  /**
+   * Simplified API: Report a user
+   */
+  async reportUser(t, e, s) {
+    return this.create().user(t).type(e).reason(s || "").publish();
+  }
+  /**
+   * Simplified API: Report an event/note
+   */
+  async reportEvent(t, e, s, r) {
+    return this.create().user(e).event(t).type(s).reason(r || "").publish();
+  }
+  /**
+   * Get reports for a specific user
+   */
+  forUser(t) {
+    return this.nostr.sub().kinds([1984]).tags("p", [t]).execute().catch(() => {
+    }), this.nostr.query().kinds([1984]).tags("p", [t]).execute();
+  }
+  /**
+   * Get reports for a specific event
+   */
+  forEvent(t) {
+    return this.nostr.sub().kinds([1984]).tags("e", [t]).execute().catch(() => {
+    }), this.nostr.query().kinds([1984]).tags("e", [t]).execute();
+  }
+  /**
+   * Get all reports by a specific reporter
+   */
+  byReporter(t) {
+    return this.nostr.sub().kinds([1984]).authors([t]).execute().catch(() => {
+    }), this.nostr.query().kinds([1984]).authors([t]).execute();
+  }
+}
+class ur {
+  constructor(t) {
     l(this, "config");
     // Lazy-loaded modules
     l(this, "_content");
@@ -5422,6 +5532,7 @@ class ar {
     l(this, "_communities");
     // CommunityModule;
     l(this, "_lists");
+    l(this, "_reports");
     // Cleanup synchronization
     l(this, "closing", !1);
     l(this, "closePromise");
@@ -5469,7 +5580,14 @@ class ar {
    * Generic list management
    */
   get lists() {
-    return this._lists || (this._lists = new We(this.config.nostr)), this._lists;
+    return this._lists || (this._lists = new qe(this.config.nostr)), this._lists;
+  }
+  /**
+   * Reporting operations (NIP-56)
+   * Content and user reporting for moderation
+   */
+  get reports() {
+    return this._reports || (this._reports = new cr(this.config.nostr)), this._reports;
   }
   /**
    * Update signing provider - simply store reference (modules access via core instance)
@@ -5525,7 +5643,7 @@ class ar {
     ]), this._content = void 0, this._reactions = void 0, this._threads = void 0, this._feeds = void 0, this._communities = void 0, this._lists = void 0;
   }
 }
-class cr {
+class lr {
   constructor(t) {
     l(this, "root", {});
     l(this, "parent", {});
@@ -5580,13 +5698,13 @@ class cr {
     return await this.nostr.publishSigned(await s.build(), t);
   }
 }
-class ur {
+class hr {
   constructor(t) {
     this.nostr = t;
   }
   /** Create a new comment builder */
   create() {
-    return new cr(this.nostr);
+    return new lr(this.nostr);
   }
   /** Reactive stream of comments for a given root address (kind:pubkey:d) */
   getForAddressable(t, e, s) {
@@ -5602,7 +5720,7 @@ class ur {
     }), this.nostr.query().kinds([1111]).execute().map((e) => e.filter((s) => s.tags.some((r) => r[0] === "e" && r[1] === t)));
   }
 }
-class lr {
+class dr {
   constructor(t) {
     l(this, "tags", []);
     l(this, "content", "");
@@ -5636,12 +5754,12 @@ class lr {
     return await this.nostr.events.create().kind(1985).content(this.content).tags(this.tags).publish();
   }
 }
-class hr {
+class gr {
   constructor(t) {
     this.nostr = t;
   }
   edit() {
-    return new lr(this.nostr);
+    return new dr(this.nostr);
   }
   /** Reactive store of labels (kind 1985) for a given target event */
   forEvent(t) {
@@ -5649,7 +5767,7 @@ class hr {
     }), this.nostr.query().kinds([1985]).tags("e", [t]).execute();
   }
 }
-class dr {
+class fr {
   constructor(t) {
     l(this, "meta", {});
     l(this, "categoryTags", []);
@@ -5676,7 +5794,7 @@ class dr {
     return e.publish();
   }
 }
-class gr {
+class yr {
   constructor(t, e) {
     l(this, "meta", {});
     l(this, "categoryTags", []);
@@ -5707,7 +5825,7 @@ class gr {
     return e.publish();
   }
 }
-class fr {
+class pr {
   constructor(t, e) {
     l(this, "messageContent", "");
     l(this, "replyToEventId");
@@ -5735,7 +5853,7 @@ class fr {
     return t.publish();
   }
 }
-class yr {
+class mr {
   constructor(t, e) {
     l(this, "reason");
     this.nostr = t, this.messageEventId = e;
@@ -5748,7 +5866,7 @@ class yr {
     return this.nostr.events.create().kind(43).content(t).tag("e", this.messageEventId).publish();
   }
 }
-class pr {
+class br {
   constructor(t, e) {
     l(this, "reason");
     this.nostr = t, this.pubkey = e;
@@ -5761,24 +5879,24 @@ class pr {
     return this.nostr.events.create().kind(44).content(t).tag("p", this.pubkey).publish();
   }
 }
-class mr {
+class wr {
   constructor(t) {
     this.nostr = t;
   }
   create() {
-    return new dr(this.nostr);
+    return new fr(this.nostr);
   }
   metadata(t) {
-    return new gr(this.nostr, t);
-  }
-  message(t) {
-    return new fr(this.nostr, t);
-  }
-  hide(t) {
     return new yr(this.nostr, t);
   }
-  mute(t) {
+  message(t) {
     return new pr(this.nostr, t);
+  }
+  hide(t) {
+    return new mr(this.nostr, t);
+  }
+  mute(t) {
+    return new br(this.nostr, t);
   }
   // Reactive: list of channels (kind 40)
   list() {
@@ -5808,7 +5926,7 @@ class mr {
 function re(o) {
   return `34550:${o.authorPubkey}:${o.identifier}`;
 }
-class br {
+class vr {
   constructor(t, e) {
     l(this, "d");
     l(this, "nameTag");
@@ -5842,7 +5960,7 @@ class br {
     const t = this.nostr.events.create().kind(34550).content("");
     t.tag("d", this.d), this.nameTag && t.tag("name", this.nameTag), this.descriptionTag && t.tag("description", this.descriptionTag), this.imageTag && t.tag("image", this.imageTag.url, ...this.imageTag.dim ? [this.imageTag.dim] : []);
     for (const r of this.moderators)
-      t.tag("p", r.pubkey, ...r.relay ? [r.relay] : [], "moderator");
+      t.tag("p", r.pubkey, r.relay || "", "moderator");
     for (const r of this.relays)
       r.marker ? t.tag("relay", r.url, r.marker) : t.tag("relay", r.url);
     try {
@@ -5853,7 +5971,7 @@ class br {
     return await t.publish();
   }
 }
-class wr {
+class Er {
   constructor(t, e) {
     l(this, "_content");
     l(this, "relayHint");
@@ -5913,7 +6031,7 @@ class wr {
     return await t.publish();
   }
 }
-class vr {
+class Sr {
   constructor(t, e, s) {
     l(this, "_content");
     l(this, "relayHint");
@@ -5963,7 +6081,7 @@ class vr {
     return e.tag("A", t, ...this.community.relay ? [this.community.relay] : []), e.tag("P", this.community.authorPubkey, ...this.community.relay ? [this.community.relay] : []), e.tag("K", "34550"), e.tag("e", this.parent.id, ...this.parent.relay ? [this.parent.relay] : []), e.tag("p", this.parent.pubkey, ...this.parent.relay ? [this.parent.relay] : []), e.tag("k", String(this.parent.kind ?? 1111)), await e.publish();
   }
 }
-class Er {
+class kr {
   constructor(t, e) {
     l(this, "_post");
     l(this, "_contentJson");
@@ -6020,7 +6138,7 @@ class Er {
     return t.tag("a", e, ...this.community.relay ? [this.community.relay] : []), t.tag("e", this._post.id), t.tag("p", this._post.pubkey), t.tag("k", String(this._post.kind)), await t.publish();
   }
 }
-class Sr {
+class Ar {
   constructor(t) {
     l(this, "relayMap", /* @__PURE__ */ new Map());
     this.nostr = t;
@@ -6133,10 +6251,10 @@ class Sr {
   }
   // Builders
   create(t) {
-    return new br(this.nostr, t);
+    return new vr(this.nostr, t);
   }
   postTo(t, e, s) {
-    const r = new wr(this.nostr, { authorPubkey: t, identifier: e, relay: s || void 0 });
+    const r = new Er(this.nostr, { authorPubkey: t, identifier: e, relay: s || void 0 });
     try {
       if (!s) {
         const i = this.getRelays(t, e);
@@ -6147,7 +6265,7 @@ class Sr {
     return r;
   }
   replyTo(t, e) {
-    const s = new vr(this.nostr, t, e);
+    const s = new Sr(this.nostr, t, e);
     try {
       if (!t.relay) {
         const r = this.getRelays(t.authorPubkey, t.identifier);
@@ -6158,7 +6276,7 @@ class Sr {
     return s;
   }
   approve(t) {
-    const e = new Er(this.nostr, t);
+    const e = new kr(this.nostr, t);
     try {
       const s = this.getRelays(t.authorPubkey, t.identifier);
       s != null && s.approvals && e.relay(s.approvals);
@@ -6218,7 +6336,7 @@ class Sr {
     });
   }
 }
-class kr {
+class _r {
   constructor(t) {
     this.nostr = t;
   }
@@ -6237,7 +6355,7 @@ class kr {
     return r.attachMedia(e, i), await r.publish();
   }
 }
-class Ar {
+class Mr {
   constructor(t, e, s, r = {}) {
     l(this, "listeners", /* @__PURE__ */ new Map());
     l(this, "subscriptionResult");
@@ -6367,7 +6485,7 @@ class Ar {
     return `listener_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 }
-class _r {
+class Pr {
   constructor(t) {
     l(this, "subscriptions", /* @__PURE__ */ new Map());
     l(this, "eventCallbacks", /* @__PURE__ */ new Map());
@@ -6389,7 +6507,7 @@ class _r {
       }
       return a;
     }
-    const i = new Ar(r, t, s, { debug: this.debug }), n = await this.subscribe(t, {
+    const i = new Mr(r, t, s, { debug: this.debug }), n = await this.subscribe(t, {
       relays: s,
       onEvent: (a) => i.broadcast(a),
       onEose: (a) => i.notifyEose(a),
@@ -7137,7 +7255,7 @@ class Pt {
     return this.events.size * 1024 / (1024 * 1024);
   }
 }
-class ze {
+class We {
   constructor() {
     l(this, "filter", {});
   }
@@ -7220,7 +7338,7 @@ class pt {
    * Returns a new store with transformed data
    */
   map(t) {
-    return new Mr(this, t);
+    return new Ir(this, t);
   }
   updateData() {
     this._data = this.cache.query(this.filter), this.notifySubscribers();
@@ -7258,7 +7376,7 @@ class pt {
     return !0;
   }
 }
-class Mr {
+class Ir {
   constructor(t, e) {
     l(this, "_data");
     l(this, "subscribers", /* @__PURE__ */ new Set());
@@ -7288,7 +7406,7 @@ class Mr {
     }
   }
 }
-class ie extends ze {
+class ie extends We {
   constructor(t) {
     super(), this.cache = t;
   }
@@ -7300,7 +7418,7 @@ class ie extends ze {
     return new pt(this.cache, this.filter);
   }
 }
-const J = class J extends ze {
+const J = class J extends We {
   constructor(e, s) {
     super();
     l(this, "relayUrls", []);
@@ -7374,12 +7492,12 @@ const J = class J extends ze {
               P[b.tagName] = M;
               const T = this.filter.limit ?? 100, R = Math.min(T * M.length, this.autoBatchMaxTotalLimit);
               R && (P.limit = R);
-              const C = await this.subscriptionManager.getOrCreateSubscription([P], b.targetRelays), F = C.addListener({
+              const x = await this.subscriptionManager.getOrCreateSubscription([P], b.targetRelays), F = x.addListener({
                 onEvent: (N) => {
                   this.cache.addEvent(N);
                 }
-              }), x = String(C.key);
-              b.sharedKey = x, b.resolvers.forEach((N) => N(x)), b.resolvers = [], J._batchedListenerRegistry = J._batchedListenerRegistry || /* @__PURE__ */ new Map(), J._batchedListenerRegistry.set(x, { sub: C, listenerId: F });
+              }), C = String(x.key);
+              b.sharedKey = C, b.resolvers.forEach((N) => N(C)), b.resolvers = [], J._batchedListenerRegistry = J._batchedListenerRegistry || /* @__PURE__ */ new Map(), J._batchedListenerRegistry.set(C, { sub: x, listenerId: F });
             } finally {
               J.pendingBatches.delete(y);
             }
@@ -7470,7 +7588,7 @@ const J = class J extends ze {
 // Static pending batches per process (keyed by base filter signature + relays)
 l(J, "pendingBatches", /* @__PURE__ */ new Map());
 let Zt = J;
-class qe {
+class ze {
   constructor(t) {
     l(this, "config");
     l(this, "updates", {});
@@ -8208,7 +8326,7 @@ class Ye {
     }
   }
 }
-class Pr {
+class Tr {
   // Frontend expects this
   constructor(t) {
     l(this, "baseStore");
@@ -8272,7 +8390,7 @@ class Xe {
       this.config.debug && console.warn("Failed to start follow list subscription:", s);
     });
     const e = this.config.nostr.query().kinds([3]).authors([t]).limit(1).execute().map((s) => this.parseFollowListEvents(s));
-    return new Pr(e);
+    return new Tr(e);
   }
   /**
    * Get followers for any pubkey - WHO FOLLOWS THIS USER
@@ -8512,7 +8630,7 @@ class Ze {
   edit() {
     if (!this.config.signingProvider)
       throw new Error("Cannot edit profile: No signing provider available. Initialize signing first.");
-    return new qe({
+    return new ze({
       relayManager: this.config.relayManager,
       signingProvider: this.config.signingProvider,
       debug: this.config.debug,
@@ -8585,7 +8703,7 @@ class Ze {
     this._follows && await this._follows.close();
   }
 }
-class Ir {
+class Rr {
   constructor(t) {
     l(this, "list", []);
     this.nostr = t;
@@ -8617,13 +8735,13 @@ class Ir {
     return r.publish();
   }
 }
-class Tr {
+class xr {
   constructor(t, e) {
     this.nostr = t, this.debug = e;
   }
   /** Create a fluent builder for publishing a NIP-65 relay list */
   edit() {
-    return new Ir(this.nostr);
+    return new Rr(this.nostr);
   }
   /** Get reactive relay list for an author (kind 10002) */
   get(t) {
@@ -8649,7 +8767,7 @@ class Tr {
     };
   }
 }
-class Rr {
+class Cr {
   constructor(t, e = (s) => s) {
     this.relayList = t, this.normalizeUrl = e;
   }
@@ -8681,7 +8799,7 @@ class Rr {
     }
   }
 }
-class Cr {
+class Nr {
   constructor(t) {
     this.nostr = t;
   }
@@ -8700,7 +8818,7 @@ class Cr {
     return await Promise.all(t.map((s) => this.check(s, e)));
   }
 }
-class xr {
+class Dr {
   constructor(t) {
     this.nostr = t;
   }
@@ -8730,7 +8848,7 @@ function me(o) {
   let t = o.trim();
   return /^wss?:\/\//i.test(t) || (t = "wss://" + t.replace(/^\/*/, "")), t.replace(/\/+$/, "");
 }
-class Nr {
+class Lr {
   constructor(t) {
     this.nostr = t;
   }
@@ -8837,7 +8955,7 @@ class be {
     }
   }
 }
-class ei {
+class ri {
   constructor(t = {}) {
     l(this, "relayManager");
     l(this, "subscriptionManager");
@@ -8889,7 +9007,7 @@ class ei {
     if (t.signingProvider && (e.signingProvider = t.signingProvider), this.config = e, this.config.debug && console.log("🔥 NostrUnchained v0.1.0-FIX (build:", (/* @__PURE__ */ new Date()).toISOString().substring(0, 19) + "Z)"), this.relayManager = new ps(this.config.relays, {
       debug: this.config.debug,
       publishTimeout: this.config.timeout
-    }), this.subscriptionManager = new _r(this.relayManager), this.relayManager.configureAuth({
+    }), this.subscriptionManager = new Pr(this.relayManager), this.relayManager.configureAuth({
       authEventFactory: async ({ relay: r, challenge: i }) => {
         if (!this.signingProvider) throw new Error("No signing provider for AUTH");
         const a = {
@@ -8925,10 +9043,10 @@ class ei {
       signingProvider: this.signingProvider,
       debug: this.config.debug,
       parent: this
-    }), this.social = new ar({
+    }), this.social = new ur({
       nostr: this,
       debug: this.config.debug
-    }), this.config.debug && console.log("NostrUnchained initialized with relays:", this.config.relays), this.config.routing === "nip65" && (this.relayRouter = new Rr(this.relayList, (i) => this.normalizeRelayUrl(i)), (async () => {
+    }), this.config.debug && console.log("NostrUnchained initialized with relays:", this.config.relays), this.config.routing === "nip65" && (this.relayRouter = new Cr(this.relayList, (i) => this.normalizeRelayUrl(i)), (async () => {
       try {
         if (!this.signingProvider) return;
         const i = await this.signingProvider.getPublicKey();
@@ -9037,38 +9155,38 @@ class ei {
    * Get NIP-65 Relay List module
    */
   get relayList() {
-    return this._relayList || (this._relayList = new Tr(this)), this._relayList;
+    return this._relayList || (this._relayList = new xr(this)), this._relayList;
   }
   // NIP-66 Discovery & Health (lightweight helpers)
   get relayDiscovery() {
-    return this._relayDiscovery || (this._relayDiscovery = new xr(this)), this._relayDiscovery;
+    return this._relayDiscovery || (this._relayDiscovery = new Dr(this)), this._relayDiscovery;
   }
   get relayHealth() {
-    return this._relayHealth || (this._relayHealth = new Cr(this)), this._relayHealth;
+    return this._relayHealth || (this._relayHealth = new Nr(this)), this._relayHealth;
   }
   /** NIP-57 Zaps */
   get zaps() {
-    return this._zap || (this._zap = new Nr(this)), this._zap;
+    return this._zap || (this._zap = new Lr(this)), this._zap;
   }
   /** NIP-51 Lists module */
   get lists() {
-    return this._lists || (this._lists = new We(this)), this._lists;
+    return this._lists || (this._lists = new qe(this)), this._lists;
   }
   /** NIP-32 Labels module */
   get labels() {
-    return this._labels || (this._labels = new hr(this)), this._labels;
+    return this._labels || (this._labels = new gr(this)), this._labels;
   }
   /** NIP-28 Channels module */
   get channels() {
-    return this._channels || (this._channels = new mr(this)), this._channels;
+    return this._channels || (this._channels = new wr(this)), this._channels;
   }
   /** NIP-22 Comments module */
   get comments() {
-    return this._comments || (this._comments = new ur(this)), this._comments;
+    return this._comments || (this._comments = new hr(this)), this._comments;
   }
   /** NIP-72 Communities module */
   get communities() {
-    return this._communities || (this._communities = new Sr(this)), this._communities;
+    return this._communities || (this._communities = new Ar(this)), this._communities;
   }
   /** Content module (NIP-23/18/01) */
   get content() {
@@ -9076,7 +9194,7 @@ class ei {
   }
   /** Files/Attachments helper (NIP-92/94/96) */
   get files() {
-    return this._files || (this._files = new kr(this)), this._files;
+    return this._files || (this._files = new _r(this)), this._files;
   }
   /**
    * Get configured relay URLs
@@ -9675,7 +9793,7 @@ const we = {
   flac: "audio/flac",
   m4a: "audio/mp4"
 };
-function si(o) {
+function ii(o) {
   try {
     const s = new URL(o).pathname.toLowerCase().match(/\.([a-z0-9]+)$/i), r = (s == null ? void 0 : s[1]) || "";
     if (we[r]) return we[r];
@@ -9684,13 +9802,13 @@ function si(o) {
   } catch {
   }
 }
-function ri(o) {
+function ni(o) {
   const t = [];
   if (t.push(`url ${o.url}`), o.mimeType && t.push(`m ${o.mimeType}`), o.blurhash && t.push(`blurhash ${o.blurhash}`), o.dim && t.push(`dim ${o.dim}`), o.alt && t.push(`alt ${o.alt}`), o.sha256 && t.push(`x ${o.sha256}`), o.fallbacks && o.fallbacks.length)
     for (const e of o.fallbacks) t.push(`fallback ${e}`);
   return ["imeta", ...t];
 }
-function ii(o) {
+function oi(o) {
   const t = [];
   for (const e of o.tags || []) {
     if (e[0] !== "imeta") continue;
@@ -9727,7 +9845,7 @@ function ii(o) {
   }
   return t;
 }
-const ni = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const ai = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   DMConversation: Ie,
   DMModule: Re,
@@ -9738,35 +9856,35 @@ const ni = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   NIP44Crypto: X,
   SealCreator: Dt,
   TimestampRandomizer: Gt
-}, Symbol.toStringTag, { value: "Module" })), oi = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+}, Symbol.toStringTag, { value: "Module" })), ci = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   FollowBatchBuilder: Ye,
   FollowBuilder: Ge,
   FollowsModule: Xe,
   ProfileBatchBuilder: Ve,
-  ProfileBuilder: qe,
+  ProfileBuilder: ze,
   ProfileDiscoveryBuilder: je,
   ProfileModule: Ze
 }, Symbol.toStringTag, { value: "Module" }));
-function Dr(o) {
+function Fr(o) {
   return typeof globalThis.btoa == "function" ? globalThis.btoa(o) : Buffer.from(o, "utf8").toString("base64");
 }
-async function Lr(o, t) {
+async function $r(o, t) {
   const e = t.method.toUpperCase(), s = t.url;
   let r;
   t.payload && typeof t.payload == "string" ? r = D(et(new TextEncoder().encode(t.payload))) : t.payload && (r = D(et(t.payload)));
   const i = o.events.create().kind(27235).content("").tag("u", s).tag("method", e);
   return r && i.tag("payload", r), await (await i.sign()).build();
 }
-function Fr(o) {
+function Or(o) {
   const t = JSON.stringify(o);
-  return `Nostr ${Dr(t)}`;
+  return `Nostr ${Fr(t)}`;
 }
-async function $r(o, t) {
-  const e = await Lr(o, t), s = Fr(e);
+async function Br(o, t) {
+  const e = await $r(o, t), s = Or(e);
   return { event: e, header: s };
 }
-class ai {
+class ui {
   constructor(t) {
     this.nostr = t;
   }
@@ -9783,7 +9901,7 @@ class ai {
     a.append("file", c, s.filename || "upload.bin"), s.caption && a.append("caption", s.caption), s.alt && a.append("alt", s.alt);
     const u = { method: "POST", body: a, headers: {} };
     if (s.requireAuth) {
-      const { header: f } = await $r(this.nostr, {
+      const { header: f } = await Br(this.nostr, {
         method: "POST",
         url: i,
         payload: n
@@ -9805,10 +9923,10 @@ class ai {
     return await e.publish();
   }
 }
-const ci = "0.2.0";
+const li = "0.2.0";
 export {
   fs as DEFAULT_RELAYS,
-  ni as DM,
+  ai as DM,
   ae as EVENT_KINDS,
   $ as ErrorHandler,
   _ as EventBuilder,
@@ -9817,38 +9935,38 @@ export {
   te as FeedStoreImpl,
   Kt as FluentEventBuilder,
   St as LocalKeySigner,
-  ai as Nip96Client,
+  ui as Nip96Client,
   be as NostrConnectSigner,
-  ei as NostrUnchained,
-  oi as Profile,
+  ri as NostrUnchained,
+  ci as Profile,
   ie as QueryBuilder,
-  Ur as QuickSigner,
+  Hr as QuickSigner,
   ps as RelayManager,
   ms as SigningProviderFactory,
   Zt as SubBuilder,
-  _r as SubscriptionManager,
-  Kr as TemporarySigner,
-  ci as VERSION,
-  Lr as buildHttpAuthEvent,
-  Fr as buildHttpAuthHeader,
-  ri as buildImetaTag,
-  Wr as createFeed,
-  qr as createFeedFromFilter,
-  zr as createFeedFromQuery,
+  Pr as SubscriptionManager,
+  qr as TemporarySigner,
+  li as VERSION,
+  $r as buildHttpAuthEvent,
+  Or as buildHttpAuthHeader,
+  ni as buildImetaTag,
+  zr as createFeed,
+  jr as createFeedFromFilter,
+  Vr as createFeedFromQuery,
   Xs as createNaddr,
-  Zr as createNevent,
-  Xr as createNprofile,
+  ti as createNevent,
+  Qr as createNprofile,
   kt as decode,
   I as derived,
-  si as guessMimeType,
-  Jr as hexToNote,
-  Gr as hexToNpub,
-  Yr as hexToNsec,
-  qs as isNostrUri,
+  ii as guessMimeType,
+  Zr as hexToNote,
+  Jr as hexToNpub,
+  Xr as hexToNsec,
+  zs as isNostrUri,
   Zs as isValidHexKey,
-  ti as isValidNote,
+  si as isValidNote,
   Qs as isValidNpub,
-  Qr as isValidNsec,
+  ei as isValidNsec,
   Ue as naddrEncode,
   Be as neventEncode,
   Gs as noteEncode,
@@ -9858,10 +9976,10 @@ export {
   Ke as npubToHex,
   Vs as nsecEncode,
   Ys as nsecToHex,
-  ii as parseImetaTags,
-  Vr as parseNostrUri,
-  Hr as setDefaultSubscriptionManager,
-  $r as signHttpAuth,
-  jr as toNostrUri,
+  oi as parseImetaTags,
+  Gr as parseNostrUri,
+  Wr as setDefaultSubscriptionManager,
+  Br as signHttpAuth,
+  Yr as toNostrUri,
   nt as writable
 };
