@@ -65,7 +65,9 @@ export class EventBuilder {
 
     // Required fields
     if (!event.pubkey) errors.push('Missing pubkey');
-    if (!event.created_at) errors.push('Missing created_at');
+    if (typeof event.created_at !== 'number' || !Number.isFinite(event.created_at)) {
+      errors.push('Missing or invalid created_at');
+    }
     if (typeof event.kind !== 'number') errors.push('Missing or invalid kind');
     if (!Array.isArray(event.tags)) errors.push('Missing or invalid tags');
     if (typeof event.content !== 'string') errors.push('Missing or invalid content');
@@ -93,12 +95,14 @@ export class EventBuilder {
     }
 
     // Timestamp validation (reasonable bounds)
-    if (event.created_at) {
+    if (typeof event.created_at === 'number' && Number.isFinite(event.created_at)) {
       const now = Math.floor(Date.now() / 1000);
       const oneHourAgo = now - 3600;
       const oneHourFuture = now + 3600;
 
-      if (event.created_at < oneHourAgo || event.created_at > oneHourFuture) {
+      if (!Number.isInteger(event.created_at)) {
+        errors.push('created_at must be an integer timestamp');
+      } else if (event.created_at < oneHourAgo || event.created_at > oneHourFuture) {
         errors.push('Timestamp is too far in the past or future');
       }
     }

@@ -27,8 +27,9 @@ describe('NIP-23: Long-form Content (kind 30023)', () => {
       .publish();
     expect(first.success).toBe(true);
 
-    // Wait minimal propagation
+    // Wait minimal propagation to ensure relay accepts replaceable update
     await testEnv.waitForSubscription(500);
+    await new Promise(res => setTimeout(res, 1100));
 
     const second = await a.content.article()
       .identifier(d)
@@ -38,13 +39,16 @@ describe('NIP-23: Long-form Content (kind 30023)', () => {
       .content('Hello Nostr - v2')
       .publish();
     expect(second.success).toBe(true);
+    await testEnv.waitForSubscription(800);
 
     const store = a.content.getArticle(apub, d);
-    for (let i = 0; i < 20; i++) {
-      if (store.current) break;
+    let article;
+    for (let i = 0; i < 25; i++) {
+      article = store.current;
+      const title = article?.tags.find((t: string[]) => t[0] === 'title')?.[1];
+      if (title === 'Second Title') break;
       await new Promise(res => setTimeout(res, 200));
     }
-    const article = store.current;
     expect(article?.kind).toBe(30023);
     expect(article?.tags.find((t: string[]) => t[0] === 'title')?.[1]).toBe('Second Title');
 

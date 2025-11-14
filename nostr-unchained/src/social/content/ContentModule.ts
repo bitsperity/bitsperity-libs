@@ -80,7 +80,17 @@ export class ContentModule {
     this.nostr.sub().kinds([30023]).authors([authorPubkey]).execute().catch(() => {});
     return this.nostr.query().kinds([30023]).authors([authorPubkey]).execute().map((events: NostrEvent[]) => {
       const filtered = events.filter(e => e.tags.some(t => t[0] === 'd' && t[1] === identifier));
-      return filtered.sort((a, b) => b.created_at - a.created_at)[0] ?? null;
+      if (!filtered.length) return null;
+
+      return filtered.sort((a, b) => {
+        if (b.created_at !== a.created_at) {
+          return b.created_at - a.created_at;
+        }
+        if (b.id !== a.id) {
+          return b.id.localeCompare(a.id);
+        }
+        return 0;
+      })[0];
     });
   }
 
