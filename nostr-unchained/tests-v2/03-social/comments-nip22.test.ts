@@ -46,6 +46,35 @@ describe('Social - Comments (NIP-22)', () => {
     const found = comments.find((ev: any) => ev.kind === 1111 && ev.content.includes('Great article!'));
     expect(!!found).toBe(true);
   }, 25000);
+
+  it('falls back to connected relays when publishing comments without relay markers', async () => {
+    const a = alice.nostr as any;
+    const b = bob.nostr as any;
+
+    const noteDraft = await a.events.note('Root note for comments').sign();
+    const builtNote = await noteDraft.build();
+    const noteResult = await a.publishSigned(builtNote);
+    expect(noteResult.success).toBe(true);
+
+    const fallbackComment = await b.comments
+      .create()
+      .onEventRoot(builtNote.id, undefined, builtNote.pubkey)
+      .replyToEvent(builtNote.id, undefined, builtNote.pubkey)
+      .content('Comment without explicit relay markers')
+      .publish();
+
+    expect(fallbackComment.success).toBe(true);
+
+    const repliesStore = a.comments.getRepliesTo(builtNote.id);
+    let found = false;
+    for (let i = 0; i < 20; i++) {
+      const replies = repliesStore.current || [];
+      found = replies.some((ev: any) => ev.content.includes('Comment without explicit relay markers'));
+      if (found) break;
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+    expect(found).toBe(true);
+  }, 25000);
 });
 
 

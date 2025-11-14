@@ -2,6 +2,69 @@ import type { NostrEvent } from '../../core/types.js';
 
 type MaybeString = string | undefined | null;
 
+type ReactiveStore<T> = {
+  subscribe(run: (value: T) => void, invalidate?: () => void): () => void;
+  readonly current: T;
+  map<U>(transform: (value: T) => U): ReactiveStore<U>;
+};
+
+class CombinedReactiveStore<T> implements ReactiveStore<T> {
+  private subscribers = new Set<(value: T) => void>();
+  private value: T;
+  private unsubscribeFns: Array<() => void> = [];
+  private active = false;
+
+  constructor(private sources: ReactiveStore<any>[], private projector: () => T) {
+    this.value = this.projector();
+    this.activate();
+  }
+
+  private activate(): void {
+    if (this.active) return;
+    this.active = true;
+    this.unsubscribeFns = this.sources.map((source) =>
+      source.subscribe(() => {
+        this.value = this.projector();
+        this.notify();
+      })
+    );
+  }
+
+  private deactivate(): void {
+    if (!this.active) return;
+    this.unsubscribeFns.forEach((fn) => fn());
+    this.unsubscribeFns = [];
+    this.active = false;
+  }
+
+  subscribe(run: (value: T) => void, invalidate?: () => void): () => void {
+    this.activate();
+    run(this.value);
+    this.subscribers.add(run);
+    return () => {
+      this.subscribers.delete(run);
+      if (this.subscribers.size === 0) {
+        this.deactivate();
+      }
+    };
+  }
+
+  get current(): T {
+    if (!this.active) {
+      this.value = this.projector();
+    }
+    return this.value;
+  }
+
+  map<U>(transform: (value: T) => U): ReactiveStore<U> {
+    return new CombinedReactiveStore<U>([this], () => transform(this.value));
+  }
+
+  private notify(): void {
+    this.subscribers.forEach((subscriber) => subscriber(this.value));
+  }
+}
+
 export interface CommunityAddress {
   authorPubkey: string;
   identifier: string; // d identifier
@@ -414,48 +477,62 @@ export class CommunitiesModule {
     const address = `34550:${authorPubkey}:${identifier}`;
     // subscribe to community posts with A-tag filter (NIP-72)
     this.nostr.sub().kinds([1111]).tags('A', [address]).execute().catch(() => {});
-    if (options?.approvedOnly) {
-      // ensure approvals and community defs are flowing
-      this.nostr.sub().kinds([4550]).tags('a', [address]).execute().catch(() => {});
-      this.nostr.sub().kinds([34550]).authors([authorPubkey]).execute().catch(() => {});
-      this.nostr.sub().kinds([5]).execute().catch(() => {});
-    }
-    return this.nostr
+    const basePostsStore = this.nostr
       .query()
       .kinds([1111])
       .tags('A', [address])
       .execute()
       .map((events: NostrEvent[]) =>
-        {
-          // Base: posts in community
-          let posts = events.filter((ev) => ev.tags.some((t) => (t[0] === 'A' || t[0] === 'a') && t[1] === address));
-          if (options?.approvedOnly) {
-            // Snapshot approvals and moderators from cache
-            const approvalsStore = this.nostr.query().kinds([4550]).execute();
-            const approvals = approvalsStore.current || [];
-            const deletionsStore = this.nostr.query().kinds([5]).execute();
-            const deletions = deletionsStore.current || [];
-            // Exclude approvals that have a matching deletion (kind 5 referencing approval id)
-            const isRevoked = (ap: NostrEvent) =>
-              deletions.some((d: NostrEvent) => d.tags.some((t) => t[0] === 'e' && t[1] === ap.id));
-            const modsStore = this.moderators(authorPubkey, identifier);
-            const moderators = new Set((modsStore as any).current || []);
-            posts = posts.filter((post) => {
-              const relevant = approvals.filter((ap: NostrEvent) =>
-                ap.tags.some((t) => t[0] === 'a' && t[1] === address) &&
-                ap.tags.some((t) => t[0] === 'e' && t[1] === post.id) &&
-                !isRevoked(ap)
-              );
-              if (relevant.length === 0) return false;
-              if (options?.moderatorsOnly) {
-                return relevant.some((ap: NostrEvent) => moderators.has(ap.pubkey));
-              }
-              return true;
-            });
+        events.filter((ev) => ev.tags.some((t) => (t[0] === 'A' || t[0] === 'a') && t[1] === address))
+      ) as ReactiveStore<NostrEvent[]>;
+
+    if (!options?.approvedOnly) {
+      return basePostsStore;
+    }
+
+    // ensure approvals and community defs are flowing
+    this.nostr.sub().kinds([4550]).tags('a', [address]).execute().catch(() => {});
+    this.nostr.sub().kinds([34550]).authors([authorPubkey]).execute().catch(() => {});
+    this.nostr.sub().kinds([5]).execute().catch(() => {});
+
+    const approvalsStore = this.nostr
+      .query()
+      .kinds([4550])
+      .tags('a', [address])
+      .execute() as ReactiveStore<NostrEvent[]>;
+    const deletionsStore = this.nostr.query().kinds([5]).execute() as ReactiveStore<NostrEvent[]>;
+    const moderatorsStore = this.moderators(authorPubkey, identifier) as ReactiveStore<string[]>;
+
+    const combined = new CombinedReactiveStore<NostrEvent[]>(
+      [basePostsStore, approvalsStore, deletionsStore, moderatorsStore],
+      () => {
+        const posts = [...(basePostsStore.current || [])];
+        const approvals = approvalsStore.current || [];
+        const deletions = deletionsStore.current || [];
+        const moderators = new Set(moderatorsStore.current || []);
+        const revokedApprovalIds = new Set(
+          deletions
+            .filter((d) => d.tags?.some((t) => t[0] === 'e'))
+            .flatMap((d) => d.tags.filter((t) => t[0] === 'e').map((t) => t[1]))
+        );
+
+        return posts.filter((post) => {
+          const relevantApprovals = approvals.filter(
+            (ap) =>
+              ap.tags.some((t) => t[0] === 'a' && t[1] === address) &&
+              ap.tags.some((t) => t[0] === 'e' && t[1] === post.id) &&
+              !revokedApprovalIds.has(ap.id)
+          );
+          if (!relevantApprovals.length) return false;
+          if (options?.moderatorsOnly) {
+            return relevantApprovals.some((ap) => moderators.has(ap.pubkey));
           }
-          return posts;
-        }
-      );
+          return true;
+        });
+      }
+    );
+
+    return combined;
   }
 
   approvals(authorPubkey: string, identifier: string, postId?: string) {

@@ -165,6 +165,8 @@ await nostr.communities
 // ✅ Event published successfully to all connected relays
 ```
 
+> **New in v2.2:** `publishSigned()` (Gift Wraps, DMs, comments) nutzt jetzt denselben Fallback-Stack wie `publish()`. Selbst wenn keine Marker/NIP-65-Listen verfügbar sind, wählt die Library automatisch verbundene oder konfigurierte Relays aus und loggt nur eine Debug-Warnung.
+
 ### Implementation Details
 
 Graceful degradation is implemented in **4 critical locations**:

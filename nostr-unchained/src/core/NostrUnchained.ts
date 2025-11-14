@@ -734,15 +734,15 @@ export class NostrUnchained {
       return await this.publishToRelaysSmart(event, autoTargets);
     }
 
-    // If event kind is routing-sensitive and we could not determine relays → warn and fallback to connected
+    // If event kind is routing-sensitive and we could not determine relays → warn and fallback to defaults
     if (this.isRoutingSensitiveEventKind((event as any).kind)) {
       if (this.config.debug) {
-        console.warn(`⚠️ Routing-sensitive event (kind ${(event as any).kind}) without specific relay markers. Falling back to connected relays. Consider adding explicit relay markers for better delivery.`);
+        console.warn(`⚠️ Routing-sensitive event (kind ${(event as any).kind}) without specific relay markers. Falling back to default relay set. Consider adding explicit relay markers for better delivery.`);
       }
     }
 
-    // Otherwise, determine target relays from connected set (optionally via router)
-    let targetRelays = this.relayManager.connectedRelays;
+    // Otherwise, determine target relays from defaults (optionally via router)
+    let targetRelays = this.getDefaultRelayTargets();
     try {
       if (this.relayRouter && this.config.routing === 'nip65') {
         const authorPubkey = signedEvent.pubkey;
@@ -753,6 +753,14 @@ export class NostrUnchained {
         });
       }
     } catch {}
+
+    if (!targetRelays.length) {
+      targetRelays = this.getDefaultRelayTargets();
+    }
+
+    if (!targetRelays.length) {
+      throw new Error('No relay targets available for publish(). Connect to at least one relay or configure defaults.');
+    }
 
     // Publish to selected relays
     const relayResults = await this.relayManager.publishToRelays(signedEvent, targetRelays);
@@ -806,12 +814,12 @@ export class NostrUnchained {
       return await this.publishSignedToRelaysSmart(signedEvent, autoTargets);
     }
 
-    if (this.isRoutingSensitiveEventKind((signedEvent as any).kind)) {
-      throw new Error('No target relay known for routing-sensitive event. Ensure markers (NIP-72) or recipient relay list (NIP-65) are available.');
+    if (this.isRoutingSensitiveEventKind((signedEvent as any).kind) && this.config.debug) {
+      console.warn(`⚠️ Routing-sensitive event (kind ${(signedEvent as any).kind}) published without explicit markers. Falling back to default relay set.`);
     }
 
-    // Otherwise, determine target relays from connected set (optionally via router)
-    let targetRelays = this.relayManager.connectedRelays;
+    // Otherwise, determine target relays from defaults (optionally via router)
+    let targetRelays = this.getDefaultRelayTargets();
     try {
       if (this.relayRouter && this.config.routing === 'nip65') {
         const authorPubkey = signedEvent.pubkey;
@@ -822,6 +830,14 @@ export class NostrUnchained {
         });
       }
     } catch {}
+
+    if (!targetRelays.length) {
+      targetRelays = this.getDefaultRelayTargets();
+    }
+
+    if (!targetRelays.length) {
+      throw new Error('No relay targets available for publishSigned(). Connect to at least one relay or configure defaults.');
+    }
 
     // Publish to selected relays (no re-signing)
     const relayResults = await this.relayManager.publishToRelays(signedEvent, targetRelays);
@@ -907,7 +923,9 @@ export class NostrUnchained {
           .filter((v) => !!v);
         if (!recipients.length) return null;
         const targets = await this.resolveRecipientsPreferredRelays(recipients, 1000);
-        return targets.length ? targets : null;
+        if (targets.length) return targets;
+        const fallbackTargets = this.getDefaultRelayTargets();
+        return fallbackTargets.length ? fallbackTargets : null;
       }
       return null;
     } catch {
@@ -917,6 +935,15 @@ export class NostrUnchained {
 
   private isRoutingSensitiveEventKind(kind: number): boolean {
     return kind === 34550 || kind === 1111 || kind === 4550 || kind === 4 || kind === 14 || kind === 1059;
+  }
+
+  private getDefaultRelayTargets(): string[] {
+    const connected = this.relayManager.connectedRelays.filter(Boolean);
+    if (connected.length) {
+      return Array.from(new Set(connected));
+    }
+    const configured = Array.isArray(this.config.relays) ? this.config.relays.filter(Boolean) : [];
+    return Array.from(new Set(configured));
   }
 
   /** Resolve recipients' preferred relays using their NIP‑65 lists (blocking with timeout). */
